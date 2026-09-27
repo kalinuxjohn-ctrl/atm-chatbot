@@ -1,0 +1,68 @@
+services:
+  # 1. Base de données PostgreSQL + pgvector
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: atm_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: atm_chatbot
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d atm_chatbot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Initialisation de la base
+  # Image légère sans PyTorch ni CUDA
+  init-db:
+    build:
+      context: .
+      dockerfile: Dockerfile.init
+    container_name: atm_init
+    environment:
+      - PGPASSWORD=postgrespassword
+      - DATABASE_URL=postgresql+psycopg2://postgres:postgrespassword@db:5432/atm_chatbot
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo '⌛ Attente de la base de données...' &&
+        psql -h db -U postgres -d atm_chatbot -f db/migrations/0001_core_schema.sql &&
+        psql -h db -U postgres -d atm_chatbot -f db/migrations/0002_symptom_action.sql &&
+        psql -h db -U postgres -d atm_chatbot -f db/migrations/0003_pgvector.sql &&
+        psql -h db -U postgres -d atm_chatbot -f db/migrations/0004_stats_table.sql &&
+        echo '🌱 Ingestion des données de test (Seed)...' &&
+        python -m db.seed.seed_demo_data &&
+        echo '✅ Base de données initialisée avec succès !'
+      "
+
+  # 3. Application Web FastAPI avec GPU NVIDIA
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: atm_app
+    restart: always
+    ports:
+      - "8000:8000"
+    gpus: all
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://postgres:postgrespassword@db:5432/atm_chatbot
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_MODEL=qwen:8b
+    depends_on:
+      init-db:
+        condition: service_completed_successfully
+    volumes:
+      - ./app:/app/app
+
+volumes:
+  pgdata:

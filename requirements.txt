@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+pydantic-settings
+python-dotenv
+#requests est utilisé pour les appels API externes ollamma qwen
+requests
+transformers
