@@ -1,0 +1,113 @@
+atm-chatbot/
+├── app/
+│   ├── api/
+│   │   ├── routes/
+│   │   │   ├── __init__.py
+│   │   │   ├── chat.py
+│   │   │   │   └── function rechercher_symptome(payload, db)
+│   │   │   └── interventions.py
+│   │   │       ├── function enregistrer_intervention(payload, db)
+│   │   │       ├── function lire_intervention(intervention_id, db)
+│   │   │       └── function enregistrer_action(intervention_id, payload, db)
+│   │   └── __init__.py
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── config.py
+│   │   │   ├── class Settings(BaseSettings)
+│   │   └── database.py
+│   │       └── function get_db()
+│   ├── jobs/
+│   │   ├── __init__.py
+│   │   └── recompute_stats.py
+│   │       └── function main()
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── catalog.py
+│   │   │   ├── class Component(Base)
+│   │   │   ├── class Symptom(Base)
+│   │   │   ├── class Action(Base)
+│   │   │   ├── class SymptomActionOutcomeStats(Base)
+│   │   ├── device.py
+│   │   │   ├── class Manufacturer(Base)
+│   │   │   ├── class DeviceModel(Base)
+│   │   │   ├── class DeviceModelVersion(Base)
+│   │   │   ├── class Device(Base)
+│   │   ├── intervention.py
+│   │   │   ├── class Intervention(Base)
+│   │   │   ├── class InterventionSymptom(Base)
+│   │   │   ├── class InterventionAction(Base)
+│   │   │   ├── class Diagnosis(Base)
+│   │   └── technician.py
+│   │       ├── class Technician(Base)
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── chat_schema.py
+│   │   │   ├── class SymptomSearchRequest(BaseModel)
+│   │   │   ├── class SolutionSuggestion(BaseModel)
+│   │   │   ├── class SymptomSearchResponse(BaseModel)
+│   │   └── intervention_schema.py
+│   │       ├── class SymptomInput(BaseModel)
+│   │       ├── class InterventionCreate(BaseModel)
+│   │       ├── class SymptomOut(BaseModel)
+│   │       ├── class InterventionOut(BaseModel)
+│   │       ├── class ActionInput(BaseModel)
+│   │       ├── class ActionOut(BaseModel)
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── embeddings_service.py
+│   │   │   ├── function _clean_text(raw_text)
+│   │   │   ├── function _fit_size(vector, target_size)
+│   │   │   ├── function _fallback_embedding(raw_text, vector_size)
+│   │   │   ├── function _get_encoder(model_name)
+│   │   │   └── function generate_embedding(raw_text, model_name, dimensions, is_query)
+│   │   ├── intervention_service.py
+│   │   │   ├── function create_intervention_with_symptoms(db, payload)
+│   │   │   ├── function get_intervention_by_id(db, intervention_id)
+│   │   │   └── function add_action_to_intervention(db, intervention_id, payload)
+│   │   ├── llm_service.py
+│   │   │   └── function generate_reply(prompt, model, base_url)
+│   │   ├── retrieval_service.py
+│   │   │   ├── function cosine_similarity(left, right)
+│   │   │   ├── function fetch_similar_symptoms(db, raw_text, device_type, limit)
+│   │   │   ├── function find_best_catalog_match(db, raw_text, device_type)
+│   │   │   ├── function store_symptom_embedding(db, intervention_symptom_id, vector)
+│   │   │   └── function find_ranked_solutions(db, raw_text, device_type, symptom_limit, solution_limit)
+│   │   └── stats_service.py
+│   │       └── function recompute_stats(db)
+│   ├── __init__.py
+│   └── main.py
+│       └── function verifier_sante()
+├── db/
+│   ├── migrations/
+│   │   ├── 0001_core_schema.sql
+│   │   ├── 0002_symptom_action.sql
+│   │   ├── 0003_pgvector.sql
+│   │   └── 0004_stats_table.sql
+│   └── seed/
+│       └── seed_demo_data.py
+│           ├── function _to_psycopg2_dsn(sqlalchemy_url)
+│           └── function run_seed()
+├── frontend/
+│   └── server.py
+│       ├── class FrontendRequestHandler(SimpleHTTPRequestHandler)
+│       │   ├── __init__(self, *args, **kwargs)
+│       │   ├── do_GET(self)
+│       │   ├── do_HEAD(self)
+│       │   ├── do_POST(self)
+│       │   ├── do_PUT(self)
+│       │   ├── do_PATCH(self)
+│       │   ├── do_DELETE(self)
+│       │   ├── _send_json_error(self, status_code, message)
+│       │   ├── _proxy_api_request(self)
+│       │   ├── _send_api_response(self, status_code, headers, response_body)
+│       │   └── log_message(self, format_string, *args)
+├── .dockerignore
+├── .env
+├── .gitignore
+├── architecture.tree
+├── COMPREHENSION.md
+├── docker-compose.yml
+├── Dockerfile
+├── Dockerfile.base
+├── Dockerfile.init
+├── feuille_de_route_flux_utilisation_chatbot.png

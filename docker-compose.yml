@@ -1,68 +1,112 @@
 services:
-  # 1. Base de données PostgreSQL + pgvector
+
   db:
     image: pgvector/pgvector:pg16
     container_name: atm_db
-    restart: always
+    restart: unless-stopped
+
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgrespassword
       POSTGRES_DB: atm_chatbot
+
     ports:
       - "5432:5432"
+
     volumes:
       - pgdata:/var/lib/postgresql/data
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d atm_chatbot"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
-  # 2. Initialisation de la base
-  # Image légère sans PyTorch ni CUDA
+
   init-db:
     build:
       context: .
       dockerfile: Dockerfile.init
+
     container_name: atm_init
+
     environment:
-      - PGPASSWORD=postgrespassword
-      - DATABASE_URL=postgresql+psycopg2://postgres:postgrespassword@db:5432/atm_chatbot
+      PGPASSWORD: postgrespassword
+      DATABASE_URL: ${DATABASE_URL}
+      HF_HOME: ${HF_HOME}
+
     depends_on:
       db:
         condition: service_healthy
-    command: >
-      sh -c "
-        echo '⌛ Attente de la base de données...' &&
-        psql -h db -U postgres -d atm_chatbot -f db/migrations/0001_core_schema.sql &&
-        psql -h db -U postgres -d atm_chatbot -f db/migrations/0002_symptom_action.sql &&
-        psql -h db -U postgres -d atm_chatbot -f db/migrations/0003_pgvector.sql &&
-        psql -h db -U postgres -d atm_chatbot -f db/migrations/0004_stats_table.sql &&
-        echo '🌱 Ingestion des données de test (Seed)...' &&
-        python -m db.seed.seed_demo_data &&
-        echo '✅ Base de données initialisée avec succès !'
-      "
 
-  # 3. Application Web FastAPI avec GPU NVIDIA
+    volumes:
+      - ./docker-cache/huggingface:/root/.cache/huggingface
+
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+
+        psql -h db -U postgres -d atm_chatbot \
+          -f db/migrations/0001_core_schema.sql
+
+        psql -h db -U postgres -d atm_chatbot \
+          -f db/migrations/0002_symptom_action.sql
+
+        psql -h db -U postgres -d atm_chatbot \
+          -f db/migrations/0003_pgvector.sql
+
+        psql -h db -U postgres -d atm_chatbot \
+          -f db/migrations/0004_stats_table.sql
+
+        psql -h db -U postgres -d atm_chatbot \
+          -f db/migrations/0005_action_targets_symptom.sql
+
+        python -m db.seed.seed_demo_data
+        python -m app.jobs.recompute_stats
+
+
   web:
     build:
       context: .
       dockerfile: Dockerfile
+
     container_name: atm_app
-    restart: always
+    restart: unless-stopped
+
     ports:
       - "8000:8000"
+
     gpus: all
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
     environment:
-      - DATABASE_URL=postgresql+psycopg2://postgres:postgrespassword@db:5432/atm_chatbot
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
-      - OLLAMA_MODEL=qwen:8b
+      DATABASE_URL: ${DATABASE_URL}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
+      OLLAMA_MODEL: ${OLLAMA_MODEL}
+      HF_HOME: ${HF_HOME}
+
+    # Permet au conteneur de résoudre l'hôte WSL/Windows
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
     depends_on:
       init-db:
         condition: service_completed_successfully
+
     volumes:
       - ./app:/app/app
+      - ./docker-cache/huggingface:/root/.cache/huggingface
+
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --reload
+
 
 volumes:
   pgdata:

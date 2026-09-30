@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.chat_schema import SymptomSearchRequest, SymptomSearchResponse
 from app.services.retrieval_service import find_ranked_solutions
+from app.services.llm_service import summarize_solutions
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -26,5 +27,9 @@ def rechercher_symptome(payload: SymptomSearchRequest, db: Session = Depends(get
     renvoie les actions déjà tentées pour ces symptômes, classées par
     accuracy décroissante -- aucun résultat n'est masqué.
     """
+
     result = find_ranked_solutions(db, raw_text=payload.raw_text, device_type=payload.device_type)
-    return SymptomSearchResponse(**result) 
+    resume = summarize_solutions(payload.raw_text, result["solutions"])
+    return SymptomSearchResponse(**result, summary=resume)
+
+

@@ -37,20 +37,24 @@ class Device(Base):
     __tablename__ = "device"
 
     device_id = Column(Integer, primary_key=True)
-    serial_number = Column(String, nullable=False, unique=True)
-    model_id = Column(Integer, ForeignKey("device_model.model_id"), nullable=False)
-    version_id = Column(Integer, ForeignKey("device_model_version.version_id"))
-    site_name = Column(String, nullable=False)
+    # gab ou tpe -- seule colonne "externe" restée NOT NULL en base (migration 0001).
+    device_type = Column(
+        Enum("gab", "tpe", name="device_type"),
+        nullable=False,
+    )
+    # Pas UNIQUE/NOT NULL en base : saisie terrain, doublons/erreurs possibles
+    # (voir commentaire migration 0001).
+    serial_number = Column(String)
+    # Nullable en base : le modèle n'est pas toujours identifié sur place.
+    model_id = Column(Integer, ForeignKey("device_model.model_id"))
+    # Nullable en base, pas de NOT NULL dans la migration.
+    site_name = Column(String)
     address = Column(String)
     install_date = Column(Date)
-    # values_callable garde les valeurs Python en minuscules exactement comme
-    # dans le type ENUM Postgres (device_status), plutôt que le nom du membre.
     status = Column(
         Enum("active", "decommissioned", "under_repair", name="device_status"),
         nullable=False,
         default="active",
     )
 
-    # Relation pratique : device.interventions renvoie toutes les interventions
-    # liées à cette machine, sans écrire la jointure à la main à chaque fois.
     interventions = relationship("Intervention", back_populates="device")

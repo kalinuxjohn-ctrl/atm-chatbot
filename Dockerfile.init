@@ -1,18 +1,8 @@
-FROM python:3.11-slim
-
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+FROM atm-python-base:latest
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+COPY app ./app
+COPY db ./db
 
-COPY requirements-init.txt .
-
-RUN pip install --no-cache-dir -r requirements-init.txt
-
-COPY . .
+CMD ["python", "-m", "db.seed.seed_demo_data"]

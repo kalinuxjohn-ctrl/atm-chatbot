@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f3f6fa">
+    <meta name="description" content="Décrivez votre problème de GAB et consultez les solutions documentées.">
+    <title>Diagnostic | ATM Assistant</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/responsive.css">
+    <script type="module" src="/js/chat.js"></script>
+  </head>
+  <body class="diagnostic-page">
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="ATM Assistant, accueil">
+        <span class="brand-symbol" aria-hidden="true">A</span>
+        <span>ATM <strong>Assistant</strong></span>
+      </a>
+      <nav class="main-navigation" aria-label="Navigation principale">
+        <a class="navigation-link" href="/">Accueil</a>
+        <a class="navigation-link navigation-link-active" href="/diagnostic.html" aria-current="page">Diagnostic</a>
+        <a class="navigation-link" href="/#help">Aide</a>
+      </nav>
+      <a class="header-action" href="/">Retour à l’accueil <span aria-hidden="true">↗</span></a>
+    </header>
+
+    <main class="diagnostic-main">
+      <div class="diagnostic-heading">
+        <div>
+          <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span> Espace diagnostic</p>
+          <h1>Parlons de votre <span>GAB</span></h1>
+          <p class="diagnostic-intro">Décrivez la situation. Je vais rechercher les cas documentés qui s’en rapprochent.</p>
+        </div>
+        <button class="button button-secondary new-search-button" id="new-search-button" type="button" hidden>
+          <span aria-hidden="true">↻</span> Nouvelle recherche
+        </button>
+      </div>
+
+      <section class="chat-panel" aria-label="Conversation avec ATM Assistant">
+        <div class="chat-toolbar">
+          <div class="assistant-identity">
+            <span class="assistant-avatar" aria-hidden="true">A</span>
+            <span><strong>ATM Assistant</strong><small><i></i> Assistant de diagnostic</small></span>
+          </div>
+          <span class="connection-status"><i></i> Prêt à vous aider</span>
+        </div>
+
+        <div class="conversation" id="conversation" aria-live="polite" aria-relevant="additions text">
+          <article class="message assistant-message">
+            <span class="message-avatar" aria-hidden="true">A</span>
+            <div class="message-body">
+              <span class="message-author">ATM Assistant <time>À l’instant</time></span>
+              <div class="message-bubble">
+                <p>Bonjour, je suis là pour vous aider.</p>
+                <p>Quel problème rencontrez-vous avec votre GAB&nbsp;? Décrivez ce que vous avez observé, avec vos mots.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="composer-area">
+          <label class="device-picker-label" for="device-type">Type d’équipement</label>
+          <div class="composer-toolbar">
+            <label class="device-picker">
+              <span class="device-picker-icon" aria-hidden="true">▤</span>
+              <span class="visually-hidden">Type d’équipement</span>
+              <select id="device-type" name="device_type">
+                <option value="gab">GAB / ATM</option>
+                <option value="tpe">TPE</option>
+              </select>
+              <span class="select-chevron" aria-hidden="true">⌄</span>
+            </label>
+            <span class="composer-hint">Vos informations servent à rechercher dans l’historique.</span>
+          </div>
+          <form class="message-composer" id="message-form">
+            <label class="visually-hidden" for="message-input">Décrivez le problème rencontré avec votre GAB</label>
+            <textarea
+              id="message-input"
+              name="raw_text"
+              rows="2"
+              maxlength="2000"
+              placeholder="Décrivez le problème rencontré avec votre GAB…"
+              required
+            ></textarea>
+            <div class="composer-footer">
+              <span class="character-count" id="character-count">0 / 2000</span>
+              <span class="keyboard-hint"><kbd>Entrée</kbd> pour envoyer <span>·</span> <kbd>Maj + Entrée</kbd> pour une nouvelle ligne</span>
+              <button class="send-button" id="send-button" type="submit" disabled>
+                <span>Envoyer</span><span aria-hidden="true">↑</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <p class="safety-note"><span aria-hidden="true">i</span> Les résultats sont des pistes issues de l’historique, pas un diagnostic garanti. En cas de doute, contactez votre banque.</p>
+    </main>
+
+    <footer class="site-footer diagnostic-footer">
+      <a class="brand brand-footer" href="/" aria-label="ATM Assistant, accueil">
+        <span class="brand-symbol" aria-hidden="true">A</span>
+        <span>ATM <strong>Assistant</strong></span>
+      </a>
+      <p>Vos messages ne sont pas conservés après la fermeture de cette page.</p>
+    </footer>
+  </body>
+</html>

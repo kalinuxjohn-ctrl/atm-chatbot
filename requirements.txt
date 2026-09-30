@@ -6,4 +6,4 @@ pydantic-settings
 python-dotenv
 #requests est utilisé pour les appels API externes ollamma qwen
 requests
-transformers
+sentence-transformers

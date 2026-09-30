@@ -21,6 +21,7 @@ import app.models  # noqa: F401
 
 from app.api.routes.interventions import router as interventions_router
 from app.api.routes.chat import router as chat_router
+from app.api.routes.catalog import router as catalog_router
 
 app = FastAPI(
     title="Device Maintenance Chatbot API",
@@ -30,9 +31,10 @@ app = FastAPI(
 
 app.include_router(interventions_router)
 app.include_router(chat_router)
-
+app.include_router(catalog_router)
 
 @app.get("/health")
 def verifier_sante() -> dict:
     """Endpoint simple pour vérifier que l'API répond (utile pour un healthcheck)."""
     return {"status": "ok"}
+

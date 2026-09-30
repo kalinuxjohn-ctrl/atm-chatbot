@@ -1,0 +1,27 @@
+.response-intro p {
+  margin: 0;
+}
+
+.message-bubble .response-intro + .identified-heading {
+  margin-top: 13px;
+}
+
+.chat-panel[aria-busy="true"] .send-button {
+  opacity: 0.55;
+}
+
+.message-bubble .solution-card + .solution-card {
+  margin-top: 7px;
+}
+
+.action-id-note {
+  display: block;
+  margin-top: 5px;
+  color: #798899;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.error-retry {
+  margin-top: 3px;
+}

@@ -1,0 +1,34 @@
+services:
+  frontend:
+    # Construit l'image à partir du Dockerfile de ce dossier.
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: atm_frontend
+    restart: unless-stopped
+
+    # Rend le frontend accessible sur http://localhost:5173.
+    ports:
+      - "5173:5173"
+
+    # FastAPI est publié par le Compose backend sur le port hôte 8000.
+    # host-gateway rend ce nom disponible depuis le conteneur, y compris
+    # avec Docker Engine sur Linux.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "5173"
+      API_BASE_URL: "http://host.docker.internal:8000"
+
+    # Contrôle périodiquement que la page d'accueil est servie.
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "from urllib.request import urlopen; urlopen('http://127.0.0.1:5173/', timeout=2)"
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3

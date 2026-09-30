@@ -42,8 +42,7 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = 5):
     la même mécanique, donc un symptôme "similaire en texte" observé sur
     l'un n'est pas forcément pertinent pour l'autre.
     """
-    query_vector = generate_embedding(raw_text, is_query=True) 
-    
+    query_vector = generate_embedding(raw_text, is_query=True)
 
     try:
         rows = db.execute(
@@ -106,6 +105,82 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = 5):
 retrieve_similar_symptoms = fetch_similar_symptoms
 
 
+def find_best_catalog_match(db, raw_text: str, device_type: str) -> dict | None:
+    """
+    Cherche, parmi les symptômes DÉJÀ rattachés au catalogue (symptom_id non
+    NULL) pour ce device_type, celui dont la formulation passée est la plus
+    proche de raw_text.
+
+    Renvoie {"symptom_id": ..., "distance": ...} si un candidat existe,
+    sinon None. Ne décide PAS du seuil d'acceptation -- c'est à l'appelant
+    (intervention_service.py) de comparer "distance" à
+    settings.symptom_catalog_match_max_distance avant de s'en servir.
+    """
+    query_vector = generate_embedding(raw_text, is_query=True)
+
+    try:
+        row = db.execute(
+            text(
+                """
+                SELECT isym.symptom_id,
+                       isym.embedding <=> CAST(:query_vector AS vector) AS distance
+                FROM intervention_symptom isym
+                JOIN intervention iv ON iv.intervention_id = isym.intervention_id
+                JOIN device d ON d.device_id = iv.device_id
+                WHERE isym.embedding IS NOT NULL
+                  AND isym.symptom_id IS NOT NULL
+                  AND d.device_type = :device_type
+                ORDER BY isym.embedding <=> CAST(:query_vector AS vector)
+                LIMIT 1
+                """
+            ),
+            {"query_vector": str(query_vector), "device_type": device_type},
+        ).mappings().first()
+        return dict(row) if row else None
+    except Exception:
+        db.rollback()
+        rows = db.execute(
+            text(
+                """
+                SELECT isym.symptom_id, isym.embedding::text AS embedding_text
+                FROM intervention_symptom isym
+                JOIN intervention iv ON iv.intervention_id = isym.intervention_id
+                JOIN device d ON d.device_id = iv.device_id
+                WHERE isym.embedding IS NOT NULL
+                  AND isym.symptom_id IS NOT NULL
+                  AND d.device_type = :device_type
+                """
+            ),
+            {"device_type": device_type},
+        ).mappings().all()
+
+        best = None
+        for row in rows:
+            vector = [float(value) for value in row["embedding_text"].strip("[]").split(",")]
+            distance = 1.0 - cosine_similarity(query_vector, vector)
+            if best is None or distance < best["distance"]:
+                best = {"symptom_id": row["symptom_id"], "distance": distance}
+        return best
+
+
+def store_symptom_embedding(db, intervention_symptom_id: int, vector: Sequence[float]) -> None:
+    """
+    Écrit l'embedding calculé pour un symptôme déjà enregistré.
+
+    La colonne `embedding` n'est pas mappée dans le modèle ORM
+    InterventionSymptom (voir app/models/intervention.py) -- son écriture
+    passe donc par une requête SQL directe, comme sa lecture ailleurs dans
+    ce fichier.
+    """
+    db.execute(
+        text(
+            "UPDATE intervention_symptom SET embedding = CAST(:vector AS vector) "
+            "WHERE intervention_symptom_id = :intervention_symptom_id"
+        ),
+        {"vector": str(list(vector)), "intervention_symptom_id": intervention_symptom_id},
+    )
+
+
 def find_ranked_solutions(db, raw_text: str, device_type: str, symptom_limit: int = 5, solution_limit: int = 10):
     """Point d'entrée principal du flux de recherche (étapes 1-2 de la
     feuille de route) : à partir d'un symptôme décrit en langage libre par
@@ -116,9 +191,6 @@ def find_ranked_solutions(db, raw_text: str, device_type: str, symptom_limit: in
     """
     similar = fetch_similar_symptoms(db, raw_text, device_type, limit=symptom_limit)
 
-    # Seuls les symptômes déjà rattachés au catalogue (symptom_id non NULL)
-    # ont des statistiques d'accuracy -- un symptôme jamais catalogué n'a
-    # encore aucune action associée à classer.
     symptom_ids = sorted({row["symptom_id"] for row in similar if row.get("symptom_id") is not None})
 
     if not symptom_ids:

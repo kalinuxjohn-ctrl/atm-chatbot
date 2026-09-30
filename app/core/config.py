@@ -15,22 +15,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # --- Base de données ---
-    # Une valeur de secours rend le projet importable sans .env pendant le
-    # développement local. Les valeurs explicites de l'environnement restent
-    # prioritaires si elles sont présentes.
     database_url: str = "postgresql+psycopg2://postgres:postgrespassword@localhost:5432/atm_chatbot"
 
     # --- Moteur de vecteurs (auto-hébergé, remplace Voyage AI) ---
-    # Solon-embeddings-large-0.1 (OrdalieTech) : les techniciens écrivent en
-    # français, un modèle spécialisé français est plus précis ici qu'un
-    # modèle multilingue générique -- voir le commentaire en tête de
-    # app/services/embeddings_service.py pour le raisonnement complet.
-    # Modifiable via la variable d'environnement EMBEDDING_MODEL_NAME sans
-    # toucher au code, par exemple pour repasser sur un modèle plus léger en
-    # production si la machine cible est moins puissante que celle de dev.
     embedding_model_name: Optional[str] = "OrdalieTech/Solon-embeddings-large-0.1"
-    # 1024 = dimension native de ce modèle, doit rester synchronisée avec
-    # `vector(1024)` dans db/migrations/0003_pgvector.sql.
     embedding_dimensions: Optional[int] = 1024
 
     # --- LLM local (Ollama) ---
@@ -40,6 +28,15 @@ class Settings(BaseSettings):
     # --- Paramètres de la recherche (retrieval) ---
     retrieval_top_k: int = 5
     max_cases_returned: int = 3
+
+    # --- Rattachement automatique au catalogue de symptômes ---
+    # Distance cosinus maximale (pgvector `<=>`, 0 = identique, 2 = opposé)
+    # en dessous de laquelle un nouveau symptôme est considéré comme "le
+    # même" qu'un symptôme déjà catalogué et se voit assigner son symptom_id
+    # automatiquement. Volontairement conservateur (0.15 ~ similarité
+    # cosinus >= 0.85) : mieux vaut laisser un symptôme non catalogué que
+    # le rattacher à tort à la mauvaise entrée du catalogue.
+    symptom_catalog_match_max_distance: float = 0.15
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

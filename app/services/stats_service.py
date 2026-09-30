@@ -29,8 +29,16 @@ def recompute_stats(db) -> int:
                 NOW() AS last_computed_at
             FROM intervention_action ia
             JOIN intervention_symptom isym ON isym.intervention_id = ia.intervention_id
+            AND (ia.targets_symptom_id IS NULL OR ia.targets_symptom_id = isym.intervention_symptom_id)
             JOIN intervention iv ON iv.intervention_id = ia.intervention_id
             JOIN device d ON d.device_id = iv.device_id
+            -- Indispensable : symptom_id et action_id sont NOT NULL dans
+            -- cette table (migration 0004). Une action pas encore rattachée
+            -- au catalogue (action_id NULL -- exactement le cas d'une
+            -- solution que le technicien vient d'ajouter lui-même) ferait
+            -- planter l'INSERT entier sans ce filtre, cassant le calcul
+            -- pour TOUTES les paires, pas seulement celle-ci.
+            WHERE ia.action_id IS NOT NULL AND isym.symptom_id IS NOT NULL
             GROUP BY isym.symptom_id, ia.action_id, d.device_type;
             """
         )
