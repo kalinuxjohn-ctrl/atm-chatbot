@@ -1,117 +1,51 @@
 """
-Générateur d'embeddings (vectorisation de texte) pour la recherche sémantique.
+Générateur d'embeddings pour la recherche sémantique.
 
-Comment ça marche, en une phrase : un modèle de réseau de neurones
-(SentenceTransformer) lit une phrase et la transforme en une liste de
-nombres (un vecteur) telle que deux phrases proches en sens ont des vecteurs
-proches géométriquement. C'est CE modèle qui fait tout le travail de
-compréhension du langage -- retrieval_service.py ne fait ensuite qu'une
-comparaison mathématique (cosinus) entre vecteurs, aucune compréhension du
-texte ne s'y passe.
+Le modèle d'embedding transforme un texte en vecteur numérique.
+La recherche sémantique compare ensuite ces vecteurs avec pgvector.
 
-Le choix du modèle a donc un impact DIRECT sur la qualité de toute la
-recherche par symptôme, indépendamment du reste du code :
-- Un modèle entraîné sur la mauvaise langue rapprochera des phrases qui ne
-  se ressemblent pas vraiment (et inversement), quelle que soit la qualité
-  du SQL autour. Les techniciens écrivant en français, on utilise ici
-  **Solon-embeddings-large-0.1** (OrdalieTech), un modèle spécialisé
-  français : à ce jour l'un des meilleurs modèles d'embeddings open-source
-  pour le français (meilleur score que CamemBERT-large ou même
-  cohere/embed-multilingual-v3 sur les benchmarks français publiés par
-  l'auteur), avec une fenêtre de contexte de 512 tokens (~350-400 mots),
-  plus large que la plupart des alternatives -- utile si un technicien
-  décrit un symptôme en plusieurs phrases plutôt qu'en une ligne. Modèle
-  volumineux (560M paramètres, ~2.2 Go) : raisonnable en développement sur
-  une machine puissante, à réévaluer si le déploiement prod tourne sur du
-  matériel plus modeste (voir `embedding_model_name` dans
-  app/core/config.py, modifiable sans toucher au code).
-- Le modèle est mis en cache après le premier chargement (voir
-  _get_encoder ci-dessous) : le charger à chaque appel rechargerait tous
-  ses poids depuis le disque à chaque recherche, ce qui serait beaucoup
-  trop lent pour un usage interactif.
-- Solon suit la convention "asymétrique" utilisée par de nombreux modèles
-  d'embeddings récents (famille E5) : le texte de RECHERCHE doit être
-  préfixé par "query : " pour de meilleures performances, alors que les
-  textes déjà enregistrés (les symptômes stockés en base) n'ont besoin
-  d'aucun préfixe. C'est pour ça que `generate_embedding` prend un
-  paramètre `is_query` -- retrieval_service.py l'active pour le texte tapé
-  par le technicien, intervention_service.py et le seed ne l'activent pas
-  pour les textes qu'ils enregistrent.
-
-Ce fichier :
-- Utilise ce modèle s'il est disponible (installé + poids téléchargeables).
-- Génère automatiquement un vecteur "de secours" (sans réseau de neurones,
-  juste un hash du texte) si l'IA plante ou est absente -- pour que le
-  reste de l'application continue de fonctionner en dégradé plutôt que de
-  planter.
-- Harmonise la taille du vecteur pour la base de données (utile surtout
-  pour le fallback ; avec Solon la taille correspond déjà nativement).
+Le modèle est configurable afin de pouvoir changer de modèle sans modifier
+les services qui utilisent generate_embedding().
 """
 
-import hashlib
-import math
+from __future__ import annotations
+
+import logging
 import re
 from functools import lru_cache
 from typing import Sequence
 
 from app.core.config import settings
 
-# Modèle par défaut si aucun n'est précisé en configuration (voir
-# app/core/config.py, `embedding_model_name`) : Solon, spécialisé français
-# -- voir l'explication en tête de fichier sur pourquoi ce choix.
+
+logger = logging.getLogger(__name__)
+
+
+# Modèle utilisé si aucun modèle n'est défini dans la configuration.
 DEFAULT_MODEL_NAME = "OrdalieTech/Solon-embeddings-large-0.1"
 
-# Préfixe recommandé par Solon (convention de type E5) pour le texte de
-# RECHERCHE uniquement -- jamais pour les textes déjà enregistrés en base.
+# Préfixe utilisé par Solon pour les textes soumis comme requêtes.
 QUERY_PREFIX = "query : "
 
 
 def _clean_text(raw_text: str | None) -> str:
+    """Nettoie et normalise un texte avant sa vectorisation."""
     if raw_text is None:
         return ""
+
     return re.sub(r"\s+", " ", raw_text).strip()
-
-
-def _fit_size(vector: Sequence[float], target_size: int) -> list[float]:
-    if len(vector) == target_size:
-        return list(vector)
-    if len(vector) < target_size:
-        padded = list(vector) + [0.0] * (target_size - len(vector))
-        return padded
-    return list(vector[:target_size])
-
-
-def _fallback_embedding(raw_text: str | None, vector_size: int) -> list[float]:
-    cleaned = _clean_text(raw_text)
-    tokens = re.findall(r"[a-z0-9]+", cleaned.lower())
-    if not tokens:
-        return [0.0] * vector_size
-
-    values = [0.0] * vector_size
-    for index, token in enumerate(tokens):
-        digest = hashlib.sha256(token.encode("utf-8")).digest()
-        weight = (int.from_bytes(digest[:8], "big") / float(2 ** 64 - 1)) * 2.0 - 1.0
-        slot = (index * 17 + len(token)) % vector_size
-        values[slot] += weight
-
-    norm = math.sqrt(sum(value * value for value in values))
-    if norm == 0:
-        return [0.0] * vector_size
-    return [value / norm for value in values]
 
 
 @lru_cache(maxsize=4)
 def _get_encoder(model_name: str):
     """
-    Charge le modèle de réseau de neurones UNE SEULE FOIS par nom de modèle,
-    puis réutilise l'instance déjà chargée en mémoire pour tous les appels
-    suivants (@lru_cache). Sans ce cache, chaque recherche de symptôme
-    rechargerait les poids depuis le disque, ce qui serait beaucoup trop
-    lent pour un usage interactif.
+    Charge un modèle d'embedding une seule fois par nom.
 
-    Utilise le GPU (CUDA) s'il est détecté par torch -- pertinent ici avec
-    de la VRAM disponible, sinon bascule automatiquement sur le CPU.
+    Le modèle reste ensuite en mémoire afin d'éviter de recharger ses poids
+    à chaque recherche.
     """
+    logger.info("[EMBEDDING] Chargement du modèle : %s", model_name)
+
     from sentence_transformers import SentenceTransformer
 
     try:
@@ -121,7 +55,57 @@ def _get_encoder(model_name: str):
     except ImportError:
         device = "cpu"
 
-    return SentenceTransformer(model_name, device=device)
+    logger.info("[EMBEDDING] Appareil utilisé : %s", device)
+
+    try:
+        encoder = SentenceTransformer(model_name, device=device)
+    except Exception as error:
+        logger.error(
+            "[EMBEDDING][ERREUR] Impossible de charger le modèle : %s",
+            model_name,
+        )
+        raise RuntimeError(
+            f"Impossible de charger le modèle d'embedding '{model_name}'."
+        ) from error
+
+    logger.info(
+        "[EMBEDDING] Modèle chargé avec succès : %s",
+        model_name,
+    )
+
+    return encoder
+
+
+def _get_model_name(model_name: str | None) -> str:
+    """Retourne le modèle configuré ou le modèle par défaut."""
+    return model_name or settings.embedding_model_name or DEFAULT_MODEL_NAME
+
+
+def _validate_dimensions(
+    vector: Sequence[float],
+    expected_dimensions: int,
+) -> None:
+    """
+    Vérifie que la dimension du vecteur correspond à celle attendue.
+
+    Un embedding ne doit pas être complété ou tronqué artificiellement :
+    une différence de dimension indique une incompatibilité de configuration.
+    """
+    actual_dimensions = len(vector)
+
+    if actual_dimensions != expected_dimensions:
+        logger.error(
+            "[EMBEDDING][ERREUR] Dimension incorrecte : "
+            "attendu=%s, obtenu=%s",
+            expected_dimensions,
+            actual_dimensions,
+        )
+
+        raise ValueError(
+            "Dimension d'embedding incompatible : "
+            f"le modèle produit {actual_dimensions} dimensions, "
+            f"mais {expected_dimensions} sont configurées."
+        )
 
 
 def generate_embedding(
@@ -131,36 +115,74 @@ def generate_embedding(
     is_query: bool = False,
 ) -> list[float]:
     """
-    Return a deterministic vector for the text, with a model fallback when needed.
+    Génère un embedding normalisé pour un texte.
 
-    is_query=True : à utiliser uniquement pour le texte tapé par le
-    technicien au moment de la recherche (voir QUERY_PREFIX ci-dessus).
-    Laisser à False pour tout texte qu'on enregistre en base (symptôme
-    stocké dans une intervention) -- ce sont des "passages", pas des
-    "queries", au sens de Solon.
+    is_query=True ajoute le préfixe attendu par les modèles utilisant
+    une distinction entre requêtes et documents.
+
+    Une erreur du moteur d'embedding est propagée afin de ne pas masquer
+    une panne ou une mauvaise configuration derrière un faux embedding.
     """
-    vector_size = dimensions or settings.embedding_dimensions or 1024
-    cleaned = _clean_text(raw_text)
-    if not cleaned:
-        return [0.0] * vector_size
+    logger.info("[EMBEDDING] Réception du texte à vectoriser")
+
+    vector_dimensions = dimensions or settings.embedding_dimensions or 1024
+    cleaned_text = _clean_text(raw_text)
+
+    if not cleaned_text:
+        logger.warning(
+            "[EMBEDDING] Texte vide : génération d'un vecteur nul"
+        )
+        return [0.0] * vector_dimensions
+
+    logger.info(
+        "[EMBEDDING] Texte préparé - longueur : %s caractères",
+        len(cleaned_text),
+    )
 
     if is_query:
-        cleaned = f"{QUERY_PREFIX}{cleaned}"
+        cleaned_text = f"{QUERY_PREFIX}{cleaned_text}"
+        logger.info("[EMBEDDING] Mode recherche activé")
+
+    selected_model = _get_model_name(model_name)
+
+    logger.info(
+        "[EMBEDDING] Modèle sélectionné : %s",
+        selected_model,
+    )
+
+    logger.info(
+        "[EMBEDDING] Génération de l'embedding..."
+    )
+
+    encoder = _get_encoder(selected_model)
 
     try:
-        chosen_model = model_name or settings.embedding_model_name or DEFAULT_MODEL_NAME
-        encoder = _get_encoder(chosen_model)
-        # normalize_embeddings=True : le modèle renvoie directement un
-        # vecteur de norme 1, cohérent avec _fallback_embedding ci-dessus
-        # et avec l'opérateur de similarité cosinus (<=>) utilisé côté
-        # pgvector dans retrieval_service.py.
-        vector = encoder.encode(cleaned, normalize_embeddings=True)
-        return _fit_size(vector.tolist(), vector_size)
-    except Exception:
-        # L'application est conçue pour fonctionner sans service
-        # d'embeddings externe/neuronal si besoin (modèle absent, erreur de
-        # chargement, pas de réseau pour le télécharger la première fois...).
-        return _fallback_embedding(cleaned, vector_size)
+        vector = encoder.encode(
+            cleaned_text,
+            normalize_embeddings=True,
+        )
+    except Exception as error:
+        logger.error(
+            "[EMBEDDING][ERREUR] Échec de la génération avec le modèle : %s",
+            selected_model,
+        )
+
+        raise RuntimeError(
+            f"Impossible de générer l'embedding avec le modèle "
+            f"'{selected_model}'."
+        ) from error
+
+    vector = vector.tolist()
+
+    _validate_dimensions(vector, vector_dimensions)
+
+    logger.info(
+        "[EMBEDDING] Embedding généré avec succès - dimensions : %s",
+        len(vector),
+    )
+
+    return vector
 
 
+# Alias conservé pour les appels existants.
 embed_text = generate_embedding

@@ -10,6 +10,8 @@ Aucune logique métier ici : tout est délégué à retrieval_service.py.
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from app.schemas.conversation_schema import ChatRequest, ChatResponse
+from app.services import chat_orchestrator_service 
 
 from app.core.database import get_db
 from app.schemas.chat_schema import SymptomSearchRequest, SymptomSearchResponse
@@ -33,3 +35,13 @@ def rechercher_symptome(payload: SymptomSearchRequest, db: Session = Depends(get
     return SymptomSearchResponse(**result, summary=resume)
 
 
+@router.post("/api/chat", response_model=ChatResponse)
+def chat(payload: ChatRequest, db: Session = Depends(get_db)) -> ChatResponse:
+    resultat = chat_orchestrator_service.handle_chat_message(
+        db=db,
+        conversation_id=payload.conversation_id,
+        technician_id=payload.technician_id,
+        message=payload.message,
+        device_type=payload.device_type,
+    )
+    return ChatResponse(**resultat)
