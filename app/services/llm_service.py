@@ -12,10 +12,12 @@ directement, seulement generate_reply().
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from time import perf_counter
 
 import requests
 
 from app.core.config import settings
+from app.core.tracing import trace
 
 
 class LLMUnavailableError(Exception):
@@ -86,11 +88,42 @@ def generate_reply(prompt: str) -> str:
     absent...), renvoie directement le message d'erreur clair à la place du
     texte généré, pour que le reste de l'app reste fonctionnel en dégradé.
     """
+    trace(
+        "LLM",
+        "Génération de la réponse démarrée",
+        model=settings.ollama_model,
+        prompt_length=len(prompt),
+    )
+    started_at = perf_counter()
     try:
-        return get_llm_provider().generate(prompt)
+        reply = get_llm_provider().generate(prompt)
     except LLMUnavailableError as erreur:
+        trace(
+            "ERROR",
+            "Échec de l'appel au LLM",
+            model=settings.ollama_model,
+            duration_ms=round((perf_counter() - started_at) * 1000, 2),
+            error_type=type(erreur).__name__,
+        )
         return str(erreur)
+    except Exception as error:
+        trace(
+            "ERROR",
+            "Erreur inattendue pendant l'appel au LLM",
+            model=settings.ollama_model,
+            duration_ms=round((perf_counter() - started_at) * 1000, 2),
+            error_type=type(error).__name__,
+        )
+        raise
 
+    trace(
+        "LLM",
+        "Réponse du LLM reçue",
+        model=settings.ollama_model,
+        response_length=len(reply) if isinstance(reply, str) else 0,
+        duration_ms=round((perf_counter() - started_at) * 1000, 2),
+    )
+    return reply
 
 ask_llm = generate_reply
 

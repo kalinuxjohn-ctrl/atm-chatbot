@@ -20,6 +20,7 @@ from __future__ import annotations
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.core.tracing import trace
 from app.models.intervention import Diagnosis, Intervention
 from app.models.technician import Technician
 from app.services.retrieval_service import fetch_similar_symptoms
@@ -43,6 +44,7 @@ def find_similar_cases(
     """
     matched_symptoms = fetch_similar_symptoms(db, raw_text, device_type, limit=symptom_limit)
     if not matched_symptoms:
+        trace("SEARCH", "Aucun cas similaire trouvé", count=0)
         return []
 
     best_per_intervention = _keep_best_match_per_intervention(matched_symptoms)
@@ -50,7 +52,7 @@ def find_similar_cases(
         best_per_intervention, key=lambda iid: _rank_key(best_per_intervention[iid])
     )[:case_limit]
 
-    return [
+    cases = [
         case
         for case in (
             build_case(
@@ -63,6 +65,13 @@ def find_similar_cases(
         )
         if case is not None
     ]
+    trace(
+        "SEARCH",
+        "Cas similaires préparés",
+        matched_symptom_count=len(matched_symptoms),
+        case_count=len(cases),
+    )
+    return cases
 
 
 def build_case(

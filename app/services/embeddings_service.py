@@ -12,10 +12,12 @@ from __future__ import annotations
 
 import logging
 import re
+from time import perf_counter
 from functools import lru_cache
 from typing import Sequence
 
 from app.core.config import settings
+from app.core.tracing import trace
 
 
 logger = logging.getLogger(__name__)
@@ -60,6 +62,12 @@ def _get_encoder(model_name: str):
     try:
         encoder = SentenceTransformer(model_name, device=device)
     except Exception as error:
+        trace(
+            "ERROR",
+            "Impossible de charger le modèle d'embedding",
+            model=model_name,
+            error_type=type(error).__name__,
+        )
         logger.error(
             "[EMBEDDING][ERREUR] Impossible de charger le modèle : %s",
             model_name,
@@ -94,6 +102,12 @@ def _validate_dimensions(
     actual_dimensions = len(vector)
 
     if actual_dimensions != expected_dimensions:
+        trace(
+            "ERROR",
+            "Dimension d'embedding incompatible",
+            expected_dimensions=expected_dimensions,
+            actual_dimensions=actual_dimensions,
+        )
         logger.error(
             "[EMBEDDING][ERREUR] Dimension incorrecte : "
             "attendu=%s, obtenu=%s",
@@ -127,12 +141,24 @@ def generate_embedding(
 
     vector_dimensions = dimensions or settings.embedding_dimensions or 1024
     cleaned_text = _clean_text(raw_text)
+    trace(
+        "PROCESSING",
+        "Texte préparé pour l'embedding",
+        input_length=len(raw_text) if raw_text is not None else 0,
+        cleaned_length=len(cleaned_text),
+    )
 
     if not cleaned_text:
         logger.warning(
             "[EMBEDDING] Texte vide : génération d'un vecteur nul"
         )
-        return [0.0] * vector_dimensions
+        vector = [0.0] * vector_dimensions
+        trace(
+            "EMBEDDING",
+            "Vecteur nul généré pour un texte vide",
+            dimensions=len(vector),
+        )
+        return vector
 
     logger.info(
         "[EMBEDDING] Texte préparé - longueur : %s caractères",
@@ -153,8 +179,15 @@ def generate_embedding(
     logger.info(
         "[EMBEDDING] Génération de l'embedding..."
     )
+    trace(
+        "EMBEDDING",
+        "Génération de l'embedding démarrée",
+        model=selected_model,
+        is_query=is_query,
+    )
 
     encoder = _get_encoder(selected_model)
+    started_at = perf_counter()
 
     try:
         vector = encoder.encode(
@@ -162,6 +195,13 @@ def generate_embedding(
             normalize_embeddings=True,
         )
     except Exception as error:
+        trace(
+            "ERROR",
+            "Échec de la génération de l'embedding",
+            model=selected_model,
+            duration_ms=round((perf_counter() - started_at) * 1000, 2),
+            error_type=type(error).__name__,
+        )
         logger.error(
             "[EMBEDDING][ERREUR] Échec de la génération avec le modèle : %s",
             selected_model,
@@ -179,6 +219,13 @@ def generate_embedding(
     logger.info(
         "[EMBEDDING] Embedding généré avec succès - dimensions : %s",
         len(vector),
+    )
+    trace(
+        "EMBEDDING",
+        "Embedding généré",
+        dimensions=len(vector),
+        model=selected_model,
+        duration_ms=round((perf_counter() - started_at) * 1000, 2),
     )
 
     return vector

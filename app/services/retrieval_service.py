@@ -19,6 +19,7 @@ from typing import Sequence
 from sqlalchemy import bindparam, text
 from sqlalchemy.types import Integer
 
+from app.core.tracing import trace
 from app.services.embeddings_service import generate_embedding
 
 
@@ -42,6 +43,12 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = 5):
     la même mécanique, donc un symptôme "similaire en texte" observé sur
     l'un n'est pas forcément pertinent pour l'autre.
     """
+    trace(
+        "SEARCH",
+        "Recherche vectorielle démarrée",
+        device_type=device_type,
+        limit=limit,
+    )
     query_vector = generate_embedding(raw_text, is_query=True)
 
     try:
@@ -62,8 +69,20 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = 5):
             ),
             {"query_vector": str(query_vector), "device_type": device_type, "limit": limit},
         ).mappings().all()
-        return [dict(row) for row in rows]
-    except Exception:
+        results = [dict(row) for row in rows]
+        trace(
+            "SEARCH",
+            "Résultats vectoriels récupérés",
+            count=len(results),
+            strategy="pgvector",
+        )
+        return results
+    except Exception as error:
+        trace(
+            "SEARCH",
+            "Recherche pgvector indisponible, utilisation du repli cosinus",
+            error_type=type(error).__name__,
+        )
         # Repli si pgvector n'est pas disponible : on relit les embeddings
         # comme du texte brut (le type `vector` accepte cette lecture) et on
         # calcule la similarité cosinus à la main.
@@ -99,7 +118,14 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = 5):
                 "similarity": score,
             })
         scored.sort(key=lambda item: item["similarity"], reverse=True)
-        return scored[:limit]
+        results = scored[:limit]
+        trace(
+            "SEARCH",
+            "Résultats vectoriels récupérés",
+            count=len(results),
+            strategy="python_cosine",
+        )
+        return results
 
 
 retrieve_similar_symptoms = fetch_similar_symptoms
@@ -216,4 +242,10 @@ def find_ranked_solutions(db, raw_text: str, device_type: str, symptom_limit: in
         {"symptom_ids": symptom_ids, "device_type": device_type, "limit": solution_limit},
     ).mappings().all()
 
+    trace(
+        "SEARCH",
+        "Solutions classées récupérées",
+        matched_symptom_count=len(symptom_ids),
+        solution_count=len(rows),
+    )
     return {"matched_symptom_ids": symptom_ids, "solutions": [dict(row) for row in rows]}

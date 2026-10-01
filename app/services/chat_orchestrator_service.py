@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
+from app.core.tracing import trace
 from app.services import case_retrieval_service, context_service, conversation_service, llm_service
 
 
@@ -22,17 +23,38 @@ def handle_chat_message(
     device_type: str | None = None,
 ) -> dict:
     conversation = conversation_service.get_or_create_conversation(db, conversation_id, technician_id)
+    trace(
+        "REQUEST",
+        "Conversation prête pour le traitement",
+        conversation_id=conversation.conversation_id,
+    )
     context = context_service.get_context(db, conversation.conversation_id)
+    trace(
+        "CONTEXT",
+        "Contexte de conversation chargé",
+        conversation_id=conversation.conversation_id,
+        has_previous_search=bool(context.get("last_search")),
+    )
 
     if device_type is not None:
         context["device_type"] = device_type  # mémorisé une fois, réutilisé les tours suivants
 
     conversation_service.save_message(db, conversation.conversation_id, "user", message)
+    trace(
+        "PROCESSING",
+        "Analyse du message utilisateur",
+        conversation_id=conversation.conversation_id,
+    )
     reply = _route_message(db, context, message)
     conversation_service.save_message(db, conversation.conversation_id, "assistant", reply)
 
     context_service.save_context(db, conversation.conversation_id, context)
     db.commit()
+    trace(
+        "RESPONSE",
+        "Réponse et contexte persistés",
+        conversation_id=conversation.conversation_id,
+    )
 
     return {"conversation_id": conversation.conversation_id, "reply": reply}
 
@@ -70,6 +92,12 @@ def _handle_symptom_search(db: Session, context: dict, message: str) -> str:
     ]
     context_service.record_last_search(context, query=message, results=results)
     context["intent"] = "diagnostic"
+    trace(
+        "CONTEXT",
+        "Contexte de diagnostic préparé",
+        result_count=len(results),
+        device_type=device_type,
+    )
 
     return _summarize_cases(message, cases)
 
@@ -117,6 +145,12 @@ def _summarize_cases(raw_text: str, cases: list[dict]) -> str:
         f"{lignes}\n\n"
         "Résume ces cas en langage naturel pour le technicien, en les distinguant clairement "
         "(garde l'ordre Cas 1 / Cas 2...). N'invente AUCUNE information absente de la liste ci-dessus."
+    )
+    trace(
+        "CONTEXT",
+        "Contexte LLM préparé à partir des cas similaires",
+        case_count=len(cases),
+        prompt_length=len(prompt),
     )
     return llm_service.generate_reply(prompt)
 

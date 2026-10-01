@@ -10,6 +10,7 @@ Aucune logique métier ici : tout est délégué à retrieval_service.py.
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from app.core.tracing import trace
 from app.schemas.conversation_schema import ChatRequest, ChatResponse
 from app.services import chat_orchestrator_service 
 
@@ -30,18 +31,67 @@ def rechercher_symptome(payload: SymptomSearchRequest, db: Session = Depends(get
     accuracy décroissante -- aucun résultat n'est masqué.
     """
 
-    result = find_ranked_solutions(db, raw_text=payload.raw_text, device_type=payload.device_type)
-    resume = summarize_solutions(payload.raw_text, result["solutions"])
-    return SymptomSearchResponse(**result, summary=resume)
-
-
-@router.post("/api/chat", response_model=ChatResponse)
-def chat(payload: ChatRequest, db: Session = Depends(get_db)) -> ChatResponse:
-    resultat = chat_orchestrator_service.handle_chat_message(
-        db=db,
-        conversation_id=payload.conversation_id,
-        technician_id=payload.technician_id,
-        message=payload.message,
+    trace(
+        "REQUEST",
+        "Requête de recherche de symptôme reçue",
+        endpoint="/chat/search-symptom",
         device_type=payload.device_type,
+        message_length=len(payload.raw_text),
     )
-    return ChatResponse(**resultat)
+    try:
+        result = find_ranked_solutions(db, raw_text=payload.raw_text, device_type=payload.device_type)
+        resume = summarize_solutions(payload.raw_text, result["solutions"])
+        response = SymptomSearchResponse(**result, summary=resume)
+    except Exception as error:
+        trace(
+            "ERROR",
+            "Échec de la requête de recherche de symptôme",
+            endpoint="/chat/search-symptom",
+            error_type=type(error).__name__,
+        )
+        raise
+
+    trace(
+        "RESPONSE",
+        "Réponse de recherche de symptôme envoyée",
+        endpoint="/chat/search-symptom",
+        result_count=len(result["solutions"]),
+    )
+    return response
+
+
+@router.post("", response_model=ChatResponse)
+def chat(payload: ChatRequest, db: Session = Depends(get_db)) -> ChatResponse:
+    trace(
+        "REQUEST",
+        "Message utilisateur reçu",
+        endpoint="/chat/api/chat",
+        conversation_id=payload.conversation_id,
+        message_length=len(payload.message),
+    )
+    try:
+        resultat = chat_orchestrator_service.handle_chat_message(
+            db=db,
+            conversation_id=payload.conversation_id,
+            technician_id=payload.technician_id,
+            message=payload.message,
+            device_type=payload.device_type,
+        )
+        response = ChatResponse(**resultat)
+    except Exception as error:
+        trace(
+            "ERROR",
+            "Échec du traitement du message utilisateur",
+            endpoint="/chat/api/chat",
+            conversation_id=payload.conversation_id,
+            error_type=type(error).__name__,
+        )
+        raise
+
+    trace(
+        "RESPONSE",
+        "Réponse finale envoyée",
+        endpoint="/chat/api/chat",
+        conversation_id=resultat["conversation_id"],
+    )
+    return response
