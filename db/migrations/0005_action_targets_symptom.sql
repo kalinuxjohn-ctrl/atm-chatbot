@@ -9,6 +9,6 @@
 BEGIN;
 
 ALTER TABLE intervention_action
-    ADD COLUMN targets_symptom_id INTEGER REFERENCES intervention_symptom(intervention_symptom_id);
+    ADD COLUMN IF NOT EXISTS targets_symptom_id INTEGER REFERENCES intervention_symptom(intervention_symptom_id);
 
 COMMIT;

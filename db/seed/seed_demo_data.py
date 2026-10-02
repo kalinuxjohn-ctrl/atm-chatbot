@@ -1,6 +1,6 @@
 """
 Script de seed : insère le cas d'exemple du design doc (§4 "Worked example")
-dans une base fraîchement migrée (migrations 0001 à 0004 déjà appliquées).
+dans une base fraîchement migrée (migrations 0001 à 0007 déjà appliquées).
 
 Contient deux interventions distinctes qui partagent des symptômes mais PAS
 la même solution -- exactement le scénario que le schéma doit préserver :
@@ -10,6 +10,10 @@ la même solution -- exactement le scénario que le schéma doit préserver :
 - Intervention 3045 (technicien Bob) : 2 des mêmes symptômes + 1 nouveau,
   résolue par le remplacement d'un capteur -- une solution différente,
   enregistrée séparément, sans rien écraser du cas d'Alan.
+
+Contient aussi quelques codes d'erreur et pannes de démo (migration 0007) --
+indépendants du catalogue symptôme/action, aucun embedding nécessaire pour
+ces deux tables (recherche texte classique, voir error_code_service.py).
 
 Les embeddings des 6 symptômes ci-dessus sont calculés et écrits en base à
 la fin de ce script (voir EMBEDDING_BACKFILL) : sans ça, la recherche par
@@ -72,10 +76,10 @@ SEED_STATEMENTS = [
     """,
     """
     INSERT INTO symptom (symptom_id, canonical_text, component_id) VALUES
-        (21, 'Card retained by ATM', 1),
-        (22, 'Transaction does not complete', NULL),
-        (23, 'Cash not dispensed', NULL),
-        (24, 'Receipt printer jammed', NULL)
+        (21, 'Carte retenue par le DAB', 1),
+        (22, 'La transaction ne s''achève pas', NULL),
+        (23, 'Les espèces ne sont pas distribuées', NULL),
+        (24, 'Imprimante de reçus bloquée', NULL)
     ON CONFLICT (symptom_id) DO NOTHING;
     """,
     """
@@ -87,6 +91,24 @@ SEED_STATEMENTS = [
     ON CONFLICT (action_id) DO NOTHING;
     """,
 
+    # --- Codes d'erreur / pannes (migration 0007) -- référentiel
+    # indépendant, recherche texte classique uniquement, aucun embedding.
+    # Choisis pour correspondre au même scénario "lecteur de carte"
+    # qu'Alan et Bob, par cohérence avec le reste de la démo. ---
+    """
+    INSERT INTO fault (fault_id, code, name) VALUES
+        (1, 'P001', 'Lecteur de carte bloqué'),
+        (2, 'P002', 'Distributeur de billets en défaut')
+    ON CONFLICT (fault_id) DO NOTHING;
+    """,
+    """
+    INSERT INTO error_code (error_code_id, code, description, fault_id) VALUES
+        (1, 'E42', 'Capteur de rétention de carte ne répond pas', 1),
+        (2, 'E43', 'Moteur du lecteur de carte bloqué', 1),
+        (3, 'E67', 'Distributeur de billets : bourrage détecté', 2)
+    ON CONFLICT (error_code_id) DO NOTHING;
+    """,
+
     # --- Intervention d'Alan (3001) : résolue par réinitialisation ---
     """
     INSERT INTO intervention (intervention_id, device_id, technician_id, opened_at, final_outcome_status)
@@ -95,9 +117,9 @@ SEED_STATEMENTS = [
     """,
     """
     INSERT INTO intervention_symptom (intervention_symptom_id, intervention_id, symptom_id, raw_text) VALUES
-        (9001, 3001, 21, 'Card is retained by the ATM.'),
-        (9002, 3001, 22, 'Transaction does not complete.'),
-        (9003, 3001, 23, 'Cash is not dispensed.')
+        (9001, 3001, 21, 'La carte est retenue par le DAB.'),
+        (9002, 3001, 22, 'La transaction ne s''achève pas.'),
+        (9003, 3001, 23, 'Les espèces ne sont pas distribuées.')
     ON CONFLICT (intervention_symptom_id) DO NOTHING;
     """,
     """
@@ -132,9 +154,9 @@ SEED_STATEMENTS = [
     """,
     """
     INSERT INTO intervention_symptom (intervention_symptom_id, intervention_id, symptom_id, raw_text) VALUES
-        (9004, 3045, 21, 'Card gets stuck inside the machine.'),
-        (9005, 3045, 22, 'Transaction never finishes.'),
-        (9006, 3045, 24, 'Receipt printer is jammed.')
+        (9004, 3045, 21, 'La carte reste coincée dans le distributeur.'),
+        (9005, 3045, 22, 'La transaction ne se termine jamais.'),
+        (9006, 3045, 24, 'L''imprimante de reçus est bloquée.')
     ON CONFLICT (intervention_symptom_id) DO NOTHING;
     """,
     """
@@ -161,6 +183,8 @@ SEQUENCE_RESETS = [
     "SELECT setval('component_component_id_seq', (SELECT MAX(component_id) FROM component));",
     "SELECT setval('symptom_symptom_id_seq', (SELECT MAX(symptom_id) FROM symptom));",
     "SELECT setval('action_action_id_seq', (SELECT MAX(action_id) FROM action));",
+    "SELECT setval('fault_fault_id_seq', (SELECT MAX(fault_id) FROM fault));",
+    "SELECT setval('error_code_error_code_id_seq', (SELECT MAX(error_code_id) FROM error_code));",
     "SELECT setval('intervention_intervention_id_seq', (SELECT MAX(intervention_id) FROM intervention));",
     "SELECT setval('intervention_symptom_intervention_symptom_id_seq', "
     "(SELECT MAX(intervention_symptom_id) FROM intervention_symptom));",
@@ -173,13 +197,16 @@ SEQUENCE_RESETS = [
 # l'embedding est calculé ici, en Python, puis écrit dans une passe séparée
 # (voir run_seed) une fois les lignes en place. Le texte doit être identique
 # mot pour mot à celui inséré plus haut dans SEED_STATEMENTS.
+#
+# fault/error_code n'apparaissent PAS ici : ces deux tables n'ont pas de
+# colonne embedding (migration 0007, recherche texte classique uniquement).
 EMBEDDING_BACKFILL = [
-    (9001, "Card is retained by the ATM."),
-    (9002, "Transaction does not complete."),
-    (9003, "Cash is not dispensed."),
-    (9004, "Card gets stuck inside the machine."),
-    (9005, "Transaction never finishes."),
-    (9006, "Receipt printer is jammed."),
+    (9001, "La carte est retenue par le DAB."),
+    (9002, "La transaction ne s'achève pas."),
+    (9003, "Les espèces ne sont pas distribuées."),
+    (9004, "La carte reste coincée dans le distributeur."),
+    (9005, "La transaction ne se termine jamais."),
+    (9006, "L'imprimante de reçus est bloquée."),
 ]
 
 
@@ -211,7 +238,10 @@ def run_seed() -> None:
                         "WHERE intervention_symptom_id = %s",
                         (str(vecteur), intervention_symptom_id),
                     )
-        print("Données de démonstration insérées avec succès (interventions 3001 et 3045).")
+        print(
+            "Données de démonstration insérées avec succès "
+            "(interventions 3001 et 3045, codes d'erreur E42/E43/E67)."
+        )
     finally:
         connection.close()
 

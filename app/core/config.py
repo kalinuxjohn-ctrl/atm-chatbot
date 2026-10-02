@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     # cosinus >= 0.85) : mieux vaut laisser un symptôme non catalogué que
     # le rattacher à tort à la mauvaise entrée du catalogue.
     symptom_catalog_match_max_distance: float = 0.15
+    symptom_similarity_threshold: float = 0.5
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

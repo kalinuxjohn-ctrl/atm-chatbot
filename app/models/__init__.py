@@ -9,6 +9,7 @@ from app.models.technician import Technician
 from app.models.device import Manufacturer, DeviceModel, DeviceModelVersion, Device
 from app.models.catalog import Component, Symptom, Action, SymptomActionOutcomeStats
 from app.models.intervention import Intervention, InterventionSymptom, InterventionAction, Diagnosis
+from app.models.fault import Fault, ErrorCode
 
 __all__ = [
     "Technician",
@@ -23,5 +24,7 @@ __all__ = [
     "Intervention",
     "InterventionSymptom",
     "InterventionAction",
+    "Fault",
+    "ErrorCode",
     "Diagnosis",
 ]

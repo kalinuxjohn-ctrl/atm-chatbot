@@ -42,30 +42,51 @@ services:
     volumes:
       - ./docker-cache/huggingface:/root/.cache/huggingface
 
+    # Applique chaque migration de db/migrations/*.sql UNE SEULE FOIS,
+    # peu importe combien de fois ce conteneur redémarre -- une table
+    # schema_migrations retient ce qui a déjà tourné. Avant ce correctif,
+    # le script rejouait tout depuis zéro à chaque `docker compose up`,
+    # ce qui échouait dès que la base n'était pas totalement vide
+    # (ex: relance sans `down -v` entre deux tests).
+    #
+    # ON_ERROR_STOP=1 sur chaque appel psql : une vraie erreur SQL arrête
+    # le script net (via `set -e`), au lieu de continuer en silence sur
+    # les fichiers suivants comme c'était le cas avant.
+    #
+    # Ajouter une nouvelle migration = juste déposer le fichier dans
+    # db/migrations/ -- rien à toucher ici, la boucle la ramasse toute seule.
     command:
       - sh
       - -c
       - |
         set -e
 
-        psql -h db -U postgres -d atm_chatbot \
-          -f db/migrations/0001_core_schema.sql
+        psql -h db -U postgres -d atm_chatbot -v ON_ERROR_STOP=1 -c "
+          CREATE TABLE IF NOT EXISTS schema_migrations (
+            filename   TEXT PRIMARY KEY,
+            applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+          );
+        "
 
-        psql -h db -U postgres -d atm_chatbot \
-          -f db/migrations/0002_symptom_action.sql
+        for fichier in db/migrations/*.sql; do
+          nom=$$(basename "$$fichier")
+          deja_applique=$$(psql -h db -U postgres -d atm_chatbot -tAc \
+            "SELECT 1 FROM schema_migrations WHERE filename = '$$nom'")
 
-        psql -h db -U postgres -d atm_chatbot \
-          -f db/migrations/0003_pgvector.sql
+          if [ "$$deja_applique" = "1" ]; then
+            echo "Migration déjà appliquée, ignorée : $$nom"
+            continue
+          fi
 
-        psql -h db -U postgres -d atm_chatbot \
-          -f db/migrations/0004_stats_table.sql
+          echo "Application de la migration : $$nom"
+          psql -h db -U postgres -d atm_chatbot -v ON_ERROR_STOP=1 -f "$$fichier"
+          psql -h db -U postgres -d atm_chatbot -v ON_ERROR_STOP=1 -c \
+            "INSERT INTO schema_migrations (filename) VALUES ('$$nom');"
+        done
 
-        psql -h db -U postgres -d atm_chatbot \
-          -f db/migrations/0005_action_targets_symptom.sql
-        
-        psql -h db -U postgres -d atm_chatbot \
-          -f db/migrations/0006_conversation_context.sql
-
+        # Idempotents par construction (ON CONFLICT ... DO NOTHING) --
+        # peuvent donc tourner à chaque démarrage sans souci, contrairement
+        # aux migrations ci-dessus.
         python -m db.seed.seed_demo_data
         python -m app.jobs.recompute_stats
 

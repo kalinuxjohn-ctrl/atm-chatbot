@@ -7,7 +7,8 @@ atm-chatbot/
 │   │   │   │   ├── function chercher_actions_similaires(text, limit, db)
 │   │   │   │   └── function resoudre_action(payload, db)
 │   │   │   ├── chat.py
-│   │   │   │   └── function rechercher_symptome(payload, db)
+│   │   │   │   ├── function rechercher_symptome(payload, db)
+│   │   │   │   └── function chat(payload, db)
 │   │   │   └── interventions.py
 │   │   │       ├── function enregistrer_intervention(payload, db)
 │   │   │       ├── function lire_intervention(intervention_id, db)
@@ -17,8 +18,12 @@ atm-chatbot/
 │   │   ├── __init__.py
 │   │   ├── config.py
 │   │   │   ├── class Settings(BaseSettings)
-│   │   └── database.py
-│   │       └── function get_db()
+│   │   ├── database.py
+│   │   │   └── function get_db()
+│   │   └── tracing.py
+│   │       ├── function _configure_logger()
+│   │       ├── function _safe_value(value)
+│   │       └── function trace(category, message, **details)
 │   ├── jobs/
 │   │   ├── __init__.py
 │   │   └── recompute_stats.py
@@ -30,6 +35,10 @@ atm-chatbot/
 │   │   │   ├── class Symptom(Base)
 │   │   │   ├── class Action(Base)
 │   │   │   ├── class SymptomActionOutcomeStats(Base)
+│   │   ├── conversation.py
+│   │   │   ├── class Conversation(Base)
+│   │   │   ├── class ConversationMessage(Base)
+│   │   │   ├── class ConversationContext(Base)
 │   │   ├── device.py
 │   │   │   ├── class Manufacturer(Base)
 │   │   │   ├── class DeviceModel(Base)
@@ -53,6 +62,9 @@ atm-chatbot/
 │   │   │   ├── class SymptomSearchRequest(BaseModel)
 │   │   │   ├── class SolutionSuggestion(BaseModel)
 │   │   │   ├── class SymptomSearchResponse(BaseModel)
+│   │   ├── conversation_schema.py
+│   │   │   ├── class ChatRequest(BaseModel)
+│   │   │   ├── class ChatResponse(BaseModel)
 │   │   └── intervention_schema.py
 │   │       ├── class SymptomInput(BaseModel)
 │   │       ├── class InterventionCreate(BaseModel)
@@ -62,15 +74,40 @@ atm-chatbot/
 │   │       ├── class ActionOut(BaseModel)
 │   ├── services/
 │   │   ├── __init__.py
+│   │   ├── case_retrieval_service.py
+│   │   │   ├── function find_similar_cases(db, raw_text, device_type, symptom_limit, case_limit)
+│   │   │   ├── function build_case(db, intervention_id, device_type, matched_symptom_text)
+│   │   │   ├── function _keep_best_match_per_intervention(matched_symptoms)
+│   │   │   ├── function _rank_key(matched_row)
+│   │   │   └── function _lookup_confidence(db, intervention, actions, device_type)
 │   │   ├── catalog_service.py
 │   │   │   ├── function find_similar_actions(db, raw_text, limit)
 │   │   │   ├── function create_action_in_catalog(db, canonical_text, component_id)
 │   │   │   └── function resolve_action_catalog_link(db, payload)
+│   │   ├── chat_orchestrator_service.py
+│   │   │   ├── function handle_chat_message(db, conversation_id, technician_id, message, device_type)
+│   │   │   ├── function _route_message(db, context, message)
+│   │   │   ├── function _looks_like_symptom_description(message)
+│   │   │   ├── function _handle_symptom_search(db, context, message)
+│   │   │   ├── function _handle_result_detail_request(db, context, position, message)
+│   │   │   ├── function _infer_legacy_kind(resultat)
+│   │   │   ├── function _summarize_cases(raw_text, cases)
+│   │   │   └── function _format_case(case, index)
+│   │   ├── context_service.py
+│   │   │   ├── function get_context(db, conversation_id)
+│   │   │   ├── function save_context(db, conversation_id, context)
+│   │   │   ├── function resolve_position_reference(message)
+│   │   │   ├── function select_result_by_position(context, position)
+│   │   │   └── function record_last_search(context, query, results)
+│   │   ├── conversation_service.py
+│   │   │   ├── function get_or_create_conversation(db, conversation_id, technician_id)
+│   │   │   ├── function save_message(db, conversation_id, role, content)
+│   │   │   └── function get_recent_messages(db, conversation_id, limit)
 │   │   ├── embeddings_service.py
 │   │   │   ├── function _clean_text(raw_text)
-│   │   │   ├── function _fit_size(vector, target_size)
-│   │   │   ├── function _fallback_embedding(raw_text, vector_size)
 │   │   │   ├── function _get_encoder(model_name)
+│   │   │   ├── function _get_model_name(model_name)
+│   │   │   ├── function _validate_dimensions(vector, expected_dimensions)
 │   │   │   └── function generate_embedding(raw_text, model_name, dimensions, is_query)
 │   │   ├── intervention_service.py
 │   │   │   ├── function create_intervention_with_symptoms(db, payload)
@@ -103,7 +140,8 @@ atm-chatbot/
 │   │   ├── 0002_symptom_action.sql
 │   │   ├── 0003_pgvector.sql
 │   │   ├── 0004_stats_table.sql
-│   │   └── 0005_action_targets_symptom.sql
+│   │   ├── 0005_action_targets_symptom.sql
+│   │   └── 0006_conversation_context.sql
 │   └── seed/
 │       └── seed_demo_data.py
 │           ├── function _to_psycopg2_dsn(sqlalchemy_url)
@@ -129,11 +167,23 @@ atm-chatbot/
 ├── .env
 ├── .gitignore
 ├── architecture.tree
+├── archive.zip
 ├── COMPREHENSION.md
 ├── docker-compose.yml
 ├── Dockerfile
 ├── Dockerfile.base
 ├── Dockerfile.init
 ├── feuille_de_route_flux_utilisation_chatbot.png
+├── main.py
+│   ├── function format_arguments(args)
+│   ├── function class_name(node)
+│   ├── function function_name(node)
+│   ├── function method_name(node)
+│   ├── function extract_class(node, prefix, output)
+│   ├── function extract_python(file_path)
+│   ├── function should_ignore(path)
+│   ├── function analyze_file(path)
+│   ├── function build_tree(directory, prefix)
+│   └── function main()
 ├── requirements-init.txt
 └── requirements.txt
