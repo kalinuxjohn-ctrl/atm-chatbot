@@ -18,7 +18,7 @@ from app.core.tracing import trace
 from app.schemas.message_understanding_schema import UnderstoodMessage
 from app.services import llm_service
 
-_PROMPT_TEMPLATE = """Tu es un module de compréhension pour un copilote de techniciens de maintenance ATM (GAB/TPE).
+_PROMPT_TEMPLATE = """Tu es un module de compréhension pour un chatbot de techniciens de maintenance ATM (GAB/TPE).
 
 Analyse UNIQUEMENT le message suivant et renvoie un JSON strict, rien d'autre (pas de texte avant/après, pas de balises markdown), avec EXACTEMENT ces clés :
 
@@ -31,7 +31,7 @@ Analyse UNIQUEMENT le message suivant et renvoie un JSON strict, rien d'autre (p
 }}
 
 Règles strictes :
-- "intent" = "diagnostic" si le technicien décrit un symptôme/problème technique nouveau.
+- "intent" = "diagnostic" si le technicien décrit un symptôme/problème technique nouveau c'est vraiment l'intension clair de l'utilisateur veux t'il de l'aide sur un equipement, juste un message,tu dois analuser cela.
 - "intent" = "detail_request" si le technicien demande des précisions sur un résultat déjà montré
   (ex: "le deuxième", "cette solution", "pourquoi ça a marché", "quelle action").
 - "intent" = "conversation" sinon (salutation, remerciement, hors-sujet).

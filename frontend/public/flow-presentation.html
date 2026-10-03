@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f3f6fa">
+    <meta
+      name="description"
+      content="Présentation animée du flux de connexion simulée et du traitement des messages du Copilote ATM."
+    >
+    <title>Comment ça circule ? | Copilote ATM</title>
+    <link rel="stylesheet" href="css/flow-presentation.css">
+    <script defer src="js/pages/flow-presentation.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Copilote ATM, accueil">
+        <span class="brand-icon" aria-hidden="true">C</span>
+        <span>Copilote <strong>ATM</strong></span>
+      </a>
+      <a class="back-link" href="/">← Retour à l’accueil</a>
+    </header>
+
+    <main class="page-shell">
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow"><span aria-hidden="true">✦</span> La visite guidée du Copilote</p>
+        <h1 id="page-title">Comment votre demande<br>arrive-t-elle à destination&nbsp;?</h1>
+        <p class="intro-copy">
+          Suivez les pictogrammes : ils racontent ce qui se passe entre votre écran,
+          le service du Copilote et son registre de conversations.
+        </p>
+      </section>
+
+      <section class="journey-card" aria-label="Schéma animé du flux de l’application">
+        <div class="journey-toolbar">
+          <div class="journey-tabs" role="group" aria-label="Choisir un parcours">
+            <button class="journey-tab is-selected" type="button" data-journey="login" aria-pressed="true">
+              <span aria-hidden="true">🔑</span> Entrer dans le Copilote
+            </button>
+            <button class="journey-tab" type="button" data-journey="message" aria-pressed="false">
+              <span aria-hidden="true">💬</span> Envoyer un message
+            </button>
+          </div>
+          <span class="journey-counter" id="journey-counter">Étape 1 sur 5</span>
+        </div>
+
+        <div class="journey-heading">
+          <div>
+            <p class="eyebrow" id="journey-kicker">PARCOURS 1 · CONNEXION</p>
+            <h2 id="journey-title">Un badge préparé à l’accueil</h2>
+          </div>
+          <span class="status-pill" id="journey-status"><span></span> Prêt à présenter</span>
+        </div>
+
+        <div class="diagram-scroll" tabindex="0" aria-label="Schéma. Sur petit écran, faire défiler horizontalement.">
+          <div class="flow-track" id="flow-track" data-journey="login" aria-label="Étapes du parcours">
+            <article class="flow-node is-active" data-step="0">
+              <span class="node-icon" aria-hidden="true">🧑‍🔧</span>
+              <span class="node-name">Technicien</span>
+              <span class="node-detail">saisit son numéro</span>
+            </article>
+            <span class="flow-link" data-link="0" aria-hidden="true"><span></span></span>
+            <article class="flow-node" data-step="1">
+              <span class="node-icon" aria-hidden="true">🖥️</span>
+              <span class="node-name">Formulaire</span>
+              <span class="node-detail">contrôle le format</span>
+            </article>
+            <span class="flow-link" data-link="1" aria-hidden="true"><span></span></span>
+            <article class="flow-node" data-step="2">
+              <span class="node-icon" aria-hidden="true">🎭</span>
+              <span class="node-name">Connexion simulée</span>
+              <span class="node-detail">pas d’appel serveur</span>
+            </article>
+            <span class="flow-link" data-link="2" aria-hidden="true"><span></span></span>
+            <article class="flow-node" data-step="3">
+              <span class="node-icon" aria-hidden="true">🎟️</span>
+              <span class="node-name">Badge local</span>
+              <span class="node-detail">gardé dans le navigateur</span>
+            </article>
+            <span class="flow-link" data-link="3" aria-hidden="true"><span></span></span>
+            <article class="flow-node" data-step="4">
+              <span class="node-icon" aria-hidden="true">🚪</span>
+              <span class="node-name">Copilote</span>
+              <span class="node-detail">accès à l’interface</span>
+            </article>
+          </div>
+        </div>
+
+        <div class="explanation" aria-live="polite" aria-atomic="true">
+          <span class="explanation-icon" id="explanation-icon" aria-hidden="true">🧑‍🔧</span>
+          <div class="explanation-copy">
+            <p class="step-label" id="step-label">ÉTAPE 1</p>
+            <h3 id="step-title">Vous vous présentez</h3>
+            <p><strong>💡 En simple</strong> <span id="simple-explanation"></span></p>
+            <p><strong>🛠️ Côté code</strong> <span id="technical-explanation"></span></p>
+          </div>
+        </div>
+
+        <div class="journey-footer">
+          <p class="truth-note" id="truth-note">
+            <span aria-hidden="true">ℹ️</span>
+            Ici, la connexion est simulée : aucun mot de passe ni compte n’est vérifié côté serveur.
+          </p>
+          <div class="controls" aria-label="Commandes de l’animation">
+            <button class="control-button secondary" id="previous-button" type="button" aria-label="Étape précédente">
+              ← <span>Précédent</span>
+            </button>
+            <button class="control-button primary" id="play-button" type="button">
+              <span aria-hidden="true">▶</span> <span>Animer le parcours</span>
+            </button>
+            <button class="control-button secondary" id="next-button" type="button">
+              <span>Suivant</span> →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="legend" aria-label="Légende">
+        <div><span class="legend-dot local"></span><span><strong>Dans le navigateur</strong> — actions sur votre écran</span></div>
+        <div><span class="legend-dot server"></span><span><strong>Sur le serveur</strong> — traitement de la demande</span></div>
+        <div><span class="legend-dot database"></span><span><strong>Dans le registre</strong> — conservation des échanges</span></div>
+      </section>
+
+      <aside class="takeaway">
+        <span class="takeaway-icon" aria-hidden="true">💡</span>
+        <p><strong>À retenir :</strong> la connexion est un badge local simulé. L’envoi d’un message, lui, peut bien aller au serveur pour être traité et enregistré.</p>
+      </aside>
+    </main>
+  </body>
+</html>

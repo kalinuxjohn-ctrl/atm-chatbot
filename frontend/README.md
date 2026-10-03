@@ -69,6 +69,7 @@ Dans ce mode, il utilise par défaut `http://127.0.0.1:8000` comme adresse de l�
 | `index.html` | Accueil animé (GAB + deux techniciens) et connexion. |
 | `copilot.html` | Copilote : sidebar rétractable, chat écrit, dictée, Chat vocal immersif, panneau de contexte, paramètres. |
 | `diagnostic.html` | Recherche directe dans l’historique des symptômes. |
+| `flow-presentation.html` | Présentation animée du flux de connexion simulée et de traitement d’un message. |
 
 ## Structure
 

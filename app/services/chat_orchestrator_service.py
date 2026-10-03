@@ -1,5 +1,5 @@
 """
-Coordination du endpoint POST /chat.
+Coordination du endpoint POST /api/chat.
 
 ORCHESTRE seulement : message_understanding_service (Niveau 1, comprendre),
 technical_reference_resolver_service (résoudre le texte en IDs réels),
