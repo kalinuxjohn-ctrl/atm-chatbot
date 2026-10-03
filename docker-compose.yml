@@ -30,10 +30,16 @@ services:
 
     container_name: atm_init
 
+
     environment:
       PGPASSWORD: postgrespassword
       DATABASE_URL: ${DATABASE_URL}
       HF_HOME: ${HF_HOME}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER}
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY}
+      VOYAGE_MODEL: ${VOYAGE_MODEL}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS}
+      
 
     depends_on:
       db:
@@ -112,7 +118,11 @@ services:
       SYMPTOM_SIMILARITY_THRESHOLD: ${SYMPTOM_SIMILARITY_THRESHOLD}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       LLM_PROVIDER: ${LLM_PROVIDER}
-      GEMINI_MODEL: ${GEMINI_MODEL} 
+      GEMINI_MODEL: ${GEMINI_MODEL}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER}
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY}
+      VOYAGE_MODEL: ${VOYAGE_MODEL}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS} 
 
     # Permet au conteneur de résoudre l'hôte WSL/Windows
     extra_hosts:

@@ -4,17 +4,23 @@ Générateur d'embeddings pour la recherche sémantique.
 Le modèle d'embedding transforme un texte en vecteur numérique.
 La recherche sémantique compare ensuite ces vecteurs avec pgvector.
 
-Le modèle est configurable afin de pouvoir changer de modèle sans modifier
-les services qui utilisent generate_embedding().
+Structuré en interface (EmbeddingProvider) + implémentation (VoyageProvider),
+même principe que LLMProvider dans llm_service.py : un futur changement de
+fournisseur se fait en ajoutant une classe ici, sans toucher à
+retrieval_service.py, case_retrieval_service.py ou seed_demo_data.py -- ils
+n'appellent jamais un provider directement, seulement generate_embedding(),
+dont la signature ne change pas.
 """
 
 from __future__ import annotations
 
 import logging
-import re 
+import re
+from abc import ABC, abstractmethod
 from time import perf_counter
-from functools import lru_cache
 from typing import Sequence
+
+import requests
 
 from app.core.config import settings
 from app.core.tracing import trace
@@ -23,76 +29,107 @@ from app.core.tracing import trace
 logger = logging.getLogger(__name__)
 
 
-# Modèle utilisé si aucun modèle n'est défini dans la configuration.
-DEFAULT_MODEL_NAME = "OrdalieTech/Solon-embeddings-base-0.1"
-
-# Préfixe utilisé par Solon pour les textes soumis comme requêtes.
-QUERY_PREFIX = "query : "
+DEFAULT_VOYAGE_MODEL_NAME = "voyage-3-large"
 
 
 def _clean_text(raw_text: str | None) -> str:
     """Nettoie et normalise un texte avant sa vectorisation."""
     if raw_text is None:
         return ""
-
     return re.sub(r"\s+", " ", raw_text).strip()
 
 
-@lru_cache(maxsize=4)
-def _get_encoder(model_name: str):
+class EmbeddingProvider(ABC):
+    """Interface commune à tout fournisseur d'embedding."""
+
+    @abstractmethod
+    def embed(self, cleaned_text: str, is_query: bool) -> list[float]:
+        """Renvoie le vecteur d'embedding, ou lève une exception avec un message clair."""
+
+
+class VoyageProvider(EmbeddingProvider):
     """
-    Charge un modèle d'embedding une seule fois par nom.
-
-    Le modèle reste ensuite en mémoire afin d'éviter de recharger ses poids
-    à chaque recherche.
+    Appelle l'API Voyage AI (fournisseur d'embeddings recommandé par
+    Anthropic). output_dimension doit être une des valeurs supportées par
+    le modèle choisi (256/512/1024/2048 pour voyage-3-large) -- doit
+    correspondre à settings.embedding_dimensions / la colonne pgvector.
     """
-    logger.info("[EMBEDDING] Chargement du modèle : %s", model_name)
 
-    from sentence_transformers import SentenceTransformer
+    _ENDPOINT = "https://api.voyageai.com/v1/embeddings"
 
-    try:
-        import torch
+    def __init__(self, api_key: str, model_name: str, output_dimension: int, timeout: int = 30):
+        self.api_key = api_key
+        self.model_name = model_name
+        self.output_dimension = output_dimension
+        self.timeout = timeout
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    except ImportError:
-        device = "cpu"
+    def embed(self, cleaned_text: str, is_query: bool) -> list[float]:
+        if not self.api_key:
+            raise RuntimeError("Aucune clé API Voyage configurée (VOYAGE_API_KEY).")
 
-    logger.info("[EMBEDDING] Appareil utilisé : %s", device)
+        try:
+            response = requests.post(
+                self._ENDPOINT,
+                headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+                json={
+                    "input": [cleaned_text],
+                    "model": self.model_name,
+                    "input_type": "query" if is_query else "document",
+                    "output_dimension": self.output_dimension,
+                },
+                timeout=self.timeout,
+            )
+        except requests.ConnectionError as erreur:
+            raise RuntimeError("Impossible de joindre l'API Voyage -- vérifiez la connexion réseau.") from erreur
+        except requests.Timeout as erreur:
+            raise RuntimeError(f"Voyage n'a pas répondu dans le délai imparti ({self.timeout}s).") from erreur
 
-    try:
-        encoder = SentenceTransformer(model_name, device=device)
-    except Exception as error:
-        trace(
-            "ERROR",
-            "Impossible de charger le modèle d'embedding",
-            model=model_name,
-            error_type=type(error).__name__,
-        )
-        logger.error(
-            "[EMBEDDING][ERREUR] Impossible de charger le modèle : %s",
-            model_name,
-        )
+        if response.status_code == 401:
+            raise RuntimeError("Clé API Voyage invalide ou expirée.")
+        if response.status_code == 429:
+            raise RuntimeError("Limite de requêtes Voyage atteinte -- réessayez plus tard.")
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as erreur:
+            raise RuntimeError(f"Voyage a répondu avec une erreur ({response.status_code}).") from erreur
+
+        payload = response.json()
+        try:
+            return payload["data"][0]["embedding"]
+        except (KeyError, IndexError) as erreur:
+            raise RuntimeError("Voyage n'a renvoyé aucun embedding exploitable pour cette requête.") from erreur
+
+
+def _resolve_provider(model_name_override: str | None) -> tuple[EmbeddingProvider, str]:
+    """
+    Point d'extension unique : brancher un nouveau fournisseur d'embedding
+    plus tard se fait ici (ajouter une classe + une branche), jamais en
+    modifiant generate_embedding() ou ses appelants.
+
+    Une valeur de settings.embedding_provider autre que "voyage" (ex. un
+    vieux ".env" qui garde "solon") est une erreur de configuration
+    explicite, pas un retour silencieux vers un comportement différent.
+    """
+    provider_name = settings.embedding_provider or "voyage"
+
+    if provider_name != "voyage":
         raise RuntimeError(
-            f"Impossible de charger le modèle d'embedding '{model_name}'."
-        ) from error
+            f"Fournisseur d'embedding inconnu ou plus supporté : '{provider_name}'. "
+            f"Seule valeur valide : 'voyage'."
+        )
 
-    logger.info(
-        "[EMBEDDING] Modèle chargé avec succès : %s",
-        model_name,
+    selected_model = model_name_override or settings.voyage_model or DEFAULT_VOYAGE_MODEL_NAME
+    return (
+        VoyageProvider(
+            api_key=settings.voyage_api_key,
+            model_name=selected_model,
+            output_dimension=settings.embedding_dimensions,
+        ),
+        selected_model,
     )
 
-    return encoder
 
-
-def _get_model_name(model_name: str | None) -> str:
-    """Retourne le modèle configuré ou le modèle par défaut."""
-    return model_name or settings.embedding_model_name or DEFAULT_MODEL_NAME
-
-
-def _validate_dimensions(
-    vector: Sequence[float],
-    expected_dimensions: int,
-) -> None:
+def _validate_dimensions(vector: Sequence[float], expected_dimensions: int) -> None:
     """
     Vérifie que la dimension du vecteur correspond à celle attendue.
 
@@ -108,13 +145,6 @@ def _validate_dimensions(
             expected_dimensions=expected_dimensions,
             actual_dimensions=actual_dimensions,
         )
-        logger.error(
-            "[EMBEDDING][ERREUR] Dimension incorrecte : "
-            "attendu=%s, obtenu=%s",
-            expected_dimensions,
-            actual_dimensions,
-        )
-
         raise ValueError(
             "Dimension d'embedding incompatible : "
             f"le modèle produit {actual_dimensions} dimensions, "
@@ -129,18 +159,18 @@ def generate_embedding(
     is_query: bool = False,
 ) -> list[float]:
     """
-    Génère un embedding normalisé pour un texte.
+    Génère un embedding normalisé pour un texte, via le fournisseur actif
+    (settings.embedding_provider).
 
-    is_query=True ajoute le préfixe attendu par les modèles utilisant
-    une distinction entre requêtes et documents.
+    is_query=True indique une requête de recherche plutôt qu'un document
+    stocké (input_type="query" pour Voyage).
 
     Une erreur du moteur d'embedding est propagée afin de ne pas masquer
     une panne ou une mauvaise configuration derrière un faux embedding.
     """
-    logger.info("[EMBEDDING] Réception du texte à vectoriser")
-
     vector_dimensions = dimensions or settings.embedding_dimensions or 1024
     cleaned_text = _clean_text(raw_text)
+
     trace(
         "PROCESSING",
         "Texte préparé pour l'embedding",
@@ -149,81 +179,42 @@ def generate_embedding(
     )
 
     if not cleaned_text:
-        logger.warning(
-            "[EMBEDDING] Texte vide : génération d'un vecteur nul"
-        )
+        logger.warning("[EMBEDDING] Texte vide : génération d'un vecteur nul")
         vector = [0.0] * vector_dimensions
-        trace(
-            "EMBEDDING",
-            "Vecteur nul généré pour un texte vide",
-            dimensions=len(vector),
-        )
+        trace("EMBEDDING", "Vecteur nul généré pour un texte vide", dimensions=len(vector))
         return vector
 
-    logger.info(
-        "[EMBEDDING] Texte préparé - longueur : %s caractères",
-        len(cleaned_text),
-    )
+    provider, selected_model = _resolve_provider(model_name)
 
-    if is_query:
-        cleaned_text = f"{QUERY_PREFIX}{cleaned_text}"
-        logger.info("[EMBEDDING] Mode recherche activé")
-
-    selected_model = _get_model_name(model_name)
-
-    logger.info(
-        "[EMBEDDING] Modèle sélectionné : %s",
-        selected_model,
-    )
-
-    logger.info(
-        "[EMBEDDING] Génération de l'embedding..."
-    )
     trace(
         "EMBEDDING",
         "Génération de l'embedding démarrée",
+        provider=settings.embedding_provider,
         model=selected_model,
         is_query=is_query,
     )
 
-    encoder = _get_encoder(selected_model)
     started_at = perf_counter()
-
     try:
-        vector = encoder.encode(
-            cleaned_text,
-            normalize_embeddings=True,
-        )
+        vector = provider.embed(cleaned_text, is_query)
     except Exception as error:
         trace(
             "ERROR",
             "Échec de la génération de l'embedding",
+            provider=settings.embedding_provider,
             model=selected_model,
             duration_ms=round((perf_counter() - started_at) * 1000, 2),
             error_type=type(error).__name__,
         )
-        logger.error(
-            "[EMBEDDING][ERREUR] Échec de la génération avec le modèle : %s",
-            selected_model,
-        )
-
-        raise RuntimeError(
-            f"Impossible de générer l'embedding avec le modèle "
-            f"'{selected_model}'."
-        ) from error
-
-    vector = vector.tolist()
+        raise RuntimeError(f"Impossible de générer l'embedding avec le modèle '{selected_model}'.") from error
 
     _validate_dimensions(vector, vector_dimensions)
 
-    logger.info(
-        "[EMBEDDING] Embedding généré avec succès - dimensions : %s",
-        len(vector),
-    )
     trace(
         "EMBEDDING",
         "Embedding généré",
         dimensions=len(vector),
+        provider=settings.embedding_provider,
         model=selected_model,
         duration_ms=round((perf_counter() - started_at) * 1000, 2),
     )

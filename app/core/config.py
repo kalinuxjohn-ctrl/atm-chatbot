@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # --- Moteur de vecteurs (auto-hébergé, remplace Voyage AI) ---
     embedding_model_name: str = "OrdalieTech/Solon-embeddings-base-0.1"
-    embedding_dimensions: int = 768
+    embedding_dimensions: int = 1024
 
     # --- LLM local (Ollama) ---
     ollama_base_url: str = "http://localhost:11434"
@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     # le rattacher à tort à la mauvaise entrée du catalogue.
     symptom_catalog_match_max_distance: float = 0.15
     symptom_similarity_threshold: float = 0.5
+
+    embedding_provider: str = "voyage"  
+    voyage_api_key: str = ""
+    voyage_model: str = "voyage-3-large"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
