@@ -153,6 +153,7 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = DEF
     le seuil de pertinence.
     """
     cleaned_text = _clean_search_text(raw_text)
+    trace("PROCESSING", "Texte de recherche nettoyé", cleaned_length=len(cleaned_text))
     if not cleaned_text:
         trace("SEARCH", "Texte de recherche vide, recherche vectorielle ignorée", device_type=device_type)
         return []
@@ -163,7 +164,7 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = DEF
     trace(
         "SEARCH",
         "Recherche vectorielle démarrée",
-        query=cleaned_text,
+        query_length=len(cleaned_text),
         device_type=device_type,
         limit=limit,
         threshold=threshold,
@@ -205,6 +206,7 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = DEF
         candidates = _fallback_cosine_search(db, query_vector, device_type, limit)
         method = "python_cosine"
 
+    trace("SEARCH", "Candidats vectoriels récupérés avant filtrage", count=len(candidates), method=method)
     return _apply_relevance_threshold(candidates, threshold, method)
 
 

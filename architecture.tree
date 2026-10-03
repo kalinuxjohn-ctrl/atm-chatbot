@@ -9,6 +9,8 @@ atm-chatbot/
 │   │   │   ├── chat.py
 │   │   │   │   ├── function rechercher_symptome(payload, db)
 │   │   │   │   └── function chat(payload, db)
+│   │   │   ├── error_code.py
+│   │   │   │   └── function rechercher_code_erreur(q, db)
 │   │   │   └── interventions.py
 │   │   │       ├── function enregistrer_intervention(payload, db)
 │   │   │       ├── function lire_intervention(intervention_id, db)
@@ -44,6 +46,9 @@ atm-chatbot/
 │   │   │   ├── class DeviceModel(Base)
 │   │   │   ├── class DeviceModelVersion(Base)
 │   │   │   ├── class Device(Base)
+│   │   ├── fault.py
+│   │   │   ├── class Fault(Base)
+│   │   │   ├── class ErrorCode(Base)
 │   │   ├── intervention.py
 │   │   │   ├── class Intervention(Base)
 │   │   │   ├── class InterventionSymptom(Base)
@@ -52,6 +57,7 @@ atm-chatbot/
 │   │   └── technician.py
 │   │       ├── class Technician(Base)
 │   ├── schemas/
+│   │   ├── app/
 │   │   ├── __init__.py
 │   │   ├── catalog_schema.py
 │   │   │   ├── class SimilarActionCandidate(BaseModel)
@@ -65,6 +71,12 @@ atm-chatbot/
 │   │   ├── conversation_schema.py
 │   │   │   ├── class ChatRequest(BaseModel)
 │   │   │   ├── class ChatResponse(BaseModel)
+│   │   ├── device_type.py
+│   │   │   └── function normalize_device_type(value)
+│   │   ├── error_code_schema.py
+│   │   │   ├── class FaultOut(BaseModel)
+│   │   │   ├── class ErrorCodeOut(BaseModel)
+│   │   │   ├── class ErrorCodeSearchResponse(BaseModel)
 │   │   └── intervention_schema.py
 │   │       ├── class SymptomInput(BaseModel)
 │   │       ├── class InterventionCreate(BaseModel)
@@ -109,6 +121,8 @@ atm-chatbot/
 │   │   │   ├── function _get_model_name(model_name)
 │   │   │   ├── function _validate_dimensions(vector, expected_dimensions)
 │   │   │   └── function generate_embedding(raw_text, model_name, dimensions, is_query)
+│   │   ├── error_code_service.py
+│   │   │   └── function search_error_codes(db, query)
 │   │   ├── intervention_service.py
 │   │   │   ├── function create_intervention_with_symptoms(db, payload)
 │   │   │   ├── function get_intervention_by_id(db, intervention_id)
@@ -125,6 +139,10 @@ atm-chatbot/
 │   │   │   └── function summarize_solutions(raw_text, solutions)
 │   │   ├── retrieval_service.py
 │   │   │   ├── function cosine_similarity(left, right)
+│   │   │   ├── function _clean_search_text(raw_text)
+│   │   │   ├── function _clamp_limit(limit, default)
+│   │   │   ├── function _apply_relevance_threshold(candidates, threshold, method)
+│   │   │   ├── function _fallback_cosine_search(db, query_vector, device_type, limit)
 │   │   │   ├── function fetch_similar_symptoms(db, raw_text, device_type, limit)
 │   │   │   ├── function find_best_catalog_match(db, raw_text, device_type)
 │   │   │   ├── function store_symptom_embedding(db, intervention_symptom_id, vector)
@@ -141,7 +159,8 @@ atm-chatbot/
 │   │   ├── 0003_pgvector.sql
 │   │   ├── 0004_stats_table.sql
 │   │   ├── 0005_action_targets_symptom.sql
-│   │   └── 0006_conversation_context.sql
+│   │   ├── 0006_conversation_context.sql
+│   │   └── 0007_error_codes.sql
 │   └── seed/
 │       └── seed_demo_data.py
 │           ├── function _to_psycopg2_dsn(sqlalchemy_url)

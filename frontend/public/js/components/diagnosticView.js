@@ -1,9 +1,12 @@
-function createElement(tagName, className, text) {
-  const element = document.createElement(tagName);
-  if (className) element.className = className;
-  if (text !== undefined) element.textContent = text;
-  return element;
-}
+/**
+ * Affichage de la page Diagnostic (recherche de symptôme) : messages,
+ * résumé, symptômes, cartes d'actions, erreurs. Aucun appel réseau ici.
+ * (Anciennement js/ui.js, comportement inchangé.)
+ */
+
+import { createElement, formatTime } from "../utils/dom.js";
+
+/* ---------- Briques de message ---------- */
 
 function createAssistantMessage(time) {
   const message = createElement("article", "message assistant-message assistant-response");
@@ -11,8 +14,7 @@ function createAssistantMessage(time) {
   avatar.setAttribute("aria-hidden", "true");
   const body = createElement("div", "message-body");
   const author = createElement("span", "message-author");
-  author.append(document.createTextNode("ATM Assistant "));
-  author.append(createElement("time", "", time));
+  author.append(document.createTextNode("ATM Assistant "), createElement("time", "", time));
   body.append(author);
   message.append(avatar, body);
   return { message, body };
@@ -25,15 +27,16 @@ function appendRetryButton(container, onRetry, label = "Réessayer") {
   container.append(retryButton);
 }
 
+/* ---------- Résultat de recherche ---------- */
+
+/** Libellé de chaque symptôme retrouvé (texte si fourni, sinon identifiant). */
 function getSymptomLabels(result) {
   const symptomsById = new Map(
     result.solutions
       .filter((solution) => solution.symptomId !== null && solution.symptomText)
       .map((solution) => [solution.symptomId, solution.symptomText]),
   );
-  return result.matchedSymptomIds.map(
-    (symptomId) => symptomsById.get(symptomId) || `Symptôme #${symptomId}`,
-  );
+  return result.matchedSymptomIds.map((symptomId) => symptomsById.get(symptomId) || `Symptôme #${symptomId}`);
 }
 
 function createSolutionCard(solution, index) {
@@ -41,11 +44,7 @@ function createSolutionCard(solution, index) {
   const number = createElement("span", "solution-index", String(index + 1).padStart(2, "0"));
   number.setAttribute("aria-hidden", "true");
   const content = createElement("div", "solution-copy");
-  content.append(createElement(
-    "strong",
-    "",
-    solution.actionText || "Libellé de l’action non fourni par l’API.",
-  ));
+  content.append(createElement("strong", "", solution.actionText || "Libellé de l’action non fourni par l’API."));
 
   if (solution.actionId !== null && !solution.actionText) {
     content.append(createElement("span", "action-id-note", `Identifiant de l’action : #${solution.actionId}`));
@@ -54,6 +53,7 @@ function createSolutionCard(solution, index) {
     content.append(createElement("span", "solution-symptom", `Symptôme associé : ${solution.symptomText}`));
   }
 
+  // On n'affiche que les statistiques réellement fournies par l'API.
   const statistics = [];
   if (solution.accuracy !== null && solution.accuracy >= 0 && solution.accuracy <= 1) {
     statistics.push(createElement("span", "accuracy-value", `Réussite : ${Math.round(solution.accuracy * 100)} %`));
@@ -84,10 +84,7 @@ function renderSearchResult(body, result, onRetry) {
   } else if (result.summary) {
     const summaryCard = createElement("section", "summary-card");
     summaryCard.setAttribute("aria-label", "Résumé de la recherche");
-    summaryCard.append(
-      createElement("h3", "", "Résumé"),
-      createElement("p", "", result.summary),
-    );
+    summaryCard.append(createElement("h3", "", "Résumé"), createElement("p", "", result.summary));
     body.append(summaryCard);
   }
 
@@ -95,9 +92,7 @@ function renderSearchResult(body, result, onRetry) {
   if (symptomLabels.length > 0) {
     body.append(createElement("h3", "identified-heading", "Symptômes associés"));
     const badges = createElement("div", "identified-symptoms");
-    symptomLabels.forEach((label) => {
-      badges.append(createElement("span", "symptom-badge", label));
-    });
+    symptomLabels.forEach((label) => badges.append(createElement("span", "symptom-badge", label)));
     body.append(badges);
   }
 
@@ -107,9 +102,7 @@ function renderSearchResult(body, result, onRetry) {
     body.append(heading);
     const solutionList = createElement("div", "solution-list");
     solutionList.setAttribute("aria-label", "Actions documentées, classées par taux de réussite");
-    result.solutions.forEach((solution, index) => {
-      solutionList.append(createSolutionCard(solution, index));
-    });
+    result.solutions.forEach((solution, index) => solutionList.append(createSolutionCard(solution, index)));
     body.append(solutionList);
     body.append(createElement(
       "p",
@@ -128,12 +121,13 @@ function renderSearchResult(body, result, onRetry) {
   appendRetryButton(body, onRetry);
 }
 
+/* ---------- API publique de la vue ---------- */
+
 export function appendUserMessage(conversation, text, deviceType, time) {
   const message = createElement("article", "message user-message");
   const body = createElement("div", "message-body");
   const author = createElement("span", "message-author");
-  author.append(document.createTextNode("Vous "));
-  author.append(createElement("time", "", time));
+  author.append(document.createTextNode("Vous "), createElement("time", "", time));
   const bubble = createElement("div", "message-bubble");
   bubble.append(
     createElement("p", "", text),
@@ -149,26 +143,19 @@ export function createTypingIndicator(conversation, time) {
   const indicator = createElement("div", "typing-indicator");
   indicator.setAttribute("role", "status");
   indicator.setAttribute("aria-label", "Analyse de votre problème en cours");
-  for (let dotIndex = 0; dotIndex < 3; dotIndex += 1) {
-    indicator.append(createElement("span"));
-  }
+  for (let dotIndex = 0; dotIndex < 3; dotIndex += 1) indicator.append(createElement("span"));
   body.append(indicator);
   conversation.append(message);
   return message;
 }
 
 export function appendAssistantMessage(conversation, result, { errorMessage, onRetry }) {
-  const { message, body } = createAssistantMessage(
-    new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(new Date()),
-  );
+  const { message, body } = createAssistantMessage(formatTime());
 
   if (errorMessage) {
     const errorCard = createElement("div", "friendly-error");
     errorCard.setAttribute("role", "alert");
-    errorCard.append(
-      createElement("strong", "", "Un problème est survenu"),
-      createElement("span", "", errorMessage),
-    );
+    errorCard.append(createElement("strong", "", "Un problème est survenu"), createElement("span", "", errorMessage));
     body.append(errorCard);
     appendRetryButton(body, onRetry);
   } else {

@@ -8,6 +8,7 @@ par le pipeline vectoriel (pas d'embedding, pas de pgvector, pas de LLM).
 
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.tracing import trace
 from app.models.fault import ErrorCode
 
 
@@ -21,6 +22,7 @@ def search_error_codes(db: Session, query: str) -> list[ErrorCode]:
     par résultat pour charger la panne liée (fault).
     """
     motif = f"%{query.strip()}%"
+    trace("SEARCH", "Recherche SQL de codes d'erreur démarrée", strategy="sql_ilike")
     return (
         db.query(ErrorCode)
         .options(joinedload(ErrorCode.fault))

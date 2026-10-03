@@ -1,23 +1,26 @@
 """
-Adaptateur pour le LLM (aujourd'hui Ollama en local).
+Adaptateur pour le LLM. Trois fournisseurs disponibles aujourd'hui :
+Ollama (local), Gemini (API gratuite), Claude (API -- payante, c'est le
+fournisseur prévu pour la version finale).
 
-Structuré en interface (LLMProvider) + implémentation (OllamaProvider),
-pas en simple fonction qui appelle l'API directement -- pour que remplacer
-Ollama plus tard (service tiers payant, même serveur, serveur séparé) se
-fasse en ajoutant UNE classe dans ce fichier, sans toucher au reste de
-l'app : summarize_solutions() et chat.py n'appellent jamais Ollama
-directement, seulement generate_reply().
+Structuré en interface (LLMProvider) + implémentations, pas en fonctions
+qui appellent chaque API directement -- changer de fournisseur = changer
+settings.llm_provider, sans toucher à summarize_solutions(),
+chat_orchestrator_service.py ou message_understanding_service.py : ils
+n'appellent jamais un fournisseur directement, seulement generate_reply().
+
+Pas de repli implicite entre fournisseurs : settings.llm_provider choisit
+UN fournisseur actif, et une valeur inconnue est une erreur de
+configuration explicite, pas un retour silencieux vers Ollama.
 """
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from time import perf_counter
 
 import requests
 
 from app.core.config import settings
-from app.core.tracing import trace
 
 
 class LLMUnavailableError(Exception):
@@ -72,58 +75,164 @@ class OllamaProvider(LLMProvider):
         return response.json().get("response", "")
 
 
+class GeminiProvider(LLMProvider):
+    """Appelle l'API Gemini de Google (offre gratuite via Google AI Studio -- quotas limités)."""
+
+    _ENDPOINT_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+    def __init__(self, api_key: str, model: str, timeout: int = 60):
+        self.api_key = api_key
+        self.model = model
+        self.timeout = timeout
+
+    def generate(self, prompt: str) -> str:
+        if not self.api_key:
+            raise LLMUnavailableError(
+                "Aucune clé API Gemini configurée (GEMINI_API_KEY) -- impossible d'utiliser ce fournisseur."
+            )
+
+        try:
+            response = requests.post(
+                self._ENDPOINT_TEMPLATE.format(model=self.model),
+                headers={"x-goog-api-key": self.api_key, "Content-Type": "application/json"},
+                json={"contents": [{"parts": [{"text": prompt}]}]},
+                timeout=self.timeout,
+            )
+        except requests.ConnectionError as erreur:
+            raise LLMUnavailableError(
+                "Impossible de joindre l'API Gemini -- vérifiez la connexion réseau du conteneur."
+            ) from erreur
+        except requests.Timeout as erreur:
+            raise LLMUnavailableError(
+                f"Gemini n'a pas répondu dans le délai imparti ({self.timeout}s)."
+            ) from erreur
+
+        if response.status_code == 401:
+            raise LLMUnavailableError("Clé API Gemini invalide ou expirée.")
+        if response.status_code == 429:
+            raise LLMUnavailableError(
+                "Quota gratuit Gemini dépassé pour l'instant (limite par minute/jour) -- réessayez plus tard."
+            )
+        if response.status_code == 404:
+            raise LLMUnavailableError(f"Modèle Gemini '{self.model}' introuvable ou non accessible avec cette clé.")
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as erreur:
+            raise LLMUnavailableError(f"Gemini a répondu avec une erreur ({response.status_code}).") from erreur
+
+        payload = response.json()
+        try:
+            return payload["candidates"][0]["content"]["parts"][0]["text"]
+        except (KeyError, IndexError) as erreur:
+            # Arrive par exemple si Gemini bloque la réponse (finishReason="SAFETY") --
+            # pas une panne réseau, mais pas de texte exploitable non plus.
+            raise LLMUnavailableError("Gemini n'a renvoyé aucun texte exploitable pour cette requête.") from erreur
+
+
+class ClaudeProvider(LLMProvider):
+    """
+    Appelle l'API Claude d'Anthropic. C'est le fournisseur prévu pour la
+    version finale du projet -- contrairement à Gemini, cette API est
+    PAYANTE (pas de palier gratuit équivalent) : à activer en connaissance
+    de cause, pas par défaut en développement.
+    """
+
+    _ENDPOINT = "https://api.anthropic.com/v1/messages"
+    _API_VERSION = "2023-06-01"
+
+    def __init__(self, api_key: str, model: str, max_tokens: int = 1024, timeout: int = 60):
+        self.api_key = api_key
+        self.model = model
+        self.max_tokens = max_tokens
+        self.timeout = timeout
+
+    def generate(self, prompt: str) -> str:
+        if not self.api_key:
+            raise LLMUnavailableError(
+                "Aucune clé API Claude configurée (CLAUDE_API_KEY) -- impossible d'utiliser ce fournisseur."
+            )
+
+        try:
+            response = requests.post(
+                self._ENDPOINT,
+                headers={
+                    "x-api-key": self.api_key,
+                    "anthropic-version": self._API_VERSION,
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.model,
+                    "max_tokens": self.max_tokens,
+                    "messages": [{"role": "user", "content": prompt}],
+                },
+                timeout=self.timeout,
+            )
+        except requests.ConnectionError as erreur:
+            raise LLMUnavailableError(
+                "Impossible de joindre l'API Claude -- vérifiez la connexion réseau du conteneur."
+            ) from erreur
+        except requests.Timeout as erreur:
+            raise LLMUnavailableError(
+                f"Claude n'a pas répondu dans le délai imparti ({self.timeout}s)."
+            ) from erreur
+
+        if response.status_code == 401:
+            raise LLMUnavailableError("Clé API Claude invalide ou expirée.")
+        if response.status_code == 429:
+            raise LLMUnavailableError("Limite de requêtes Claude atteinte -- réessayez plus tard.")
+        if response.status_code == 404:
+            raise LLMUnavailableError(f"Modèle Claude '{self.model}' introuvable ou non accessible avec cette clé.")
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as erreur:
+            raise LLMUnavailableError(f"Claude a répondu avec une erreur ({response.status_code}).") from erreur
+
+        payload = response.json()
+        try:
+            return payload["content"][0]["text"]
+        except (KeyError, IndexError) as erreur:
+            raise LLMUnavailableError("Claude n'a renvoyé aucun texte exploitable pour cette requête.") from erreur
+
+
+_PROVIDERS = {
+    "ollama": lambda: OllamaProvider(base_url=settings.ollama_base_url, model=settings.ollama_model),
+    "gemini": lambda: GeminiProvider(api_key=settings.gemini_api_key, model=settings.gemini_model),
+    "claude": lambda: ClaudeProvider(api_key=settings.claude_api_key, model=settings.claude_model),
+}
+
+
 def get_llm_provider() -> LLMProvider:
     """
-    Point d'extension unique : brancher un autre backend LLM plus tard se
-    fait ici (lire settings, choisir/instancier la bonne classe), jamais en
+    Point d'extension unique : brancher un nouveau backend LLM plus tard se
+    fait en ajoutant une classe + une entrée dans _PROVIDERS, jamais en
     modifiant les appelants de generate_reply().
+
+    Aucun repli implicite : un settings.llm_provider non reconnu est une
+    erreur de configuration (faute de frappe, nouveau fournisseur pas
+    encore branché...), pas un retour silencieux vers un autre fournisseur.
     """
-    return OllamaProvider(base_url=settings.ollama_base_url, model=settings.ollama_model)
+    try:
+        return _PROVIDERS[settings.llm_provider]()
+    except KeyError:
+        raise LLMUnavailableError(
+            f"Fournisseur LLM inconnu : '{settings.llm_provider}'. "
+            f"Valeurs valides : {', '.join(_PROVIDERS)}."
+        )
 
 
 def generate_reply(prompt: str) -> str:
     """
     Demande une réponse au LLM configuré. Ne laisse jamais remonter
     d'exception à l'appelant : en cas de problème (réseau, timeout, modèle
-    absent...), renvoie directement le message d'erreur clair à la place du
-    texte généré, pour que le reste de l'app reste fonctionnel en dégradé.
+    absent, mauvaise config...), renvoie directement le message d'erreur
+    clair à la place du texte généré, pour que le reste de l'app reste
+    fonctionnel en dégradé.
     """
-    trace(
-        "LLM",
-        "Génération de la réponse démarrée",
-        model=settings.ollama_model,
-        prompt_length=len(prompt),
-    )
-    started_at = perf_counter()
     try:
-        reply = get_llm_provider().generate(prompt)
+        return get_llm_provider().generate(prompt)
     except LLMUnavailableError as erreur:
-        trace(
-            "ERROR",
-            "Échec de l'appel au LLM",
-            model=settings.ollama_model,
-            duration_ms=round((perf_counter() - started_at) * 1000, 2),
-            error_type=type(erreur).__name__,
-        )
         return str(erreur)
-    except Exception as error:
-        trace(
-            "ERROR",
-            "Erreur inattendue pendant l'appel au LLM",
-            model=settings.ollama_model,
-            duration_ms=round((perf_counter() - started_at) * 1000, 2),
-            error_type=type(error).__name__,
-        )
-        raise
 
-    trace(
-        "LLM",
-        "Réponse du LLM reçue",
-        model=settings.ollama_model,
-        response_length=len(reply) if isinstance(reply, str) else 0,
-        duration_ms=round((perf_counter() - started_at) * 1000, 2),
-    )
-    return reply
 
 ask_llm = generate_reply
 

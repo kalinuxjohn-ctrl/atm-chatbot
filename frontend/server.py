@@ -12,8 +12,23 @@ API_BASE_URL = os.environ.get("API_BASE_URL", "http://127.0.0.1:8000").rstrip("/
 # The container must listen on every interface so Docker can publish its port.
 HOST = os.environ.get("HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT", "5173"))
+# Le backend interroge un LLM : le premier appel (chargement du modèle) peut dépasser 1 minute.
+PROXY_TIMEOUT_SECONDS = int(os.environ.get("PROXY_TIMEOUT_SECONDS", "180"))
 FRONTEND_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 PUBLIC_DIRECTORY = os.path.join(FRONTEND_DIRECTORY, "public")
+
+# Certaines routes FastAPI sont DÉJÀ déclarées sous /api (routeurs chat et
+# error_code) : on les relaie telles quelles. Les autres (/health, /catalog,
+# /interventions) n'ont pas ce préfixe : on retire alors le /api du proxy.
+BACKEND_PATHS_WITH_API_PREFIX = ("/api/chat", "/api/error_code")
+
+
+def build_backend_path(request_path):
+    """/api/chat -> /api/chat ; /api/health -> /health."""
+    for prefix in BACKEND_PATHS_WITH_API_PREFIX:
+        if request_path == prefix or request_path.startswith(f"{prefix}/"):
+            return request_path
+    return request_path[len("/api"):]
 
 
 class FrontendRequestHandler(SimpleHTTPRequestHandler):
@@ -21,6 +36,14 @@ class FrontendRequestHandler(SimpleHTTPRequestHandler):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=PUBLIC_DIRECTORY, **kwargs)
+
+    def end_headers(self):
+        # Oblige le navigateur à revalider HTML/CSS/JS à chaque chargement :
+        # après une reconstruction Docker, la nouvelle interface s'affiche
+        # sans devoir vider le cache (une réponse 304 reste possible).
+        if not self.path.startswith("/api/"):
+            self.send_header("Cache-Control", "no-cache")
+        super().end_headers()
 
     def do_GET(self):
         if self.path.startswith("/api/"):
@@ -61,7 +84,8 @@ class FrontendRequestHandler(SimpleHTTPRequestHandler):
             return
 
         request_path = urlsplit(self.path)
-        target_url = f"{API_BASE_URL}{request_path.path[4:]}?{request_path.query}"
+        query = f"?{request_path.query}" if request_path.query else ""
+        target_url = f"{API_BASE_URL}{build_backend_path(request_path.path)}{query}"
         body_length = int(self.headers.get("Content-Length", "0"))
         request_body = self.rfile.read(body_length) if body_length else None
         request_headers = {
@@ -77,7 +101,7 @@ class FrontendRequestHandler(SimpleHTTPRequestHandler):
         )
 
         try:
-            with urlopen(api_request, timeout=60) as api_response:
+            with urlopen(api_request, timeout=PROXY_TIMEOUT_SECONDS) as api_response:
                 self._send_api_response(api_response.status, api_response.headers, api_response.read())
         except HTTPError as error:
             self._send_api_response(error.code, error.headers, error.read())

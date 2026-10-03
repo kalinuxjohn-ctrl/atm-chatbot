@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0f2742">
+    <meta name="description" content="Copilote ATM : conversation écrite et vocale pour la maintenance GAB et TPE.">
+    <title>Copilote | Copilote ATM</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/copilot.css">
+    <script type="module" src="/js/pages/copilot.js"></script>
+  </head>
+  <body class="copilot-page">
+    <!--
+      Structure :
+        .app-shell
+          ├─ aside.app-sidebar        navigation rétractable (sidebar.js)
+          ├─ main.workspace           barre du Copilote + conversation + saisie
+          └─ aside.context-panel      contexte de la session (contextPanel.js)
+      Les états d'affichage (sidebar, panneau) sont des attributs data-* de .app-shell.
+    -->
+    <div class="app-shell" id="app-shell" data-sidebar="expanded" data-sidebar-drawer="closed" data-context-panel="closed">
+
+      <!-- ========== Sidebar ========== -->
+      <aside class="app-sidebar" id="app-sidebar" aria-label="Menu du Copilote">
+        <div class="sidebar-header">
+          <a class="sidebar-brand" href="/" aria-label="Copilote ATM, accueil">
+            <!-- Avatar du Copilote (le même que dans les messages), rempli par copilot.js -->
+            <span class="sidebar-brand-avatar" id="sidebar-brand-avatar" aria-hidden="true"></span>
+            <span class="sidebar-brand-text">Copilote <strong>ATM</strong></span>
+          </a>
+          <button class="sidebar-collapse-button" id="sidebar-collapse-button" type="button" aria-controls="app-sidebar" aria-label="Réduire le menu">
+            <span data-icon="collapse"></span>
+          </button>
+        </div>
+
+        <div class="sidebar-greeting">
+          <p class="sidebar-greeting-title">Bonjour <span id="greeting-name"></span> !</p>
+          <p class="sidebar-greeting-text">Écrivez votre question ou parlez au Copilote.</p>
+        </div>
+
+        <nav class="sidebar-navigation" aria-label="Navigation principale">
+          <p class="sidebar-section-title">Navigation</p>
+          <a class="sidebar-link" href="/" data-sidebar-label="Accueil">
+            <span data-icon="home"></span><span class="sidebar-link-label">Accueil</span>
+          </a>
+          <a class="sidebar-link is-active" href="/copilot.html" aria-current="page" data-sidebar-label="Copilote">
+            <span data-icon="chat"></span><span class="sidebar-link-label">Copilote</span>
+          </a>
+          <a class="sidebar-link" href="/diagnostic.html" data-sidebar-label="Diagnostic">
+            <span data-icon="diagnostic"></span><span class="sidebar-link-label">Diagnostic</span>
+          </a>
+
+          <p class="sidebar-section-title">Actions</p>
+          <button class="sidebar-link" id="new-conversation-button" type="button" data-sidebar-label="Nouvelle conversation" data-closes-drawer>
+            <span data-icon="plus"></span><span class="sidebar-link-label">Nouvelle conversation</span>
+          </button>
+          <button class="sidebar-link" type="button" data-open-voice-mode data-sidebar-label="Chat vocal" data-closes-drawer>
+            <span data-icon="voice"></span><span class="sidebar-link-label">Chat vocal</span>
+          </button>
+          <button class="sidebar-link" type="button" data-open-settings data-sidebar-label="Paramètres" data-closes-drawer>
+            <span data-icon="settings"></span><span class="sidebar-link-label">Paramètres</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="technician-card" data-sidebar-label="Technicien connecté">
+            <span class="technician-avatar" id="technician-avatar" aria-hidden="true"></span>
+            <span class="technician-card-text">
+              <strong id="technician-name"></strong>
+              <small id="technician-number"></small>
+            </span>
+          </div>
+          <button class="sidebar-link sidebar-logout" id="logout-button" type="button" data-sidebar-label="Déconnexion">
+            <span data-icon="logout"></span><span class="sidebar-link-label">Déconnexion</span>
+          </button>
+        </div>
+      </aside>
+      <div class="sidebar-backdrop" id="sidebar-backdrop" aria-hidden="true"></div>
+
+      <!-- ========== Espace de conversation ========== -->
+      <main class="workspace">
+        <header class="workspace-header">
+          <button class="icon-button mobile-menu-button" type="button" data-open-sidebar aria-controls="app-sidebar" aria-label="Ouvrir le menu">
+            <span data-icon="menu"></span>
+          </button>
+
+          <div class="assistant-identity">
+            <span class="toolbar-avatar" id="toolbar-avatar" aria-hidden="true"></span>
+            <span class="assistant-identity-text">
+              <strong>Copilote ATM</strong>
+              <small aria-live="polite"><i></i> <span id="copilot-status">Prêt à vous aider</span></small>
+            </span>
+          </div>
+
+          <div class="workspace-actions">
+            <span class="demo-badge" id="demo-badge" hidden title="Ajoutez ?mock=0 à l’adresse pour revenir au backend réel">Mode démo</span>
+            <button class="pill-button pill-button-warning" id="stop-reading-button" type="button" aria-label="Arrêter la lecture" hidden>
+              <span data-icon="stop"></span><span>Arrêter la lecture</span>
+            </button>
+            <button class="pill-button pill-button-primary" type="button" data-open-voice-mode aria-label="Ouvrir le Chat vocal">
+              <span data-icon="voice"></span><span class="pill-button-label">Chat vocal</span>
+            </button>
+            <button class="icon-button" type="button" data-toggle-context aria-controls="context-panel" aria-label="Afficher le contexte de la session">
+              <span data-icon="panel"></span>
+            </button>
+          </div>
+        </header>
+
+        <section class="chat-panel" aria-label="Conversation avec le Copilote">
+          <!-- Fil de conversation (rempli par chatView.js) -->
+          <div class="conversation" id="conversation" aria-live="polite" aria-relevant="additions text"></div>
+
+          <!-- Zone de saisie -->
+          <div class="composer-area">
+            <form class="message-composer" id="message-form">
+              <div class="device-picker" id="device-picker"></div>
+
+              <label class="visually-hidden" for="message-input">Votre message au Copilote</label>
+              <textarea
+                id="message-input"
+                rows="1"
+                maxlength="2000"
+                placeholder="Décrivez le problème observé…"
+                aria-describedby="character-count dictation-status"
+                required
+              ></textarea>
+
+              <button class="mic-button" id="mic-button" type="button" aria-pressed="false" aria-label="Dicter votre message au micro" title="Dicter au micro">
+                <span data-icon="mic"></span>
+              </button>
+              <button class="send-button" id="send-button" type="submit" disabled aria-label="Envoyer le message">
+                <span class="send-button-label">Envoyer</span><span data-icon="send"></span>
+              </button>
+            </form>
+
+            <!-- États de la dictée : écoute, traitement, erreur micro (composerDictation.js) -->
+            <p class="dictation-status" id="dictation-status" data-state="idle" hidden></p>
+
+            <div class="composer-meta">
+              <span class="keyboard-hint"><kbd>Entrée</kbd> envoyer · <kbd>Maj + Entrée</kbd> nouvelle ligne</span>
+              <span class="character-count" id="character-count">0 / 2000</span>
+            </div>
+
+            <!-- Bulles de suggestions (suggestions.js) -->
+            <div class="composer-suggestions" id="composer-suggestions"></div>
+          </div>
+        </section>
+      </main>
+
+      <!-- ========== Contexte de la session (colonne ou tiroir) ========== -->
+      <aside class="context-panel" id="context-panel" aria-label="Contexte de la session">
+        <header class="context-panel-header">
+          <h2>Contexte</h2>
+          <button class="icon-button" id="context-close-button" type="button" aria-label="Fermer le contexte">
+            <span data-icon="close"></span>
+          </button>
+        </header>
+
+        <section class="context-card">
+          <h3>Session en cours</h3>
+          <dl class="context-list">
+            <div><dt>Équipement</dt><dd data-context="device">GAB</dd></div>
+            <div><dt>Conversation</dt><dd data-context="conversation">Nouvelle</dd></div>
+            <div><dt>Messages</dt><dd data-context="messages">0</dd></div>
+            <div><dt>Technicien</dt><dd data-context="technician">—</dd></div>
+          </dl>
+        </section>
+
+        <section class="context-card">
+          <h3>Voix du Copilote</h3>
+          <dl class="context-list">
+            <div><dt>Lecture</dt><dd data-context="voice">—</dd></div>
+            <div><dt>Langue</dt><dd data-context="voice-language">—</dd></div>
+            <div><dt>Micro</dt><dd data-context="recognition">—</dd></div>
+          </dl>
+          <button class="text-button" type="button" data-open-settings>Modifier la voix</button>
+        </section>
+
+        <section class="context-card context-card-note">
+          <h3>Bon à savoir</h3>
+          <p>Les réponses sont des pistes issues de l’historique des interventions, pas un diagnostic garanti.</p>
+          <p>La conversation est conservée dans cet onglet jusqu’à sa fermeture.</p>
+        </section>
+      </aside>
+      <div class="context-backdrop" id="context-backdrop" aria-hidden="true"></div>
+    </div>
+
+    <!-- ========== Mode Chat vocal (voiceMode.js, état dans data-state) ==========
+         Voile translucide : la conversation reste visible derrière. -->
+    <dialog class="voice-dialog" id="voice-dialog" data-state="idle" aria-labelledby="voice-title" aria-describedby="voice-status">
+      <div class="voice-card">
+        <header class="voice-header">
+          <span>
+            <strong id="voice-title">Chat vocal</strong>
+            <small>Même conversation que le chat écrit</small>
+          </span>
+          <button class="voice-icon-button" type="button" data-voice-close aria-label="Fermer le mode vocal">
+            <span data-icon="close"></span>
+          </button>
+        </header>
+
+        <div class="voice-stage">
+          <span class="voice-ring"></span>
+          <span class="voice-ring"></span>
+          <span class="voice-ring"></span>
+          <div class="voice-avatar" data-voice-avatar></div>
+        </div>
+
+        <div class="voice-status-block" aria-live="polite">
+          <p class="voice-status" id="voice-status" data-voice-status>Appuyez sur le micro pour parler.</p>
+          <p class="voice-detail" data-voice-detail hidden></p>
+        </div>
+
+        <div class="voice-wave" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+
+        <div class="voice-error-actions" data-voice-error-actions hidden>
+          <button class="voice-secondary-button" type="button" data-voice-retry>
+            <span data-icon="refresh"></span><span>Réessayer</span>
+          </button>
+          <button class="voice-secondary-button" type="button" data-voice-offline hidden>
+            <span data-icon="download"></span><span>Activer la reconnaissance hors ligne</span>
+          </button>
+          <button class="voice-secondary-button" type="button" data-voice-type-instead>
+            <span data-icon="keyboard"></span><span>Écrire ma question</span>
+          </button>
+        </div>
+
+        <form class="voice-fallback" data-voice-fallback hidden>
+          <label class="visually-hidden" for="voice-fallback-input">Votre question</label>
+          <input id="voice-fallback-input" type="text" maxlength="2000" placeholder="Écrivez (ou dictez avec ⊞ + H)…" autocomplete="off">
+          <button type="submit" aria-label="Envoyer"><span data-icon="send"></span></button>
+        </form>
+
+        <div class="voice-texts">
+          <div class="voice-line voice-line-user">
+            <span>Vous</span>
+            <p data-voice-transcript></p>
+          </div>
+          <div class="voice-line voice-line-copilot">
+            <span>Copilote</span>
+            <p data-voice-reply></p>
+          </div>
+        </div>
+
+        <div class="voice-controls">
+          <button class="voice-side-button" type="button" data-voice-mute aria-pressed="false">
+            <span data-icon="mic"></span><span data-label>Couper le micro</span>
+          </button>
+          <button class="voice-main-button" type="button" data-voice-main aria-label="Parler">
+            <span data-icon="mic"></span>
+          </button>
+          <button class="voice-side-button" type="button" data-voice-stop-reading hidden>
+            <span data-icon="stop"></span><span>Arrêter la lecture</span>
+          </button>
+          <button class="voice-side-button" type="button" data-voice-replay hidden>
+            <span data-icon="speaker"></span><span>Réécouter</span>
+          </button>
+        </div>
+
+        <p class="voice-hint">Les échanges s’affichent aussi dans la conversation. <kbd>Échap</kbd> pour fermer.</p>
+      </div>
+    </dialog>
+
+    <!-- ========== Paramètres (settingsPanel.js, enregistrés dans le navigateur) ========== -->
+    <dialog class="app-dialog settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
+      <form class="dialog-form" method="dialog">
+        <header class="dialog-header">
+          <h2 id="settings-title">Paramètres du Copilote</h2>
+          <p>Vos choix sont enregistrés sur cet appareil et appliqués immédiatement.</p>
+        </header>
+
+        <fieldset class="settings-group">
+          <legend>Avatar du Copilote</legend>
+          <div class="avatar-choices" data-avatar-choices></div>
+        </fieldset>
+
+        <fieldset class="settings-group" data-voice-section>
+          <legend>Voix</legend>
+          <div class="segmented" role="radiogroup" aria-label="Type de voix">
+            <label><input type="radio" name="voiceGender" value="female"> <span>Voix féminine</span></label>
+            <label><input type="radio" name="voiceGender" value="male"> <span>Voix masculine</span></label>
+          </div>
+          <label class="field">
+            <span>Voix française</span>
+            <select name="voiceURI" data-voice-select>
+              <option value="">Automatique</option>
+            </select>
+          </label>
+          <p class="voice-active" data-voice-active></p>
+          <p class="settings-note settings-warning" data-voice-warning hidden></p>
+          <button class="button button-secondary" type="button" data-voice-test>🔊 Tester la voix</button>
+          <p class="settings-note unsupported-note">La synthèse vocale n’est pas disponible dans ce navigateur.</p>
+        </fieldset>
+
+        <fieldset class="settings-group">
+          <legend>Conversation</legend>
+          <label class="switch">
+            <input type="checkbox" name="voiceModeEnabled">
+            <span class="switch-track" aria-hidden="true"></span>
+            <span>Fonctions vocales <small>Affiche le micro et le Chat vocal</small></span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" name="autoRead">
+            <span class="switch-track" aria-hidden="true"></span>
+            <span>Lecture automatique <small>Le Copilote lit à voix haute ses réponses du chat écrit</small></span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" name="handsFree">
+            <span class="switch-track" aria-hidden="true"></span>
+            <span>Chat vocal mains libres <small>Le micro se rouvre après chaque réponse lue</small></span>
+          </label>
+          <p class="settings-note" data-recognition-note hidden>
+            La reconnaissance vocale n’est pas disponible dans ce navigateur (utilisez Chrome ou Edge).
+          </p>
+        </fieldset>
+
+        <footer class="dialog-actions">
+          <button class="button button-primary" type="submit">Terminé</button>
+        </footer>
+      </form>
+    </dialog>
+  </body>
+</html>

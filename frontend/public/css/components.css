@@ -25,3 +25,162 @@
 .error-retry {
   margin-top: 3px;
 }
+
+/* ==========================================================================
+   Composants partagés par plusieurs pages (accueil, copilote)
+   ========================================================================== */
+
+/* ---------- Bouton d'en-tête (variante <button> du lien .header-action) ---------- */
+.header-action-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ---------- Avatars SVG (components/avatar.js) ----------
+   data-state="speaking" fait bouger la bouche ; les yeux clignent en continu. */
+.avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.avatar svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.avatar .avatar-eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: avatar-blink 4.5s infinite;
+}
+
+.avatar .avatar-mouth {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 150ms ease;
+}
+
+.avatar[data-state="speaking"] .avatar-mouth {
+  animation: avatar-talk 260ms ease-in-out infinite alternate;
+}
+
+.avatar[data-state="listening"] .avatar-mouth {
+  transform: scale(0.8, 1.6);
+}
+
+@keyframes avatar-blink {
+  0%, 94%, 100% { transform: scaleY(1); }
+  97% { transform: scaleY(0.1); }
+}
+
+@keyframes avatar-talk {
+  from { transform: scale(1, 1); }
+  to { transform: scale(0.85, 3.2); }
+}
+
+/* ---------- Boîtes de dialogue (<dialog>) ---------- */
+.app-dialog {
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100vh - 40px);
+  padding: 0;
+  border: 1px solid #dfe6ec;
+  border-radius: 13px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 24px 60px rgba(16, 36, 58, 0.22);
+}
+
+.app-dialog[open] {
+  animation: dialog-in 220ms ease-out;
+}
+
+.app-dialog::backdrop {
+  background: rgba(16, 36, 58, 0.42);
+  backdrop-filter: blur(3px);
+}
+
+.dialog-form {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+}
+
+.dialog-header h2 {
+  margin: 0 0 6px;
+  color: var(--navy);
+  font-size: 19px;
+  letter-spacing: -0.4px;
+}
+
+.dialog-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- Champs de formulaire ---------- */
+.field {
+  display: grid;
+  gap: 6px;
+  color: #4b5b6e;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.field em {
+  color: var(--faint);
+  font-style: normal;
+  font-weight: 400;
+}
+
+.field small {
+  color: var(--faint);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.field input,
+.field select {
+  height: 40px;
+  padding: 0 11px;
+  border: 1px solid #d6e0e8;
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: #85b8b4;
+  outline: 3px solid rgba(22, 139, 135, 0.15);
+}
+
+.form-error {
+  margin: 0;
+  padding: 9px 11px;
+  border: 1px solid #efd3d3;
+  border-radius: 6px;
+  background: #fdf5f5;
+  color: var(--danger);
+  font-size: 11px;
+}

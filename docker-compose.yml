@@ -109,6 +109,10 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
       OLLAMA_MODEL: ${OLLAMA_MODEL}
       HF_HOME: ${HF_HOME}
+      SYMPTOM_SIMILARITY_THRESHOLD: ${SYMPTOM_SIMILARITY_THRESHOLD}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      LLM_PROVIDER: ${LLM_PROVIDER}
+      GEMINI_MODEL: ${GEMINI_MODEL} 
 
     # Permet au conteneur de résoudre l'hôte WSL/Windows
     extra_hosts:

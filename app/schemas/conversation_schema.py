@@ -12,12 +12,14 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+from app.schemas.device_type import DeviceType
+
 
 class ChatRequest(BaseModel):
     conversation_id: Optional[int] = None  # absent -> nouvelle conversation
     technician_id: int  # TODO: remplacer par la dépendance d'auth existante si disponible
     message: str
-    device_type: Optional[str] = None  # "gab" | "tpe"... requis par retrieval_service pour chercher ;
+    device_type: Optional[DeviceType] = None  # "gab" ou "tpe" uniquement ; requis par retrieval_service pour chercher ;
     # facultatif ici car mémorisé dans le contexte dès qu'il est fourni une première fois.
 
 

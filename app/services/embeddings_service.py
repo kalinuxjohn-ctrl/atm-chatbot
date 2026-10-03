@@ -11,7 +11,7 @@ les services qui utilisent generate_embedding().
 from __future__ import annotations
 
 import logging
-import re
+import re 
 from time import perf_counter
 from functools import lru_cache
 from typing import Sequence
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 # Modèle utilisé si aucun modèle n'est défini dans la configuration.
-DEFAULT_MODEL_NAME = "OrdalieTech/Solon-embeddings-large-0.1"
+DEFAULT_MODEL_NAME = "OrdalieTech/Solon-embeddings-base-0.1"
 
 # Préfixe utilisé par Solon pour les textes soumis comme requêtes.
 QUERY_PREFIX = "query : "

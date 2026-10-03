@@ -4,4 +4,3 @@ __pycache__/
 .venv/
 docker-cache/
 get-docker.sh
-fcls

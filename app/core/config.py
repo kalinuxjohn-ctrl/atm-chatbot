@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg2://postgres:postgrespassword@localhost:5432/atm_chatbot"
 
     # --- Moteur de vecteurs (auto-hébergé, remplace Voyage AI) ---
-    embedding_model_name: Optional[str] = "OrdalieTech/Solon-embeddings-large-0.1"
-    embedding_dimensions: Optional[int] = 1024
+    embedding_model_name: str = "OrdalieTech/Solon-embeddings-base-0.1"
+    embedding_dimensions: int = 768
 
     # --- LLM local (Ollama) ---
     ollama_base_url: str = "http://localhost:11434"
@@ -27,7 +27,11 @@ class Settings(BaseSettings):
 
     # --- Paramètres de la recherche (retrieval) ---
     retrieval_top_k: int = 5
-    max_cases_returned: int = 3
+    max_cases_returned: int = 3 
+
+    llm_provider: str = "ollama"  # "ollama" | "gemini"
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-3.8-flash"
 
     # --- Rattachement automatique au catalogue de symptômes ---
     # Distance cosinus maximale (pgvector `<=>`, 0 = identique, 2 = opposé)

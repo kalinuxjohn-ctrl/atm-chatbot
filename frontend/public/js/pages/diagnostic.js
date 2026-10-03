@@ -1,11 +1,19 @@
-import { ApiRequestError, searchSymptoms } from "./api.js";
+/**
+ * Page Diagnostic : recherche directe d'un symptôme dans l'historique.
+ * ✅ API réelle : POST /chat/search-symptom (services/api/symptomApi.js).
+ * (Anciennement js/chat.js, comportement inchangé.)
+ */
+
 import {
   appendAssistantMessage,
   appendUserMessage,
   createTypingIndicator,
   resetConversation,
   scrollConversationToBottom,
-} from "./ui.js";
+} from "../components/diagnosticView.js";
+import { getFriendlyErrorMessage } from "../core/httpClient.js";
+import { searchSymptoms } from "../services/api/symptomApi.js";
+import { formatTime } from "../utils/dom.js";
 
 const conversation = document.querySelector("#conversation");
 const messageForm = document.querySelector("#message-form");
@@ -17,14 +25,12 @@ const newSearchButton = document.querySelector("#new-search-button");
 const chatPanel = document.querySelector(".chat-panel");
 let requestInProgress = false;
 
+/* ---------- État du formulaire ---------- */
+
 function updateComposerState() {
   sendButton.disabled = requestInProgress || !messageInput.value.trim();
   characterCount.textContent = `${messageInput.value.length} / ${messageInput.maxLength}`;
   messageInput.setAttribute("aria-describedby", "character-count");
-}
-
-function formatTime() {
-  return new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(new Date());
 }
 
 function setBusy(isBusy) {
@@ -35,20 +41,9 @@ function setBusy(isBusy) {
   updateComposerState();
 }
 
-function getFriendlyErrorMessage(error) {
-  if (!(error instanceof ApiRequestError)) {
-    console.error("Erreur inattendue dans le diagnostic.", error);
-    return "Impossible de traiter votre demande pour le moment. Veuillez réessayer dans quelques instants.";
-  }
-  if (error.kind === "timeout") {
-    return "L’analyse prend plus de temps que prévu. Vérifiez votre connexion et réessayez.";
-  }
-  if (error.kind === "network") {
-    return "Impossible de joindre le service pour le moment. Vérifiez votre connexion et réessayez.";
-  }
-  return "Impossible de traiter votre demande pour le moment. Veuillez réessayer dans quelques instants.";
-}
+/* ---------- Recherche ---------- */
 
+/** includeUserMessage = false lors d'un nouvel essai (message déjà affiché). */
 async function submitSearch(rawText, deviceType, { includeUserMessage = true } = {}) {
   if (requestInProgress) return;
   setBusy(true);
@@ -57,23 +52,21 @@ async function submitSearch(rawText, deviceType, { includeUserMessage = true } =
   newSearchButton.hidden = false;
   scrollConversationToBottom(conversation);
 
+  const retry = () => submitSearch(rawText, deviceType, { includeUserMessage: false });
   try {
     const result = await searchSymptoms(rawText, deviceType);
     typingIndicator.remove();
-    appendAssistantMessage(conversation, result, {
-      onRetry: () => submitSearch(rawText, deviceType, { includeUserMessage: false }),
-    });
+    appendAssistantMessage(conversation, result, { onRetry: retry });
   } catch (error) {
     typingIndicator.remove();
-    appendAssistantMessage(conversation, null, {
-      errorMessage: getFriendlyErrorMessage(error),
-      onRetry: () => submitSearch(rawText, deviceType, { includeUserMessage: false }),
-    });
+    appendAssistantMessage(conversation, null, { errorMessage: getFriendlyErrorMessage(error), onRetry: retry });
   } finally {
     setBusy(false);
     scrollConversationToBottom(conversation);
   }
 }
+
+/* ---------- Événements ---------- */
 
 messageForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -92,6 +85,7 @@ messageInput.addEventListener("input", () => {
   updateComposerState();
 });
 
+// Entrée = envoyer, Maj + Entrée = nouvelle ligne.
 messageInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
     event.preventDefault();

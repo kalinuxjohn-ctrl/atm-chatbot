@@ -19,7 +19,7 @@ from app.schemas.chat_schema import SymptomSearchRequest, SymptomSearchResponse
 from app.services.retrieval_service import find_ranked_solutions
 from app.services.llm_service import summarize_solutions
 
-router = APIRouter(prefix="/chat", tags=["chat"])
+router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 
 @router.post("/search-symptom", response_model=SymptomSearchResponse)
@@ -65,7 +65,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)) -> ChatResponse:
     trace(
         "REQUEST",
         "Message utilisateur reçu",
-        endpoint="/chat/api/chat",
+        endpoint="/chat",
         conversation_id=payload.conversation_id,
         message_length=len(payload.message),
     )
@@ -82,7 +82,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)) -> ChatResponse:
         trace(
             "ERROR",
             "Échec du traitement du message utilisateur",
-            endpoint="/chat/api/chat",
+            endpoint="/chat",
             conversation_id=payload.conversation_id,
             error_type=type(error).__name__,
         )
@@ -91,7 +91,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)) -> ChatResponse:
     trace(
         "RESPONSE",
         "Réponse finale envoyée",
-        endpoint="/chat/api/chat",
+        endpoint="/chat",
         conversation_id=resultat["conversation_id"],
     )
     return response

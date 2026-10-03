@@ -67,6 +67,23 @@ SEED_STATEMENTS = [
     VALUES (8, 'Bob Nguyen', 'T-0082')
     ON CONFLICT (technician_id) DO NOTHING;
     """,
+        # --- Techniciens ---
+    """
+    INSERT INTO technician (technician_id, full_name, employee_code)
+    VALUES (4, 'Technicien Test API', 'T-0004')
+    ON CONFLICT (technician_id) DO NOTHING;
+    """,
+    """
+    INSERT INTO technician (technician_id, full_name, employee_code)
+    VALUES (7, 'Alan Moreau', 'T-0071')
+    ON CONFLICT (technician_id) DO NOTHING;
+    """,
+    """
+    INSERT INTO technician (technician_id, full_name, employee_code)
+    VALUES (8, 'Bob Nguyen', 'T-0082')
+    ON CONFLICT (technician_id) DO NOTHING;
+    """,
+
 
     # --- Catalogue partagé : composant, symptômes, actions ---
     """
@@ -76,7 +93,7 @@ SEED_STATEMENTS = [
     """,
     """
     INSERT INTO symptom (symptom_id, canonical_text, component_id) VALUES
-        (21, 'Carte retenue par le DAB', 1),
+        (21, 'Carte retenue par le GAB', 1),
         (22, 'La transaction ne s''achève pas', NULL),
         (23, 'Les espèces ne sont pas distribuées', NULL),
         (24, 'Imprimante de reçus bloquée', NULL)
@@ -117,7 +134,7 @@ SEED_STATEMENTS = [
     """,
     """
     INSERT INTO intervention_symptom (intervention_symptom_id, intervention_id, symptom_id, raw_text) VALUES
-        (9001, 3001, 21, 'La carte est retenue par le DAB.'),
+        (9001, 3001, 21, 'La carte est retenue par le GAB.'),
         (9002, 3001, 22, 'La transaction ne s''achève pas.'),
         (9003, 3001, 23, 'Les espèces ne sont pas distribuées.')
     ON CONFLICT (intervention_symptom_id) DO NOTHING;
@@ -201,7 +218,7 @@ SEQUENCE_RESETS = [
 # fault/error_code n'apparaissent PAS ici : ces deux tables n'ont pas de
 # colonne embedding (migration 0007, recherche texte classique uniquement).
 EMBEDDING_BACKFILL = [
-    (9001, "La carte est retenue par le DAB."),
+    (9001, "La carte est retenue par le GAB."),
     (9002, "La transaction ne s'achève pas."),
     (9003, "Les espèces ne sont pas distribuées."),
     (9004, "La carte reste coincée dans le distributeur."),
