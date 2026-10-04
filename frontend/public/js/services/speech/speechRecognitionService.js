@@ -109,34 +109,60 @@ export function closeMicrophone(stream) {
 
 /* ---------- Une session de reconnaissance ---------- */
 
-function runRecognition({ processLocally, onInterim, onStateChange }) {
+function runRecognition({ processLocally, onInterim, onStateChange, onSpeechStart, silenceMs }) {
   const recognition = new SpeechRecognitionClass();
   recognition.lang = SPEECH_LANG;
   recognition.interimResults = true;
-  recognition.continuous = false;
+  // Avec silenceMs : écoute continue, c'est NOTRE minuterie de silence qui
+  // termine la phrase. Le technicien peut marquer de courtes pauses sans
+  // que sa phrase soit coupée (le mode non continu s'arrête à la 1re pause).
+  recognition.continuous = Boolean(silenceMs);
   recognition.maxAlternatives = 1;
   if (processLocally) recognition.processLocally = true;
 
   let finalText = "";
+  let interimText = "";
   let errorCode = null;
+  let silenceTimer = 0;
+
+  const finishAfterSilence = () => {
+    if (!silenceMs) return;
+    clearTimeout(silenceTimer);
+    silenceTimer = setTimeout(() => {
+      onStateChange(LISTEN_STATES.PROCESSING);
+      recognition.stop();
+    }, silenceMs);
+  };
 
   const promise = new Promise((resolve, reject) => {
     recognition.onaudiostart = () => onStateChange(LISTEN_STATES.LISTENING);
-    recognition.onspeechend = () => onStateChange(LISTEN_STATES.PROCESSING);
+    recognition.onspeechstart = () => onSpeechStart();
+    recognition.onspeechend = () => {
+      if (!silenceMs) onStateChange(LISTEN_STATES.PROCESSING);
+    };
     recognition.onresult = (event) => {
       let interim = "";
       for (let index = event.resultIndex; index < event.results.length; index += 1) {
         const result = event.results[index];
-        if (result.isFinal) finalText += result[0].transcript;
+        if (result.isFinal) finalText += `${result[0].transcript} `;
         else interim += result[0].transcript;
       }
-      onInterim(`${finalText} ${interim}`.trim());
+      interimText = interim;
+      onInterim(`${finalText} ${interim}`.replace(/\s+/g, " ").trim());
+      finishAfterSilence();
     };
     // "aborted" = arrêt volontaire ; "no-speech" = silence : ce ne sont pas des pannes.
     recognition.onerror = (event) => {
       if (event.error !== "aborted" && event.error !== "no-speech") errorCode = event.error;
     };
-    recognition.onend = () => (errorCode ? reject(errorCode) : resolve(finalText.trim()));
+    recognition.onend = () => {
+      clearTimeout(silenceTimer);
+      // Un texte encore "provisoire" au moment de l'arrêt est conservé : sans
+      // ça, la fin de phrase dite juste avant le silence serait perdue.
+      const text = `${finalText} ${interimText}`.replace(/\s+/g, " ").trim();
+      if (errorCode && !text) reject(errorCode);
+      else resolve(text);
+    };
   });
 
   try {
@@ -144,7 +170,17 @@ function runRecognition({ processLocally, onInterim, onStateChange }) {
   } catch {
     return { promise: Promise.reject("unknown"), stop() {}, abort() {} };
   }
-  return { promise, stop: () => recognition.stop(), abort: () => recognition.abort() };
+  return {
+    promise,
+    stop: () => {
+      clearTimeout(silenceTimer);
+      recognition.stop();
+    },
+    abort: () => {
+      clearTimeout(silenceTimer);
+      recognition.abort();
+    },
+  };
 }
 
 /**
@@ -154,12 +190,20 @@ function runRecognition({ processLocally, onInterim, onStateChange }) {
  *   onInterim?: (text: string) => void,              texte partiel affiché en direct
  *   onStateChange?: (state: string) => void,          voir LISTEN_STATES
  *   onMicrophoneStream?: (stream: MediaStream) => void  ex. animation du volume
+ *   onSpeechStart?: () => void,                       le technicien commence à parler
+ *   silenceMs?: number,                               fin de phrase après ce silence (écoute continue)
  * }} handlers
  * @returns {{ promise: Promise<string>, stop: () => void, cancel: () => void }}
  *          promise = texte reconnu ("" si rien entendu) ; rejet = SpeechRecognitionError
  *          stop = fin d'écoute, la phrase entendue est conservée ; cancel = tout abandonner
  */
-export function listen({ onInterim = () => {}, onStateChange = () => {}, onMicrophoneStream = () => {} } = {}) {
+export function listen({
+  onInterim = () => {},
+  onStateChange = () => {},
+  onMicrophoneStream = () => {},
+  onSpeechStart = () => {},
+  silenceMs = 0,
+} = {}) {
   let activeSession = null;
   let cancelled = false;
   let stopRequested = false;
@@ -181,7 +225,8 @@ export function listen({ onInterim = () => {}, onStateChange = () => {}, onMicro
       // Le service en ligne échoue parfois une première fois : un essai de plus,
       // puis passage à la reconnaissance locale si elle vient d'être installée.
       for (let attempt = 1; attempt <= 2; attempt += 1) {
-        activeSession = runRecognition({ processLocally, onInterim, onStateChange });
+        activeSession = runRecognition({ processLocally, onInterim, onStateChange, onSpeechStart, silenceMs });
+        if (stopRequested) activeSession.stop();
         try {
           return await activeSession.promise;
         } catch (code) {

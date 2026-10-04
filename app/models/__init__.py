@@ -10,6 +10,7 @@ from app.models.device import Manufacturer, DeviceModel, DeviceModelVersion, Dev
 from app.models.catalog import Component, Symptom, Action, SymptomActionOutcomeStats
 from app.models.intervention import Intervention, InterventionSymptom, InterventionAction, Diagnosis
 from app.models.fault import Fault, ErrorCode
+from app.models.conversation import Conversation, ConversationMessage, ConversationContext
 
 __all__ = [
     "Technician",
@@ -27,4 +28,7 @@ __all__ = [
     "Fault",
     "ErrorCode",
     "Diagnosis",
+    "Conversation",
+    "ConversationMessage",
+    "ConversationContext",
 ]

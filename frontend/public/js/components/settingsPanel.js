@@ -62,16 +62,17 @@ export function createSettingsPanel({ dialog }) {
 
     const groups = new Map();
     voices.forEach((description) => {
-      if (!groups.has(description.languageLabel)) {
+      const groupLabel = description.group || description.languageLabel;
+      if (!groups.has(groupLabel)) {
         const group = createElement("optgroup");
-        group.label = description.languageLabel;
-        groups.set(description.languageLabel, group);
+        group.label = groupLabel;
+        groups.set(groupLabel, group);
         voiceSelect.append(group);
       }
       const option = createElement("option", "", formatVoiceLabel(description));
       option.value = description.voiceURI;
       option.dataset.gender = description.gender;
-      groups.get(description.languageLabel).append(option);
+      groups.get(groupLabel).append(option);
     });
 
     const { voiceURI } = getPreferences();
@@ -88,14 +89,14 @@ export function createSettingsPanel({ dialog }) {
     if (!description) {
       activeVoiceElement.textContent = "Voix utilisée : voix par défaut du système";
       voiceWarning.textContent =
-        "Aucune voix française n’est installée : la lecture risque d’avoir un accent étranger. Sous Windows : Paramètres › Heure et langue › Voix › Ajouter des voix › Français (France). Microsoft Edge propose aussi des voix françaises naturelles.";
+        "Aucune voix française disponible : la synthèse vocale du serveur est injoignable et ce navigateur n’a pas de voix française. Vérifiez la connexion Internet du serveur frontend, ou installez une voix française dans Windows (Paramètres › Heure et langue › Voix).";
       voiceWarning.hidden = false;
       return;
     }
 
     activeVoiceElement.textContent = `Voix utilisée : ${formatVoiceLabel(description)} · ${description.languageLabel}`;
     if (!genderMatched && frenchVoices.length > 0) {
-      voiceWarning.textContent = `Aucune voix ${GENDER_ADJECTIVES[preferences.voiceGender]} française n’est installée sur cet appareil : la voix ${description.shortName} est utilisée avec une tonalité ajustée.`;
+      voiceWarning.textContent = `Aucune voix ${GENDER_ADJECTIVES[preferences.voiceGender]} française n’est disponible pour le moment (synthèse du serveur injoignable) : la voix ${description.shortName} est utilisée avec une tonalité ajustée.`;
       voiceWarning.hidden = false;
     }
   }
@@ -107,7 +108,6 @@ export function createSettingsPanel({ dialog }) {
     form.elements.voiceGender.value = preferences.voiceGender;
     form.elements.voiceModeEnabled.checked = preferences.voiceModeEnabled;
     form.elements.autoRead.checked = preferences.autoRead;
-    form.elements.handsFree.checked = preferences.handsFree;
   }
 
   /* --- Enregistrement immédiat de chaque modification --- */
@@ -131,7 +131,6 @@ export function createSettingsPanel({ dialog }) {
     }
     if (name === "voiceModeEnabled") updatePreferences({ voiceModeEnabled: checked });
     if (name === "autoRead") updatePreferences({ autoRead: checked });
-    if (name === "handsFree") updatePreferences({ handsFree: checked });
   });
 
   form.addEventListener("submit", (event) => {

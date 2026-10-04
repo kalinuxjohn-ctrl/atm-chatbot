@@ -23,6 +23,7 @@ import { createSuggestionList, flySuggestionToConversation } from "../components
 import { createVoiceMode } from "../components/voiceMode.js";
 import { getFriendlyErrorMessage } from "../core/httpClient.js";
 import { createConversationService } from "../services/conversationService.js";
+import { filterErrorCodesForDevice, loadKnownErrorCodes } from "../services/knownErrorCodesService.js";
 import { getPreferences, onPreferencesChange } from "../services/preferencesService.js";
 import { logout, requireSession } from "../services/sessionService.js";
 import {
@@ -83,6 +84,8 @@ async function initCopilot({ technicianId, displayName }) {
   let requestInProgress = false;
   // Animation du prochain message du technicien ("landing" après la montée d'une bulle).
   let nextUserAnimation = "up";
+  // Codes d'erreur à réponse enregistrée (public/data/error-codes), chargés au démarrage.
+  let knownErrorCodes = [];
 
   createSidebar({
     shell: elements.shell,
@@ -104,7 +107,7 @@ async function initCopilot({ technicianId, displayName }) {
     conversationElement: elements.conversation,
     getAvatarKind: () => getPreferences().avatar,
     onListen: (text) => void readAloud(text),
-    createWelcomeExtras: () => createSuggestionList({ deviceType: conversation.deviceType, onPick: pickSuggestion }),
+    createWelcomeExtras: () => buildSuggestionList(),
   });
 
   const devicePicker = createDevicePicker({
@@ -135,6 +138,10 @@ async function initCopilot({ technicianId, displayName }) {
       const { reply, error } = await submitMessage(text, { channel: "voice", readReply: false });
       if (error) throw new Error(getFriendlyErrorMessage(error));
       return reply;
+    },
+    getContextLabel: () => {
+      const device = DEVICE_OPTIONS.find((option) => option.value === conversation.deviceType);
+      return device ? `Équipement : ${device.name}` : "";
     },
   });
 
@@ -261,11 +268,37 @@ async function initCopilot({ technicianId, displayName }) {
   }
 
   /* ---------- Bulles de suggestions ---------- */
+  /** Bulles de l'équipement sélectionné : codes d'erreur connus + problèmes fréquents. */
+  function buildSuggestionList(className = "") {
+    return createSuggestionList({
+      deviceType: conversation.deviceType,
+      errorCodes: filterErrorCodesForDevice(knownErrorCodes, conversation.deviceType),
+      onPick: pickSuggestion,
+      onPickErrorCode: pickErrorCode,
+      className,
+    });
+  }
+
   function renderSuggestions() {
-    elements.composerSuggestions.replaceChildren(
-      createSuggestionList({ deviceType: conversation.deviceType, onPick: pickSuggestion, className: "suggestion-list-compact" }),
-    );
+    elements.composerSuggestions.replaceChildren(buildSuggestionList("suggestion-list-compact"));
     chatView.refreshWelcomeExtras();
+  }
+
+  /**
+   * Code d'erreur connu : la bulle monte, puis le code et sa réponse enregistrée
+   * s'affichent directement -- AUCUN appel au backend (voir knownErrorCodesService).
+   */
+  async function pickErrorCode(errorCode, chip) {
+    if (requestInProgress) return;
+    dictation.cancel();
+    stopReading();
+    requestInProgress = true; // bloque un double clic pendant l'animation
+    await flySuggestionToConversation(chip, elements.conversation);
+    requestInProgress = false;
+    nextUserAnimation = "landing";
+    conversation.addLocalExchange(`Code erreur ${errorCode.code} : ${errorCode.label}`, errorCode.replyText);
+    nextUserAnimation = "up";
+    if (getPreferences().autoRead) void readAloud(errorCode.replyText);
   }
 
   /** La bulle "monte" vers la conversation puis devient le message du technicien. */
@@ -359,6 +392,11 @@ async function initCopilot({ technicianId, displayName }) {
   updateContext();
   updateComposerState();
   setStatus(READY_STATUS);
+
+  // Sans bloquer le démarrage : les bulles de codes d'erreur apparaissent dès
+  // que leurs fichiers JSON sont lus (en cas d'échec, seules ces bulles manquent).
+  knownErrorCodes = await loadKnownErrorCodes();
+  renderSuggestions();
 }
 
 /** "Raoul Dupont" -> "RD" (pastille du technicien). */

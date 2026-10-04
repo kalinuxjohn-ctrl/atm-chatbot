@@ -57,6 +57,7 @@ docker compose down
 Vous pouvez aussi lancer le frontend directement avec Python :
 
 ```powershell
+pip install -r requirements.txt   # voix françaises du Copilote (edge-tts), facultatif
 python server.py
 ```
 
@@ -81,6 +82,9 @@ public/
 │   ├── home.css          animations de l’accueil
 │   ├── copilot.css       page Copilote complète (palette bleue, sidebar, chat, Chat vocal, paramètres, responsive)
 │   └── responsive.css    petits écrans des pages Accueil / Diagnostic + prefers-reduced-motion
+├── data/
+│   └── error-codes/      codes d'erreur fréquents : un JSON par code, réponse affichée SANS backend
+│                         (mode d'emploi : data/error-codes/README.md)
 └── js/
     ├── config.js                     constantes (URL API, langue, mode démo)
     ├── core/httpClient.js            SEUL endroit qui appelle fetch
@@ -89,6 +93,7 @@ public/
     │   │   └── mocks.js              réponses simulées
     │   ├── speech/                   reconnaissance vocale, synthèse vocale, niveau du micro
     │   ├── conversationService.js    fil de conversation partagé texte + voix
+    │   ├── knownErrorCodesService.js lecture et vérification des fichiers data/error-codes/
     │   ├── preferencesService.js     paramètres (localStorage)
     │   └── sessionService.js         technicien connecté
     ├── components/
@@ -98,7 +103,7 @@ public/
     │   ├── contextPanel.js           panneau "Contexte" (colonne ou tiroir)
     │   ├── chatView.js               affichage des messages
     │   ├── devicePicker.js           sélecteur GAB / TPE
-    │   ├── suggestions.js            bulles de cas fréquents + animation vers la conversation
+    │   ├── suggestions.js            bulles (codes d'erreur connus + cas fréquents) + animation vers la conversation
     │   ├── composerDictation.js      micro de la zone de saisie (dictée)
     │   ├── voiceMode.js              Chat vocal immersif
     │   ├── settingsPanel.js          paramètres (avatar, voix française, options)
@@ -129,11 +134,11 @@ Ajoutez `?mock=1` à l’adresse pour utiliser des réponses simulées sans back
 
 ## Fonctions vocales
 
-Aucune route vocale n’existe côté backend : tout passe par les API du navigateur (Chrome ou Edge recommandés), puis par `POST /api/chat`, comme le chat écrit.
+Le backend ne reçoit que du texte (`POST /api/chat`, comme le chat écrit). La reconnaissance vocale se fait dans le navigateur (Chrome ou Edge recommandés) ; la **voix du Copilote** est générée par le serveur frontend (`server.py`, routes `GET /tts/voices` et `POST /tts`, paquet `edge-tts`, connexion Internet requise).
 
 - **Micro de la zone de saisie** : dicte le texte dans le champ, sans l’envoyer. États affichés : « Autorisation du micro… », « Écoute en cours… », « Traitement… », « Erreur microphone : … ».
-- **Chat vocal** : voile translucide au-dessus de la conversation. Vous parlez, le texte est transcrit puis envoyé, et la réponse est lue à voix haute. C’est la **même** conversation : les échanges s’affichent aussi dans le chat. Option « mains libres » : le micro se rouvre après chaque réponse.
-- **Voix** : seules les voix **françaises** installées sont proposées, groupées par région (« Français (France) », « Français (Canada) »…). Le choix (féminine / masculine ou voix précise) est enregistré et réellement utilisé. Si aucune voix française, ou aucune voix du genre choisi, n’est installée, les Paramètres l’indiquent. Sous Windows : Paramètres › Heure et langue › Voix › Ajouter des voix. Edge propose aussi des voix naturelles.
+- **Chat vocal** : écran plein, comme un appel ; la messagerie est masquée. Conversation entièrement à la voix : on parle naturellement, le message part tout seul après ~1,3 s de silence, la réponse est lue, puis le micro se rouvre automatiquement. Toucher la bulle envoie tout de suite (pendant l’écoute) ou interrompt le Copilote (pendant la lecture). C’est la **même** conversation : les échanges apparaissent dans le chat à la fermeture.
+- **Voix** : uniquement des voix **françaises**. Par défaut, voix naturelles du serveur (Denise / Henri, et d’autres voix fr-FR, fr-BE, fr-CA, fr-CH), identiques dans tous les navigateurs. Si le serveur de synthèse est injoignable, le Copilote se rabat automatiquement sur les voix françaises du navigateur (jamais une voix anglaise).
 - **Erreur « réseau » de la reconnaissance vocale** : Chrome et Edge envoient l’audio à leur propre service de transcription. Si ce service est injoignable, par exemple dans le navigateur intégré de VS Code, Brave, Opera, un réseau filtré ou un VPN, le navigateur renvoie l’erreur `network` même si Internet fonctionne. Le Copilote l’explique, propose la reconnaissance hors ligne lorsque Chrome la prend en charge, ainsi qu’une saisie au clavier ou la dictée Windows (⊞ + H).
 
 ## Diagnostic

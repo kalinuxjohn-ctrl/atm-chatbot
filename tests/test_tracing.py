@@ -117,7 +117,9 @@ class TracingTests(unittest.TestCase):
         ):
             result = retrieval_service.fetch_similar_symptoms(db, "SECRET_QUERY", "gab")
         self.assertEqual(result, [candidate])
-        db.rollback.assert_called_once()
+        # Seul le savepoint est annulé, jamais toute la transaction de l'appelant.
+        db.begin_nested.return_value.rollback.assert_called_once()
+        db.rollback.assert_not_called()
         self.assertIn("method=python_cosine", self.output.getvalue())
         self.assertIn("error_type=RuntimeError", self.output.getvalue())
         self.assertNotIn("SECRET", self.output.getvalue())
@@ -159,7 +161,7 @@ class TracingTests(unittest.TestCase):
             ([], "Aucune intervention ni statistique connue pour ce symptôme dans l'historique."),
         ):
             with self.subTest(solutions=solutions):
-                context = {}
+                context = {"device_type": "gab"}
                 with (
                     patch.object(orchestrator.technical_reference_resolver_service,
                                  "resolve_technical_references", return_value={}),

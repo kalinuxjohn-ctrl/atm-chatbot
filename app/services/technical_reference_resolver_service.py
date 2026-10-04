@@ -17,6 +17,8 @@ from sqlalchemy.orm import Session
 from app.core.tracing import trace
 from app.schemas.device_type import normalize_device_type
 
+VALID_DEVICE_TYPES = ("gab", "tpe")
+
 
 def resolve_technical_references(
     db: Session, device_type_text: str | None, model_name_text: str | None, error_code_text: str | None
@@ -36,7 +38,10 @@ def resolve_technical_references(
 
     if device_type_text:
         normalized = normalize_device_type(device_type_text)
-        if normalized:
+        # Seules les valeurs de l'ENUM PostgreSQL sont gardées : un texte
+        # libre du LLM ("distributeur", "ATM"...) utilisé tel quel comme
+        # filtre SQL ferait échouer la requête.
+        if normalized in VALID_DEVICE_TYPES:
             resolved["device_type"] = normalized
 
     if model_name_text:
@@ -75,7 +80,7 @@ def _resolve_model_id(db: Session, model_name_text: str) -> int | None:
 def _resolve_error_code_id(db: Session, error_code_text: str) -> int | None:
     """Réutilise le même index que error_code_service (idx_error_code_code_ci, migration 0007)."""
     row = db.execute(
-        text("SELECT error_code_id FROM error_code WHERE UPPER(code) = UPPER(:error_code_text) LIMIT 1"),
+        text("SELECT error_code_id FROM error_code WHERE UPPER(code) = UPPER(TRIM(:error_code_text)) LIMIT 1"),
         {"error_code_text": error_code_text},
     ).first()
     return row[0] if row else None

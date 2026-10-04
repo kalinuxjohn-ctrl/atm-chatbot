@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     llm_provider: str = "ollama"  # "ollama" | "gemini"
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.8-flash"
+    # Utilisés par ClaudeProvider (llm_service.py) quand llm_provider="claude".
+    claude_api_key: str = ""
+    claude_model: str = "claude-sonnet-5-5"
 
     # --- Rattachement automatique au catalogue de symptômes ---
     # Distance cosinus maximale (pgvector `<=>`, 0 = identique, 2 = opposé)
@@ -47,7 +50,10 @@ class Settings(BaseSettings):
     voyage_api_key: str = ""
     voyage_model: str = "voyage-3-large"
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    # extra="ignore" : le .env est partagé avec docker-compose (OLLAMA_HOST,
+    # HF_HOME...) -- une variable que l'app ne connaît pas ne doit pas
+    # empêcher le démarrage.
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 
 settings = Settings()

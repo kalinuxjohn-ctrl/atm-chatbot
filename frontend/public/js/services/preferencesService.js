@@ -14,7 +14,6 @@ export const DEFAULT_PREFERENCES = Object.freeze({
   voiceURI: null, // voix précise du navigateur ; null = choix automatique selon voiceGender
   voiceModeEnabled: true, // affiche les boutons micro et "Chat vocal"
   autoRead: true, // lit les réponses du chat écrit à voix haute
-  handsFree: true, // mode vocal : réécoute automatiquement après chaque réponse lue
   sidebarCollapsed: null, // null = selon la largeur d'écran ; true/false = choix du technicien
 });
 

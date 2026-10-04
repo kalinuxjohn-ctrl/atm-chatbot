@@ -11,6 +11,11 @@ export const API_BASE_URL = "/api";
 // Doit rester un peu supérieur au délai du proxy (PROXY_TIMEOUT_SECONDS de server.py).
 export const REQUEST_TIMEOUT_MS = 185000;
 
+// Dossier des réponses enregistrées pour les codes d'erreur fréquents
+// (fichiers statiques servis par le frontend, jamais par le backend).
+// Mode d'emploi : public/data/error-codes/README.md
+export const KNOWN_ERROR_CODES_DIRECTORY = "/data/error-codes";
+
 // Langue utilisée pour la reconnaissance et la synthèse vocale.
 export const SPEECH_LANG = "fr-FR";
 

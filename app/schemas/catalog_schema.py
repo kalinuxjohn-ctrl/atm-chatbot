@@ -4,6 +4,8 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, model_validator
 
+from app.schemas.device_type import NonEmptyStr
+
 
 class SimilarActionCandidate(BaseModel):
     """Une action déjà cataloguée, proposée comme doublon potentiel."""
@@ -20,7 +22,7 @@ class ResolveActionRequest(BaseModel):
 
     intervention_action_id: int
     decision: Literal["new", "merge"]
-    canonical_text: Optional[str] = None  # requis si decision="new"
+    canonical_text: Optional[NonEmptyStr] = None  # requis si decision="new"
     component_id: Optional[int] = None  # facultatif, seulement utile si decision="new"
     existing_action_id: Optional[int] = None  # requis si decision="merge"
 

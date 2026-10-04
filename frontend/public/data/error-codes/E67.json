@@ -1,0 +1,13 @@
+{
+  "code": "E67",
+  "device_type": "gab",
+  "label": "Bourrage du distributeur de billets",
+  "reply": [
+    "Code E67 : bourrage détecté dans le distributeur de billets (panne P002 – distributeur de billets en défaut).",
+    "1. Mettez le GAB hors service et ouvrez le coffre selon la procédure de sécurité.",
+    "2. Retirez les billets coincés dans le chemin de transport et dans la zone de présentation.",
+    "3. Contrôlez l'état des cassettes (billets froissés ou mal rangés) et remettez-les en place.",
+    "4. Lancez un test de distribution avant de remettre le GAB en service.",
+    "Si le problème persiste, décrivez-moi ce que vous observez pour chercher des interventions similaires."
+  ]
+}

@@ -6,15 +6,22 @@ Ce fichier définit la forme des données qui entrent et sortent de l'API :
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
+
+from app.schemas.device_type import NonEmptyStr
+
+# Valeurs de l'ENUM PostgreSQL `action_outcome` (migration 0002) : toute
+# autre valeur est refusée dès la validation (422) au lieu de faire
+# échouer l'INSERT (500).
+ActionOutcome = Literal["resolved", "partial", "no_effect", "made_worse", "unknown"]
 
 
 class SymptomInput(BaseModel):
     """Symptôme tel que rapporté par le technicien."""
 
-    raw_text: str = Field(..., description="Formulation exacte du technicien.")
+    raw_text: NonEmptyStr = Field(..., description="Formulation exacte du technicien.")
     severity: Optional[str] = None
 
 
@@ -53,13 +60,13 @@ class ActionInput(BaseModel):
     """Action tentée par le technicien, telle que rapportée pour une intervention."""
 
     action_id: Optional[int] = None
-    raw_text: str = Field(..., description="Description du technicien de ce qu'il a fait.")
+    raw_text: NonEmptyStr = Field(..., description="Description du technicien de ce qu'il a fait.")
     # sequence_order retiré du payload d'entrée : il est calculé côté serveur
     # (voir intervention_service.add_action_to_intervention) et n'a donc pas
     # à être fourni ni pris en compte quand il l'est.
     performed_at: Optional[datetime] = None
     result_description: str
-    outcome_status: str = "unknown"
+    outcome_status: ActionOutcome = "unknown"
     is_confirmed_solution: bool = False
     targets_symptom_id: Optional[int] = None  # quel symptôme précis ça visait, si l'intervention en a plusieurs
 

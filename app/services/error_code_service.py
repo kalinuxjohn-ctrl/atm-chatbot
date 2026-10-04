@@ -21,12 +21,21 @@ def search_error_codes(db: Session, query: str) -> list[ErrorCode]:
     partielle qui matche tout. joinedload évite une requête supplémentaire
     par résultat pour charger la panne liée (fault).
     """
-    motif = f"%{query.strip()}%"
+    recherche = (query or "").strip()
+    if not recherche:
+        # "   " passerait le min_length de la route : sans ce garde-fou, le
+        # motif "%%" renverrait TOUTE la table.
+        return []
+
+    # % et _ sont des jokers pour ILIKE : on les échappe pour qu'une saisie
+    # comme "E_4" cherche littéralement "E_4" et non "E" + n'importe quel caractère + "4".
+    echappe = recherche.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    motif = f"%{echappe}%"
     trace("SEARCH", "Recherche SQL de codes d'erreur démarrée", strategy="sql_ilike")
     return (
         db.query(ErrorCode)
         .options(joinedload(ErrorCode.fault))
-        .filter(ErrorCode.code.ilike(motif))
+        .filter(ErrorCode.code.ilike(motif, escape="\\"))
         .order_by(ErrorCode.code)
         .all()
     )

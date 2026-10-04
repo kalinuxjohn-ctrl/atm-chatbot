@@ -27,6 +27,16 @@ from app.services import (
     retrieval_service,
     technical_reference_resolver_service,
 )
+from app.services.embeddings_service import EmbeddingUnavailableError
+
+_SEARCH_UNAVAILABLE_REPLY = (
+    "La recherche dans l'historique est momentanément indisponible (service d'embedding injoignable). "
+    "Réessaie dans quelques instants."
+)
+_DEVICE_TYPE_REQUIRED_REPLY = (
+    "Je n'ai pas pu déterminer le type d'appareil concerné. Sélectionne GAB ou TPE "
+    "(ou précise-le dans ton message), puis renvoie la description du problème."
+)
 
 
 def handle_chat_message(
@@ -61,6 +71,7 @@ def handle_chat_message(
 
     conversation_service.save_message(db, conversation.conversation_id, "assistant", reply)
     context_service.save_context(db, conversation.conversation_id, context)
+    conversation_service.mark_conversation_active(conversation)
     db.commit()
     trace(
         "RESPONSE",
@@ -73,18 +84,39 @@ def handle_chat_message(
 
 def _route_message(db: Session, context: dict, message: str, understood: UnderstoodMessage) -> str:
     if understood.intent == "detail_request":
+        last_search = context.get("last_search")
+        last_results = (last_search or {}).get("results") or []
         position = context_service.resolve_position_reference(message)
-        if position is not None and context.get("last_search"):
+
+        # Pas d'ordinal dans le message ("pourquoi ça a marché ?") : on
+        # reste sur le résultat déjà sélectionné, ou sur l'unique résultat.
+        if position is None and last_results:
+            selected = context.get("selected_result")
+            if selected and selected.get("position") is not None:
+                position = selected["position"]
+            elif len(last_results) == 1:
+                position = last_results[0].get("position", 1)
+
+        if position is not None and last_search:
             trace("ROUTING", "Demande de détail sur un résultat précédent", position=position)
             return _handle_result_detail_request(db, context, position, message)
+
+        if last_results:
+            trace("ROUTING", "Demande de détail ambiguë, précision demandée", result_count=len(last_results))
+            return (
+                f"La dernière recherche a donné {len(last_results)} résultats : lequel veux-tu détailler ? "
+                "(par exemple « le premier » ou « le deuxième »)"
+            )
+
         trace("ROUTING", "Demande de détail sans référence exploitable, réponse conversationnelle")
         return llm_service.generate_reply(
             "Tu es un assistant pour techniciens de maintenance ATM. Le technicien semble demander "
-            f"un détail, mais aucune recherche récente n'est disponible. Message : « {message} »"
+            "un détail, mais aucune recherche récente n'est disponible. Invite-le à décrire son problème. "
+            f"Message : « {message} »"
         )
 
     if understood.intent == "diagnostic":
-        return _handle_symptom_search(db, context, understood)
+        return _handle_symptom_search(db, context, understood, message)
 
     trace("ROUTING", "Réponse conversationnelle sans recherche vectorielle")
     return llm_service.generate_reply(
@@ -93,18 +125,12 @@ def _route_message(db: Session, context: dict, message: str, understood: Underst
     )
 
 
-def _handle_symptom_search(db: Session, context: dict, understood: UnderstoodMessage) -> str:
-    search_text = understood.reformulated_problem_text or ""
-    trace(
-        "PROCESSING",
-        "Texte reformulé préparé pour le diagnostic",
-        search_text_length=len(search_text),
-        has_device_type=bool(understood.device_type_text or context.get("device_type")),
-    )
-
-    device_type = understood.device_type_text or context.get("device_type")
-    if device_type:
-        context["device_type"] = device_type
+def _handle_symptom_search(
+    db: Session, context: dict, understood: UnderstoodMessage, message: str | None = None
+) -> str:
+    # Repli sur le message brut : un LLM qui classe en "diagnostic" sans
+    # remplir la reformulation ne doit pas lancer une recherche à vide.
+    search_text = (understood.reformulated_problem_text or "").strip() or (message or "").strip()
 
     # Résolution déterministe -- mémorisée dans le contexte dès maintenant,
     # mais PAS ENCORE utilisée comme filtre SQL par case_retrieval_service/
@@ -117,6 +143,19 @@ def _handle_symptom_search(db: Session, context: dict, understood: UnderstoodMes
         error_code_text=understood.error_code_text,
     )
     context.update({key: value for key, value in resolved.items() if key != "device_type"})
+
+    # Seule une valeur VALIDÉE ("gab"/"tpe") par le résolveur peut
+    # remplacer celle du contexte -- jamais le texte brut du LLM.
+    device_type = resolved.get("device_type") or context.get("device_type")
+    if device_type:
+        context["device_type"] = device_type
+
+    trace(
+        "PROCESSING",
+        "Texte reformulé préparé pour le diagnostic",
+        search_text_length=len(search_text),
+        has_device_type=bool(device_type),
+    )
     trace(
         "CONTEXT",
         "Références mémorisées, filtre de recherche limité au type d'appareil",
@@ -124,28 +163,45 @@ def _handle_symptom_search(db: Session, context: dict, understood: UnderstoodMes
         has_device_type=bool(device_type),
     )
 
-    cases = case_retrieval_service.find_similar_cases(db, raw_text=search_text, device_type=device_type)
+    if not device_type:
+        # Sans type d'appareil, la recherche (filtrée par device_type) ne
+        # peut rien trouver : on le demande plutôt que de répondre à tort
+        # "aucune intervention connue".
+        trace("RESPONSE", "Type d'appareil inconnu, précision demandée au technicien")
+        return _DEVICE_TYPE_REQUIRED_REPLY
 
-    if cases:
-        results = [
-            {"position": index + 1, "kind": "case", "intervention_id": case["intervention_id"]}
-            for index, case in enumerate(cases)
-        ]
-        context_service.record_last_search(context, query=search_text, results=results)
-        context["intent"] = "diagnostic"
-        trace("CONTEXT", "Cas réels mémorisés pour le suivi", result_count=len(results))
-        return _summarize_cases(search_text, cases)
+    try:
+        cases = case_retrieval_service.find_similar_cases(db, raw_text=search_text, device_type=device_type)
 
-    # Repli : aucun cas réel, mais peut-être des stats agrégées.
-    trace("SEARCH", "Aucun cas réel, recherche de statistiques agrégées")
-    aggregated = retrieval_service.find_ranked_solutions(db, raw_text=search_text, device_type=device_type)
+        if cases:
+            results = [
+                {
+                    "position": index + 1,
+                    "kind": "case",
+                    "intervention_id": case["intervention_id"],
+                    # Gardé en mémoire : c'est la recherche qui sait QUEL symptôme
+                    # a fait remonter ce cas -- sans lui, « détaille le deuxième »
+                    # ne pourrait plus l'afficher (voir _handle_result_detail_request).
+                    "matched_symptom_text": case.get("matched_symptom_text"),
+                }
+                for index, case in enumerate(cases)
+            ]
+            context_service.record_last_search(context, query=search_text, results=results)
+            context["intent"] = "diagnostic"
+            trace("CONTEXT", "Cas réels mémorisés pour le suivi", result_count=len(results))
+            return _summarize_cases(search_text, cases)
+
+        # Repli : aucun cas réel, mais peut-être des stats agrégées.
+        trace("SEARCH", "Aucun cas réel, recherche de statistiques agrégées")
+        aggregated = retrieval_service.find_ranked_solutions(db, raw_text=search_text, device_type=device_type)
+    except EmbeddingUnavailableError as error:
+        trace("ERROR", "Recherche impossible, service d'embedding indisponible", error_type=type(error).__name__)
+        return _SEARCH_UNAVAILABLE_REPLY
+
     solutions = aggregated["solutions"]
 
     if solutions:
-        results = [
-            {"position": index + 1, "symptom_id": s["symptom_id"], "action_id": s["action_id"]}
-            for index, s in enumerate(solutions)
-        ]
+        results = [_stat_result(index + 1, s) for index, s in enumerate(solutions)]
         context_service.record_last_search(context, query=search_text, results=results)
         context["intent"] = "diagnostic"
         trace("CONTEXT", "Solutions agrégées mémorisées pour le suivi", result_count=len(results))
@@ -154,6 +210,26 @@ def _handle_symptom_search(db: Session, context: dict, understood: UnderstoodMes
     context_service.record_last_search(context, query=search_text, results=[])
     trace("RESPONSE", "Aucun cas ni solution, réponse déterministe sans LLM de synthèse")
     return "Aucune intervention ni statistique connue pour ce symptôme dans l'historique."
+
+
+def _stat_result(position: int, solution: dict) -> dict:
+    """
+    Résultat agrégé mémorisé dans le contexte (JSONB) : valeurs converties
+    en types JSON simples (accuracy_score est un Decimal côté SQL, non
+    sérialisable tel quel).
+    """
+    accuracy = solution.get("accuracy_score")
+    return {
+        "position": position,
+        "kind": "stat",
+        "symptom_id": solution.get("symptom_id"),
+        "action_id": solution.get("action_id"),
+        "symptom_text": solution.get("symptom_text"),
+        "action_text": solution.get("action_text"),
+        "attempts": solution.get("attempts"),
+        "successes": solution.get("successes"),
+        "accuracy_score": float(accuracy) if accuracy is not None else None,
+    }
 
 
 def _handle_result_detail_request(db: Session, context: dict, position: int, message: str) -> str:
@@ -166,26 +242,49 @@ def _handle_result_detail_request(db: Session, context: dict, position: int, mes
 
     if kind == "case":
         case = case_retrieval_service.build_case(
-            db, resultat["intervention_id"], device_type=context.get("device_type")
+            db,
+            resultat["intervention_id"],
+            device_type=context.get("device_type"),
+            # .get() : les recherches enregistrées avant ce champ ne l'ont pas
+            # -- elles retombent simplement sur « non précisé », sans erreur.
+            matched_symptom_text=resultat.get("matched_symptom_text"),
         )
         if case is None:
             trace("SEARCH", "Cas sélectionné indisponible", position=position)
             return "Ce cas ne semble plus disponible en base."
+        case_text = _format_case(case)
         prompt = (
             "Tu es un assistant pour techniciens de maintenance ATM. Voici le cas que le "
-            f"technicien approfondit :\n{_format_case(case)}\n\n"
+            f"technicien approfondit :\n{case_text}\n\n"
             f"Le technicien demande : « {message} ». Réponds UNIQUEMENT à partir de ces informations, "
             "sans en inventer d'autres."
         )
         trace("CONTEXT", "Contexte LLM préparé pour le détail d'un cas", position=position)
-        return llm_service.generate_reply(prompt)
+        return llm_service.generate_reply(prompt, fallback=case_text)
 
-    trace("CONTEXT", "Résultat agrégé ou ancien format non détaillable", position=position)
+    if kind == "stat" and resultat.get("action_text"):
+        trace("CONTEXT", "Détail d'un résultat agrégé", position=position)
+        return _format_stat_result(resultat)
+
+    trace("CONTEXT", "Résultat d'ancien format non détaillable", position=position)
     return "Ce résultat vient d'une ancienne recherche et n'est plus détaillable dans ce format -- relance une nouvelle recherche."
 
 
 def _infer_legacy_kind(resultat: dict) -> str:
     return "case" if "intervention_id" in resultat else "stat"
+
+
+def _format_stat_result(resultat: dict) -> str:
+    fiabilite = ""
+    if resultat.get("accuracy_score") is not None:
+        fiabilite = (
+            f", réussie {resultat.get('successes')}/{resultat.get('attempts')} fois "
+            f"(fiabilité {resultat['accuracy_score']:.0%})"
+        )
+    return (
+        f"Résultat {resultat['position']} : action « {resultat['action_text']} » "
+        f"pour le symptôme « {resultat.get('symptom_text') or 'non précisé'} »{fiabilite}."
+    )
 
 
 def _summarize_cases(raw_text: str, cases: list[dict]) -> str:
@@ -208,7 +307,8 @@ def _summarize_cases(raw_text: str, cases: list[dict]) -> str:
         case_count=len(cases),
         prompt_length=len(prompt),
     )
-    return llm_service.generate_reply(prompt)
+    # Si le LLM est indisponible, le technicien voit quand même les cas trouvés.
+    return llm_service.generate_reply(prompt, fallback=f"Cas similaires trouvés dans l'historique :\n{lignes}")
 
 
 def _format_case(case: dict, index: int | None = None) -> str:
@@ -220,6 +320,6 @@ def _format_case(case: dict, index: int | None = None) -> str:
     )
     prefixe = f"Cas {index}" if index is not None else "Cas"
     return (
-        f"{prefixe} ({case['technician_name']}, {case['device_label']}) : symptôme « {case['matched_symptom_text']} », "
-        f"actions tentées : {actions_txt}, résultat : {case['final_outcome_status']}{fiabilite}."
+        f"{prefixe} ({case['technician_name']}, {case['device_label']}) : symptôme « {case.get('matched_symptom_text') or 'non précisé'} », "
+        f"actions tentées : {actions_txt}, résultat : {case.get('final_outcome_status') or 'non renseigné'}{fiabilite}."
     )

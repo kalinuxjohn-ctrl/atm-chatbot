@@ -10,20 +10,24 @@ d'ordinaux suffit et reste 100% prévisible.
 
 from __future__ import annotations
 
+import copy
 import re
 
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.models.conversation import ConversationContext
 
 # Table volontairement simple plutôt qu'un parseur NLP : suffisant pour
 # "le premier/deuxième/troisième", extensible en ajoutant une ligne si un
-# nouveau tour de phrase apparaît en usage réel.
+# nouveau tour de phrase apparaît en usage réel. Formes féminines
+# ("la première solution") et "second(e)" incluses.
 _ORDINAL_PATTERNS: dict[str, int] = {
-    r"\bpremier\b": 1,
-    r"\b1er\b": 1,
+    r"\bpremi(?:er|[eè]re)\b": 1,
+    r"\b1(?:er|[eè]re)\b": 1,
     r"\bdeuxi[eè]me\b": 2,
-    r"\b2[eè]me\b": 2,
+    r"\b2(?:[eè]me|nde?)\b": 2,
+    r"\bseconde?\b": 2,
     r"\btroisi[eè]me\b": 3,
     r"\b3[eè]me\b": 3,
     r"\bquatri[eè]me\b": 4,
@@ -34,7 +38,12 @@ _ORDINAL_PATTERNS: dict[str, int] = {
 def get_context(db: Session, conversation_id: int) -> dict:
     """Charge le contexte actif, ou {} si la conversation n'en a pas encore."""
     row = db.get(ConversationContext, conversation_id)
-    return dict(row.context) if row is not None else {}
+    if row is None or not isinstance(row.context, dict):
+        return {}
+    # Copie PROFONDE : le contexte est modifié en place par l'orchestrateur
+    # (last_search, selected_result...) -- une copie superficielle
+    # partagerait ces objets imbriqués avec l'état chargé par SQLAlchemy.
+    return copy.deepcopy(row.context)
 
 
 def save_context(db: Session, conversation_id: int, context: dict) -> None:
@@ -44,6 +53,9 @@ def save_context(db: Session, conversation_id: int, context: dict) -> None:
         db.add(ConversationContext(conversation_id=conversation_id, context=context))
     else:
         row.context = context
+        # JSONB non "mutable" côté ORM : on signale explicitement la
+        # modification pour garantir l'UPDATE (et la mise à jour d'updated_at).
+        flag_modified(row, "context")
     db.flush()
 
 
@@ -83,7 +95,7 @@ def select_result_by_position(context: dict, position: int) -> dict | None:
 def record_last_search(context: dict, query: str, results: list[dict]) -> None:
     """
     Enregistre une nouvelle recherche (mutation en place). `results` doit
-    déjà être une liste de {"position": int, "intervention_symptom_id": int}.
+    déjà être une liste de {"position": int, "kind": "case" | "stat", ...}.
     Une nouvelle recherche invalide forcément l'ancienne sélection.
     """
     context["last_search"] = {"query": query, "results": results}

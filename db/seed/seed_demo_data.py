@@ -26,7 +26,7 @@ Usage :
 import psycopg2
 
 from app.core.config import settings
-from app.services.embeddings_service import generate_embedding
+from app.services.embeddings_service import generate_embeddings_batch
 
 
 # Chaque chaîne est un statement SQL indépendant. ON CONFLICT ... DO NOTHING
@@ -248,8 +248,13 @@ def run_seed() -> None:
                     cursor.execute(statement)
                 for statement in SEQUENCE_RESETS:
                     cursor.execute(statement)
-                for intervention_symptom_id, raw_text in EMBEDDING_BACKFILL:
-                    vecteur = generate_embedding(raw_text)
+                # UN SEUL appel réseau pour les 6 textes plutôt qu'un par
+                # texte -- indispensable sur le palier gratuit Voyage
+                # (3 requêtes/minute) : 6 appels séquentiels dépassent
+                # systématiquement la limite dès le 2e ou 3e.
+                textes = [raw_text for _, raw_text in EMBEDDING_BACKFILL]
+                vecteurs = generate_embeddings_batch(textes)
+                for (intervention_symptom_id, _), vecteur in zip(EMBEDDING_BACKFILL, vecteurs):
                     cursor.execute(
                         "UPDATE intervention_symptom SET embedding = %s::vector "
                         "WHERE intervention_symptom_id = %s",

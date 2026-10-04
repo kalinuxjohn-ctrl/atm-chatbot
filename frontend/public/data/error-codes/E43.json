@@ -1,0 +1,13 @@
+{
+  "code": "E43",
+  "device_type": "gab",
+  "label": "Moteur du lecteur de carte bloqué",
+  "reply": [
+    "Code E43 : le moteur du lecteur de carte est bloqué (panne P001 – lecteur de carte bloqué).",
+    "1. Mettez le GAB hors service puis ouvrez le module lecteur de carte.",
+    "2. Retirez tout objet coincé dans le chemin de la carte (carte, ticket, corps étranger).",
+    "3. Vérifiez que les rouleaux tournent librement à la main, puis réinitialisez le lecteur.",
+    "4. Si le moteur reste bloqué, remplacez le module lecteur de carte.",
+    "Si le problème persiste, décrivez-moi ce que vous observez pour chercher des interventions similaires."
+  ]
+}

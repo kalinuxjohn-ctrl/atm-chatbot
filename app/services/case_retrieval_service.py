@@ -100,9 +100,9 @@ def build_case(
 
     return {
         "intervention_id": intervention_id,
-        "technician_name": getattr(technician, "full_name", "technicien inconnu"),
-        # Champs Device défensifs -- à ajuster une fois device.py confirmé.
-        "device_label": getattr(device, "site_name", None) or getattr(device, "serial_number", "?"),
+        "technician_name": getattr(technician, "full_name", None) or "technicien inconnu",
+        # `or` en cascade : un attribut présent mais NULL ne doit jamais s'afficher "None".
+        "device_label": getattr(device, "site_name", None) or getattr(device, "serial_number", None) or "appareil non identifié",
         "opened_at": intervention.opened_at,
         "matched_symptom_text": matched_symptom_text,
         "actions": [
@@ -153,9 +153,7 @@ def _lookup_confidence(db: Session, intervention: Intervention, actions: list, d
     if confirmed is None or device_type is None:
         return None
 
-    # On repart du symptom_id catalogué de l'intervention plutôt que du
-    # texte brut : symptom_action_outcome_stats est indexée sur symptom_id.
-    symptom_id = next((s.symptom_id for s in intervention.symptoms if s.symptom_id is not None), None)
+    symptom_id = _catalog_symptom_id_solved_by(confirmed, intervention.symptoms)
     if symptom_id is None:
         return None
 
@@ -169,3 +167,31 @@ def _lookup_confidence(db: Session, intervention: Intervention, actions: list, d
         {"symptom_id": symptom_id, "action_id": confirmed.action_id, "device_type": device_type},
     ).mappings().first()
     return dict(row) if row else None
+
+
+def _catalog_symptom_id_solved_by(confirmed_action, intervention_symptoms: list) -> int | None:
+    """
+    symptom_id catalogué que l'action confirmée a réellement résolu --
+    c'est la clé sous laquelle symptom_action_outcome_stats range sa fiabilité.
+    """
+    # Cas 1 : le technicien a précisé quel symptôme l'action visait
+    # (targets_symptom_id). Seul ce symptôme-là a des stats pour cette
+    # action -- prendre un autre symptôme de l'intervention ne trouverait rien.
+    # Si ce symptôme n'est pas encore catalogué (symptom_id NULL), l'action
+    # n'a de stats sous AUCUN symptôme : on renvoie None plutôt que d'aller
+    # chercher la fiabilité d'un autre symptôme qu'elle ne visait pas.
+    if confirmed_action.targets_symptom_id is not None:
+        targeted_symptom = next(
+            (s for s in intervention_symptoms if s.intervention_symptom_id == confirmed_action.targets_symptom_id),
+            None,
+        )
+        return targeted_symptom.symptom_id if targeted_symptom is not None else None
+
+    # Cas 2 : action sans cible précise -- le recalcul des stats la compte
+    # pour TOUS les symptômes de l'intervention, n'importe lequel convient.
+    # Tri par ID : la relation ORM n'a pas d'ordre garanti, sans ce tri le
+    # symptôme choisi (et donc la fiabilité affichée) pourrait varier d'un appel à l'autre.
+    for symptom in sorted(intervention_symptoms, key=lambda s: s.intervention_symptom_id):
+        if symptom.symptom_id is not None:
+            return symptom.symptom_id
+    return None

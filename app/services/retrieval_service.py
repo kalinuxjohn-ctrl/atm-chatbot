@@ -65,6 +65,16 @@ def _clamp_limit(limit: int, default: int = DEFAULT_SYMPTOM_LIMIT) -> int:
     return min(limit, MAX_SYMPTOM_LIMIT)
 
 
+def _parse_vector_text(embedding_text: str | None) -> list[float]:
+    """'[0.1,0.2,...]' (format texte pgvector) -> liste de floats ; [] si la valeur est vide ou illisible."""
+    if not embedding_text:
+        return []
+    try:
+        return [float(value) for value in embedding_text.strip("[]").split(",") if value.strip()]
+    except ValueError:
+        return []
+
+
 def _apply_relevance_threshold(candidates: list[dict], threshold: float, method: str) -> list[dict]:
     """
     Filtre commun aux deux moteurs (pgvector et repli Python) -- c'est ICI,
@@ -121,7 +131,7 @@ def _fallback_cosine_search(db, query_vector: Sequence[float], device_type: str,
 
     scored = []
     for row in rows:
-        vector = [float(value) for value in row["embedding_text"].strip("[]").split(",")]
+        vector = _parse_vector_text(row["embedding_text"])
         similarity = cosine_similarity(query_vector, vector)
         scored.append(
             {
@@ -172,6 +182,12 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = DEF
 
     query_vector = generate_embedding(cleaned_text, is_query=True)
 
+    # SAVEPOINT plutôt que db.rollback() : en cas d'échec, seule cette
+    # requête est annulée -- un rollback complet effacerait aussi ce que
+    # l'appelant a déjà écrit dans la même transaction (ex. conversation et
+    # message utilisateur de /api/chat), qui échouerait ensuite sur une
+    # clé étrangère.
+    savepoint = db.begin_nested()
     try:
         rows = db.execute(
             text(
@@ -191,6 +207,7 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = DEF
             {"query_vector": str(query_vector), "device_type": device_type, "limit": limit},
         ).mappings().all()
         candidates = [dict(row) for row in rows]
+        savepoint.commit()
         method = "pgvector"
     except Exception as error:
         trace(
@@ -201,8 +218,8 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = DEF
         # Indispensable : la requête précédente a échoué et a laissé la
         # transaction "avortée" côté Postgres -- toute nouvelle requête sur
         # la même session échouerait avec InFailedSqlTransaction tant qu'on
-        # n'a pas annulé cette transaction.
-        db.rollback()
+        # n'est pas revenu au savepoint.
+        savepoint.rollback()
         candidates = _fallback_cosine_search(db, query_vector, device_type, limit)
         method = "python_cosine"
 
@@ -213,7 +230,9 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = DEF
 retrieve_similar_symptoms = fetch_similar_symptoms
 
 
-def find_best_catalog_match(db, raw_text: str, device_type: str) -> dict | None:
+def find_best_catalog_match(
+    db, raw_text: str, device_type: str, query_vector: Sequence[float] | None = None
+) -> dict | None:
     """
     Cherche, parmi les symptômes DÉJÀ rattachés au catalogue (symptom_id non
     NULL) pour ce device_type, celui dont la formulation passée est la plus
@@ -229,8 +248,15 @@ def find_best_catalog_match(db, raw_text: str, device_type: str) -> dict | None:
     if not cleaned_text:
         return None
 
-    query_vector = generate_embedding(cleaned_text, is_query=True)
+    # query_vector fourni : l'appelant l'a déjà calculé dans un appel groupé
+    # (voir intervention_service.create_intervention_with_symptoms) -- on
+    # évite un appel au fournisseur d'embedding de plus par symptôme.
+    if query_vector is None:
+        query_vector = generate_embedding(cleaned_text, is_query=True)
 
+    # Même raison que dans fetch_similar_symptoms : ne jamais annuler le
+    # travail en cours de l'appelant (ex. intervention en cours de création).
+    savepoint = db.begin_nested()
     try:
         row = db.execute(
             text(
@@ -249,9 +275,10 @@ def find_best_catalog_match(db, raw_text: str, device_type: str) -> dict | None:
             ),
             {"query_vector": str(query_vector), "device_type": device_type},
         ).mappings().first()
+        savepoint.commit()
         return dict(row) if row else None
     except Exception:
-        db.rollback()
+        savepoint.rollback()
         rows = db.execute(
             text(
                 """
@@ -269,7 +296,9 @@ def find_best_catalog_match(db, raw_text: str, device_type: str) -> dict | None:
 
         best = None
         for row in rows:
-            vector = [float(value) for value in row["embedding_text"].strip("[]").split(",")]
+            vector = _parse_vector_text(row["embedding_text"])
+            if not vector:
+                continue
             distance = 1.0 - cosine_similarity(query_vector, vector)
             if best is None or distance < best["distance"]:
                 best = {"symptom_id": row["symptom_id"], "distance": distance}

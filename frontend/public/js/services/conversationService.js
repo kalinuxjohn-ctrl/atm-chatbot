@@ -78,6 +78,16 @@ export function createConversationService({ technicianId }) {
       return result;
     },
 
+    /**
+     * Ajoute un échange dont la réponse est DÉJÀ connue côté frontend (ex. code
+     * d'erreur fréquent) : affiché et sauvegardé comme les autres messages, mais
+     * sans aucun appel au backend -- le backend ne voit donc pas cet échange.
+     */
+    addLocalExchange(userText, replyText) {
+      addMessage("user", userText, "text");
+      addMessage("assistant", replyText, "text");
+    },
+
     async reset() {
       state = { conversationId: null, deviceType: state.deviceType, messages: [] };
       await clearConversation();

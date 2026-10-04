@@ -59,6 +59,10 @@ class OllamaProvider(LLMProvider):
             raise LLMUnavailableError(
                 f"Ollama n'a pas répondu dans le délai imparti ({self.timeout}s)."
             ) from erreur
+        except requests.RequestException as erreur:
+            raise LLMUnavailableError(
+                f"Erreur réseau lors de l'appel à Ollama ({type(erreur).__name__})."
+            ) from erreur
 
         if response.status_code == 404:
             raise LLMUnavailableError(
@@ -72,7 +76,10 @@ class OllamaProvider(LLMProvider):
                 f"Ollama a répondu avec une erreur ({response.status_code})."
             ) from erreur
 
-        return response.json().get("response", "")
+        try:
+            return response.json()["response"]
+        except (ValueError, KeyError, TypeError) as erreur:
+            raise LLMUnavailableError("Ollama n'a renvoyé aucun texte exploitable pour cette requête.") from erreur
 
 
 class GeminiProvider(LLMProvider):
@@ -106,8 +113,12 @@ class GeminiProvider(LLMProvider):
             raise LLMUnavailableError(
                 f"Gemini n'a pas répondu dans le délai imparti ({self.timeout}s)."
             ) from erreur
+        except requests.RequestException as erreur:
+            raise LLMUnavailableError(
+                f"Erreur réseau lors de l'appel à Gemini ({type(erreur).__name__})."
+            ) from erreur
 
-        if response.status_code == 401:
+        if response.status_code in (401, 403):
             raise LLMUnavailableError("Clé API Gemini invalide ou expirée.")
         if response.status_code == 429:
             raise LLMUnavailableError(
@@ -120,10 +131,9 @@ class GeminiProvider(LLMProvider):
         except requests.HTTPError as erreur:
             raise LLMUnavailableError(f"Gemini a répondu avec une erreur ({response.status_code}).") from erreur
 
-        payload = response.json()
         try:
-            return payload["candidates"][0]["content"]["parts"][0]["text"]
-        except (KeyError, IndexError) as erreur:
+            return response.json()["candidates"][0]["content"]["parts"][0]["text"]
+        except (ValueError, KeyError, IndexError, TypeError) as erreur:
             # Arrive par exemple si Gemini bloque la réponse (finishReason="SAFETY") --
             # pas une panne réseau, mais pas de texte exploitable non plus.
             raise LLMUnavailableError("Gemini n'a renvoyé aucun texte exploitable pour cette requête.") from erreur
@@ -175,6 +185,10 @@ class ClaudeProvider(LLMProvider):
             raise LLMUnavailableError(
                 f"Claude n'a pas répondu dans le délai imparti ({self.timeout}s)."
             ) from erreur
+        except requests.RequestException as erreur:
+            raise LLMUnavailableError(
+                f"Erreur réseau lors de l'appel à Claude ({type(erreur).__name__})."
+            ) from erreur
 
         if response.status_code == 401:
             raise LLMUnavailableError("Clé API Claude invalide ou expirée.")
@@ -187,10 +201,11 @@ class ClaudeProvider(LLMProvider):
         except requests.HTTPError as erreur:
             raise LLMUnavailableError(f"Claude a répondu avec une erreur ({response.status_code}).") from erreur
 
-        payload = response.json()
         try:
-            return payload["content"][0]["text"]
-        except (KeyError, IndexError) as erreur:
+            # Le premier bloc n'est pas forcément du texte : on prend le premier bloc "text".
+            blocks = response.json()["content"]
+            return next(block["text"] for block in blocks if block.get("type") == "text")
+        except (ValueError, KeyError, IndexError, TypeError, StopIteration) as erreur:
             raise LLMUnavailableError("Claude n'a renvoyé aucun texte exploitable pour cette requête.") from erreur
 
 
@@ -220,18 +235,30 @@ def get_llm_provider() -> LLMProvider:
         )
 
 
-def generate_reply(prompt: str) -> str:
+def generate_reply(prompt: str, fallback: str | None = None) -> str:
     """
     Demande une réponse au LLM configuré. Ne laisse jamais remonter
     d'exception à l'appelant : en cas de problème (réseau, timeout, modèle
     absent, mauvaise config...), renvoie directement le message d'erreur
     clair à la place du texte généré, pour que le reste de l'app reste
     fonctionnel en dégradé.
+
+    `fallback` (facultatif) : texte déjà prêt renvoyé À LA PLACE du message
+    d'erreur si le LLM est indisponible -- utile quand l'appelant a des
+    données factuelles à montrer même sans reformulation (ex. cas trouvés).
     """
     try:
-        return get_llm_provider().generate(prompt)
+        reply = get_llm_provider().generate(prompt)
     except LLMUnavailableError as erreur:
-        return str(erreur)
+        return fallback if fallback is not None else str(erreur)
+
+    # Un LLM peut répondre "avec succès" mais sans aucun texte : on ne
+    # renvoie jamais une bulle vide au technicien.
+    if not isinstance(reply, str) or not reply.strip():
+        if fallback is not None:
+            return fallback
+        return "Le modèle de langage n'a renvoyé aucune réponse -- réessayez dans un instant."
+    return reply.strip()
 
 
 ask_llm = generate_reply

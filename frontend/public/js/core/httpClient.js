@@ -54,6 +54,22 @@ export async function postJson(path, body, { timeoutMs = REQUEST_TIMEOUT_MS } = 
   return payload;
 }
 
+/**
+ * Lit un fichier JSON STATIQUE servi par le frontend lui-même (ex.
+ * /data/error-codes/E42.json) -- pas de préfixe /api, le backend n'est
+ * jamais contacté. Les messages d'erreur sont faits pour la console du
+ * développeur qui édite ces fichiers.
+ */
+export async function getStaticJson(url) {
+  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!response.ok) throw new Error(`fichier introuvable (HTTP ${response.status})`);
+  try {
+    return await response.json();
+  } catch {
+    throw new Error("JSON mal formé (virgule en trop, guillemet manquant… ?)");
+  }
+}
+
 /** Message lisible par le technicien, quelle que soit l'erreur. */
 export function getFriendlyErrorMessage(error) {
   if (!(error instanceof ApiRequestError)) {

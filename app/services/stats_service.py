@@ -4,12 +4,20 @@ from __future__ import annotations
 
 from sqlalchemy import text
 
+from app.core.tracing import trace
+
 
 def recompute_stats(db) -> int:
     """Rebuild the aggregate stats used for case ranking."""
     db.execute(
         text(
             """
+            -- Sérialise les recalculs concurrents (ex. deux actions
+            -- enregistrées en même temps) : sans ce verrou, deux
+            -- DELETE + INSERT entrelacés violeraient la clé primaire.
+            -- Les lectures (SELECT) restent possibles pendant le recalcul.
+            LOCK TABLE symptom_action_outcome_stats IN EXCLUSIVE MODE;
+
             DELETE FROM symptom_action_outcome_stats;
 
             -- On ajoute une jointure jusqu'à `device` (via `intervention`)
@@ -46,3 +54,20 @@ def recompute_stats(db) -> int:
     db.commit()
     row_count = db.execute(text("SELECT COUNT(*) FROM symptom_action_outcome_stats")).scalar()
     return int(row_count or 0)
+
+
+def recompute_stats_safely(db) -> bool:
+    """
+    Variante pour les routes HTTP : appelée APRÈS le commit de la donnée
+    métier (action enregistrée, action cataloguée...), un échec du recalcul
+    ne doit pas transformer une écriture réussie en erreur 500. Les stats
+    seront de toute façon reconstruites au prochain recalcul (ou par
+    app/jobs/recompute_stats.py).
+    """
+    try:
+        recompute_stats(db)
+        return True
+    except Exception as error:
+        db.rollback()
+        trace("ERROR", "Échec du recalcul des statistiques (donnée métier conservée)", error_type=type(error).__name__)
+        return False

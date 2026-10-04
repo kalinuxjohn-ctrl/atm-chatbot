@@ -75,6 +75,8 @@ export function createComposerDictation({ button, statusElement, input, onTextCh
 
     setButtonListening(true);
     session = listen({
+      // Une courte pause ne coupe plus la dictée : elle se termine après 2 s de silence.
+      silenceMs: 2000,
       onStateChange: (state) => showStatus(state, STATUS[state]),
       onInterim: (text) => {
         input.value = withBase(text);

@@ -1,12 +1,16 @@
 /**
- * Suggestions de problèmes fréquents ("bulles").
+ * Bulles de suggestions, affichées sous la zone de saisie et dans le message
+ * d'accueil. Deux sortes de bulles, visuellement distinctes :
  *
- * Elles sont affichées à deux endroits : sous la zone de saisie et dans le
- * message d'accueil de la conversation. Un clic envoie le texte comme un
- * message du technicien, par le flux normal du chat.
+ *   ┌──────────────────────────────┐
+ *   │ E42  Capteur de rétention    │  CODE D'ERREUR CONNU -> réponse enregistrée
+ *   └──────────────────────────────┘  côté frontend, AUCUN appel au backend.
+ *                                     Pour en ajouter : public/data/error-codes/README.md
  *
- * Ce ne sont PAS des données du backend : uniquement des raccourcis de saisie.
- * Pour en AJOUTER : compléter SUGGESTIONS_BY_DEVICE.
+ *   ┌──────────────────────────────┐
+ *   │ ✦ Le GAB a avalé la carte    │  PROBLÈME FRÉQUENT -> envoyé au backend comme
+ *   └──────────────────────────────┘  un message tapé par le technicien.
+ *                                     Pour en ajouter : compléter SUGGESTIONS_BY_DEVICE.
  */
 
 import { createElement, prefersReducedMotion } from "../utils/dom.js";
@@ -32,23 +36,49 @@ export const SUGGESTIONS_BY_DEVICE = Object.freeze({
 const FLIGHT_DURATION_MS = 520;
 
 /**
- * Crée la liste de bulles.
- * @param {{ deviceType: string, onPick: (text: string, chip: HTMLElement) => void, className?: string }} options
+ * Crée la liste de bulles : codes d'erreur connus d'abord, puis problèmes fréquents.
+ * @param {{
+ *   deviceType: string,
+ *   onPick: (text: string, chip: HTMLElement) => void,               clic sur un problème fréquent
+ *   errorCodes?: import("../services/knownErrorCodesService.js").KnownErrorCode[],  déjà filtrés pour deviceType
+ *   onPickErrorCode?: (errorCode: object, chip: HTMLElement) => void, clic sur un code d'erreur
+ *   className?: string,
+ * }} options
  * @returns {HTMLUListElement}
  */
-export function createSuggestionList({ deviceType, onPick, className = "" }) {
+export function createSuggestionList({ deviceType, onPick, errorCodes = [], onPickErrorCode = () => {}, className = "" }) {
   const list = createElement("ul", `suggestion-list ${className}`.trim());
-  list.setAttribute("aria-label", "Suggestions de problèmes fréquents");
+  list.setAttribute("aria-label", "Codes d'erreur et problèmes fréquents");
+
+  errorCodes.forEach((errorCode) => {
+    const chip = createErrorCodeChip(errorCode);
+    chip.addEventListener("click", () => onPickErrorCode(errorCode, chip));
+    list.append(wrapInListItem(chip));
+  });
+
   (SUGGESTIONS_BY_DEVICE[deviceType] || SUGGESTIONS_BY_DEVICE.gab).forEach((text) => {
-    const item = createElement("li");
     const chip = createElement("button", "suggestion-chip");
     chip.type = "button";
     chip.append(createIcon("sparkle", "icon suggestion-chip-icon"), createElement("span", "", text));
     chip.addEventListener("click", () => onPick(text, chip));
-    item.append(chip);
-    list.append(item);
+    list.append(wrapInListItem(chip));
   });
   return list;
+}
+
+/** Bulle d'un code d'erreur : le code en badge, suivi de son libellé court. */
+function createErrorCodeChip({ code, label }) {
+  const chip = createElement("button", "suggestion-chip error-code-chip");
+  chip.type = "button";
+  chip.setAttribute("aria-label", `Code d'erreur ${code} : ${label}`);
+  chip.append(createElement("span", "error-code-badge", code), createElement("span", "", label));
+  return chip;
+}
+
+function wrapInListItem(chip) {
+  const item = createElement("li");
+  item.append(chip);
+  return item;
 }
 
 /**

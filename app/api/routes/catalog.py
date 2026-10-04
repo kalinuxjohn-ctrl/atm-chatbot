@@ -4,7 +4,7 @@ Routes HTTP pour la vérification anti-doublon du catalogue d'actions :
 - POST /catalog/actions/resolve : décision du technicien (nouvelle entrée ou fusion)
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -16,7 +16,9 @@ router = APIRouter(prefix="/catalog", tags=["catalog"])
 
 @router.get("/actions/similar", response_model=list[SimilarActionCandidate])
 def chercher_actions_similaires(
-    text: str, limit: int = 5, db: Session = Depends(get_db)
+    text: str = Query(..., min_length=1),
+    limit: int = Query(5, ge=1, le=50),
+    db: Session = Depends(get_db),
 ) -> list[SimilarActionCandidate]:
     """Montre les actions déjà cataloguées les plus proches -- à charge au technicien de juger."""
     return find_similar_actions(db, text, limit)

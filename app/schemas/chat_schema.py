@@ -10,13 +10,13 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from app.schemas.device_type import DeviceType
+from app.schemas.device_type import DeviceType, NonEmptyStr
 
 
 class SymptomSearchRequest(BaseModel):
     """Symptôme décrit en langage libre par le technicien, sur un appareil donné."""
 
-    raw_text: str = Field(..., description="Formulation exacte du technicien.")
+    raw_text: NonEmptyStr = Field(..., description="Formulation exacte du technicien.")
     device_type: DeviceType
 
 

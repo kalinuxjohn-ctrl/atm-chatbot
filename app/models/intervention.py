@@ -64,7 +64,7 @@ class InterventionAction(Base):
     is_confirmed_solution = Column(Boolean, nullable=False, default=False)
 
     intervention = relationship("Intervention", back_populates="actions")
-        # Quel symptôme précis cette action visait -- NULL = comptée pour tous
+    # Quel symptôme précis cette action visait -- NULL = comptée pour tous
     # les symptômes de l'intervention (comportement historique, voir
     # migration 0005 et stats_service.recompute_stats).
     targets_symptom_id = Column(Integer, ForeignKey("intervention_symptom.intervention_symptom_id"))

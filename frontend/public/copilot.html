@@ -130,6 +130,9 @@
               <button class="mic-button" id="mic-button" type="button" aria-pressed="false" aria-label="Dicter votre message au micro" title="Dicter au micro">
                 <span data-icon="mic"></span>
               </button>
+              <button class="composer-voice-button" type="button" data-open-voice-mode aria-label="Démarrer le Chat vocal" title="Parler au Copilote">
+                <span data-icon="voice"></span><span class="composer-voice-button-label">Vocal</span>
+              </button>
               <button class="send-button" id="send-button" type="submit" disabled aria-label="Envoyer le message">
                 <span class="send-button-label">Envoyer</span><span data-icon="send"></span>
               </button>
@@ -188,80 +191,72 @@
     </div>
 
     <!-- ========== Mode Chat vocal (voiceMode.js, état dans data-state) ==========
-         Voile translucide : la conversation reste visible derrière. -->
+         Plein écran, comme une conversation téléphonique : la messagerie est
+         masquée, mais chaque échange est quand même envoyé / reçu par le chat
+         (et visible dans la conversation après la fermeture). -->
     <dialog class="voice-dialog" id="voice-dialog" data-state="idle" aria-labelledby="voice-title" aria-describedby="voice-status">
-      <div class="voice-card">
-        <header class="voice-header">
-          <span>
+      <div class="voice-screen">
+        <header class="voice-topbar">
+          <span class="voice-brand">
             <strong id="voice-title">Chat vocal</strong>
-            <small>Même conversation que le chat écrit</small>
+            <small data-voice-device></small>
           </span>
           <button class="voice-icon-button" type="button" data-voice-close aria-label="Fermer le mode vocal">
             <span data-icon="close"></span>
           </button>
         </header>
 
-        <div class="voice-stage">
-          <span class="voice-ring"></span>
-          <span class="voice-ring"></span>
-          <span class="voice-ring"></span>
-          <div class="voice-avatar" data-voice-avatar></div>
-        </div>
-
-        <div class="voice-status-block" aria-live="polite">
-          <p class="voice-status" id="voice-status" data-voice-status>Appuyez sur le micro pour parler.</p>
-          <p class="voice-detail" data-voice-detail hidden></p>
-        </div>
-
-        <div class="voice-wave" aria-hidden="true">
-          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-        </div>
-
-        <div class="voice-error-actions" data-voice-error-actions hidden>
-          <button class="voice-secondary-button" type="button" data-voice-retry>
-            <span data-icon="refresh"></span><span>Réessayer</span>
+        <div class="voice-center">
+          <!-- La bulle : touchez pour parler, finir votre phrase ou interrompre le Copilote. -->
+          <button class="voice-orb" type="button" data-voice-main aria-label="Parler">
+            <span class="voice-orb-halo" aria-hidden="true"></span>
+            <span class="voice-orb-halo" aria-hidden="true"></span>
+            <span class="voice-orb-core" aria-hidden="true">
+              <span class="voice-avatar" data-voice-avatar></span>
+            </span>
           </button>
-          <button class="voice-secondary-button" type="button" data-voice-offline hidden>
-            <span data-icon="download"></span><span>Activer la reconnaissance hors ligne</span>
-          </button>
-          <button class="voice-secondary-button" type="button" data-voice-type-instead>
-            <span data-icon="keyboard"></span><span>Écrire ma question</span>
-          </button>
-        </div>
 
-        <form class="voice-fallback" data-voice-fallback hidden>
-          <label class="visually-hidden" for="voice-fallback-input">Votre question</label>
-          <input id="voice-fallback-input" type="text" maxlength="2000" placeholder="Écrivez (ou dictez avec ⊞ + H)…" autocomplete="off">
-          <button type="submit" aria-label="Envoyer"><span data-icon="send"></span></button>
-        </form>
-
-        <div class="voice-texts">
-          <div class="voice-line voice-line-user">
-            <span>Vous</span>
-            <p data-voice-transcript></p>
+          <div class="voice-status-block" aria-live="polite">
+            <p class="voice-status" id="voice-status" data-voice-status>Connexion…</p>
+            <p class="voice-detail" data-voice-detail hidden></p>
           </div>
-          <div class="voice-line voice-line-copilot">
-            <span>Copilote</span>
-            <p data-voice-reply></p>
+
+          <div class="voice-captions" aria-live="polite">
+            <p class="voice-caption voice-caption-user" data-voice-transcript></p>
+            <p class="voice-caption voice-caption-copilot" data-voice-reply></p>
           </div>
+
+          <div class="voice-error-actions" data-voice-error-actions hidden>
+            <button class="voice-secondary-button" type="button" data-voice-retry>
+              <span data-icon="refresh"></span><span>Réessayer</span>
+            </button>
+            <button class="voice-secondary-button" type="button" data-voice-offline hidden>
+              <span data-icon="download"></span><span>Activer la reconnaissance hors ligne</span>
+            </button>
+            <button class="voice-secondary-button" type="button" data-voice-type-instead>
+              <span data-icon="keyboard"></span><span>Écrire ma question</span>
+            </button>
+          </div>
+
+          <form class="voice-fallback" data-voice-fallback hidden>
+            <label class="visually-hidden" for="voice-fallback-input">Votre question</label>
+            <input id="voice-fallback-input" type="text" maxlength="2000" placeholder="Écrivez votre question…" autocomplete="off">
+            <button type="submit" aria-label="Envoyer"><span data-icon="send"></span></button>
+          </form>
         </div>
 
-        <div class="voice-controls">
-          <button class="voice-side-button" type="button" data-voice-mute aria-pressed="false">
-            <span data-icon="mic"></span><span data-label>Couper le micro</span>
+        <footer class="voice-controls">
+          <button class="voice-round-button" type="button" data-voice-mute aria-pressed="false">
+            <span data-icon="mic"></span><span class="voice-round-label" data-label>Couper le micro</span>
           </button>
-          <button class="voice-main-button" type="button" data-voice-main aria-label="Parler">
-            <span data-icon="mic"></span>
+          <button class="voice-round-button voice-end-button" type="button" data-voice-end>
+            <span data-icon="close"></span><span class="voice-round-label">Terminer</span>
           </button>
-          <button class="voice-side-button" type="button" data-voice-stop-reading hidden>
-            <span data-icon="stop"></span><span>Arrêter la lecture</span>
+          <button class="voice-round-button" type="button" data-voice-replay disabled>
+            <span data-icon="speaker"></span><span class="voice-round-label">Réécouter</span>
           </button>
-          <button class="voice-side-button" type="button" data-voice-replay hidden>
-            <span data-icon="speaker"></span><span>Réécouter</span>
-          </button>
-        </div>
-
-        <p class="voice-hint">Les échanges s’affichent aussi dans la conversation. <kbd>Échap</kbd> pour fermer.</p>
+        </footer>
+        <p class="voice-hint">Parlez naturellement : votre message part dès que vous vous taisez. Touchez la bulle pour interrompre. <kbd>Échap</kbd> pour quitter.</p>
       </div>
     </dialog>
 
@@ -307,11 +302,6 @@
             <input type="checkbox" name="autoRead">
             <span class="switch-track" aria-hidden="true"></span>
             <span>Lecture automatique <small>Le Copilote lit à voix haute ses réponses du chat écrit</small></span>
-          </label>
-          <label class="switch">
-            <input type="checkbox" name="handsFree">
-            <span class="switch-track" aria-hidden="true"></span>
-            <span>Chat vocal mains libres <small>Le micro se rouvre après chaque réponse lue</small></span>
           </label>
           <p class="settings-note" data-recognition-note hidden>
             La reconnaissance vocale n’est pas disponible dans ce navigateur (utilisez Chrome ou Edge).

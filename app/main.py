@@ -8,7 +8,8 @@ Puis tester sur http://localhost:8000/docs (documentation interactive
 générée automatiquement par FastAPI).
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 # Import volontairement inutilisé directement : le simple fait d'importer
 # le package charge tous les modules de app/models/ (technician, device,
@@ -23,6 +24,7 @@ from app.api.routes.interventions import router as interventions_router
 from app.api.routes.chat import router as chat_router
 from app.api.routes.catalog import router as catalog_router
 from app.api.routes.error_code import router as error_codes_router
+from app.core.errors import ExternalServiceUnavailableError, InvalidReferenceError, ReferenceNotFoundError
 
 app = FastAPI(
     title="Device Maintenance Chatbot API",
@@ -34,6 +36,24 @@ app.include_router(interventions_router)
 app.include_router(chat_router)
 app.include_router(catalog_router)
 app.include_router(error_codes_router)
+
+
+# Les services lèvent des exceptions métier (app/core/errors.py) ; elles
+# sont traduites ici en codes HTTP explicites plutôt qu'en 500 opaques.
+@app.exception_handler(ReferenceNotFoundError)
+def _reference_introuvable(request: Request, error: ReferenceNotFoundError) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"detail": str(error)})
+
+
+@app.exception_handler(InvalidReferenceError)
+def _reference_invalide(request: Request, error: InvalidReferenceError) -> JSONResponse:
+    return JSONResponse(status_code=422, content={"detail": str(error)})
+
+
+@app.exception_handler(ExternalServiceUnavailableError)
+def _service_externe_indisponible(request: Request, error: ExternalServiceUnavailableError) -> JSONResponse:
+    return JSONResponse(status_code=503, content={"detail": str(error)})
+
 
 @app.get("/health")
 def verifier_sante() -> dict:

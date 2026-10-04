@@ -1,4 +1,4 @@
-# Image Python légère : le frontend n'utilise que la bibliothèque standard.
+# Image Python légère : bibliothèque standard + edge-tts (voix françaises, /tts).
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -8,6 +8,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     API_BASE_URL=http://host.docker.internal:8000
 
 WORKDIR /app
+
+COPY requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copie uniquement le serveur et les fichiers web dans l'image.
 COPY server.py ./server.py

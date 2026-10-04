@@ -1,0 +1,13 @@
+{
+  "code": "E42",
+  "device_type": "gab",
+  "label": "Capteur de rétention de carte",
+  "reply": [
+    "Code E42 : le capteur de rétention de carte ne répond pas (panne P001 – lecteur de carte bloqué).",
+    "1. Mettez le GAB hors service et récupérez la carte retenue si elle est encore dans le lecteur.",
+    "2. Vérifiez que le connecteur du capteur de rétention est bien branché sur la carte du lecteur.",
+    "3. Nettoyez le capteur (poussière, débris de carte) puis redémarrez le lecteur.",
+    "4. Si E42 réapparaît, remplacez le capteur de rétention.",
+    "Si le problème persiste, décrivez-moi ce que vous observez pour chercher des interventions similaires."
+  ]
+}
