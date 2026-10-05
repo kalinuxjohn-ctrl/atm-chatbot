@@ -78,6 +78,12 @@ a:focus-visible,
   font-weight: 700;
 }
 
+/* Logo image (assets/images/logo.svg) à la place de l'ancienne lettre. */
+img.brand-logo {
+  background: none;
+  object-fit: contain;
+}
+
 .back-link {
   color: var(--muted);
   font-size: 13px;

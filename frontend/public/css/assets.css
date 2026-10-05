@@ -1,0 +1,20 @@
+/* ==========================================================================
+   IMAGES DU SITE -- le SEUL endroit où leurs chemins sont écrits.
+
+   Pour changer une image :
+     - soit remplacez le fichier dans public/assets/images/ en gardant son nom ;
+     - soit déposez votre image (jpg, png, webp, svg) dans ce dossier et
+       changez le chemin ci-dessous.
+   Mode d'emploi complet : public/assets/README.md
+   ========================================================================== */
+
+:root {
+  /* Fond plein écran de la page d'accueil (avant connexion). */
+  --image-home-background: url("/assets/images/home-background.svg");
+
+  /* Fond de la zone de conversation du Copilote (doit rester clair et discret). */
+  --image-app-background: url("/assets/images/app-background.svg");
+}
+
+/* Le logo n'est pas ici : il est utilisé dans le HTML (<img src="/assets/images/logo.svg">)
+   et comme icône d'onglet du navigateur -- remplacez simplement le fichier logo.svg. */

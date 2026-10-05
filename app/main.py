@@ -25,6 +25,11 @@ from app.api.routes.chat import router as chat_router
 from app.api.routes.catalog import router as catalog_router
 from app.api.routes.error_code import router as error_codes_router
 from app.core.errors import ExternalServiceUnavailableError, InvalidReferenceError, ReferenceNotFoundError
+from app.core.tracing import trace
+
+# Seul texte renvoyé au client quand une IA externe fait défaut (voir le
+# gestionnaire _service_externe_indisponible plus bas).
+SERVICE_SATURE_MESSAGE = "Le chatbot est momentanément saturé. Réessayez dans quelques instants."
 
 app = FastAPI(
     title="Device Maintenance Chatbot API",
@@ -52,7 +57,17 @@ def _reference_invalide(request: Request, error: InvalidReferenceError) -> JSONR
 
 @app.exception_handler(ExternalServiceUnavailableError)
 def _service_externe_indisponible(request: Request, error: ExternalServiceUnavailableError) -> JSONResponse:
-    return JSONResponse(status_code=503, content={"detail": str(error)})
+    # Cause précise (fournisseur, code HTTP, quota...) : dans les journaux
+    # seulement. Le client reçoit un message neutre qui ne révèle pas quels
+    # services d'IA travaillent derrière le chatbot.
+    trace(
+        "ERROR",
+        "Service externe indisponible, réponse 503 envoyée",
+        endpoint=request.url.path,
+        error_type=type(error).__name__,
+        cause=str(error),
+    )
+    return JSONResponse(status_code=503, content={"detail": SERVICE_SATURE_MESSAGE})
 
 
 @app.get("/health")

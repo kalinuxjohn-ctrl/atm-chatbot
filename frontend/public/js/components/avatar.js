@@ -1,16 +1,22 @@
 /**
- * Avatars du Copilote, en SVG dessinés dans le code : aucune image externe.
+ * Avatars du Copilote (messages, barre du haut, page d'accueil, paramètres).
  *
- * Pour AJOUTER un avatar : ajouter une entrée dans AVATARS (label, couleurs,
- * tracés des cheveux). Il apparaîtra automatiquement dans les paramètres.
+ * Deux façons de définir un avatar dans AVATARS :
+ *   1. DESSIN SVG en code (par défaut) : couleurs + tracés des cheveux.
+ *      Les animations (yeux qui clignent, bouche qui parle) ne marchent
+ *      qu'avec ce mode -- elles sont en CSS (components.css).
+ *   2. IMAGE : ajouter `image: "/assets/avatars/mon-avatar.png"` à l'entrée.
+ *      L'image remplace le dessin (pas d'animation). Mode d'emploi :
+ *      public/assets/README.md
  *
- * Les animations (clignement des yeux, bouche qui parle) sont en CSS
- * (components.css) et pilotées par l'attribut data-state du conteneur.
+ * Pour AJOUTER un avatar : ajouter une entrée ici. Il apparaît
+ * automatiquement dans les paramètres.
  */
 
 export const AVATARS = Object.freeze({
   female: {
     label: "Technicienne",
+    // image: "/assets/avatars/technicienne.png",  // décommenter pour utiliser une image
     skin: "#f1c3a0",
     hairColor: "#5a3524",
     hairBack: "M33 56 C30 30 44 18 60 18 C77 18 90 30 87 56 C89 72 85 86 79 92 L41 92 C35 86 31 72 33 56 Z",
@@ -18,6 +24,7 @@ export const AVATARS = Object.freeze({
   },
   male: {
     label: "Technicien",
+    // image: "/assets/avatars/technicien.png",  // décommenter pour utiliser une image
     skin: "#e2a982",
     hairColor: "#33241b",
     hairBack: "",
@@ -62,6 +69,23 @@ export function renderAvatar(kind, className = "") {
   const wrapper = document.createElement("span");
   wrapper.className = `avatar ${className}`.trim();
   wrapper.dataset.avatar = avatar;
+
+  const { image, label } = AVATARS[avatar];
+  if (image) {
+    const picture = document.createElement("img");
+    picture.className = "avatar-image";
+    picture.src = image;
+    picture.alt = "";
+    picture.setAttribute("aria-hidden", "true");
+    // Chemin erroné ou fichier absent : on revient au dessin plutôt que d'afficher une image cassée.
+    picture.addEventListener("error", () => {
+      console.warn(`[avatar] Image introuvable pour « ${label} » : ${image} -- dessin SVG utilisé à la place.`);
+      wrapper.innerHTML = buildSvg(AVATARS[avatar]);
+    }, { once: true });
+    wrapper.append(picture);
+    return wrapper;
+  }
+
   wrapper.innerHTML = buildSvg(AVATARS[avatar]); // contenu statique défini ci-dessus, aucune donnée utilisateur
   return wrapper;
 }

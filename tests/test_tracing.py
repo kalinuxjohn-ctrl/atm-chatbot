@@ -6,12 +6,14 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+from app import main
 from app.api.routes import chat as chat_routes
 from app.core import tracing
 from app.schemas.conversation_schema import ChatRequest
 from app.schemas.message_understanding_schema import UnderstoodMessage
 from app.services import (
     chat_orchestrator_service as orchestrator,
+    llm_service,
     message_understanding_service as understanding,
     retrieval_service,
     technical_reference_resolver_service as resolver,
@@ -58,13 +60,40 @@ class TracingTests(unittest.TestCase):
         self.assertIn("[UNDERSTANDING]", output)
         self.assertNotIn("SECRET", output)
 
-    def test_understanding_fallback_keeps_behavior_without_logging_response(self):
+    def test_unreadable_understanding_raises_instead_of_guessing_diagnostic(self):
+        # Avant : une réponse illisible faisait traiter le message comme une
+        # panne (un « bonjour » affichait des cas). Désormais : erreur 503.
         with patch.object(understanding.llm_service, "generate_reply", return_value="SECRET_RESPONSE"):
-            result = understanding.understand_message("SECRET_MESSAGE")
-        self.assertEqual(result.intent, "diagnostic")
-        self.assertEqual(result.reformulated_problem_text, "SECRET_MESSAGE")
+            with self.assertRaises(llm_service.LLMUnavailableError):
+                understanding.understand_message("SECRET_MESSAGE")
         self.assertIn("[ERROR]", self.output.getvalue())
         self.assertNotIn("SECRET", self.output.getvalue())
+
+    def test_llm_failure_raises_without_fallback_and_uses_fallback_otherwise(self):
+        provider = MagicMock()
+        provider.generate.side_effect = llm_service.LLMUnavailableError("Gemini a répondu avec une erreur (503).")
+        with patch.object(llm_service, "get_llm_provider", return_value=provider):
+            with self.assertRaises(llm_service.LLMUnavailableError):
+                llm_service.generate_reply("prompt")
+            self.assertEqual(llm_service.generate_reply("prompt", fallback="cas trouvés"), "cas trouvés")
+
+    def test_empty_llm_reply_is_an_error(self):
+        provider = MagicMock()
+        provider.generate.return_value = "   "
+        with patch.object(llm_service, "get_llm_provider", return_value=provider):
+            with self.assertRaises(llm_service.LLMUnavailableError):
+                llm_service.generate_reply("prompt")
+
+    def test_unavailable_service_returns_neutral_503_and_logs_cause(self):
+        request = SimpleNamespace(url=SimpleNamespace(path="/api/chat"))
+        response = main._service_externe_indisponible(
+            request, llm_service.LLMUnavailableError("Gemini a répondu avec une erreur (503).")
+        )
+        body = response.body.decode("utf-8")
+        self.assertEqual(response.status_code, 503)
+        self.assertNotIn("Gemini", body)  # le client ne doit pas deviner le fournisseur
+        self.assertIn("saturé", body)
+        self.assertIn("Gemini a répondu avec une erreur (503).", self.output.getvalue())  # cause claire côté serveur
 
     def test_reference_resolution_keeps_returned_ids(self):
         db = MagicMock()

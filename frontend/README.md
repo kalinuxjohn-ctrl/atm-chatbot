@@ -76,7 +76,9 @@ Dans ce mode, il utilise par défaut `http://127.0.0.1:8000` comme adresse de l�
 
 ```text
 public/
+├── assets/               IMAGES modifiables (logo, fonds d'écran, avatars) -- mode d'emploi : assets/README.md
 ├── css/
+│   ├── assets.css        chemins des images de fond : le SEUL endroit où les changer
 │   ├── style.css         base commune (en-tête, chat, boutons)
 │   ├── components.css    avatars, boîtes de dialogue, champs
 │   ├── home.css          animations de l’accueil

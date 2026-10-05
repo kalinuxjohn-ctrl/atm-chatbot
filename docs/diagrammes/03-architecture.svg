@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Architecture : le navigateur du technicien parle au serveur d'interface, qui relaie les questions au serveur métier ; celui-ci lit et écrit dans la base de données et appelle deux services d'IA externes.">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3b4f66"/></marker>
+  </defs>
+  <rect width="1000" height="470" fill="#ffffff"/>
+
+  <!-- Zones -->
+  <rect x="15" y="40" width="170" height="400" rx="14" fill="#f6f9fc" stroke="#c9d6e3"/>
+  <text x="100" y="28" font-size="12" font-weight="700" text-anchor="middle" fill="#5b6b7f" letter-spacing="1">SUR LE TERRAIN</text>
+
+  <rect x="230" y="40" width="520" height="400" rx="14" fill="#f2f9f8" stroke="#127a76" stroke-dasharray="6 5"/>
+  <text x="490" y="28" font-size="12" font-weight="700" text-anchor="middle" fill="#127a76" letter-spacing="1">HÉBERGÉ CHEZ NOUS (CONTENEURS DOCKER)</text>
+
+  <rect x="790" y="40" width="195" height="400" rx="14" fill="#fffaf0" stroke="#c98410" stroke-dasharray="6 5"/>
+  <text x="887" y="28" font-size="12" font-weight="700" text-anchor="middle" fill="#8a5a00" letter-spacing="1">SERVICES EXTERNES</text>
+
+  <!-- Navigateur -->
+  <rect x="28" y="150" width="144" height="150" rx="12" fill="#fff" stroke="#10243a" stroke-width="1.5"/>
+  <rect x="45" y="168" width="110" height="64" rx="5" fill="#10243a"/>
+  <rect x="54" y="178" width="60" height="8" rx="3" fill="#4fd6c7"/>
+  <rect x="54" y="192" width="88" height="6" rx="3" fill="#56708c"/>
+  <rect x="54" y="204" width="74" height="6" rx="3" fill="#56708c"/>
+  <text x="100" y="256" font-size="13" font-weight="700" text-anchor="middle" fill="#10243a">Navigateur</text>
+  <text x="100" y="274" font-size="11.5" text-anchor="middle" fill="#5b6b7f">PC, tablette, téléphone</text>
+  <text x="100" y="290" font-size="11.5" text-anchor="middle" fill="#5b6b7f">écran, micro, son</text>
+
+  <!-- Serveur d'interface -->
+  <rect x="255" y="130" width="200" height="190" rx="12" fill="#fff" stroke="#127a76" stroke-width="1.5"/>
+  <text x="355" y="158" font-size="14" font-weight="700" text-anchor="middle" fill="#0d4f4c">Serveur d'interface</text>
+  <g font-size="12" fill="#1d2d3d">
+    <text x="272" y="188">• pages, images, avatars</text>
+    <text x="272" y="210">• codes d'erreur fréquents</text>
+    <text x="272" y="232">• voix de synthèse</text>
+    <text x="272" y="254">• relais vers le serveur</text>
+    <text x="282" y="272">métier</text>
+  </g>
+
+  <!-- Serveur métier -->
+  <rect x="520" y="80" width="210" height="190" rx="12" fill="#fff" stroke="#1f6fd1" stroke-width="1.8"/>
+  <text x="625" y="108" font-size="14" font-weight="700" text-anchor="middle" fill="#1657a8">Serveur métier</text>
+  <g font-size="12" fill="#1d2d3d">
+    <text x="537" y="138">• comprend la demande</text>
+    <text x="537" y="160">• cherche les cas proches</text>
+    <text x="537" y="182">• calcule la fiabilité</text>
+    <text x="537" y="204">• mémorise la conversation</text>
+    <text x="537" y="226">• enregistre les</text>
+    <text x="547" y="244">interventions</text>
+  </g>
+
+  <!-- Base de données -->
+  <path d="M545 330 v70 a80 13 0 0 0 160 0 v-70" fill="#e6f5f3" stroke="#127a76" stroke-width="1.5"/>
+  <ellipse cx="625" cy="330" rx="80" ry="13" fill="#cdeee9" stroke="#127a76" stroke-width="1.5"/>
+  <text x="625" y="366" font-size="13" font-weight="700" text-anchor="middle" fill="#0d4f4c">Base de données</text>
+  <text x="625" y="384" font-size="11.5" text-anchor="middle" fill="#2f5f5c">historique, catalogue,</text>
+  <text x="625" y="400" font-size="11.5" text-anchor="middle" fill="#2f5f5c">conversations, vecteurs</text>
+
+  <!-- Services externes -->
+  <rect x="805" y="90" width="166" height="80" rx="12" fill="#fff" stroke="#c98410" stroke-width="1.5"/>
+  <text x="888" y="120" font-size="13.5" font-weight="700" text-anchor="middle" fill="#5c3c00">IA de langage</text>
+  <text x="888" y="140" font-size="11.5" text-anchor="middle" fill="#8a5a00">comprendre et rédiger</text>
+  <text x="888" y="156" font-size="11.5" text-anchor="middle" fill="#8a5a00">(Gemini ou Claude)</text>
+
+  <rect x="805" y="250" width="166" height="80" rx="12" fill="#fff" stroke="#c98410" stroke-width="1.5"/>
+  <text x="888" y="280" font-size="13.5" font-weight="700" text-anchor="middle" fill="#5c3c00">Moteur de vecteurs</text>
+  <text x="888" y="300" font-size="11.5" text-anchor="middle" fill="#8a5a00">texte → empreinte</text>
+  <text x="888" y="316" font-size="11.5" text-anchor="middle" fill="#8a5a00">numérique (Voyage AI)</text>
+
+  <!-- Flux -->
+  <g stroke="#3b4f66" stroke-width="1.6" fill="none">
+    <line x1="172" y1="210" x2="251" y2="210" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+    <line x1="455" y1="190" x2="516" y2="170" marker-end="url(#arrow)"/>
+    <line x1="625" y1="270" x2="625" y2="313" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+    <line x1="730" y1="130" x2="801" y2="130" marker-end="url(#arrow)"/>
+    <line x1="730" y1="262" x2="801" y2="262" marker-end="url(#arrow)"/>
+  </g>
+  <g font-size="11.5" fill="#3b4f66">
+    <text x="201" y="200" text-anchor="middle">pages</text>
+    <text x="201" y="230" text-anchor="middle">messages</text>
+    <text x="486" y="166" text-anchor="middle">questions</text>
+    <text x="635" y="296">lit / écrit</text>
+    <text x="769" y="122" text-anchor="middle">texte</text>
+    <text x="770" y="256" text-anchor="middle">phrase</text>
+  </g>
+
+  <!-- Raccourci codes d'erreur -->
+  <text x="355" y="350" font-size="11.5" text-anchor="middle" fill="#127a76" font-style="italic">Les codes d'erreur fréquents</text>
+  <text x="355" y="366" font-size="11.5" text-anchor="middle" fill="#127a76" font-style="italic">sont servis directement ici,</text>
+  <text x="355" y="382" font-size="11.5" text-anchor="middle" fill="#127a76" font-style="italic">sans solliciter le serveur métier.</text>
+</svg>

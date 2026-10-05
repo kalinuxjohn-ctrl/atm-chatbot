@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Diagramme de classes des référentiels : une statistique de fiabilité relie un symptôme et une action du catalogue pour un type d'appareil ; un code d'erreur signale une panne ; une conversation contient des messages et garde une mémoire.">
+  <rect width="1000" height="470" fill="#ffffff"/>
+
+  <text x="20" y="24" font-size="12" font-weight="700" fill="#127a76" letter-spacing="1">CATALOGUE ET FIABILITÉ</text>
+  <text x="540" y="24" font-size="12" font-weight="700" fill="#8a5a00" letter-spacing="1">CODES D'ERREUR</text>
+  <text x="540" y="214" font-size="12" font-weight="700" fill="#1657a8" letter-spacing="1">CONVERSATION</text>
+
+  <!-- Symptôme du catalogue -->
+  <rect x="20" y="44" width="200" height="58" rx="6" fill="#f2f9f8" stroke="#127a76" stroke-width="1.4"/>
+  <rect x="20" y="44" width="200" height="30" rx="6" fill="#cdeee9"/><path d="M20 74 h200" stroke="#127a76"/>
+  <text x="120" y="64" font-size="13" font-weight="700" text-anchor="middle" fill="#0d4f4c">Symptôme du catalogue</text>
+  <text x="30" y="92" font-size="12" fill="#1d2d3d">libellé normalisé</text>
+
+  <!-- Action du catalogue -->
+  <rect x="20" y="280" width="200" height="58" rx="6" fill="#f2f9f8" stroke="#127a76" stroke-width="1.4"/>
+  <rect x="20" y="280" width="200" height="30" rx="6" fill="#cdeee9"/><path d="M20 310 h200" stroke="#127a76"/>
+  <text x="120" y="300" font-size="13" font-weight="700" text-anchor="middle" fill="#0d4f4c">Action du catalogue</text>
+  <text x="30" y="328" font-size="12" fill="#1d2d3d">libellé normalisé</text>
+
+  <!-- Composant -->
+  <rect x="20" y="166" width="200" height="58" rx="6" fill="#fff" stroke="#10243a" stroke-width="1.4"/>
+  <rect x="20" y="166" width="200" height="30" rx="6" fill="#e9eef4"/><path d="M20 196 h200" stroke="#10243a"/>
+  <text x="120" y="186" font-size="13" font-weight="700" text-anchor="middle" fill="#10243a">Composant</text>
+  <text x="30" y="214" font-size="12" fill="#1d2d3d">nom (lecteur de carte…)</text>
+
+  <!-- Statistique -->
+  <rect x="290" y="130" width="210" height="112" rx="6" fill="#fff" stroke="#127a76" stroke-width="2.2"/>
+  <rect x="290" y="130" width="210" height="30" rx="6" fill="#cdeee9"/><path d="M290 160 h210" stroke="#127a76"/>
+  <text x="395" y="150" font-size="13" font-weight="700" text-anchor="middle" fill="#0d4f4c">Statistique de fiabilité</text>
+  <text x="300" y="178" font-size="12" fill="#1d2d3d">type d'appareil (GAB / TPE)</text>
+  <text x="300" y="196" font-size="12" fill="#1d2d3d">nombre d'essais</text>
+  <text x="300" y="214" font-size="12" fill="#1d2d3d">nombre de réussites</text>
+  <text x="300" y="232" font-size="12" fill="#1d2d3d">score (réussites ÷ essais)</text>
+
+  <g stroke="#3b4f66" stroke-width="1.4" fill="none">
+    <line x1="220" y1="88" x2="320" y2="130"/>
+    <line x1="220" y1="300" x2="320" y2="242"/>
+    <line x1="120" y1="102" x2="120" y2="166" stroke-dasharray="5 4"/>
+    <line x1="120" y1="224" x2="120" y2="280" stroke-dasharray="5 4"/>
+  </g>
+  <g font-size="11.5" fill="#3b4f66" font-style="italic" stroke="#fff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">
+    <text x="240" y="80">pour ce symptôme</text>
+    <text x="330" y="300">pour cette action</text>
+    <text x="128" y="140">concerne</text>
+    <text x="128" y="258">concerne</text>
+  </g>
+  <g font-size="11.5" font-weight="700" fill="#1657a8" stroke="#fff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">
+    <text x="226" y="106">1</text><text x="328" y="124">0..*</text>
+    <text x="226" y="296">1</text><text x="328" y="258">0..*</text>
+  </g>
+  <text x="290" y="356" font-size="11.5" fill="#5b6b7f">Recalculée à partir des interventions :</text>
+  <text x="290" y="372" font-size="11.5" fill="#5b6b7f">jamais saisie à la main.</text>
+
+  <!-- Code d'erreur -->
+  <rect x="540" y="44" width="180" height="76" rx="6" fill="#fffaf0" stroke="#c98410" stroke-width="1.4"/>
+  <rect x="540" y="44" width="180" height="30" rx="6" fill="#fdecc8"/><path d="M540 74 h180" stroke="#c98410"/>
+  <text x="630" y="64" font-size="13" font-weight="700" text-anchor="middle" fill="#5c3c00">Code d'erreur</text>
+  <text x="550" y="92" font-size="12" fill="#1d2d3d">code affiché (ex. E42)</text>
+  <text x="550" y="110" font-size="12" fill="#1d2d3d">description</text>
+
+  <!-- Panne -->
+  <rect x="790" y="44" width="190" height="76" rx="6" fill="#fffaf0" stroke="#c98410" stroke-width="1.4"/>
+  <rect x="790" y="44" width="190" height="30" rx="6" fill="#fdecc8"/><path d="M790 74 h190" stroke="#c98410"/>
+  <text x="885" y="64" font-size="13" font-weight="700" text-anchor="middle" fill="#5c3c00">Panne</text>
+  <text x="800" y="92" font-size="12" fill="#1d2d3d">code (ex. P001)</text>
+  <text x="800" y="110" font-size="12" fill="#1d2d3d">nom</text>
+
+  <line x1="720" y1="82" x2="790" y2="82" stroke="#3b4f66" stroke-width="1.4"/>
+  <text x="755" y="76" font-size="11.5" text-anchor="middle" fill="#3b4f66" font-style="italic">signale</text>
+  <text x="724" y="98" font-size="11.5" font-weight="700" fill="#1657a8">0..*</text>
+  <text x="786" y="98" font-size="11.5" font-weight="700" fill="#1657a8" text-anchor="end">0..1</text>
+
+  <!-- Conversation -->
+  <rect x="540" y="232" width="200" height="94" rx="6" fill="#fff" stroke="#1f6fd1" stroke-width="1.6"/>
+  <rect x="540" y="232" width="200" height="30" rx="6" fill="#d5e5fa"/><path d="M540 262 h200" stroke="#1f6fd1"/>
+  <text x="640" y="252" font-size="13" font-weight="700" text-anchor="middle" fill="#1657a8">Conversation</text>
+  <text x="550" y="280" font-size="12" fill="#1d2d3d">technicien</text>
+  <text x="550" y="298" font-size="12" fill="#1d2d3d">date de début</text>
+  <text x="550" y="316" font-size="12" fill="#1d2d3d">dernière activité</text>
+
+  <!-- Message -->
+  <rect x="790" y="232" width="190" height="94" rx="6" fill="#fff" stroke="#1f6fd1" stroke-width="1.4"/>
+  <rect x="790" y="232" width="190" height="30" rx="6" fill="#eaf2fd"/><path d="M790 262 h190" stroke="#1f6fd1"/>
+  <text x="885" y="252" font-size="13" font-weight="700" text-anchor="middle" fill="#1657a8">Message</text>
+  <text x="800" y="280" font-size="12" fill="#1d2d3d">auteur (technicien / IA)</text>
+  <text x="800" y="298" font-size="12" fill="#1d2d3d">contenu</text>
+  <text x="800" y="316" font-size="12" fill="#1d2d3d">heure</text>
+
+  <!-- Mémoire -->
+  <rect x="790" y="360" width="190" height="94" rx="6" fill="#fff" stroke="#1f6fd1" stroke-width="1.4"/>
+  <rect x="790" y="360" width="190" height="30" rx="6" fill="#eaf2fd"/><path d="M790 390 h190" stroke="#1f6fd1"/>
+  <text x="885" y="380" font-size="13" font-weight="700" text-anchor="middle" fill="#1657a8">Mémoire de conversation</text>
+  <text x="800" y="408" font-size="12" fill="#1d2d3d">dernière recherche</text>
+  <text x="800" y="426" font-size="12" fill="#1d2d3d">résultat sélectionné</text>
+  <text x="800" y="444" font-size="12" fill="#1d2d3d">type d'appareil</text>
+
+  <g stroke="#3b4f66" stroke-width="1.4" fill="none">
+    <line x1="740" y1="280" x2="790" y2="280"/>
+    <polyline points="680,326 680,407 790,407"/>
+  </g>
+  <text x="765" y="274" font-size="11.5" text-anchor="middle" fill="#3b4f66" font-style="italic">contient</text>
+  <text x="744" y="296" font-size="11.5" font-weight="700" fill="#1657a8">1</text>
+  <text x="764" y="296" font-size="11.5" font-weight="700" fill="#1657a8">1..*</text>
+  <text x="735" y="400" font-size="11.5" text-anchor="middle" fill="#3b4f66" font-style="italic">garde</text>
+  <text x="688" y="344" font-size="11.5" font-weight="700" fill="#1657a8">1</text>
+  <text x="772" y="422" font-size="11.5" font-weight="700" fill="#1657a8">1</text>
+</svg>

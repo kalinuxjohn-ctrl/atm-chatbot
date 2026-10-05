@@ -101,6 +101,13 @@ textarea:focus-visible {
   font-weight: 700;
 }
 
+/* Logo image (assets/images/logo.svg) à la place de l'ancienne lettre. */
+img.brand-logo {
+  padding: 0;
+  background: none;
+  object-fit: contain;
+}
+
 .main-navigation {
   display: flex;
   height: 100%;

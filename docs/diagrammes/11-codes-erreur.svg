@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 300" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Deux chemins : un clic sur un code d'erreur fréquent obtient une réponse immédiate depuis l'interface, sans serveur ni IA ; un message libre passe par le serveur métier, l'IA et la base, ce qui prend quelques secondes.">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3b4f66"/></marker>
+  </defs>
+  <rect width="960" height="300" fill="#ffffff"/>
+
+  <!-- Chemin court -->
+  <text x="20" y="34" font-size="13" font-weight="700" fill="#8a5a00" letter-spacing="0.6">CHEMIN COURT · CODE D'ERREUR FRÉQUENT</text>
+  <rect x="20" y="52" width="170" height="56" rx="28" fill="#fff4dd" stroke="#c98410" stroke-width="1.5"/>
+  <rect x="38" y="70" width="38" height="20" rx="5" fill="#fdecc8"/>
+  <text x="57" y="85" font-size="12" font-weight="700" text-anchor="middle" fill="#8a5a00" font-family="Consolas, monospace">E42</text>
+  <text x="132" y="85" font-size="12.5" text-anchor="middle" fill="#5c3c00">clic sur la bulle</text>
+  <rect x="250" y="52" width="200" height="56" rx="10" fill="#f2f9f8" stroke="#127a76"/>
+  <text x="350" y="76" font-size="13" font-weight="700" text-anchor="middle" fill="#0d4f4c">Interface</text>
+  <text x="350" y="95" font-size="11.5" text-anchor="middle" fill="#2f5f5c">lit la fiche E42 préparée</text>
+  <rect x="510" y="52" width="200" height="56" rx="10" fill="#10243a"/>
+  <text x="610" y="85" font-size="13" font-weight="600" text-anchor="middle" fill="#fff">Réponse affichée</text>
+  <line x1="190" y1="80" x2="246" y2="80" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <line x1="450" y1="80" x2="506" y2="80" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="740" y="76" font-size="13" font-weight="700" fill="#127a76">immédiat</text>
+  <text x="740" y="95" font-size="11.5" fill="#5b6b7f">0 serveur, 0 IA, 0 coût</text>
+
+  <line x1="20" y1="146" x2="940" y2="146" stroke="#e1e8f0"/>
+
+  <!-- Chemin complet -->
+  <text x="20" y="182" font-size="13" font-weight="700" fill="#1657a8" letter-spacing="0.6">CHEMIN COMPLET · DESCRIPTION LIBRE</text>
+  <rect x="20" y="200" width="170" height="56" rx="28" fill="#eaf2fd" stroke="#1f6fd1" stroke-width="1.5"/>
+  <text x="105" y="233" font-size="12.5" text-anchor="middle" fill="#1657a8">message écrit ou dicté</text>
+  <rect x="230" y="200" width="120" height="56" rx="10" fill="#f2f9f8" stroke="#127a76"/>
+  <text x="290" y="233" font-size="13" font-weight="700" text-anchor="middle" fill="#0d4f4c">Interface</text>
+  <rect x="390" y="200" width="150" height="56" rx="10" fill="#fff" stroke="#1f6fd1" stroke-width="1.5"/>
+  <text x="465" y="233" font-size="13" font-weight="700" text-anchor="middle" fill="#1657a8">Serveur métier</text>
+  <rect x="580" y="200" width="130" height="56" rx="10" fill="#fff4dd" stroke="#c98410"/>
+  <text x="645" y="225" font-size="12.5" font-weight="700" text-anchor="middle" fill="#5c3c00">IA + vecteurs</text>
+  <text x="645" y="243" font-size="12" text-anchor="middle" fill="#0d4f4c">+ base</text>
+  <g stroke="#3b4f66" stroke-width="1.6">
+    <line x1="190" y1="228" x2="226" y2="228" marker-end="url(#arrow)"/>
+    <line x1="350" y1="228" x2="386" y2="228" marker-end="url(#arrow)"/>
+    <line x1="540" y1="228" x2="576" y2="228" marker-end="url(#arrow)"/>
+  </g>
+  <text x="740" y="224" font-size="13" font-weight="700" fill="#1657a8">quelques secondes</text>
+  <text x="740" y="243" font-size="11.5" fill="#5b6b7f">compréhension + recherche</text>
+  <text x="740" y="259" font-size="11.5" fill="#5b6b7f">+ rédaction</text>
+</svg>

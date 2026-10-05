@@ -70,10 +70,17 @@ export async function getStaticJson(url) {
   }
 }
 
+// HTTP 503 du backend = une IA externe n'a pas répondu (surcharge, quota…).
+// La cause précise reste dans les journaux du serveur : le technicien n'a
+// pas à savoir quels services travaillent derrière le chatbot.
+const SATURATED_MESSAGE = "Désolé, le chatbot est actuellement saturé. Réessayez dans quelques instants.";
+
 /** Message lisible par le technicien, quelle que soit l'erreur. */
 export function getFriendlyErrorMessage(error) {
   if (!(error instanceof ApiRequestError)) {
     console.error("Erreur inattendue.", error);
+  } else if (error.status === 503) {
+    return SATURATED_MESSAGE;
   } else if (error.kind === "timeout") {
     return "L’analyse prend plus de temps que prévu. Vérifiez votre connexion et réessayez.";
   } else if (error.kind === "network") {

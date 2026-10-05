@@ -21,10 +21,16 @@ from abc import ABC, abstractmethod
 import requests
 
 from app.core.config import settings
+from app.core.errors import ExternalServiceUnavailableError
+from app.core.tracing import trace
 
 
-class LLMUnavailableError(Exception):
-    """Le LLM n'a pas pu répondre -- le message est déjà rédigé pour l'utilisateur final."""
+class LLMUnavailableError(ExternalServiceUnavailableError):
+    """
+    Le LLM n'a pas répondu, ou pas de façon exploitable. Le message décrit la
+    cause précise pour les journaux du serveur ; il n'est JAMAIS montré au
+    technicien (app/main.py renvoie un 503 au message neutre).
+    """
 
 
 class LLMProvider(ABC):
@@ -237,27 +243,29 @@ def get_llm_provider() -> LLMProvider:
 
 def generate_reply(prompt: str, fallback: str | None = None) -> str:
     """
-    Demande une réponse au LLM configuré. Ne laisse jamais remonter
-    d'exception à l'appelant : en cas de problème (réseau, timeout, modèle
-    absent, mauvaise config...), renvoie directement le message d'erreur
-    clair à la place du texte généré, pour que le reste de l'app reste
-    fonctionnel en dégradé.
+    Demande une réponse au LLM configuré.
 
-    `fallback` (facultatif) : texte déjà prêt renvoyé À LA PLACE du message
-    d'erreur si le LLM est indisponible -- utile quand l'appelant a des
-    données factuelles à montrer même sans reformulation (ex. cas trouvés).
+    LLM indisponible (réseau, surcharge 503, quota, mauvaise config...) ou
+    réponse vide :
+    - SANS `fallback` : lève LLMUnavailableError. La requête HTTP se termine
+      alors en 503 et le technicien voit « chatbot saturé » -- jamais le
+      message technique, qui trahirait le fournisseur d'IA utilisé.
+    - AVEC `fallback` : renvoie ce texte déjà prêt à la place. Réservé aux
+      cas où l'appelant a des données factuelles à montrer même sans
+      reformulation (ex. les cas trouvés dans l'historique).
+    Dans les deux cas, la cause précise est écrite dans les journaux.
     """
     try:
         reply = get_llm_provider().generate(prompt)
+        # Un LLM peut répondre "avec succès" mais sans aucun texte : traité
+        # comme une panne, jamais renvoyé comme une bulle vide.
+        if not isinstance(reply, str) or not reply.strip():
+            raise LLMUnavailableError("Le LLM a répondu sans aucun texte.")
     except LLMUnavailableError as erreur:
-        return fallback if fallback is not None else str(erreur)
-
-    # Un LLM peut répondre "avec succès" mais sans aucun texte : on ne
-    # renvoie jamais une bulle vide au technicien.
-    if not isinstance(reply, str) or not reply.strip():
-        if fallback is not None:
-            return fallback
-        return "Le modèle de langage n'a renvoyé aucune réponse -- réessayez dans un instant."
+        if fallback is None:
+            raise
+        trace("ERROR", "LLM indisponible, texte de secours utilisé", cause=str(erreur))
+        return fallback
     return reply.strip()
 
 

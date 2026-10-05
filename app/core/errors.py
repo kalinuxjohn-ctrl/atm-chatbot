@@ -14,4 +14,10 @@ class InvalidReferenceError(ValueError):
 
 
 class ExternalServiceUnavailableError(RuntimeError):
-    """Un service externe indispensable (ex. API d'embedding) ne répond pas -> HTTP 503."""
+    """
+    Un service externe indispensable (IA de langage, API d'embedding) ne répond
+    pas ou répond de façon inexploitable -> HTTP 503. Le message de l'exception
+    est destiné aux JOURNAUX du serveur (cause précise) ; le client ne reçoit
+    qu'un message neutre (voir app/main.py), pour ne pas exposer les services
+    utilisés derrière le chatbot.
+    """

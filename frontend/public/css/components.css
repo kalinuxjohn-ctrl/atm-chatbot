@@ -53,6 +53,14 @@
   height: 100%;
 }
 
+/* Avatar défini par une image (champ `image` dans avatar.js) : remplit son cadre rond. */
+.avatar .avatar-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .avatar .avatar-eyes {
   transform-box: fill-box;
   transform-origin: center;

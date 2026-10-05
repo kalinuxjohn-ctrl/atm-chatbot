@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Logo ATM-Chatbot : bulle de discussion contenant un écran de GAB. -->
+  <defs>
+    <linearGradient id="logo-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10243a"/>
+      <stop offset="1" stop-color="#0d5f63"/>
+    </linearGradient>
+    <linearGradient id="logo-screen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7ee0d6"/>
+      <stop offset="1" stop-color="#2bb3a9"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#logo-bg)"/>
+  <!-- Bulle -->
+  <path d="M14 16h36a5 5 0 0 1 5 5v19a5 5 0 0 1-5 5H30l-9 8v-8h-7a5 5 0 0 1-5-5V21a5 5 0 0 1 5-5z" fill="#fff"/>
+  <!-- Écran du GAB -->
+  <rect x="19" y="21" width="26" height="14" rx="3" fill="url(#logo-screen)"/>
+  <path d="M23 26h10M23 30h6" stroke="#0d3a46" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="40" cy="28" r="2.2" fill="#0d3a46"/>
+  <!-- Fente à carte -->
+  <rect x="24" y="38.5" width="16" height="2.2" rx="1.1" fill="#10243a" opacity="0.55"/>
+</svg>

@@ -1,0 +1,590 @@
+<title>Dossier d'étude ATM-Chatbot</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,750&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+  /* Mise en page : document de lecture, sommaire fixe à gauche sur grand écran,
+     une seule colonne sur téléphone. Les figures sont des « planches » blanches
+     (images autonomes, réutilisables dans Word), identiques dans les deux thèmes. */
+  :root {
+    --bg: #f5f7f9;
+    --paper: #ffffff;
+    --ink: #142538;
+    --ink-soft: #4a5b6e;
+    --line: #dbe3ea;
+    --accent: #127a76;
+    --accent-ink: #0d5c59;
+    --accent-pale: #e5f4f2;
+    --blue: #1f6fd1;
+    --amber: #a86d08;
+    --amber-pale: #fff3dc;
+    --plate: #ffffff;
+    --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1822; --paper: #142230; --ink: #e4ecf3; --ink-soft: #a3b3c3; --line: #2a3a4a;
+      --accent: #4fc9bd; --accent-ink: #7fdcd2; --accent-pale: #16302f; --blue: #6fa8f0;
+      --amber: #f0b453; --amber-pale: #2c2412; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1822; --paper: #142230; --ink: #e4ecf3; --ink-soft: #a3b3c3; --line: #2a3a4a;
+    --accent: #4fc9bd; --accent-ink: #7fdcd2; --accent-pale: #16302f; --blue: #6fa8f0;
+    --amber: #f0b453; --amber-pale: #2c2412; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.62 var(--font-body);
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: 24px 64px;
+    gap: 40px;
+  }
+  @media (min-width: 1080px) {
+    .layout { grid-template-columns: 230px minmax(0, 1fr); padding-inline: 32px; }
+  }
+
+  /* ---------- Sommaire ---------- */
+  .toc { font-size: 14.5px; }
+  .toc-inner { display: grid; gap: 4px; }
+  @media (min-width: 1080px) {
+    .toc-inner { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); }
+  }
+  .toc-title {
+    margin: 0 0 8px;
+    color: var(--ink-soft);
+    font: 700 12px/1 var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .toc a {
+    display: grid;
+    grid-template-columns: 26px 1fr;
+    gap: 6px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+  .toc a:hover, .toc a:focus-visible { background: var(--accent-pale); color: var(--ink); outline: none; }
+  .toc a span { color: var(--accent); font: 700 12px/1.9 var(--font-mono); }
+  .toc .toc-part { margin: 12px 0 2px 6px; color: var(--ink); font-weight: 700; font-size: 13px; }
+  @media (max-width: 1079px) {
+    .toc { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+    .toc-inner { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+    .toc .toc-part { grid-column: 1 / -1; }
+  }
+
+  /* ---------- Document ---------- */
+  main { min-width: 0; }
+  .doc {
+    max-width: 860px;
+    padding: clamp(20px, 4vw, 56px);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--paper);
+  }
+
+  .cover { padding-bottom: 28px; margin-bottom: 36px; border-bottom: 2px solid var(--ink); }
+  .cover-kicker {
+    margin: 0 0 18px;
+    color: var(--accent);
+    font: 700 12.5px/1 var(--font-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; }
+  h1 { margin: 0 0 14px; font-size: clamp(34px, 6vw, 54px); font-weight: 750; line-height: 1.04; letter-spacing: -0.02em; }
+  .cover-lead { max-width: 60ch; margin: 0 0 22px; color: var(--ink-soft); font-size: 19px; }
+  .cover-meta { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 0; padding: 0; list-style: none; font-size: 14.5px; color: var(--ink-soft); }
+  .cover-meta strong { color: var(--ink); }
+
+  section { scroll-margin-top: 20px; }
+  .part-label {
+    margin: 56px 0 6px;
+    color: var(--amber);
+    font: 700 12.5px/1 var(--font-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  h2 {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    margin: 44px 0 14px;
+    font-size: clamp(25px, 3.6vw, 31px);
+    font-weight: 750;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+  .part-label + section h2 { margin-top: 6px; }
+  h2 .num { color: var(--accent); font: 700 0.62em/1 var(--font-mono); }
+  h3 { margin: 30px 0 8px; font-size: 20px; font-weight: 600; }
+  p, ul, ol { max-width: 68ch; }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 16px; padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  strong { font-weight: 700; }
+  .muted { color: var(--ink-soft); }
+
+  /* Encadré « en une phrase » */
+  .keypoint {
+    max-width: 68ch;
+    margin: 18px 0 22px;
+    padding: 14px 18px;
+    border-left: 4px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    background: var(--accent-pale);
+  }
+  .keypoint p:last-child { margin-bottom: 0; }
+
+  /* Résumé pour décideurs */
+  .summary { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 18px 0 8px; }
+  @media (min-width: 640px) { .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .summary div { padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; }
+  .summary dt { margin-bottom: 4px; color: var(--accent); font: 700 12px/1.3 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+  .summary dd { margin: 0; font-size: 15.5px; line-height: 1.5; }
+
+  /* Figures */
+  figure { margin: 26px 0 30px; }
+  .plate {
+    overflow-x: auto;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--plate);
+  }
+  .plate img { display: block; width: 100%; min-width: 560px; height: auto; }
+  figcaption { max-width: 70ch; margin-top: 10px; color: var(--ink-soft); font-size: 15px; line-height: 1.5; }
+  figcaption b { color: var(--ink); font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.04em; margin-right: 6px; }
+
+  /* Tableaux */
+  .table-wrap { overflow-x: auto; margin: 16px 0 24px; border: 1px solid var(--line); border-radius: 12px; }
+  table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 15px; line-height: 1.45; }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th { background: var(--accent-pale); color: var(--accent-ink); font: 700 12px/1.3 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; }
+  tr:last-child td { border-bottom: 0; }
+  td.id { white-space: nowrap; color: var(--accent); font: 700 13px/1.45 var(--font-mono); }
+  .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--amber-pale);
+    color: var(--amber);
+    font: 700 11.5px/1.7 var(--font-mono);
+    white-space: nowrap;
+  }
+
+  /* Fiche de cas d'utilisation */
+  .usecase { margin: 18px 0 26px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .usecase header { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; padding: 12px 18px; background: var(--accent-pale); }
+  .usecase header code { color: var(--accent); font: 700 13px/1 var(--font-mono); }
+  .usecase header strong { font-family: var(--font-display); font-size: 18px; }
+  .usecase dl { display: grid; grid-template-columns: minmax(0, 1fr); margin: 0; padding: 6px 18px 14px; }
+  @media (min-width: 640px) { .usecase dl { grid-template-columns: 170px minmax(0, 1fr); } }
+  .usecase dt { padding-top: 10px; color: var(--ink-soft); font-size: 14px; font-weight: 700; }
+  .usecase dd { min-width: 0; margin: 0; padding-top: 10px; font-size: 15.5px; }
+  .usecase dd ol, .usecase dd ul { margin-bottom: 0; }
+
+  /* Étapes de la démarche (vraie séquence) */
+  .steps { display: grid; gap: 0; margin: 18px 0 24px; padding: 0; list-style: none; counter-reset: step; max-width: none; }
+  .steps li { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; margin: 0; padding-bottom: 18px; counter-increment: step; }
+  .steps li::before {
+    content: counter(step);
+    display: grid; width: 44px; height: 44px; place-items: center;
+    border-radius: 50%; background: var(--ink); color: var(--paper);
+    font: 700 16px/1 var(--font-mono);
+  }
+  .steps li:not(:last-child)::after { content: ""; position: absolute; left: 21px; top: 46px; bottom: 2px; width: 2px; background: var(--line); }
+  .steps h3 { margin: 8px 0 4px; font-size: 18px; }
+  .steps p { margin: 0; font-size: 15.5px; color: var(--ink-soft); }
+
+  /* Glossaire */
+  .glossary { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; max-width: 68ch; margin: 0; }
+  @media (min-width: 640px) { .glossary { grid-template-columns: 170px minmax(0, 1fr); } }
+  .glossary dt { padding: 10px 0 0; font-weight: 700; }
+  .glossary dd { margin: 0; padding: 10px 0; border-bottom: 1px solid var(--line); color: var(--ink-soft); }
+  @media (min-width: 640px) { .glossary dt { border-bottom: 1px solid var(--line); } }
+
+  .doc-footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 14px; }
+  a { color: var(--accent); }
+  a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sommaire">
+    <div class="toc-inner">
+      <p class="toc-title">Sommaire</p>
+      <a href="#resume"><span>00</span>Le projet en bref</a>
+      <p class="toc-part">Étude du besoin</p>
+      <a href="#contexte"><span>01</span>Contexte et problème</a>
+      <a href="#objectifs"><span>02</span>Objectifs</a>
+      <a href="#acteurs"><span>03</span>Acteurs</a>
+      <a href="#besoins"><span>04</span>Besoins</a>
+      <a href="#cas"><span>05</span>Cas d'utilisation</a>
+      <p class="toc-part">Compréhension</p>
+      <a href="#parcours"><span>06</span>Le parcours d'une question</a>
+      <a href="#similarite"><span>07</span>Retrouver une panne semblable</a>
+      <a href="#fiabilite"><span>08</span>Mesurer ce qui marche</a>
+      <a href="#apprentissage"><span>09</span>Un système qui s'enrichit</a>
+      <a href="#codes"><span>10</span>Les codes d'erreur fréquents</a>
+      <p class="toc-part">Conception</p>
+      <a href="#architecture"><span>11</span>Architecture</a>
+      <a href="#stack"><span>12</span>Technologies retenues</a>
+      <a href="#donnees"><span>13</span>Modèle de données</a>
+      <a href="#limites"><span>14</span>Sécurité et limites</a>
+      <a href="#demarche"><span>15</span>Démarche du projet</a>
+      <a href="#glossaire"><span>16</span>Glossaire</a>
+    </div>
+  </nav>
+
+  <main>
+    <article class="doc">
+      <header class="cover">
+        <p class="cover-kicker">Dossier d'étude et de conception</p>
+        <h1>ATM-Chatbot</h1>
+        <p class="cover-lead">Un assistant conversationnel qui aide les techniciens de maintenance des guichets automatiques (GAB) et des terminaux de paiement (TPE) à résoudre une panne en s'appuyant sur les interventions déjà réalisées.</p>
+        <ul class="cover-meta">
+          <li><strong>Version</strong> 1.0</li>
+          <li><strong>Date</strong> octobre 2026</li>
+          <li><strong>Public</strong> direction, encadrement, équipes métier</li>
+        </ul>
+      </header>
+
+      <!-- ===================== 00 ===================== -->
+      <section id="resume">
+        <h2><span class="num">00</span>Le projet en bref</h2>
+        <p>Ce document décrit ATM-Chatbot du point de vue du besoin et de la conception, sans entrer dans le code. Il suit l'ordre d'un projet bien mené : on part du problème, on décrit ce que les utilisateurs doivent pouvoir faire, puis on explique comment le système est conçu pour y répondre.</p>
+        <dl class="summary">
+          <div><dt>Le problème</dt><dd>Les solutions aux pannes restent dans la mémoire de quelques techniciens expérimentés.</dd></div>
+          <div><dt>La réponse</dt><dd>Un assistant qui retrouve les interventions passées semblables et montre ce qui a réellement marché.</dd></div>
+          <div><dt>Pour qui</dt><dd>Les techniciens sur le terrain, au clavier ou à la voix, sur PC, tablette ou téléphone.</dd></div>
+          <div><dt>Ce qu'on gagne</dt><dd>Moins d'essais au hasard, un savoir partagé, et une base qui s'améliore à chaque intervention.</dd></div>
+        </dl>
+      </section>
+
+      <!-- ===================== ÉTUDE DU BESOIN ===================== -->
+      <p class="part-label">Partie 1 · Étude du besoin</p>
+
+      <section id="contexte">
+        <h2><span class="num">01</span>Contexte et problème</h2>
+        <p>Un technicien intervient seul devant un GAB en panne : la carte du client est restée bloquée, l'écran est noir ou les billets ne sortent pas. Souvent, quelqu'un a déjà rencontré exactement cette panne. Mais cette expérience n'est écrite nulle part de façon exploitable.</p>
+        <p>Aujourd'hui, le technicien a trois options : appeler un collègue (s'il est disponible), fouiller dans des notes personnelles (si elles existent), ou essayer des manipulations jusqu'à ce que l'une fonctionne. Dans les trois cas, la solution trouvée n'est pas transmise au suivant.</p>
+        <figure>
+          <div class="plate"><img src="diagrammes/01-avant-apres.svg" alt="Comparaison : aujourd'hui le technicien dépend d'un collègue, de notes ou du hasard ; avec ATM-Chatbot il interroge l'assistant, qui s'appuie sur l'historique partagé et enrichi à chaque intervention." loading="lazy"></div>
+          <figcaption><b>FIGURE 1</b>À gauche, la situation actuelle : le savoir est individuel et se perd. À droite, la situation visée : chaque intervention enregistrée devient une piste pour le technicien suivant.</figcaption>
+        </figure>
+      </section>
+
+      <section id="objectifs">
+        <h2><span class="num">02</span>Objectifs</h2>
+        <ol>
+          <li><strong>Réduire le temps de diagnostic</strong> en proposant d'emblée les interventions passées les plus proches de la panne décrite.</li>
+          <li><strong>Privilégier ce qui marche vraiment</strong> en classant les solutions selon leur taux de réussite constaté sur le terrain, et non selon une opinion.</li>
+          <li><strong>Capitaliser le savoir</strong> : chaque intervention enregistrée améliore les réponses suivantes.</li>
+          <li><strong>S'adapter au terrain</strong> : description en langage courant, à l'écrit ou à la voix, sur tout appareil.</li>
+          <li><strong>Ne jamais inventer</strong> : l'assistant reformule l'historique, il ne fabrique pas de procédure.</li>
+        </ol>
+      </section>
+
+      <section id="acteurs">
+        <h2><span class="num">03</span>Acteurs</h2>
+        <p>Un acteur est une personne ou un système qui interagit avec ATM-Chatbot.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Acteur</th><th>Type</th><th>Ce qu'il attend du système</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Technicien</strong></td><td>Humain</td><td>Des pistes fiables pour la panne qu'il a devant lui, et un moyen simple d'enregistrer ce qu'il a fait.</td></tr>
+              <tr><td><strong>Technicien référent</strong></td><td>Humain</td><td>Garder un catalogue d'actions propre : décider si une action nouvelle est vraiment nouvelle ou s'il s'agit d'une action déjà connue, formulée autrement.</td></tr>
+              <tr><td><strong>IA de langage</strong></td><td>Système externe</td><td>Comprendre l'intention d'un message et rédiger une réponse lisible à partir des cas fournis.</td></tr>
+              <tr><td><strong>Moteur de similarité</strong></td><td>Système externe</td><td>Transformer une phrase en « empreinte de sens » pour pouvoir comparer deux descriptions de panne.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="besoins">
+        <h2><span class="num">04</span>Besoins</h2>
+        <h3>Besoins fonctionnels : ce que le système doit faire</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Réf.</th><th>Besoin</th><th>Acteur</th></tr></thead>
+            <tbody>
+              <tr><td class="id">BF-01</td><td>S'identifier avec son numéro de technicien.</td><td>Technicien</td></tr>
+              <tr><td class="id">BF-02</td><td>Choisir le type d'appareil (GAB ou TPE) sur lequel porte la conversation.</td><td>Technicien</td></tr>
+              <tr><td class="id">BF-03</td><td>Décrire une panne en langage courant, à l'écrit ou en dictant.</td><td>Technicien</td></tr>
+              <tr><td class="id">BF-04</td><td>Recevoir les interventions passées les plus semblables, sur le même type d'appareil.</td><td>Technicien</td></tr>
+              <tr><td class="id">BF-05</td><td>À défaut de cas semblables, recevoir les solutions connues classées par fiabilité.</td><td>Technicien</td></tr>
+              <tr><td class="id">BF-06</td><td>Demander le détail d'un résultat en le désignant simplement (« le deuxième »).</td><td>Technicien</td></tr>
+              <tr><td class="id">BF-07</td><td>Écouter les réponses à voix haute, et converser entièrement à la voix (mode mains libres).</td><td>Technicien</td></tr>
+              <tr><td class="id">BF-08</td><td>Obtenir en un clic la fiche d'un code d'erreur fréquent.</td><td>Technicien</td></tr>
+              <tr><td class="id">BF-09</td><td>Rechercher un code d'erreur par son code, exact ou partiel (ex. « E4 »).</td><td>Technicien</td></tr>
+              <tr><td class="id">BF-10</td><td>Enregistrer une intervention : appareil concerné et symptômes constatés.</td><td>Technicien</td></tr>
+              <tr><td class="id">BF-11</td><td>Enregistrer chaque action tentée, son résultat, et si elle a résolu la panne.</td><td>Technicien</td></tr>
+              <tr><td class="id">BF-12</td><td>Ranger une action nouvelle dans le catalogue, après avoir vu les actions existantes qui lui ressemblent.</td><td>Référent</td></tr>
+              <tr><td class="id">BF-13</td><td>Recalculer automatiquement les taux de réussite après chaque enregistrement.</td><td>Système</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Besoins non fonctionnels : les qualités attendues</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Réf.</th><th>Qualité</th><th>Exigence</th></tr></thead>
+            <tbody>
+              <tr><td class="id">BNF-01</td><td>Fiabilité de l'information</td><td>L'assistant ne présente que des cas réellement enregistrés, et seulement s'ils ressemblent suffisamment à la panne décrite (seuil réglable).</td></tr>
+              <tr><td class="id">BNF-02</td><td>Pertinence par équipement</td><td>Un GAB et un TPE n'ont pas la même mécanique : les recherches et les statistiques sont toujours séparées par type d'appareil.</td></tr>
+              <tr><td class="id">BNF-03</td><td>Fonctionnement dégradé</td><td>Si l'IA de rédaction ne répond pas, les cas trouvés sont tout de même affichés. Si la recherche est indisponible, un message clair invite à réessayer.</td></tr>
+              <tr><td class="id">BNF-04</td><td>Rapidité</td><td>Fiche de code d'erreur fréquent : immédiate. Réponse complète : quelques secondes.</td></tr>
+              <tr><td class="id">BNF-05</td><td>Ergonomie terrain</td><td>Utilisable au téléphone, à une main, avec la voix ; vocabulaire du métier.</td></tr>
+              <tr><td class="id">BNF-06</td><td>Indépendance vis-à-vis des fournisseurs</td><td>Changer d'IA (Gemini, Claude ou un modèle installé localement) se fait par un réglage, sans refaire le système.</td></tr>
+              <tr><td class="id">BNF-07</td><td>Autonomie des équipes métier</td><td>Fiches de codes d'erreur, images et avatars modifiables sans programmer.</td></tr>
+              <tr><td class="id">BNF-08</td><td>Confidentialité</td><td>Les données restent sur nos serveurs ; seuls les textes nécessaires partent vers les services d'IA. Les clés d'accès ne sont jamais écrites dans le programme.</td></tr>
+              <tr><td class="id">BNF-09</td><td>Portabilité</td><td>Le système s'installe à l'identique sur n'importe quel serveur (conteneurs).</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="cas">
+        <h2><span class="num">05</span>Cas d'utilisation</h2>
+        <p>Le diagramme de cas d'utilisation montre, d'un coup d'œil, <strong>qui fait quoi</strong> avec le système. Chaque ovale est un service rendu ; chaque trait relie un acteur aux services qu'il utilise.</p>
+        <figure>
+          <div class="plate"><img src="diagrammes/02-cas-utilisation.svg" alt="Diagramme de cas d'utilisation : le technicien utilise sept services (s'identifier, décrire une panne, consulter les cas, demander un détail, consulter un code d'erreur, enregistrer une intervention, enregistrer une action) ; le technicien référent classe les actions ; l'IA de langage et le moteur de similarité assistent." loading="lazy"></div>
+          <figcaption><b>FIGURE 2</b>Les huit services d'ATM-Chatbot. « Décrire une panne » inclut toujours la recherche de cas similaires. En pointillés orange : les services externes sollicités.</figcaption>
+        </figure>
+
+        <h3>Fiches détaillées des deux cas principaux</h3>
+        <div class="usecase">
+          <header><code>UC-02</code><strong>Décrire une panne et obtenir des pistes</strong></header>
+          <dl>
+            <dt>Acteur principal</dt><dd>Technicien</dd>
+            <dt>Avant de commencer</dt><dd>Le technicien est identifié. Le type d'appareil est choisi dans l'interface ou mentionné dans le message.</dd>
+            <dt>Déroulement normal</dt>
+            <dd><ol>
+              <li>Le technicien décrit la panne avec ses mots (« le GAB a avalé la carte »).</li>
+              <li>Le système comprend qu'il s'agit d'une demande de diagnostic.</li>
+              <li>Il cherche les interventions passées semblables, sur le même type d'appareil.</li>
+              <li>Il présente jusqu'à trois cas, du plus proche au moins proche, avec ce qui a été fait et la fiabilité connue.</li>
+              <li>Le technicien peut demander le détail d'un cas (« le deuxième »).</li>
+            </ol></dd>
+            <dt>Variantes</dt>
+            <dd><ul>
+              <li>Aucun cas semblable : le système propose les solutions connues, classées par taux de réussite.</li>
+              <li>Rien de connu du tout : il le dit clairement, sans inventer.</li>
+              <li>Type d'appareil inconnu : il demande s'il s'agit d'un GAB ou d'un TPE.</li>
+              <li>Service de recherche indisponible : il invite à réessayer dans un instant.</li>
+            </ul></dd>
+          </dl>
+        </div>
+
+        <div class="usecase">
+          <header><code>UC-06</code><strong>Enregistrer une intervention</strong></header>
+          <dl>
+            <dt>Acteur principal</dt><dd>Technicien</dd>
+            <dt>Avant de commencer</dt><dd>L'appareil et le technicien existent dans la base.</dd>
+            <dt>Déroulement normal</dt>
+            <dd><ol>
+              <li>Le technicien indique l'appareil et décrit un ou plusieurs symptômes.</li>
+              <li>Le système calcule l'empreinte de sens de chaque symptôme, pour les recherches futures.</li>
+              <li>Si un symptôme est quasi identique à un symptôme déjà catalogué (ressemblance d'au moins 85 %), il y est rattaché automatiquement.</li>
+              <li>L'intervention et tous ses symptômes sont enregistrés ensemble.</li>
+            </ol></dd>
+            <dt>Règle de gestion</dt><dd>Tout ou rien : si une étape échoue, rien n'est enregistré. On évite ainsi un symptôme orphelin ou une intervention incomplète.</dd>
+            <dt>Variantes</dt>
+            <dd><ul>
+              <li>Appareil ou technicien inconnu : l'enregistrement est refusé avec un message explicite.</li>
+              <li>Symptôme sans équivalent proche : il est enregistré tel quel. Il pourra être rattaché plus tard.</li>
+            </ul></dd>
+          </dl>
+        </div>
+      </section>
+
+      <!-- ===================== COMPRÉHENSION ===================== -->
+      <p class="part-label">Partie 2 · Comprendre le fonctionnement</p>
+
+      <section id="parcours">
+        <h2><span class="num">06</span>Le parcours d'une question</h2>
+        <p>Tout message suit le même chemin en trois étapes : <strong>comprendre</strong> ce que veut le technicien, <strong>chercher</strong> dans l'historique si c'est utile, puis <strong>répondre</strong> en mémorisant l'échange pour la suite de la conversation.</p>
+        <figure>
+          <div class="plate"><img src="diagrammes/04-parcours-message.svg" alt="Organigramme : après compréhension de l'intention, une conversation reçoit une réponse courte, un diagnostic déclenche une recherche en cascade, une demande de détail reprend un résultat mémorisé ; tout finit par une réponse affichée et mémorisée." loading="lazy"></div>
+          <figcaption><b>FIGURE 3</b>Trois intentions possibles. Seul le diagnostic lance une recherche, en cascade : d'abord des cas réels, puis des statistiques, puis un aveu honnête qu'on ne sait pas.</figcaption>
+        </figure>
+        <div class="keypoint">
+          <p><strong>Pourquoi la demande de détail se passe d'IA :</strong> quand le technicien écrit « le deuxième », le système sait exactement quel cas il a montré en deuxième position, car il l'a mémorisé. Il ne demande pas à l'IA de deviner, ce qui supprime tout risque de confusion.</p>
+        </div>
+
+        <h3>Le même parcours, vu dans le temps</h3>
+        <p>Le diagramme de séquence suivant montre qui parle à qui, et dans quel ordre, pour un diagnostic. Les flèches pleines sont des demandes, les flèches en pointillés des réponses.</p>
+        <figure>
+          <div class="plate"><img src="diagrammes/09-sequence-diagnostic.svg" alt="Diagramme de séquence en treize échanges entre le technicien, l'interface, le serveur métier, l'IA de langage, le moteur de vecteurs et la base de données." loading="lazy"></div>
+          <figcaption><b>FIGURE 4</b>Un diagnostic en treize échanges. Le serveur métier (barre bleue) orchestre tout ; les deux services d'IA ne voient que des textes, jamais la base de données.</figcaption>
+        </figure>
+      </section>
+
+      <section id="similarite">
+        <h2><span class="num">07</span>Retrouver une panne semblable</h2>
+        <p>Deux techniciens ne décrivent jamais une panne avec les mêmes mots. « Le GAB a avalé la carte » et « la carte reste coincée dans le distributeur » parlent pourtant de la même chose. Une recherche par mots-clés échouerait ; ATM-Chatbot compare donc le <strong>sens</strong> des phrases.</p>
+        <figure>
+          <div class="plate"><img src="diagrammes/05-similarite.svg" alt="Chaque phrase devient une position sur une carte du sens ; les descriptions de la même panne se regroupent ; seules celles situées dans la zone assez proche de la question sont retenues." loading="lazy"></div>
+          <figcaption><b>FIGURE 5</b>Chaque phrase est transformée en une liste de 1 024 nombres, comme des coordonnées. Les pannes semblables se retrouvent voisines ; on retient celles qui tombent dans la zone « assez proche » de la question.</figcaption>
+        </figure>
+        <p>Deux garde-fous complètent ce principe. D'abord, un <strong>seuil de ressemblance</strong> : un cas trop éloigné n'est jamais montré, même s'il est « le moins éloigné » de tous. Ensuite, la recherche est toujours limitée au même <strong>type d'appareil</strong> que la question.</p>
+      </section>
+
+      <section id="fiabilite">
+        <h2><span class="num">08</span>Mesurer ce qui marche</h2>
+        <p>Pour chaque couple « symptôme + action », et pour chaque type d'appareil, le système compte combien de fois l'action a été essayée et combien de fois elle a réellement résolu la panne. Le rapport des deux donne la <strong>fiabilité</strong>.</p>
+        <figure>
+          <div class="plate"><img src="diagrammes/06-fiabilite.svg" alt="Tableau : remplacer le capteur de rétention, 1 réussite sur 1 essai, 100 % ; réinitialiser le lecteur, 3 sur 4, 75 % ; vérifier l'état du lecteur, 0 sur 2, 0 %." loading="lazy"></div>
+          <figcaption><b>FIGURE 6</b>Exemple pour le symptôme « carte retenue » sur GAB. Une pastille verte, c'est une fois où l'action a résolu la panne ; une pastille grise, une fois où elle n'a pas suffi.</figcaption>
+        </figure>
+        <p class="muted">Rien n'est masqué : le technicien voit tout le classement et garde la décision finale. La fiabilité n'est jamais saisie à la main. Elle est recalculée à partir des interventions enregistrées.</p>
+      </section>
+
+      <section id="apprentissage">
+        <h2><span class="num">09</span>Un système qui s'enrichit</h2>
+        <p>ATM-Chatbot n'est pas figé. Chaque intervention enregistrée nourrit les réponses suivantes, ce qui forme une boucle vertueuse.</p>
+        <figure>
+          <div class="plate"><img src="diagrammes/10-boucle-apprentissage.svg" alt="Cycle en quatre étapes : le technicien enregistre, le symptôme est rapproché du catalogue, les fiabilités sont recalculées, le technicien suivant reçoit de meilleures pistes." loading="lazy"></div>
+          <figcaption><b>FIGURE 7</b>Plus les techniciens enregistrent leurs interventions, plus les pistes proposées sont nombreuses et leurs fiabilités précises.</figcaption>
+        </figure>
+        <div class="keypoint">
+          <p><strong>Le rôle du catalogue :</strong> les techniciens écrivent librement (« carte avalée », « carte bloquée »). Le catalogue regroupe ces formulations sous un libellé unique. Sans lui, les statistiques seraient éparpillées entre des dizaines de façons de dire la même chose.</p>
+        </div>
+      </section>
+
+      <section id="codes">
+        <h2><span class="num">10</span>Les codes d'erreur fréquents</h2>
+        <p>Certaines pannes reviennent si souvent, avec un code affiché par la machine (E42, E67…), que leur procédure est déjà connue. Pour celles-ci, inutile de solliciter l'IA : une fiche préparée à l'avance s'affiche dès que le technicien touche la bulle du code.</p>
+        <figure>
+          <div class="plate"><img src="diagrammes/11-codes-erreur.svg" alt="Deux chemins : le clic sur un code d'erreur fréquent donne une réponse immédiate depuis l'interface ; une description libre passe par le serveur métier, l'IA et la base, ce qui prend quelques secondes." loading="lazy"></div>
+          <figcaption><b>FIGURE 8</b>Le chemin court est instantané et gratuit ; le chemin complet traite tout le reste.</figcaption>
+        </figure>
+        <p>Ces fiches sont de simples fichiers, un par code. Un responsable métier peut en ajouter ou en corriger sans intervention d'un développeur.</p>
+      </section>
+
+      <!-- ===================== CONCEPTION ===================== -->
+      <p class="part-label">Partie 3 · Conception</p>
+
+      <section id="architecture">
+        <h2><span class="num">11</span>Architecture</h2>
+        <p>Le système est découpé en blocs aux rôles bien séparés. Ce découpage permet de faire évoluer chaque bloc sans toucher aux autres : changer de fournisseur d'IA, par exemple, ne concerne qu'un seul bloc.</p>
+        <figure>
+          <div class="plate"><img src="diagrammes/03-architecture.svg" alt="Architecture : le navigateur échange avec le serveur d'interface ; celui-ci relaie les questions au serveur métier, qui lit et écrit dans la base de données et appelle l'IA de langage et le moteur de vecteurs, hébergés à l'extérieur." loading="lazy"></div>
+          <figcaption><b>FIGURE 9</b>Trois zones : le terrain (le navigateur du technicien), notre hébergement (interface, serveur métier, base de données) et deux services d'IA externes.</figcaption>
+        </figure>
+        <ul>
+          <li><strong>Navigateur</strong> : rien à installer. Le micro et le haut-parleur de l'appareil servent au mode vocal.</li>
+          <li><strong>Serveur d'interface</strong> : fournit les pages et les images, les fiches de codes d'erreur et une voix française de qualité. Il relaie les questions vers le serveur métier, qui n'est jamais exposé directement.</li>
+          <li><strong>Serveur métier</strong> : le cerveau. Il applique les règles (seuils, séparation GAB/TPE, cascade de recherche) et orchestre les appels aux services d'IA.</li>
+          <li><strong>Base de données</strong> : une seule base conserve l'historique, le catalogue, les conversations et les empreintes de sens.</li>
+          <li><strong>Services externes</strong> : l'IA de langage comprend et rédige ; le moteur de vecteurs calcule les empreintes de sens.</li>
+        </ul>
+      </section>
+
+      <section id="stack">
+        <h2><span class="num">12</span>Technologies retenues</h2>
+        <p>Le tableau suivant détaille les technologies retenues pour chaque bloc, avec la raison de chaque choix.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Bloc</th><th>Technologie</th><th>Pourquoi ce choix</th></tr></thead>
+            <tbody>
+              <tr><td>Interface</td><td>HTML, CSS, JavaScript (sans framework)</td><td>Légère et rapide, même sur un téléphone modeste ; aucune installation.</td></tr>
+              <tr><td>Voix</td><td>Reconnaissance vocale du navigateur, synthèse <span class="tag">edge-tts</span></td><td>Dictée intégrée à Chrome et Edge ; voix françaises naturelles, identiques sur tous les appareils.</td></tr>
+              <tr><td>Serveur d'interface</td><td>Python (serveur web léger)</td><td>Simple et suffisant : sert les pages et relaie les questions.</td></tr>
+              <tr><td>Serveur métier</td><td>Python + <span class="tag">FastAPI</span></td><td>Vérifie automatiquement les données reçues et documente lui-même ses services.</td></tr>
+              <tr><td>Base de données</td><td><span class="tag">PostgreSQL 16</span> + extension <span class="tag">pgvector</span></td><td>Base robuste et éprouvée. L'extension permet la recherche par ressemblance dans la même base que les données classiques.</td></tr>
+              <tr><td>Empreintes de sens</td><td><span class="tag">Voyage AI</span> (voyage-3-large, 1 024 dimensions)</td><td>Très bonne compréhension du français technique ; service recommandé pour une utilisation avec Claude.</td></tr>
+              <tr><td>IA de langage</td><td><span class="tag">Gemini</span> en développement, <span class="tag">Claude</span> en cible</td><td>Gemini offre un palier gratuit pour les essais ; Claude est retenu pour la version finale. Un modèle local reste possible. On passe de l'un à l'autre par un simple réglage.</td></tr>
+              <tr><td>Hébergement</td><td><span class="tag">Docker</span> (conteneurs)</td><td>Le même ensemble s'installe à l'identique sur un poste de développement ou sur un serveur de production.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="donnees">
+        <h2><span class="num">13</span>Modèle de données</h2>
+        <p>Le diagramme de classes décrit les informations que le système conserve et les liens entre elles. Chaque boîte est un type d'information ; chaque trait, une relation. Les petits nombres (<code>1</code>, <code>0..*</code>) indiquent « combien » : par exemple, une intervention contient <em>au moins un</em> symptôme (<code>1..*</code>).</p>
+        <figure>
+          <div class="plate"><img src="diagrammes/07-classes-interventions.svg" alt="Diagramme de classes du cœur métier centré sur l'intervention : appareil, modèle, fabricant, technicien, symptômes constatés, actions tentées, diagnostics, et leur rattachement au catalogue." loading="lazy"></div>
+          <figcaption><b>FIGURE 10</b>Le cœur du système est l'<strong>intervention</strong> : une visite d'un technicien sur un appareil, avec ce qu'il a constaté, ce qu'il a tenté et ce qu'il a conclu. En vert : le catalogue, qui regroupe les formulations libres sous un libellé unique.</figcaption>
+        </figure>
+        <figure>
+          <div class="plate"><img src="diagrammes/08-classes-referentiels.svg" alt="Diagramme de classes des référentiels : statistique de fiabilité entre symptôme et action du catalogue ; code d'erreur et panne ; conversation, message et mémoire de conversation." loading="lazy"></div>
+          <figcaption><b>FIGURE 11</b>Les informations d'appui : la fiabilité calculée pour chaque couple symptôme/action, le référentiel des codes d'erreur, et la conversation avec sa mémoire (dernière recherche, résultat choisi).</figcaption>
+        </figure>
+        <div class="keypoint">
+          <p><strong>Deux façons de décrire une panne, volontairement :</strong> le <em>symptôme constaté</em> garde les mots exacts du technicien, sans rien perdre ; le <em>symptôme du catalogue</em> est la version normalisée, qui sert aux statistiques.</p>
+        </div>
+      </section>
+
+      <section id="limites">
+        <h2><span class="num">14</span>Sécurité, confidentialité et limites</h2>
+        <h3>Ce qui est prévu</h3>
+        <ul>
+          <li>Les consignes données à l'IA lui interdisent d'ajouter une information absente des cas fournis. Elle reformule ; elle ne diagnostique pas seule.</li>
+          <li>L'IA ne manipule jamais d'identifiant interne. Les références (« le deuxième », un nom de modèle, un code d'erreur) sont résolues par le serveur métier, de façon vérifiable.</li>
+          <li>Un technicien ne peut pas reprendre la conversation d'un autre technicien.</li>
+          <li>Les clés d'accès aux services d'IA sont stockées hors du programme.</li>
+        </ul>
+        <h3>Limites connues de la version actuelle</h3>
+        <ul>
+          <li><strong>Connexion simplifiée</strong> : l'identification se fait par numéro de technicien, sans mot de passe. Elle devra être raccordée à l'annuaire de l'entreprise avant une mise en production.</li>
+          <li><strong>Données envoyées à l'extérieur</strong> : les descriptions de pannes transitent par les services d'IA. Il faut éviter d'y saisir des données personnelles de clients.</li>
+          <li><strong>Quotas</strong> : en offre gratuite, le moteur de vecteurs limite le nombre de requêtes par minute. Un abonnement sera nécessaire en usage réel.</li>
+          <li><strong>Qualité de départ</strong> : au lancement, l'historique est réduit. La pertinence progresse avec le nombre d'interventions enregistrées (figure 7).</li>
+        </ul>
+      </section>
+
+      <section id="demarche">
+        <h2><span class="num">15</span>Démarche du projet</h2>
+        <p>Le projet suit cinq phases, chacune produisant un livrable vérifiable avant de passer à la suivante.</p>
+        <ol class="steps">
+          <li><div><h3>Étude du besoin</h3><p>Échanges avec les techniciens, recueil des pannes fréquentes et de leurs codes. Livrable : besoins et cas d'utilisation (parties 1 et 2 de ce dossier).</p></div></li>
+          <li><div><h3>Conception</h3><p>Architecture, choix des technologies, modèle de données, parcours d'un message. Livrable : partie 3 de ce dossier.</p></div></li>
+          <li><div><h3>Réalisation</h3><p>Base de données et jeu de démonstration, serveur métier, interface, mode vocal, fiches de codes d'erreur.</p></div></li>
+          <li><div><h3>Tests et validation</h3><p>Tests automatiques, vérification des règles (séparation GAB/TPE, seuils, cas sans résultat), puis essais avec des techniciens.</p></div></li>
+          <li><div><h3>Déploiement et amélioration continue</h3><p>Mise en service, enrichissement du catalogue, réglage des seuils de ressemblance, passage à l'IA cible.</p></div></li>
+        </ol>
+      </section>
+
+      <section id="glossaire">
+        <h2><span class="num">16</span>Glossaire</h2>
+        <dl class="glossary">
+          <dt>GAB</dt><dd>Guichet automatique bancaire : le distributeur de billets.</dd>
+          <dt>TPE</dt><dd>Terminal de paiement électronique : l'appareil de paiement par carte chez un commerçant.</dd>
+          <dt>Intervention</dt><dd>Une visite d'un technicien sur un appareil : ce qu'il a constaté, ce qu'il a tenté, le résultat.</dd>
+          <dt>Catalogue</dt><dd>La liste normalisée des symptômes et des actions, qui regroupe les formulations libres équivalentes.</dd>
+          <dt>Fiabilité</dt><dd>Réussites ÷ essais, pour une action donnée face à un symptôme donné, sur un type d'appareil donné.</dd>
+          <dt>IA de langage</dt><dd>Programme capable de comprendre et de rédiger du texte (Gemini, Claude). On parle aussi de LLM.</dd>
+          <dt>Empreinte de sens</dt><dd>Liste de nombres qui résume le sens d'une phrase. Deux phrases de même sens ont des empreintes proches. Le terme technique est « vecteur » ou « embedding ».</dd>
+          <dt>Seuil de ressemblance</dt><dd>Ressemblance minimale pour qu'un cas soit montré (réglable, de 0 à 1).</dd>
+          <dt>Serveur métier</dt><dd>Le programme central qui applique les règles et coordonne les échanges. On parle aussi d'API.</dd>
+          <dt>Conteneur</dt><dd>Un emballage standard (Docker) qui permet d'installer un programme à l'identique sur n'importe quelle machine.</dd>
+        </dl>
+      </section>
+
+      <footer class="doc-footer">
+        ATM-Chatbot · Dossier d'étude et de conception · version 1.0. Les onze figures existent aussi en fichiers séparés (SVG et PNG) dans le dossier <code>docs/diagrammes/</code> du projet, pour être insérées dans un rapport ou une présentation.
+      </footer>
+    </article>
+  </main>
+</div>

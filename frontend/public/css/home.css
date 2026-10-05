@@ -3,6 +3,181 @@
    S'appuie sur la scène GAB déjà définie dans style.css.
    ========================================================================== */
 
+/* ---------- Thème sombre immersif sur l'image de fond ----------
+   L'image vient de assets.css (--image-home-background). Le dégradé posé
+   par-dessus garantit un texte lisible quelle que soit l'image choisie. */
+.home-page {
+  background:
+    linear-gradient(180deg, rgba(6, 17, 30, 0.55) 0%, rgba(6, 17, 30, 0.35) 45%, rgba(6, 17, 30, 0.88) 100%),
+    var(--image-home-background) center top / cover no-repeat fixed,
+    #081524;
+  color: #e6eef6;
+}
+
+/* En-tête */
+.home-page .site-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.home-page .brand,
+.home-page .header-action {
+  color: #fff;
+}
+
+.home-page .brand {
+  font-size: 16px;
+}
+
+.home-page .header-action {
+  font-size: 13px;
+}
+
+.home-page .header-action span {
+  color: #6fe0d3;
+}
+
+.home-page .navigation-link {
+  color: #a9bccf;
+  font-size: 13px;
+}
+
+.home-page .navigation-link:hover,
+.home-page .navigation-link-active {
+  border-bottom-color: #4fd6c7;
+  color: #fff;
+}
+
+/* Accroche */
+.home-page .eyebrow {
+  width: fit-content;
+  padding: 6px 12px 6px 9px;
+  border: 1px solid rgba(111, 224, 211, 0.28);
+  border-radius: 999px;
+  background: rgba(111, 224, 211, 0.08);
+  color: #8fe9de;
+  font-size: 11px;
+}
+
+.home-page .hero-copy h1 {
+  color: #fff;
+  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* Mot mis en avant : dégradé lumineux bleu -> turquoise. */
+.home-page .hero-copy h1 span {
+  background: linear-gradient(90deg, #6fb8ff, #4fd6c7);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.home-page .hero-description {
+  max-width: 470px;
+  color: #c3d2e1;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.home-page .hero-button {
+  min-height: 52px;
+  padding: 0 24px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1fa99d, #1f6fd1);
+  box-shadow: 0 12px 30px -10px rgba(31, 169, 157, 0.7);
+  font-size: 14px;
+}
+
+.home-page .hero-button:hover {
+  box-shadow: 0 16px 36px -10px rgba(31, 169, 157, 0.85);
+}
+
+.home-page .hero-button .button-icon {
+  color: #fff;
+}
+
+.home-page .trust-note {
+  color: #a9bccf;
+  font-size: 12px;
+}
+
+.home-page .trust-icon {
+  background: rgba(111, 224, 211, 0.16);
+  color: #8fe9de;
+}
+
+/* Scène du GAB : carte en verre dépoli posée sur l'image. */
+.home-page .hero-visual {
+  border-color: rgba(255, 255, 255, 0.14);
+  border-radius: 24px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px);
+}
+
+.home-page .visual-orbit {
+  border-color: rgba(143, 233, 222, 0.18);
+}
+
+.home-page .visual-glow {
+  background: radial-gradient(circle, rgba(79, 214, 199, 0.32), rgba(79, 150, 214, 0.08) 61%, transparent 72%);
+}
+
+/* Étapes : cartes en verre sur le bas sombre de l'image. */
+.home-page .steps-section {
+  border-top: none;
+  background: transparent;
+}
+
+.home-page .section-heading h2 {
+  color: #fff;
+  font-size: 26px;
+}
+
+.home-page .step-card {
+  padding: 22px;
+  border-color: rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  transition: transform 200ms ease, border-color 200ms ease, background-color 200ms ease;
+}
+
+.home-page .step-card:hover {
+  border-color: rgba(111, 224, 211, 0.4);
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-3px);
+}
+
+.home-page .step-index {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(31, 169, 157, 0.35), rgba(31, 111, 209, 0.35));
+  color: #fff;
+  font-size: 11px;
+}
+
+.home-page .step-card h3 {
+  color: #fff;
+  font-size: 16px;
+}
+
+.home-page .step-card p {
+  color: #b5c6d6;
+  font-size: 13px;
+}
+
+/* Pied de page */
+.home-page .site-footer {
+  border-top-color: rgba(255, 255, 255, 0.08);
+  background: rgba(6, 17, 30, 0.65);
+  backdrop-filter: blur(8px);
+}
+
+.home-page .site-footer p {
+  color: #8fa3b8;
+  font-size: 12px;
+}
+
 /* ---------- Apparition du texte ---------- */
 .home-reveal {
   animation: home-reveal 600ms ease-out both;
@@ -125,6 +300,40 @@
 }
 
 @media (max-width: 600px) {
+  /* Les tailles agrandies du thème sombre (plus haut) sont plus spécifiques
+     que celles de responsive.css : on les réduit ici pour que l'en-tête tienne. */
+  .home-page .brand {
+    font-size: 12px;
+  }
+
+  /* Logo + bouton sur la 1re ligne, liens de navigation sur la 2de : les
+     4 liens + « Reprendre en tant que … » ne tiennent pas sur une seule ligne. */
+  .home-page .site-header {
+    height: auto;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    padding-top: 12px;
+  }
+
+  .home-page .main-navigation {
+    order: 3;
+    width: 100%;
+    height: 40px;
+    justify-content: space-between;
+  }
+
+  .home-page .navigation-link {
+    font-size: 12px;
+  }
+
+  .home-page .header-action {
+    font-size: 9px;
+  }
+
+  .home-page .hero-description {
+    font-size: 14px;
+  }
+
   .home-character {
     bottom: 18px;
   }

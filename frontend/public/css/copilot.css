@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Page Copilote ATM
+   Page ATM-Chatbot
    --------------------------------------------------------------------------
    Toutes les règles sont limitées à .copilot-page : les pages Accueil et
    Diagnostic (style.css) ne sont pas affectées.
@@ -1841,18 +1841,22 @@
   --glow-accent: 0 12px 32px -10px rgba(31, 111, 209, 0.45);
 }
 
+/* Zone de conversation : image de fond claire (assets.css, --image-app-background). */
 .copilot-page .workspace {
   background:
     radial-gradient(900px 480px at 85% -10%, rgba(79, 157, 255, 0.12), transparent 60%),
-    radial-gradient(700px 420px at -5% 105%, rgba(52, 209, 191, 0.1), transparent 60%),
+    var(--image-app-background) center / cover no-repeat,
     var(--canvas);
 }
 
-/* Sidebar : plus de profondeur, lien actif lumineux. */
+/* Sidebar : reprend l'image de l'accueil sous un voile bleu nuit, pour
+   garder le même univers visuel qu'avant la connexion. */
 .app-sidebar {
   background:
     radial-gradient(420px 260px at 0% 0%, rgba(79, 157, 255, 0.22), transparent 70%),
-    linear-gradient(180deg, #0c2140 0%, #102a4d 60%, #0e2442 100%);
+    linear-gradient(180deg, rgba(12, 33, 64, 0.9) 0%, rgba(16, 42, 77, 0.88) 60%, rgba(14, 36, 66, 0.94) 100%),
+    var(--image-home-background) 30% center / cover no-repeat,
+    #0c2140;
   box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06);
 }
 

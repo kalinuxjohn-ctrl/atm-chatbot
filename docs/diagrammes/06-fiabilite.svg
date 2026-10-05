@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 330" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Calcul de la fiabilité : pour le symptôme carte retenue sur un GAB, réinitialiser le lecteur a réussi 3 fois sur 4 soit 75 pour cent, remplacer le capteur 1 fois sur 1 soit 100 pour cent, vérifier l'état du lecteur 0 fois sur 2 soit 0 pour cent ; les solutions sont classées par fiabilité.">
+  <rect width="960" height="330" fill="#ffffff"/>
+  <text x="30" y="36" font-size="14" font-weight="700" fill="#10243a">Symptôme « carte retenue » · sur GAB</text>
+  <text x="30" y="56" font-size="12" fill="#5b6b7f">Chaque pastille = une fois où l'action a été tentée sur le terrain</text>
+
+  <!-- En-têtes -->
+  <g font-size="11.5" font-weight="700" fill="#5b6b7f" letter-spacing="0.6">
+    <text x="30" y="92">ACTION TENTÉE</text>
+    <text x="350" y="92">HISTORIQUE</text>
+    <text x="560" y="92">RÉUSSITES / ESSAIS</text>
+    <text x="720" y="92">FIABILITÉ</text>
+  </g>
+  <line x1="30" y1="102" x2="930" y2="102" stroke="#e1e8f0"/>
+
+  <!-- Ligne 1 : 100 % sur 1 -->
+  <text x="30" y="140" font-size="13" fill="#10243a" font-weight="600">Remplacer le capteur de rétention</text>
+  <circle cx="362" cy="135" r="11" fill="#127a76"/><path d="M357 135 l4 4 l7 -8" stroke="#fff" stroke-width="2.2" fill="none"/>
+  <text x="600" y="140" font-size="13" fill="#1d2d3d" text-anchor="middle">1 / 1</text>
+  <rect x="720" y="126" width="180" height="16" rx="8" fill="#e1e8f0"/>
+  <rect x="720" y="126" width="180" height="16" rx="8" fill="#127a76"/>
+  <text x="910" y="140" font-size="13" font-weight="700" fill="#127a76">100 %</text>
+
+  <!-- Ligne 2 : 75 % sur 4 -->
+  <text x="30" y="196" font-size="13" fill="#10243a" font-weight="600">Réinitialiser le lecteur de carte</text>
+  <circle cx="362" cy="191" r="11" fill="#127a76"/><path d="M357 191 l4 4 l7 -8" stroke="#fff" stroke-width="2.2" fill="none"/>
+  <circle cx="392" cy="191" r="11" fill="#127a76"/><path d="M387 191 l4 4 l7 -8" stroke="#fff" stroke-width="2.2" fill="none"/>
+  <circle cx="422" cy="191" r="11" fill="#c9d6e3"/><path d="M417 186 l10 10 M427 186 l-10 10" stroke="#5b6b7f" stroke-width="2" fill="none"/>
+  <circle cx="452" cy="191" r="11" fill="#127a76"/><path d="M447 191 l4 4 l7 -8" stroke="#fff" stroke-width="2.2" fill="none"/>
+  <text x="600" y="196" font-size="13" fill="#1d2d3d" text-anchor="middle">3 / 4</text>
+  <rect x="720" y="182" width="180" height="16" rx="8" fill="#e1e8f0"/>
+  <rect x="720" y="182" width="135" height="16" rx="8" fill="#127a76"/>
+  <text x="910" y="196" font-size="13" font-weight="700" fill="#127a76">75 %</text>
+
+  <!-- Ligne 3 : 0 % sur 2 -->
+  <text x="30" y="252" font-size="13" fill="#10243a" font-weight="600">Vérifier l'état du lecteur</text>
+  <circle cx="362" cy="247" r="11" fill="#c9d6e3"/><path d="M357 242 l10 10 M367 242 l-10 10" stroke="#5b6b7f" stroke-width="2" fill="none"/>
+  <circle cx="392" cy="247" r="11" fill="#c9d6e3"/><path d="M387 242 l10 10 M397 242 l-10 10" stroke="#5b6b7f" stroke-width="2" fill="none"/>
+  <text x="600" y="252" font-size="13" fill="#1d2d3d" text-anchor="middle">0 / 2</text>
+  <rect x="720" y="238" width="180" height="16" rx="8" fill="#e1e8f0"/>
+  <text x="910" y="252" font-size="13" font-weight="700" fill="#5b6b7f">0 %</text>
+
+  <line x1="30" y1="280" x2="930" y2="280" stroke="#e1e8f0"/>
+  <text x="30" y="308" font-size="12" fill="#5b6b7f">Le technicien voit TOUT le classement, du plus au moins fiable. À fiabilité égale, l'action la plus souvent essayée passe devant.</text>
+</svg>

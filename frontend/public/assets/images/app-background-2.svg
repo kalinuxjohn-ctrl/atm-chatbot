@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+  <!--
+    Fond de la zone de conversation du Copilote : petits robots et bulles de
+    discussion en filigrane, plus un grand robot à peine visible en bas à
+    droite. Volontairement très pâle pour ne jamais gêner la lecture.
+    Remplaçable : voir assets/README.md.
+  -->
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4f8fc"/>
+      <stop offset="1" stop-color="#eaf3f5"/>
+    </linearGradient>
+    <radialGradient id="blob-blue" cx="0.12" cy="0.1" r="0.45">
+      <stop offset="0" stop-color="#9cc2f3" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#9cc2f3" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blob-teal" cx="0.85" cy="0.85" r="0.5">
+      <stop offset="0" stop-color="#8fdcd2" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#8fdcd2" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Motif répété : une tête de robot et une bulle de discussion -->
+    <pattern id="robots" width="220" height="200" patternUnits="userSpaceOnUse">
+      <g fill="none" stroke="#6f93b8" stroke-opacity="0.16" stroke-width="2" stroke-linecap="round">
+        <line x1="50" y1="34" x2="50" y2="22"/>
+        <circle cx="50" cy="18" r="4"/>
+        <rect x="26" y="34" width="48" height="38" rx="12"/>
+        <circle cx="41" cy="52" r="4"/>
+        <circle cx="59" cy="52" r="4"/>
+        <path d="M43 62 q7 5 14 0"/>
+        <path d="M140 120 h46 a8 8 0 0 1 8 8 v20 a8 8 0 0 1 -8 8 h-26 l-10 9 v-9 h-10 a8 8 0 0 1 -8 -8 v-20 a8 8 0 0 1 8 -8 z"/>
+      </g>
+      <g fill="#6f93b8" fill-opacity="0.16">
+        <circle cx="151" cy="138" r="2.5"/><circle cx="163" cy="138" r="2.5"/><circle cx="175" cy="138" r="2.5"/>
+      </g>
+    </pattern>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#base)"/>
+  <rect width="1600" height="1000" fill="url(#robots)"/>
+  <rect width="1600" height="1000" fill="url(#blob-blue)"/>
+  <rect width="1600" height="1000" fill="url(#blob-teal)"/>
+
+  <!-- Grand robot en filigrane, en bas à droite -->
+  <g fill="none" stroke="#5c8fc4" stroke-opacity="0.16" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="1380" y1="560" x2="1380" y2="515"/>
+    <circle cx="1380" cy="500" r="14"/>
+    <path d="M1258 650 C1258 520 1502 520 1502 650"/>
+    <rect x="1270" y="560" width="220" height="170" rx="52"/>
+    <rect x="1296" y="590" width="168" height="110" rx="34"/>
+    <rect x="1330" y="620" width="26" height="38" rx="13"/>
+    <rect x="1404" y="620" width="26" height="38" rx="13"/>
+    <path d="M1352 676 q28 18 56 0"/>
+    <rect x="1250" y="764" width="260" height="260" rx="60"/>
+    <rect x="1310" y="810" width="140" height="90" rx="14"/>
+  </g>
+</svg>

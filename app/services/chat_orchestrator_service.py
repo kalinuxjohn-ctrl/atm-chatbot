@@ -27,12 +27,7 @@ from app.services import (
     retrieval_service,
     technical_reference_resolver_service,
 )
-from app.services.embeddings_service import EmbeddingUnavailableError
 
-_SEARCH_UNAVAILABLE_REPLY = (
-    "La recherche dans l'historique est momentanément indisponible (service d'embedding injoignable). "
-    "Réessaie dans quelques instants."
-)
 _DEVICE_TYPE_REQUIRED_REPLY = (
     "Je n'ai pas pu déterminer le type d'appareil concerné. Sélectionne GAB ou TPE "
     "(ou précise-le dans ton message), puis renvoie la description du problème."
@@ -170,33 +165,32 @@ def _handle_symptom_search(
         trace("RESPONSE", "Type d'appareil inconnu, précision demandée au technicien")
         return _DEVICE_TYPE_REQUIRED_REPLY
 
-    try:
-        cases = case_retrieval_service.find_similar_cases(db, raw_text=search_text, device_type=device_type)
+    # Service d'embedding indisponible : EmbeddingUnavailableError remonte
+    # telle quelle -> 503 « chatbot saturé » (app/main.py), cause précise
+    # dans les journaux. Aucun message technique dans la conversation.
+    cases = case_retrieval_service.find_similar_cases(db, raw_text=search_text, device_type=device_type)
 
-        if cases:
-            results = [
-                {
-                    "position": index + 1,
-                    "kind": "case",
-                    "intervention_id": case["intervention_id"],
-                    # Gardé en mémoire : c'est la recherche qui sait QUEL symptôme
-                    # a fait remonter ce cas -- sans lui, « détaille le deuxième »
-                    # ne pourrait plus l'afficher (voir _handle_result_detail_request).
-                    "matched_symptom_text": case.get("matched_symptom_text"),
-                }
-                for index, case in enumerate(cases)
-            ]
-            context_service.record_last_search(context, query=search_text, results=results)
-            context["intent"] = "diagnostic"
-            trace("CONTEXT", "Cas réels mémorisés pour le suivi", result_count=len(results))
-            return _summarize_cases(search_text, cases)
+    if cases:
+        results = [
+            {
+                "position": index + 1,
+                "kind": "case",
+                "intervention_id": case["intervention_id"],
+                # Gardé en mémoire : c'est la recherche qui sait QUEL symptôme
+                # a fait remonter ce cas -- sans lui, « détaille le deuxième »
+                # ne pourrait plus l'afficher (voir _handle_result_detail_request).
+                "matched_symptom_text": case.get("matched_symptom_text"),
+            }
+            for index, case in enumerate(cases)
+        ]
+        context_service.record_last_search(context, query=search_text, results=results)
+        context["intent"] = "diagnostic"
+        trace("CONTEXT", "Cas réels mémorisés pour le suivi", result_count=len(results))
+        return _summarize_cases(search_text, cases)
 
-        # Repli : aucun cas réel, mais peut-être des stats agrégées.
-        trace("SEARCH", "Aucun cas réel, recherche de statistiques agrégées")
-        aggregated = retrieval_service.find_ranked_solutions(db, raw_text=search_text, device_type=device_type)
-    except EmbeddingUnavailableError as error:
-        trace("ERROR", "Recherche impossible, service d'embedding indisponible", error_type=type(error).__name__)
-        return _SEARCH_UNAVAILABLE_REPLY
+    # Repli : aucun cas réel, mais peut-être des stats agrégées.
+    trace("SEARCH", "Aucun cas réel, recherche de statistiques agrégées")
+    aggregated = retrieval_service.find_ranked_solutions(db, raw_text=search_text, device_type=device_type)
 
     solutions = aggregated["solutions"]
 

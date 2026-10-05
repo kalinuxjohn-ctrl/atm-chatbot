@@ -47,7 +47,7 @@ export function createChatView({ conversationElement, getAvatarKind, onListen, c
   function createAssistantShell(time) {
     const message = createElement("article", "message assistant-message message-enter-fade");
     const body = createElement("div", "message-body");
-    body.append(createAuthor("Copilote ATM", time));
+    body.append(createAuthor("ATM-Chatbot", time));
     message.append(createAvatarSlot(), body);
     return { message, body };
   }

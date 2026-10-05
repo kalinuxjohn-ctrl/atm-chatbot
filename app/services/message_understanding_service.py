@@ -45,11 +45,13 @@ Message du technicien : « {technician_message} »
 
 def understand_message(technician_message: str) -> UnderstoodMessage:
     """
-    Repli sûr en cas de panne du LLM ou de réponse mal formée : intent
-    forcé à "diagnostic" avec le message brut comme reformulated_problem_text
-    -- c'est le comportement qui existait avant cette fonctionnalité (traiter
-    tout message assez long comme une description de symptôme), donc le
-    flux ne régresse jamais en dessous de ce qui marchait déjà.
+    Pas de repli : sans compréhension fiable, on ne devine PAS l'intention.
+    (Avant, tout message était alors traité comme une panne -- un simple
+    « bonjour » déclenchait une recherche et affichait des cas sans rapport.)
+
+    Lève LLMUnavailableError si le LLM ne répond pas, ou si sa réponse n'est
+    pas le JSON attendu. La requête se termine en 503 et le technicien voit
+    « chatbot saturé » (voir app/main.py).
     """
     trace(
         "UNDERSTANDING",
@@ -57,18 +59,18 @@ def understand_message(technician_message: str) -> UnderstoodMessage:
         message_length=len(technician_message),
     )
     prompt = _PROMPT_TEMPLATE.format(technician_message=technician_message)
-    raw_response = llm_service.generate_reply(prompt)
+    raw_response = llm_service.generate_reply(prompt)  # lève LLMUnavailableError si le LLM ne répond pas
 
     try:
         parsed = _parse_json_response(raw_response)
         understood = UnderstoodMessage(**parsed)
     except Exception as error:
-        trace(
-            "ERROR",
-            "Échec de la compréhension du message, repli sur intent=diagnostic",
-            error_type=type(error).__name__,
-        )
-        return UnderstoodMessage(intent="diagnostic", reformulated_problem_text=technician_message)
+        # La réponse brute n'est pas journalisée : elle peut reprendre le
+        # texte du technicien.
+        trace("ERROR", "Réponse de compréhension inexploitable", error_type=type(error).__name__)
+        raise llm_service.LLMUnavailableError(
+            f"Réponse de compréhension inexploitable ({type(error).__name__} : JSON absent ou non conforme)."
+        ) from error
 
     trace(
         "UNDERSTANDING",

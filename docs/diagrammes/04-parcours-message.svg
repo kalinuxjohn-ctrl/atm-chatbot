@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Parcours d'un message : l'IA détermine l'intention ; une conversation reçoit une réponse courte, un diagnostic déclenche la recherche en trois niveaux, une demande de détail reprend un résultat déjà montré ; tout se termine par une réponse affichée et mémorisée.">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3b4f66"/></marker>
+  </defs>
+  <rect width="960" height="640" fill="#ffffff"/>
+
+  <!-- Départ -->
+  <rect x="360" y="20" width="240" height="46" rx="23" fill="#10243a"/>
+  <text x="480" y="49" font-size="13.5" font-weight="600" text-anchor="middle" fill="#fff">Le technicien envoie un message</text>
+
+  <rect x="350" y="96" width="260" height="54" rx="10" fill="#fff4dd" stroke="#c98410" stroke-width="1.5"/>
+  <text x="480" y="119" font-size="13.5" font-weight="700" text-anchor="middle" fill="#5c3c00">Étape 1 · Comprendre</text>
+  <text x="480" y="138" font-size="12" text-anchor="middle" fill="#8a5a00">l'IA détermine l'intention</text>
+
+  <!-- Losange -->
+  <polygon points="480,178 570,218 480,258 390,218" fill="#fff" stroke="#10243a" stroke-width="1.6"/>
+  <text x="480" y="214" font-size="12.5" font-weight="700" text-anchor="middle" fill="#10243a">Quelle</text>
+  <text x="480" y="230" font-size="12.5" font-weight="700" text-anchor="middle" fill="#10243a">intention ?</text>
+
+  <!-- Branche conversation -->
+  <rect x="40" y="300" width="230" height="64" rx="10" fill="#f6f9fc" stroke="#9fb3c8"/>
+  <text x="155" y="327" font-size="13" font-weight="700" text-anchor="middle" fill="#10243a">Réponse courte et polie</text>
+  <text x="155" y="347" font-size="11.5" text-anchor="middle" fill="#5b6b7f">aucune recherche lancée</text>
+
+  <!-- Branche diagnostic -->
+  <rect x="355" y="300" width="250" height="64" rx="10" fill="#fff" stroke="#1f6fd1" stroke-width="1.5"/>
+  <text x="480" y="327" font-size="13" font-weight="700" text-anchor="middle" fill="#1657a8">GAB ou TPE connu ?</text>
+  <text x="480" y="347" font-size="11.5" text-anchor="middle" fill="#5b6b7f">sinon : on le demande</text>
+
+  <rect x="345" y="392" width="270" height="150" rx="12" fill="#eaf2fd" stroke="#1f6fd1" stroke-width="1.5"/>
+  <text x="480" y="416" font-size="13" font-weight="700" text-anchor="middle" fill="#1657a8">Étape 2 · Chercher (en cascade)</text>
+  <g font-size="12" fill="#1d2d3d">
+    <circle cx="368" cy="442" r="10" fill="#1f6fd1"/><text x="368" y="446" text-anchor="middle" fill="#fff" font-weight="700" font-size="11">1</text>
+    <text x="386" y="446">Interventions réelles similaires</text>
+    <circle cx="368" cy="478" r="10" fill="#6f9fd8"/><text x="368" y="482" text-anchor="middle" fill="#fff" font-weight="700" font-size="11">2</text>
+    <text x="386" y="474">sinon : solutions classées</text>
+    <text x="386" y="490">par fiabilité</text>
+    <circle cx="368" cy="516" r="10" fill="#9fb3c8"/><text x="368" y="520" text-anchor="middle" fill="#fff" font-weight="700" font-size="11">3</text>
+    <text x="386" y="520">sinon : « aucune donnée connue »</text>
+  </g>
+
+  <!-- Branche détail -->
+  <rect x="690" y="300" width="230" height="64" rx="10" fill="#f2f9f8" stroke="#127a76"/>
+  <text x="805" y="327" font-size="13" font-weight="700" text-anchor="middle" fill="#0d4f4c">Retrouve « le 2e » résultat</text>
+  <text x="805" y="347" font-size="11.5" text-anchor="middle" fill="#2f5f5c">dans la mémoire, sans IA</text>
+  <rect x="690" y="392" width="230" height="64" rx="10" fill="#f2f9f8" stroke="#127a76"/>
+  <text x="805" y="419" font-size="13" font-weight="700" text-anchor="middle" fill="#0d4f4c">Détail de ce cas</text>
+  <text x="805" y="439" font-size="11.5" text-anchor="middle" fill="#2f5f5c">actions, résultat, fiabilité</text>
+
+  <!-- Rédaction -->
+  <rect x="350" y="566" width="260" height="0" fill="none"/>
+  <rect x="330" y="574" width="300" height="50" rx="25" fill="#10243a"/>
+  <text x="480" y="596" font-size="13" font-weight="600" text-anchor="middle" fill="#fff">Étape 3 · Réponse rédigée, affichée</text>
+  <text x="480" y="613" font-size="12" text-anchor="middle" fill="#b9c8d8">et mémorisée pour la suite</text>
+
+  <!-- Flèches -->
+  <g stroke="#3b4f66" stroke-width="1.6" fill="none">
+    <line x1="480" y1="66" x2="480" y2="92" marker-end="url(#arrow)"/>
+    <line x1="480" y1="150" x2="480" y2="174" marker-end="url(#arrow)"/>
+    <polyline points="390,218 155,218 155,296" marker-end="url(#arrow)"/>
+    <line x1="480" y1="258" x2="480" y2="296" marker-end="url(#arrow)"/>
+    <polyline points="570,218 805,218 805,296" marker-end="url(#arrow)"/>
+    <line x1="480" y1="364" x2="480" y2="388" marker-end="url(#arrow)"/>
+    <line x1="805" y1="364" x2="805" y2="388" marker-end="url(#arrow)"/>
+    <line x1="480" y1="542" x2="480" y2="570" marker-end="url(#arrow)"/>
+    <polyline points="155,364 155,599 326,599" marker-end="url(#arrow)"/>
+    <polyline points="805,456 805,599 634,599" marker-end="url(#arrow)"/>
+  </g>
+  <g font-size="12" font-weight="600">
+    <text x="270" y="210" text-anchor="middle" fill="#5b6b7f">conversation</text>
+    <text x="490" y="282" fill="#1657a8">diagnostic</text>
+    <text x="690" y="210" text-anchor="middle" fill="#127a76">demande de détail</text>
+  </g>
+</svg>
