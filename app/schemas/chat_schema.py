@@ -40,4 +40,4 @@ class SymptomSearchResponse(BaseModel):
         description="Symptômes catalogués retrouvés par similarité, à l'origine des solutions ci-dessous.",
     )
     solutions: list[SolutionSuggestion] = Field(default_factory=list)
-    summary: str = ""  # reformulation en langage naturel des solutions ci-dessus (via Ollama)
+    summary: str = ""  # résumé LLM ou demande de reformulation après rejet local du texte

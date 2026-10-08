@@ -1,20 +1,17 @@
 /**
- * Bulles de suggestions, affichées sous la zone de saisie et dans le message
- * d'accueil. Deux sortes de bulles, visuellement distinctes :
+ * Menus déroulants de suggestions, affichés juste au-dessus de la zone de saisie.
+ * Deux menus, deux comportements :
  *
- *   ┌──────────────────────────────┐
- *   │ E42  Capteur de rétention    │  CODE D'ERREUR CONNU -> réponse enregistrée
- *   └──────────────────────────────┘  côté frontend, AUCUN appel au backend.
- *                                     Pour en ajouter : public/data/error-codes/README.md
+ *   [ Pannes fréquentes      ▾ ]  PROBLÈME FRÉQUENT -> envoyé au backend comme
+ *                                 un message tapé par le technicien.
+ *                                 Pour en ajouter : compléter SUGGESTIONS_BY_DEVICE.
  *
- *   ┌──────────────────────────────┐
- *   │ ✦ Le GAB a avalé la carte    │  PROBLÈME FRÉQUENT -> envoyé au backend comme
- *   └──────────────────────────────┘  un message tapé par le technicien.
- *                                     Pour en ajouter : compléter SUGGESTIONS_BY_DEVICE.
+ *   [ Codes d'erreur connus  ▾ ]  CODE D'ERREUR CONNU -> réponse enregistrée
+ *                                 côté frontend, AUCUN appel au backend.
+ *                                 Pour en ajouter : public/data/error-codes/README.md
  */
 
-import { createElement, prefersReducedMotion } from "../utils/dom.js";
-import { createIcon } from "./icons.js";
+import { createElement } from "../utils/dom.js";
 
 export const SUGGESTIONS_BY_DEVICE = Object.freeze({
   gab: [
@@ -33,93 +30,69 @@ export const SUGGESTIONS_BY_DEVICE = Object.freeze({
   ],
 });
 
-const FLIGHT_DURATION_MS = 520;
-
 /**
- * Crée la liste de bulles : codes d'erreur connus d'abord, puis problèmes fréquents.
+ * Crée les deux menus : pannes fréquentes, puis codes d'erreur connus.
+ * Le menu des codes n'apparaît que s'il y a au moins un code pour cet équipement.
  * @param {{
  *   deviceType: string,
- *   onPick: (text: string, chip: HTMLElement) => void,               clic sur un problème fréquent
+ *   onPick: (text: string) => void,                                  choix d'une panne fréquente
  *   errorCodes?: import("../services/knownErrorCodesService.js").KnownErrorCode[],  déjà filtrés pour deviceType
- *   onPickErrorCode?: (errorCode: object, chip: HTMLElement) => void, clic sur un code d'erreur
- *   className?: string,
+ *   onPickErrorCode?: (errorCode: object) => void,                   choix d'un code d'erreur
  * }} options
- * @returns {HTMLUListElement}
+ * @returns {HTMLDivElement}
  */
-export function createSuggestionList({ deviceType, onPick, errorCodes = [], onPickErrorCode = () => {}, className = "" }) {
-  const list = createElement("ul", `suggestion-list ${className}`.trim());
-  list.setAttribute("aria-label", "Codes d'erreur et problèmes fréquents");
+export function createSuggestionMenus({ deviceType, onPick, errorCodes = [], onPickErrorCode = () => {} }) {
+  const container = createElement("div", "suggestion-menus");
 
-  errorCodes.forEach((errorCode) => {
-    const chip = createErrorCodeChip(errorCode);
-    chip.addEventListener("click", () => onPickErrorCode(errorCode, chip));
-    list.append(wrapInListItem(chip));
-  });
+  const frequentProblems = SUGGESTIONS_BY_DEVICE[deviceType] || SUGGESTIONS_BY_DEVICE.gab;
+  container.append(
+    createMenu({
+      placeholder: "Pannes fréquentes…",
+      ariaLabel: "Choisir une panne fréquente",
+      options: frequentProblems.map((text) => ({ label: text })),
+      onChoose: (index) => onPick(frequentProblems[index]),
+    }),
+  );
 
-  (SUGGESTIONS_BY_DEVICE[deviceType] || SUGGESTIONS_BY_DEVICE.gab).forEach((text) => {
-    const chip = createElement("button", "suggestion-chip");
-    chip.type = "button";
-    chip.append(createIcon("sparkle", "icon suggestion-chip-icon"), createElement("span", "", text));
-    chip.addEventListener("click", () => onPick(text, chip));
-    list.append(wrapInListItem(chip));
-  });
-  return list;
-}
-
-/** Bulle d'un code d'erreur : le code en badge, suivi de son libellé court. */
-function createErrorCodeChip({ code, label }) {
-  const chip = createElement("button", "suggestion-chip error-code-chip");
-  chip.type = "button";
-  chip.setAttribute("aria-label", `Code d'erreur ${code} : ${label}`);
-  chip.append(createElement("span", "error-code-badge", code), createElement("span", "", label));
-  return chip;
-}
-
-function wrapInListItem(chip) {
-  const item = createElement("li");
-  item.append(chip);
-  return item;
+  if (errorCodes.length > 0) {
+    container.append(
+      createMenu({
+        placeholder: "Codes d’erreur connus…",
+        ariaLabel: "Choisir un code d'erreur connu",
+        options: errorCodes.map(({ code, label }) => ({ label: `${code} — ${label}` })),
+        onChoose: (index) => onPickErrorCode(errorCodes[index]),
+        className: "error-code-menu",
+      }),
+    );
+  }
+  return container;
 }
 
 /**
- * Animation : une copie de la bulle monte vers le bas de la conversation, à
- * l'endroit où le message du technicien va apparaître.
- * @returns {Promise<void>} résolue quand la bulle est arrivée
+ * Un menu déroulant natif (accessible au clavier et sur mobile). Il revient sur
+ * son texte d'invite après chaque choix, pour pouvoir rechoisir la même entrée.
  */
-export async function flySuggestionToConversation(chip, conversationElement) {
-  if (prefersReducedMotion() || typeof chip.animate !== "function") return;
+function createMenu({ placeholder, ariaLabel, options, onChoose, className = "" }) {
+  const select = createElement("select", `suggestion-menu ${className}`.trim());
+  select.setAttribute("aria-label", ariaLabel);
 
-  const from = chip.getBoundingClientRect();
-  const to = conversationElement.getBoundingClientRect();
-  const ghost = chip.cloneNode(true);
-  ghost.classList.add("suggestion-ghost");
-  ghost.setAttribute("aria-hidden", "true");
-  Object.assign(ghost.style, {
-    top: `${from.top}px`,
-    left: `${from.left}px`,
-    width: `${from.width}px`,
-    height: `${from.height}px`,
+  const placeholderOption = createElement("option", "", placeholder);
+  placeholderOption.value = "";
+  placeholderOption.selected = true;
+  placeholderOption.disabled = true;
+  select.append(placeholderOption);
+
+  // La valeur de chaque option est sa position dans la liste d'origine.
+  options.forEach(({ label }, index) => {
+    const option = createElement("option", "", label);
+    option.value = String(index);
+    select.append(option);
   });
-  document.body.append(ghost);
-  chip.classList.add("is-launched");
 
-  // Arrivée : aligné à droite (côté messages du technicien), en bas du fil.
-  const deltaX = to.right - 28 - from.right;
-  const deltaY = Math.min(0, to.bottom - 34 - from.bottom);
-
-  try {
-    await ghost.animate(
-      [
-        { transform: "translate(0, 0) scale(1)", opacity: 1 },
-        { transform: `translate(${deltaX}px, ${deltaY}px) scale(1.05)`, opacity: 1, offset: 0.8 },
-        { transform: `translate(${deltaX}px, ${deltaY - 8}px) scale(1.05)`, opacity: 0 },
-      ],
-      { duration: FLIGHT_DURATION_MS, easing: "cubic-bezier(0.22, 0.8, 0.25, 1)" },
-    ).finished;
-  } catch {
-    /* animation interrompue : on continue sans elle */
-  } finally {
-    ghost.remove();
-    chip.classList.remove("is-launched");
-  }
+  select.addEventListener("change", () => {
+    const chosenIndex = Number(select.value);
+    select.value = "";
+    onChoose(chosenIndex);
+  });
+  return select;
 }

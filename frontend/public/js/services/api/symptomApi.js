@@ -7,10 +7,9 @@
 
 import { ApiRequestError, postJson } from "../../core/httpClient.js";
 
-// Quand le LLM (Ollama) est indisponible, le backend renvoie son erreur dans
-// `summary` : on la détecte pour ne pas l'afficher comme un vrai résumé.
-const OLLAMA_ERROR_MARKERS = [
-  "ollama",
+// Compatibilité avec les anciennes réponses contenant une erreur dans
+// `summary` : ne pas l'afficher comme un vrai résumé.
+const LLM_ERROR_MARKERS = [
   "impossible de joindre",
   "n'a pas répondu dans le délai",
   "n'est pas installé",
@@ -28,7 +27,7 @@ function transformSearchResponse(payload) {
     throw new ApiRequestError("Réponse API invalide.", { kind: "invalid-response" });
   }
 
-  const summaryHasProviderError = OLLAMA_ERROR_MARKERS.some((marker) =>
+  const summaryHasProviderError = LLM_ERROR_MARKERS.some((marker) =>
     payload.summary.toLocaleLowerCase("fr").includes(marker),
   );
 

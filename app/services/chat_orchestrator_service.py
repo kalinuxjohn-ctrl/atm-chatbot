@@ -1,14 +1,15 @@
 """
 Coordination du endpoint POST /api/chat.
 
-ORCHESTRE seulement : message_understanding_service (Niveau 1, comprendre),
+ORCHESTRE seulement : text_validation_service (nettoyage et validation locale),
+message_understanding_service (Niveau 1, comprendre),
 technical_reference_resolver_service (résoudre le texte en IDs réels),
 context_service (mémoire + position), case_retrieval_service/
 retrieval_service (recherche, inchangés), llm_service (Niveau 2, synthèse,
 inchangé).
 
 Le routage suit l'intention renvoyée par message_understanding_service --
-chaque message passe par le LLM de compréhension (voir diagramme :
+chaque message validé passe par le LLM de compréhension (voir diagramme :
 Technicien -> message -> Chat Orchestrator -> Niveau 1).
 """
 
@@ -27,6 +28,7 @@ from app.services import (
     retrieval_service,
     technical_reference_resolver_service,
 )
+from app.services.text_validation_service import REFORMULATION_REPLY, validate_and_clean_message
 
 _DEVICE_TYPE_REQUIRED_REPLY = (
     "Je n'ai pas pu déterminer le type d'appareil concerné. Sélectionne GAB ou TPE "
@@ -53,16 +55,30 @@ def handle_chat_message(
     if device_type is not None:
         context["device_type"] = device_type  # choix de l'interface : prime sur ce que dit le message
 
-    conversation_service.save_message(db, conversation.conversation_id, "user", message)
-
-    understood = message_understanding_service.understand_message(message, device_type=context.get("device_type"))
+    validation = validate_and_clean_message(message)
     trace(
-        "ROUTING",
-        "Orientation du message selon son intention",
+        "VALIDATION",
+        "Message utilisateur évalué",
         conversation_id=conversation.conversation_id,
-        intent=understood.intent,
+        valid=validation.valid,
+        reason=validation.reason,
     )
-    reply = _route_message(db, context, message, understood)
+    conversation_service.save_message(db, conversation.conversation_id, "user", validation.cleaned_text)
+
+    # La compréhension appelle déjà le LLM : la validation doit la précéder.
+    if validation.valid:
+        understood = message_understanding_service.understand_message(
+            validation.cleaned_text, device_type=context.get("device_type")
+        )
+        trace(
+            "ROUTING",
+            "Orientation du message selon son intention",
+            conversation_id=conversation.conversation_id,
+            intent=understood.intent,
+        )
+        reply = _route_message(db, context, validation.cleaned_text, understood)
+    else:
+        reply = REFORMULATION_REPLY
 
     conversation_service.save_message(db, conversation.conversation_id, "assistant", reply)
     context_service.save_context(db, conversation.conversation_id, context)

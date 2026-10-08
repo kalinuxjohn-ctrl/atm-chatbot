@@ -9,7 +9,7 @@ import { createIcon } from "./icons.js";
 
 const GREETING = [
   "Bonjour, je suis votre Copilote de maintenance.",
-  "Décrivez le problème observé sur le GAB ou le TPE, à l’écrit ou au micro, ou choisissez un cas fréquent ci-dessous.",
+  "Décrivez le problème observé sur le GAB ou le TPE, à l’écrit ou au micro, ou choisissez un cas fréquent dans les menus au-dessus de la zone de saisie.",
 ];
 
 /**

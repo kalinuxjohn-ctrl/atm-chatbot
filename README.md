@@ -12,8 +12,10 @@ prompts, réponses LLM brutes, secrets ou données personnelles à `trace()`.
 ## Parcours du chat
 
 1. `POST /chat` reçoit et valide le message avec `ChatRequest`.
-2. L'orchestrateur charge ou crée la conversation, charge son contexte et
-   enregistre le message utilisateur.
+2. L'orchestrateur charge ou crée la conversation, charge son contexte,
+   nettoie et valide le message localement avec `text_validation_service`,
+   puis enregistre le texte nettoyé. Un message rejeté reçoit une demande
+   de reformulation sans appel LLM, puis passe directement à l'étape 6.
 3. Le LLM de compréhension produit une intention et des références textuelles.
    Si sa sortie est invalide, le repli existant traite le message en diagnostic.
 4. Selon l'intention :
@@ -37,8 +39,39 @@ Le repli pgvector utilise le cosinus Python. La recherche autonome
 
 `python -B -m unittest discover -s tests -p test_tracing.py -v`
 
+`python -B -m unittest discover -s tests -p test_text_validation_service.py -v`
+
+`python -B -m unittest discover -s tests -p test_llm_providers.py -v`
+
 Les opérations métier sont simulées, sans appel au LLM ni requête réelle.
 L'import du backend nécessite néanmoins une configuration valide et un
 pilote de base de données disponible. Pour une vérification isolée, lancer
 depuis un répertoire sans `.env`, avec la racine du projet dans `PYTHONPATH`
 et `DATABASE_URL=sqlite:///:memory:` ; aucun schéma SQLite n'est créé.
+
+## Validation locale des messages
+
+`app/services/text_validation_service.py` ne dépend ni de la base ni du LLM,
+seulement de la bibliothèque standard. Unicode et espaces sont normalisés,
+les accents et identifiants conservés.
+
+Le filtre est volontairement tolérant : il ne rejette que le bruit évident
+(message vide, uniquement des symboles, un même motif répété au moins 4 fois
+comme `aaaaaa` ou `test test test test`, ou un mot isolé en minuscules avec
+5 consonnes d'affilée comme `qsdfghjklm`). Tout le reste passe, y compris les
+fautes de frappe, les lignes de log et les phrases incohérentes : le LLM juge.
+
+La route directe `POST /api/chat/search-symptom` applique également ce
+contrôle avant recherche et résumé. En cas de rejet, elle renvoie des listes
+vides et la demande de reformulation dans `summary`, sans recherche ni LLM.
+La trace `VALIDATION` contient le résultat et la raison du rejet, jamais le texte.
+
+La validation reste un module dans le backend existant, sans conteneur
+supplémentaire. Les dépendances sont installées dans l'image de base :
+
+```powershell
+docker build -f Dockerfile.base -t atm-python-base:latest .
+docker compose up -d --build
+```
+
+Claude est le fournisseur par défaut ; `LLM_PROVIDER=gemini` reste possible.

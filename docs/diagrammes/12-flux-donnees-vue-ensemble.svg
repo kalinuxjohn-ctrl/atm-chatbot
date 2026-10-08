@@ -141,5 +141,5 @@
 <text x="830" y="900" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">au message suivant pour rester dans la même discussion.</text>
 <line x1="30" y1="912" x2="1370" y2="912" stroke="#9fb3c8"/>
 <text x="30" y="936" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">Une conversation (« bonjour », hors-sujet) ne fait que les étapes 1-4, 8, 9, 10 : pas de Voyage ni de recherche. Si rien n&#x27;est trouvé en 7, la réponse est fixe, sans appel 2.</text>
-<text x="30" y="953" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">Le fournisseur d&#x27;IA est choisi par LLM_PROVIDER (claude en version finale ; gemini ou ollama possibles en développement) — le flux reste identique.</text>
+<text x="30" y="953" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">Le fournisseur d&#x27;IA est choisi par LLM_PROVIDER (claude par défaut ; gemini disponible) — le flux reste identique.</text>
 </svg>

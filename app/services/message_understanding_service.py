@@ -3,8 +3,8 @@ Niveau 1 du flux (voir diagramme) : comprendre ce que le technicien vient
 d'écrire -- son intention, et le texte brut qu'il mentionne (modèle, code
 d'erreur, description du problème).
 
-Passe par llm_service.generate_reply() -- Ollama aujourd'hui, Claude demain,
-sans aucun changement à ce fichier quand ça basculera. Ne retourne QUE du
+Passe par llm_service.generate_reply() -- Claude ou Gemini,
+sans dépendre du fournisseur choisi. Ne retourne QUE du
 texte et une intention, jamais un ID interne (garantie structurelle : voir
 message_understanding_schema.py).
 """
@@ -100,8 +100,7 @@ def understand_message(technician_message: str, device_type: str | None = None) 
 
 def _parse_json_response(raw_response: str) -> dict:
     """
-    Les modèles locaux (Ollama) respectent rarement un JSON pur à 100% --
-    ils entourent parfois la réponse de ```json ... ``` ou d'une phrase
+    Les fournisseurs entourent parfois la réponse de ```json ... ``` ou d'une phrase
     d'intro. On extrait le premier bloc { ... } trouvé plutôt que de
     dépendre d'un format de sortie parfait.
     """

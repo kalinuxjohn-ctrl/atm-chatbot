@@ -21,15 +21,11 @@ class Settings(BaseSettings):
     embedding_model_name: str = "OrdalieTech/Solon-embeddings-base-0.1"
     embedding_dimensions: int = 1024
 
-    # --- LLM local (Ollama) ---
-    ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "llama3.1"
-
     # --- Paramètres de la recherche (retrieval) ---
     retrieval_top_k: int = 5
     max_cases_returned: int = 3 
 
-    llm_provider: str = "ollama"  # "ollama" | "gemini"
+    llm_provider: str = "claude"  # "claude" | "gemini"
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.5-flash-lite"
     # Utilisés par ClaudeProvider (llm_service.py) quand llm_provider="claude".
@@ -50,8 +46,8 @@ class Settings(BaseSettings):
     voyage_api_key: str = ""
     voyage_model: str = "voyage-3-large"
 
-    # extra="ignore" : le .env est partagé avec docker-compose (OLLAMA_HOST,
-    # HF_HOME...) -- une variable que l'app ne connaît pas ne doit pas
+    # extra="ignore" : le .env est partagé avec docker-compose --
+    # une variable que l'app ne connaît pas ne doit pas
     # empêcher le démarrage.
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

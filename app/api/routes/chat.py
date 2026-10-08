@@ -18,6 +18,7 @@ from app.core.database import get_db
 from app.schemas.chat_schema import SymptomSearchRequest, SymptomSearchResponse
 from app.services.retrieval_service import find_ranked_solutions
 from app.services.llm_service import summarize_solutions
+from app.services.text_validation_service import REFORMULATION_REPLY, validate_and_clean_message
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -39,8 +40,17 @@ def rechercher_symptome(payload: SymptomSearchRequest, db: Session = Depends(get
         message_length=len(payload.raw_text),
     )
     try:
-        result = find_ranked_solutions(db, raw_text=payload.raw_text, device_type=payload.device_type)
-        resume = summarize_solutions(payload.raw_text, result["solutions"], device_type=payload.device_type)
+        validation = validate_and_clean_message(payload.raw_text)
+        trace(
+            "VALIDATION",
+            "Texte de recherche évalué",
+            valid=validation.valid,
+            reason=validation.reason,
+        )
+        if not validation.valid:
+            return SymptomSearchResponse(summary=REFORMULATION_REPLY)
+        result = find_ranked_solutions(db, raw_text=validation.cleaned_text, device_type=payload.device_type)
+        resume = summarize_solutions(validation.cleaned_text, result["solutions"], device_type=payload.device_type)
         response = SymptomSearchResponse(**result, summary=resume)
     except Exception as error:
         trace(

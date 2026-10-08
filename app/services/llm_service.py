@@ -1,6 +1,6 @@
 """
-Adaptateur pour le LLM. Trois fournisseurs disponibles aujourd'hui :
-Ollama (local), Gemini (API gratuite), Claude (API -- payante, c'est le
+Adaptateur pour le LLM. Deux fournisseurs disponibles aujourd'hui :
+Gemini (API gratuite), Claude (API -- payante, c'est le
 fournisseur prévu pour la version finale).
 
 Structuré en interface (LLMProvider) + implémentations, pas en fonctions
@@ -11,7 +11,7 @@ n'appellent jamais un fournisseur directement, seulement generate_reply().
 
 Pas de repli implicite entre fournisseurs : settings.llm_provider choisit
 UN fournisseur actif, et une valeur inconnue est une erreur de
-configuration explicite, pas un retour silencieux vers Ollama.
+configuration explicite, pas un retour silencieux vers un autre fournisseur.
 """
 
 from __future__ import annotations
@@ -39,53 +39,6 @@ class LLMProvider(ABC):
     @abstractmethod
     def generate(self, prompt: str) -> str:
         """Renvoie le texte généré, ou lève LLMUnavailableError avec un message clair."""
-
-
-class OllamaProvider(LLMProvider):
-    """Appelle un serveur Ollama local via son API HTTP."""
-
-    def __init__(self, base_url: str, model: str, timeout: int = 120):
-        self.base_url = base_url
-        self.model = model
-        self.timeout = timeout
-
-    def generate(self, prompt: str) -> str:
-        try:
-            response = requests.post(
-                f"{self.base_url}/api/generate",
-                json={"model": self.model, "prompt": prompt, "stream": False},
-                timeout=self.timeout,
-            )
-        except requests.ConnectionError as erreur:
-            raise LLMUnavailableError(
-                f"Impossible de joindre Ollama à {self.base_url} -- vérifiez qu'il est "
-                f"démarré et accessible depuis ce conteneur."
-            ) from erreur
-        except requests.Timeout as erreur:
-            raise LLMUnavailableError(
-                f"Ollama n'a pas répondu dans le délai imparti ({self.timeout}s)."
-            ) from erreur
-        except requests.RequestException as erreur:
-            raise LLMUnavailableError(
-                f"Erreur réseau lors de l'appel à Ollama ({type(erreur).__name__})."
-            ) from erreur
-
-        if response.status_code == 404:
-            raise LLMUnavailableError(
-                f"Le modèle '{self.model}' n'est pas installé sur Ollama "
-                f"(essayez : ollama pull {self.model})."
-            )
-        try:
-            response.raise_for_status()
-        except requests.HTTPError as erreur:
-            raise LLMUnavailableError(
-                f"Ollama a répondu avec une erreur ({response.status_code})."
-            ) from erreur
-
-        try:
-            return response.json()["response"]
-        except (ValueError, KeyError, TypeError) as erreur:
-            raise LLMUnavailableError("Ollama n'a renvoyé aucun texte exploitable pour cette requête.") from erreur
 
 
 class GeminiProvider(LLMProvider):
@@ -149,8 +102,8 @@ class ClaudeProvider(LLMProvider):
     """
     Appelle l'API Claude d'Anthropic. C'est le fournisseur prévu pour la
     version finale du projet -- contrairement à Gemini, cette API est
-    PAYANTE (pas de palier gratuit équivalent) : à activer en connaissance
-    de cause, pas par défaut en développement.
+    PAYANTE (pas de palier gratuit équivalent). Gemini reste sélectionnable
+    explicitement en développement avec LLM_PROVIDER.
     """
 
     _ENDPOINT = "https://api.anthropic.com/v1/messages"
@@ -216,7 +169,6 @@ class ClaudeProvider(LLMProvider):
 
 
 _PROVIDERS = {
-    "ollama": lambda: OllamaProvider(base_url=settings.ollama_base_url, model=settings.ollama_model),
     "gemini": lambda: GeminiProvider(api_key=settings.gemini_api_key, model=settings.gemini_model),
     "claude": lambda: ClaudeProvider(api_key=settings.claude_api_key, model=settings.claude_model),
 }

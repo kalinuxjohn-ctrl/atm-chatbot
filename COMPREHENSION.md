@@ -25,7 +25,7 @@ local** les reformule en français.
 | API | Python + FastAPI | `app/main.py` |
 | Base de données | PostgreSQL 16 + extension **pgvector** | `docker-compose.yml` (service `db`) |
 | Embeddings (texte → vecteur) | `OrdalieTech/Solon-embeddings-large-0.1` via `sentence-transformers`, **1024 dimensions**, en local (GPU si dispo) | `app/services/embeddings_service.py` |
-| LLM | **Ollama en local** (modèle par défaut `llama3.1`) | `app/services/llm_service.py` |
+| LLM | **Claude par défaut**, Gemini disponible | `app/services/llm_service.py` |
 | Déploiement | Docker Compose : `db` → `init-db` → `web` | `docker-compose.yml` |
 
 Tout est **gratuit et auto-hébergé** : aucune clé d'API payante.
@@ -147,10 +147,10 @@ Le modèle est chargé **une seule fois** puis gardé en mémoire (`lru_cache`).
 un prompt « résume ces cas, garde l'ordre Cas 1 / Cas 2…, **n'invente rien** »
 et appelle `llm_service.generate_reply()`.
 
-`llm_service` passe par une interface `LLMProvider` (aujourd'hui
-`OllamaProvider`) : changer de LLM = ajouter une classe. **Il ne lève jamais
-d'erreur vers l'API** : si Ollama est injoignable, le texte de l'erreur
-(« Impossible de joindre Ollama… ») devient la réponse.
+`llm_service` passe par une interface `LLMProvider` (`ClaudeProvider` ou
+`GeminiProvider`), choisie avec `LLM_PROVIDER`. Une indisponibilité remonte
+à l'API (503 neutre), sauf si l'appelant fournit un texte de secours :
+celui-ci est alors renvoyé et la cause est journalisée.
 
 ---
 
@@ -295,13 +295,14 @@ Documentation interactive : <http://localhost:8000/docs>.
 | --- | --- | --- |
 | `DATABASE_URL` | `postgresql+psycopg2://…/atm_chatbot` | connexion BDD |
 | `EMBEDDING_MODEL_NAME` / `EMBEDDING_DIMENSIONS` | Solon / 1024 | modèle d'embedding |
-| `OLLAMA_BASE_URL` / `OLLAMA_MODEL` | `http://localhost:11434` / `llama3.1` | LLM |
+| `LLM_PROVIDER` | `claude` | fournisseur LLM (`claude` ou `gemini`) |
+| `CLAUDE_API_KEY` / `CLAUDE_MODEL` | clé vide / `claude-sonnet-5-5` | API Claude |
+| `GEMINI_API_KEY` / `GEMINI_MODEL` | clé vide / `gemini-3.5-flash-lite` | API Gemini |
 | `SYMPTOM_SIMILARITY_THRESHOLD` | 0.5 | seuil de pertinence de la recherche |
 | `SYMPTOM_CATALOG_MATCH_MAX_DISTANCE` | 0.15 | seuil de rattachement automatique au catalogue |
 
-⚠️ `Settings` refuse les variables inconnues : `OLLAMA_HOST`, `OLLAMA_PORT`
-et `HF_HOME` présentes dans `.env` font échouer le démarrage hors Docker. Il
-faut soit les retirer de `.env`, soit les déclarer dans `Settings`.
+`Settings` ignore les variables inconnues (`extra="ignore"`) : le fichier
+`.env` peut être partagé avec Docker Compose.
 
 ---
 
@@ -317,8 +318,8 @@ Les catégories utilisées sont REQUEST, CONTEXT, PROCESSING, SEARCH, EMBEDDING,
 LLM, RESPONSE et ERROR. Suivre ces lignes permet de voir tout le trajet d'un
 message, de la requête à la réponse.
 
-Ollama doit tourner **sur l'hôte**, accessible depuis le conteneur via
-`host.docker.internal`.
+Le backend doit accéder à l'API du fournisseur choisi et recevoir sa clé
+via `.env` (`CLAUDE_API_KEY` ou `GEMINI_API_KEY`).
 
 ---
 

@@ -19,7 +19,7 @@ import { DEVICE_OPTIONS, createDevicePicker } from "../components/devicePicker.j
 import { hydrateIcons } from "../components/icons.js";
 import { createSettingsPanel, formatVoiceLabel } from "../components/settingsPanel.js";
 import { createSidebar } from "../components/sidebar.js";
-import { createSuggestionList, flySuggestionToConversation } from "../components/suggestions.js";
+import { createSuggestionMenus } from "../components/suggestions.js";
 import { createVoiceMode } from "../components/voiceMode.js";
 import { getFriendlyErrorMessage } from "../core/httpClient.js";
 import { createConversationService } from "../services/conversationService.js";
@@ -82,8 +82,6 @@ async function initCopilot({ technicianId, displayName }) {
   /* ---------- Services et composants ---------- */
   const conversation = createConversationService({ technicianId });
   let requestInProgress = false;
-  // Animation du prochain message du technicien ("landing" après la montée d'une bulle).
-  let nextUserAnimation = "up";
   // Codes d'erreur à réponse enregistrée (public/data/error-codes), chargés au démarrage.
   let knownErrorCodes = [];
 
@@ -107,7 +105,6 @@ async function initCopilot({ technicianId, displayName }) {
     conversationElement: elements.conversation,
     getAvatarKind: () => getPreferences().avatar,
     onListen: (text) => void readAloud(text),
-    createWelcomeExtras: () => buildSuggestionList(),
   });
 
   const devicePicker = createDevicePicker({
@@ -234,7 +231,7 @@ async function initCopilot({ technicianId, displayName }) {
     requestInProgress = isBusy;
     elements.chatPanel.setAttribute("aria-busy", String(isBusy));
     elements.newConversationButton.disabled = isBusy;
-    elements.composerSuggestions.classList.toggle("is-disabled", isBusy);
+    updateSuggestionMenusState();
     devicePicker.setDisabled(isBusy);
     setStatus(isBusy ? "Le Copilote réfléchit…" : READY_STATUS, isBusy ? "processing" : "idle");
     updateComposerState();
@@ -249,67 +246,65 @@ async function initCopilot({ technicianId, displayName }) {
   async function submitMessage(text, { channel = "text", silent = false, readReply = true } = {}) {
     if (requestInProgress) return { error: new Error("Une réponse est déjà en cours de préparation.") };
     setBusy(true);
-    const removeTyping = chatView.showTyping();
+    let removeTyping = () => {};
     let reply = null;
     let error = null;
     try {
-      ({ text: reply } = await conversation.ask(text, { channel, silent }));
+      // ask() affiche tout de suite le message du technicien : les points
+      // "le Copilote réfléchit" sont ajoutés APRÈS, donc en dessous de lui.
+      const pendingAnswer = conversation.ask(text, { channel, silent });
+      removeTyping = chatView.showTyping();
+      ({ text: reply } = await pendingAnswer);
     } catch (caught) {
       error = caught;
       chatView.showError(getFriendlyErrorMessage(caught), () => void submitMessage(text, { channel, silent: true, readReply }));
     } finally {
       removeTyping();
       setBusy(false);
-      nextUserAnimation = "up";
       updateContext();
     }
     if (reply && readReply && getPreferences().autoRead) void readAloud(reply);
     return { reply, error };
   }
 
-  /* ---------- Bulles de suggestions ---------- */
-  /** Bulles de l'équipement sélectionné : codes d'erreur connus + problèmes fréquents. */
-  function buildSuggestionList(className = "") {
-    return createSuggestionList({
-      deviceType: conversation.deviceType,
-      errorCodes: filterErrorCodesForDevice(knownErrorCodes, conversation.deviceType),
-      onPick: pickSuggestion,
-      onPickErrorCode: pickErrorCode,
-      className,
+  /* ---------- Menus de suggestions ---------- */
+  /** Menus de l'équipement sélectionné : pannes fréquentes + codes d'erreur connus. */
+  function renderSuggestions() {
+    elements.composerSuggestions.replaceChildren(
+      createSuggestionMenus({
+        deviceType: conversation.deviceType,
+        errorCodes: filterErrorCodesForDevice(knownErrorCodes, conversation.deviceType),
+        onPick: pickSuggestion,
+        onPickErrorCode: pickErrorCode,
+      }),
+    );
+    updateSuggestionMenusState();
+  }
+
+  /** Menus inactifs pendant qu'une réponse est en préparation. */
+  function updateSuggestionMenusState() {
+    elements.composerSuggestions.querySelectorAll("select").forEach((menu) => {
+      menu.disabled = requestInProgress;
     });
   }
 
-  function renderSuggestions() {
-    elements.composerSuggestions.replaceChildren(buildSuggestionList("suggestion-list-compact"));
-    chatView.refreshWelcomeExtras();
-  }
-
   /**
-   * Code d'erreur connu : la bulle monte, puis le code et sa réponse enregistrée
-   * s'affichent directement -- AUCUN appel au backend (voir knownErrorCodesService).
+   * Code d'erreur connu : le code et sa réponse enregistrée s'affichent
+   * directement -- AUCUN appel au backend (voir knownErrorCodesService).
    */
-  async function pickErrorCode(errorCode, chip) {
+  function pickErrorCode(errorCode) {
     if (requestInProgress) return;
     dictation.cancel();
     stopReading();
-    requestInProgress = true; // bloque un double clic pendant l'animation
-    await flySuggestionToConversation(chip, elements.conversation);
-    requestInProgress = false;
-    nextUserAnimation = "landing";
     conversation.addLocalExchange(`Code erreur ${errorCode.code} : ${errorCode.label}`, errorCode.replyText);
-    nextUserAnimation = "up";
     if (getPreferences().autoRead) void readAloud(errorCode.replyText);
   }
 
-  /** La bulle "monte" vers la conversation puis devient le message du technicien. */
-  async function pickSuggestion(text, chip) {
+  /** Panne fréquente : envoyée comme si le technicien l'avait tapée. */
+  function pickSuggestion(text) {
     if (requestInProgress) return;
     dictation.cancel();
     stopReading();
-    requestInProgress = true; // bloque un double clic pendant l'animation
-    await flySuggestionToConversation(chip, elements.conversation);
-    requestInProgress = false;
-    nextUserAnimation = "landing";
     void submitMessage(text);
   }
 
@@ -368,7 +363,7 @@ async function initCopilot({ technicianId, displayName }) {
   // Tous les messages (écrits OU vocaux) arrivent par cet abonnement.
   conversation.subscribe((event) => {
     if (event.type === "message") {
-      chatView.appendMessage(event.message, { userAnimation: nextUserAnimation });
+      chatView.appendMessage(event.message);
       updateContext();
     }
     if (event.type === "reset") {
