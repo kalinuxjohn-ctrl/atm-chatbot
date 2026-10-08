@@ -107,26 +107,48 @@ def _apply_relevance_threshold(candidates: list[dict], threshold: float, method:
     return retained
 
 
-def _fallback_cosine_search(db, query_vector: Sequence[float], device_type: str, limit: int) -> list[dict]:
+def _model_filter_sql(model_name: str | None) -> tuple[str, dict]:
+    """
+    Filtre facultatif par nom de modèle (celui que Claude a extrait du
+    message). Sans modèle mentionné : chaîne vide, la recherche reste
+    filtrée par device_type seul. Comparaison insensible à la casse et aux
+    espaces autour, comme technical_reference_resolver_service.
+    """
+    if not model_name or not model_name.strip():
+        return "", {}
+    return (
+        """
+              AND d.model_id IN (
+                  SELECT dm.model_id FROM device_model dm
+                  WHERE UPPER(TRIM(dm.model_name)) = UPPER(TRIM(:model_name))
+              )""",
+        {"model_name": model_name},
+    )
+
+
+def _fallback_cosine_search(
+    db, query_vector: Sequence[float], device_type: str, limit: int, model_name: str | None = None
+) -> list[dict]:
     """
     Repli quand pgvector est indisponible. Mêmes colonnes, même clé de
     score ("similarity", élevé = pertinent), même tri que le chemin
     pgvector -- ce n'est pas une deuxième logique, juste un calcul fait à
     la main plutôt que par l'extension SQL.
     """
+    model_filter, model_params = _model_filter_sql(model_name)
     rows = db.execute(
         text(
-            """
+            f"""
             SELECT isym.intervention_symptom_id, isym.intervention_id,
                    isym.symptom_id, isym.raw_text, isym.embedding::text AS embedding_text
             FROM intervention_symptom isym
             JOIN intervention iv ON iv.intervention_id = isym.intervention_id
             JOIN device d ON d.device_id = iv.device_id
             WHERE isym.embedding IS NOT NULL
-              AND d.device_type = :device_type
+              AND d.device_type = :device_type{model_filter}
             """
         ),
-        {"device_type": device_type},
+        {"device_type": device_type, **model_params},
     ).mappings().all()
 
     scored = []
@@ -146,7 +168,9 @@ def _fallback_cosine_search(db, query_vector: Sequence[float], device_type: str,
     return scored[:limit]
 
 
-def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = DEFAULT_SYMPTOM_LIMIT) -> list[dict]:
+def fetch_similar_symptoms(
+    db, raw_text: str, device_type: str, limit: int = DEFAULT_SYMPTOM_LIMIT, model_name: str | None = None
+) -> list[dict]:
     """
     Les symptômes enregistrés les plus proches d'une recherche texte, DÉJÀ
     filtrés par le seuil de pertinence (settings.symptom_similarity_threshold)
@@ -156,7 +180,9 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = DEF
     Restreint aux symptômes enregistrés sur le même device_type (jointure
     jusqu'à `device` via `intervention`) : un GAB et un TPE ne partagent pas
     la même mécanique, donc un symptôme "similaire en texte" observé sur
-    l'un n'est pas forcément pertinent pour l'autre.
+    l'un n'est pas forcément pertinent pour l'autre. Si `model_name` est
+    fourni (modèle cité dans le message), restreint en plus aux appareils
+    de ce modèle.
 
     Retourne [] si le texte est vide/inexploitable (aucune recherche
     vectorielle n'est lancée dans ce cas), ou si aucun candidat ne dépasse
@@ -176,11 +202,13 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = DEF
         "Recherche vectorielle démarrée",
         query_length=len(cleaned_text),
         device_type=device_type,
+        has_model_filter=bool(model_name),
         limit=limit,
         threshold=threshold,
     )
 
     query_vector = generate_embedding(cleaned_text, is_query=True)
+    model_filter, model_params = _model_filter_sql(model_name)
 
     # SAVEPOINT plutôt que db.rollback() : en cas d'échec, seule cette
     # requête est annulée -- un rollback complet effacerait aussi ce que
@@ -191,7 +219,7 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = DEF
     try:
         rows = db.execute(
             text(
-                """
+                f"""
                 SELECT isym.intervention_symptom_id, isym.intervention_id,
                        isym.symptom_id, isym.raw_text,
                        1 - (isym.embedding <=> CAST(:query_vector AS vector)) AS similarity
@@ -199,12 +227,12 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = DEF
                 JOIN intervention iv ON iv.intervention_id = isym.intervention_id
                 JOIN device d ON d.device_id = iv.device_id
                 WHERE isym.embedding IS NOT NULL
-                  AND d.device_type = :device_type
+                  AND d.device_type = :device_type{model_filter}
                 ORDER BY isym.embedding <=> CAST(:query_vector AS vector)
                 LIMIT :limit
                 """
             ),
-            {"query_vector": str(query_vector), "device_type": device_type, "limit": limit},
+            {"query_vector": str(query_vector), "device_type": device_type, "limit": limit, **model_params},
         ).mappings().all()
         candidates = [dict(row) for row in rows]
         savepoint.commit()
@@ -220,7 +248,7 @@ def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = DEF
         # la même session échouerait avec InFailedSqlTransaction tant qu'on
         # n'est pas revenu au savepoint.
         savepoint.rollback()
-        candidates = _fallback_cosine_search(db, query_vector, device_type, limit)
+        candidates = _fallback_cosine_search(db, query_vector, device_type, limit, model_name=model_name)
         method = "python_cosine"
 
     trace("SEARCH", "Candidats vectoriels récupérés avant filtrage", count=len(candidates), method=method)
@@ -324,7 +352,12 @@ def store_symptom_embedding(db, intervention_symptom_id: int, vector: Sequence[f
 
 
 def find_ranked_solutions(
-    db, raw_text: str, device_type: str, symptom_limit: int = DEFAULT_SYMPTOM_LIMIT, solution_limit: int = 10
+    db,
+    raw_text: str,
+    device_type: str,
+    symptom_limit: int = DEFAULT_SYMPTOM_LIMIT,
+    solution_limit: int = 10,
+    model_name: str | None = None,
 ) -> dict:
     """Point d'entrée principal du flux de recherche (étapes 1-2 de la
     feuille de route) : à partir d'un symptôme décrit en langage libre par
@@ -346,7 +379,9 @@ def find_ranked_solutions(
     solution n'est alors recherchée au hasard.
     """
     solution_limit = _clamp_limit(solution_limit, default=10)
-    similar = fetch_similar_symptoms(db, raw_text, device_type, limit=symptom_limit)
+    # model_name ne filtre que les symptômes retenus : les stats elles-mêmes
+    # restent calculées par device_type (pas de colonne modèle dans la table).
+    similar = fetch_similar_symptoms(db, raw_text, device_type, limit=symptom_limit, model_name=model_name)
 
     if not similar:
         return {"matched_symptom_ids": [], "solutions": [], "no_relevant_match": True}

@@ -34,16 +34,27 @@ Règles strictes :
 - "intent" = "diagnostic" si le technicien décrit un symptôme/problème technique nouveau c'est vraiment l'intension clair de l'utilisateur veux t'il de l'aide sur un equipement, juste un message,tu dois analuser cela.
 - "intent" = "detail_request" si le technicien demande des précisions sur un résultat déjà montré
   (ex: "le deuxième", "cette solution", "pourquoi ça a marché", "quelle action").
-- "intent" = "conversation" sinon (salutation, remerciement, hors-sujet).
+- "intent" = "conversation" sinon (salutation, remerciement, et TOUT message sans rapport
+  avec la maintenance d'un GAB ou d'un TPE).
 - N'invente JAMAIS une information absente du message : si le modèle ou le code d'erreur
   n'est pas mentionné, mets null. Ne mets JAMAIS un identifiant numérique de base de données.
 - "reformulated_problem_text" ne doit être rempli QUE si intent == "diagnostic".
 
-Message du technicien : « {technician_message} »
+{device_type_rule}Message du technicien : « {technician_message} »
 """
 
 
-def understand_message(technician_message: str) -> UnderstoodMessage:
+def _device_type_rule(device_type: str | None) -> str:
+    """Rien si l'interface n'a pas fourni de type : Claude le déduit alors du message seul."""
+    if not device_type:
+        return ""
+    return (
+        llm_service.device_type_instruction(device_type)
+        + f'Mets "{device_type}" dans "device_type_text", même si le message cite un autre type d\'appareil.\n\n'
+    )
+
+
+def understand_message(technician_message: str, device_type: str | None = None) -> UnderstoodMessage:
     """
     Pas de repli : sans compréhension fiable, on ne devine PAS l'intention.
     (Avant, tout message était alors traité comme une panne -- un simple
@@ -58,7 +69,10 @@ def understand_message(technician_message: str) -> UnderstoodMessage:
         "Compréhension du message démarrée (LLM niveau 1)",
         message_length=len(technician_message),
     )
-    prompt = _PROMPT_TEMPLATE.format(technician_message=technician_message)
+    prompt = _PROMPT_TEMPLATE.format(
+        technician_message=technician_message,
+        device_type_rule=_device_type_rule(device_type),
+    )
     raw_response = llm_service.generate_reply(prompt)  # lève LLMUnavailableError si le LLM ne répond pas
 
     try:

@@ -32,17 +32,21 @@ def find_similar_cases(
     device_type: str,
     symptom_limit: int = 8,
     case_limit: int = 3,
+    model_name: str | None = None,
 ) -> list[dict]:
     """
     Jusqu'à `case_limit` interventions passées similaires à `raw_text`,
-    triées de la plus à la moins pertinente.
+    triées de la plus à la moins pertinente. Limitées aux appareils du
+    modèle `model_name` s'il est fourni.
 
     symptom_limit > case_limit volontairement : plusieurs symptômes
     catalogués différents peuvent pointer vers la même intervention, donc
     on élargit la recherche en amont pour ne pas rater une intervention
     pertinente juste parce qu'un seul de ses symptômes a été retenu.
     """
-    matched_symptoms = fetch_similar_symptoms(db, raw_text, device_type, limit=symptom_limit)
+    matched_symptoms = fetch_similar_symptoms(
+        db, raw_text, device_type, limit=symptom_limit, model_name=model_name
+    )
     if not matched_symptoms:
         trace("SEARCH", "Aucun cas similaire trouvé", count=0)
         return []

@@ -272,7 +272,23 @@ def generate_reply(prompt: str, fallback: str | None = None) -> str:
 ask_llm = generate_reply
 
 
-def summarize_solutions(raw_text: str, solutions: list[dict]) -> str:
+def device_type_instruction(device_type: str | None) -> str:
+    """
+    Phrase à placer en tête d'un prompt pour que le LLM sache sur quel type
+    d'appareil travaille le technicien. Le choix fait dans l'interface prime
+    sur ce que le message mentionne (voir chat_orchestrator_service) : le
+    LLM doit raisonner avec ce même type. Chaîne vide si le type est inconnu.
+    """
+    if not device_type:
+        return ""
+    label = device_type.upper()
+    return (
+        f"Le type d'appareil choisi dans l'interface est : {label}. "
+        f"Privilégie ce type d'appareil : considère que le technicien travaille sur un {label}.\n"
+    )
+
+
+def summarize_solutions(raw_text: str, solutions: list[dict], device_type: str | None = None) -> str:
     """
     Résume en français les cas déjà connus retrouvés par la recherche
     (retrieval_service.find_ranked_solutions). Le prompt interdit
@@ -291,12 +307,14 @@ def summarize_solutions(raw_text: str, solutions: list[dict]) -> str:
 
     prompt = (
         "Tu es un assistant pour techniciens de maintenance. "
+        f"{device_type_instruction(device_type)}"
         f"Un technicien décrit ce symptôme : « {raw_text} ».\n"
         "Voici les cas déjà enregistrés dans l'historique, classés du plus au moins fiable :\n"
         f"{lignes_cas}\n\n"
         "Résume ces cas en 2-3 phrases claires, en français, pour aider le technicien à choisir "
         "quoi essayer en premier. N'invente AUCUNE information absente de la liste ci-dessus, et "
-        "ne propose aucune action qui n'y figure pas."
+        "ne propose aucune action qui n'y figure pas. Si la liste est vide donne des solutions adaptées au symptôme."
+        "en utilisant tes connaissances et ton expérience, mais indique clairement que la solution viens de toi."
     )
 
     return generate_reply(prompt)

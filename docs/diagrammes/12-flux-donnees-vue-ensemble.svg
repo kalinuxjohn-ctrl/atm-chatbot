@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 960" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Vue d&#x27;ensemble du flux de données entre navigateur, serveur frontend, backend FastAPI, Claude, Voyage AI et PostgreSQL, avec le détail de chaque échange.">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3b4f66"/></marker>
+  </defs>
+  <rect width="1400" height="960" fill="#ffffff"/>
+<text x="30" y="40" font-size="20" font-weight="700" fill="#10243a" text-anchor="start" xml:space="preserve">Flux des données d&#x27;un message : qui parle à qui</text>
+<text x="30" y="62" font-size="12.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">Un message du technicien en mode diagnostic. Les numéros renvoient au tableau ci-dessous.</text>
+<rect x="30" y="140" width="210" height="170" rx="10" fill="#f6f9fc" stroke="#10243a" stroke-width="1.5"/>
+<text x="135" y="168" font-size="15" font-weight="700" fill="#10243a" text-anchor="middle" xml:space="preserve">Navigateur</text>
+<text x="135" y="186" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="middle" xml:space="preserve">frontend du technicien</text>
+<text x="48" y="214.0" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">copilot.html + JavaScript</text>
+<text x="48" y="229.5" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">chatApi.js envoie le message</text>
+<text x="48" y="245.0" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">affiche la réponse</text>
+<text x="48" y="260.5" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">historique gardé dans</text>
+<text x="48" y="276.0" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">le sessionStorage de l&#x27;onglet</text>
+<rect x="300" y="140" width="200" height="170" rx="10" fill="#f6f9fc" stroke="#10243a" stroke-width="1.5"/>
+<text x="400" y="168" font-size="15" font-weight="700" fill="#10243a" text-anchor="middle" xml:space="preserve">Serveur frontend</text>
+<text x="400" y="186" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="middle" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">frontend/server.py</text>
+<text x="318" y="214.0" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">sert les pages HTML/JS</text>
+<text x="318" y="229.5" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">relaie chaque /api/...</text>
+<text x="318" y="245.0" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">vers le backend :8000</text>
+<text x="318" y="260.5" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">aucune logique métier</text>
+<rect x="560" y="90" width="360" height="300" rx="12" fill="#eaf2fd" stroke="#1f6fd1" stroke-width="1.5"/>
+<text x="740" y="116" font-size="15" font-weight="700" fill="#1657a8" text-anchor="middle" xml:space="preserve">Backend FastAPI</text>
+<text x="740" y="133" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="middle" xml:space="preserve">le seul à parler aux services externes</text>
+<text x="578" y="158" font-size="11.5" font-weight="600" fill="#1657a8" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">routes/chat.py</text>
+<text x="578" y="170" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">point d&#x27;entrée POST /api/chat</text>
+<text x="578" y="186" font-size="11.5" font-weight="600" fill="#1657a8" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">chat_orchestrator_service</text>
+<text x="578" y="198" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">chef d&#x27;orchestre, choisit la branche</text>
+<text x="578" y="214" font-size="11.5" font-weight="600" fill="#1657a8" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">message_understanding_service</text>
+<text x="578" y="226" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">appel 1 à Claude : comprendre</text>
+<text x="578" y="242" font-size="11.5" font-weight="600" fill="#1657a8" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">technical_reference_resolver</text>
+<text x="578" y="254" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">texte → vrais IDs en base</text>
+<text x="578" y="270" font-size="11.5" font-weight="600" fill="#1657a8" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">case_retrieval / retrieval</text>
+<text x="578" y="282" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">recherche des cas et des stats</text>
+<text x="578" y="298" font-size="11.5" font-weight="600" fill="#1657a8" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">embeddings_service</text>
+<text x="578" y="310" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">appelle Voyage AI</text>
+<text x="578" y="326" font-size="11.5" font-weight="600" fill="#1657a8" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">llm_service</text>
+<text x="578" y="338" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">appelle Claude</text>
+<text x="578" y="354" font-size="11.5" font-weight="600" fill="#1657a8" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">context / conversation_service</text>
+<text x="578" y="366" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">mémoire de la conversation</text>
+<rect x="1000" y="90" width="370" height="80" rx="10" fill="#fff4dd" stroke="#c98410" stroke-width="1.5"/>
+<text x="1018" y="115" font-size="14" font-weight="700" fill="#5c3c00" text-anchor="start" xml:space="preserve">Claude · API Anthropic</text>
+<text x="1018" y="134" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">api.anthropic.com/v1/messages</text>
+<text x="1018" y="153" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">modèle claude-sonnet-5-5 : comprend puis rédige</text>
+<rect x="1000" y="200" width="370" height="80" rx="10" fill="#f1edfc" stroke="#6b4fc9" stroke-width="1.5"/>
+<text x="1018" y="225" font-size="14" font-weight="700" fill="#3e2a8a" text-anchor="start" xml:space="preserve">Voyage AI · embeddings</text>
+<text x="1018" y="244" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">api.voyageai.com/v1/embeddings</text>
+<text x="1018" y="263" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">voyage-3-large : texte → vecteur de 1024 nombres</text>
+<rect x="1000" y="310" width="370" height="80" rx="10" fill="#e8f5f4" stroke="#127a76" stroke-width="1.5"/>
+<text x="1018" y="335" font-size="14" font-weight="700" fill="#0d4f4c" text-anchor="start" xml:space="preserve">PostgreSQL + pgvector</text>
+<text x="1018" y="354" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">base de données du projet</text>
+<text x="1018" y="373" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">interventions, symptômes + vecteurs, stats, conversations</text>
+<line x1="240" y1="205" x2="298" y2="205" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)"/>
+<circle cx="269" cy="190" r="11" fill="#10243a"/><text x="269" y="194" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">1</text>
+<line x1="298" y1="255" x2="242" y2="255" stroke="#3b4f66" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<circle cx="269" cy="270" r="11" fill="#10243a"/><text x="269" y="274" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">10</text>
+<line x1="500" y1="205" x2="558" y2="205" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)"/>
+<circle cx="529" cy="190" r="11" fill="#10243a"/><text x="529" y="194" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">2</text>
+<line x1="558" y1="255" x2="502" y2="255" stroke="#3b4f66" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<line x1="920" y1="130" x2="998" y2="130" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<circle cx="944" cy="116" r="11" fill="#c98410"/><text x="944" y="120" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">4</text>
+<circle cx="974" cy="116" r="11" fill="#c98410"/><text x="974" y="120" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">8</text>
+<line x1="920" y1="240" x2="998" y2="240" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<circle cx="959" cy="226" r="11" fill="#6b4fc9"/><text x="959" y="230" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">6</text>
+<line x1="920" y1="350" x2="998" y2="350" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<circle cx="930" cy="372" r="11" fill="#127a76"/><text x="930" y="376" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">3</text>
+<circle cx="950" cy="372" r="11" fill="#127a76"/><text x="950" y="376" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">5</text>
+<circle cx="970" cy="372" r="11" fill="#127a76"/><text x="970" y="376" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">7</text>
+<circle cx="990" cy="372" r="11" fill="#127a76"/><text x="990" y="376" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">9</text>
+<text x="30" y="345" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve" font-style="italic">Flèche pleine = requête · pointillés = réponse</text>
+<rect x="30" y="420" width="1340" height="32" fill="#10243a" rx="6"/>
+<text x="40" y="441" font-size="12.5" font-weight="700" fill="#fff" text-anchor="start" xml:space="preserve">N°</text>
+<text x="90" y="441" font-size="12.5" font-weight="700" fill="#fff" text-anchor="start" xml:space="preserve">De → vers</text>
+<text x="300" y="441" font-size="12.5" font-weight="700" fill="#fff" text-anchor="start" xml:space="preserve">Ce qui est envoyé</text>
+<text x="830" y="441" font-size="12.5" font-weight="700" fill="#fff" text-anchor="start" xml:space="preserve">Ce qui revient · à quoi ça sert</text>
+<circle cx="55" cy="475.0" r="11" fill="#10243a"/><text x="55" y="479.0" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">1</text>
+<text x="90" y="479" font-size="12" font-weight="600" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Navigateur → server.py</text>
+<text x="300" y="471" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">POST /api/chat  { technician_id, message,</text>
+<text x="300" y="486" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">conversation_id (null au 1er message), device_type &quot;gab&quot;|&quot;tpe&quot; }</text>
+<text x="830" y="471" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Rien directement : server.py relaie la requête.</text>
+<text x="830" y="486" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Le device_type vient du bouton GAB / TPE de l&#x27;interface.</text>
+<rect x="30" y="498" width="1340" height="46" fill="#f6f9fc"/>
+<circle cx="55" cy="521.0" r="11" fill="#10243a"/><text x="55" y="525.0" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">2</text>
+<text x="90" y="525" font-size="12" font-weight="600" fill="#1d2d3d" text-anchor="start" xml:space="preserve">server.py → FastAPI</text>
+<text x="300" y="517" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">La même requête, relayée telle quelle</text>
+<text x="300" y="532" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">vers http://127.0.0.1:8000/api/chat</text>
+<text x="830" y="517" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Le navigateur n&#x27;a jamais besoin de connaître l&#x27;adresse du backend</text>
+<text x="830" y="532" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">ni les clés d&#x27;API (elles restent côté backend).</text>
+<circle cx="55" cy="567.0" r="11" fill="#127a76"/><text x="55" y="571.0" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">3</text>
+<text x="90" y="571" font-size="12" font-weight="600" fill="#1d2d3d" text-anchor="start" xml:space="preserve">FastAPI ↔ PostgreSQL</text>
+<text x="300" y="563" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Lit la conversation et son contexte (JSONB),</text>
+<text x="300" y="578" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">enregistre le message « user »</text>
+<text x="830" y="563" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Revient : dernière recherche, résultat sélectionné, device_type.</text>
+<text x="830" y="578" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Sert à comprendre plus tard « détaille le deuxième ».</text>
+<rect x="30" y="590" width="1340" height="46" fill="#f6f9fc"/>
+<circle cx="55" cy="613.0" r="11" fill="#c98410"/><text x="55" y="617.0" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">4</text>
+<text x="90" y="617" font-size="12" font-weight="600" fill="#1d2d3d" text-anchor="start" xml:space="preserve">FastAPI → Claude (appel 1)</text>
+<text x="300" y="609" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Consignes + type d&#x27;appareil choisi dans l&#x27;interface + message brut</text>
+<text x="300" y="624" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">(ni historique, ni autre contexte, ni données de la base)</text>
+<text x="830" y="609" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">JSON { intent, device_type_text, model_name_text, error_code_text,</text>
+<text x="830" y="624" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">reformulated_problem_text } → décide quelle branche suivre.</text>
+<circle cx="55" cy="659.0" r="11" fill="#127a76"/><text x="55" y="663.0" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">5</text>
+<text x="90" y="663" font-size="12" font-weight="600" fill="#1d2d3d" text-anchor="start" xml:space="preserve">FastAPI ↔ PostgreSQL</text>
+<text x="300" y="655" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Les textes extraits par Claude :</text>
+<text x="300" y="670" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">« E42 », nom du modèle, « gab »/« tpe »</text>
+<text x="830" y="655" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">error_code_id, model_id réels : l&#x27;IA ne donne jamais d&#x27;ID, c&#x27;est la base.</text>
+<text x="830" y="670" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Le type de l&#x27;interface prime ; celui du message ne sert que s&#x27;il manque.</text>
+<rect x="30" y="682" width="1340" height="46" fill="#f6f9fc"/>
+<circle cx="55" cy="705.0" r="11" fill="#6b4fc9"/><text x="55" y="709.0" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">6</text>
+<text x="90" y="709" font-size="12" font-weight="600" fill="#1d2d3d" text-anchor="start" xml:space="preserve">FastAPI → Voyage AI</text>
+<text x="300" y="701" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">{ input: [texte reformulé], model: &quot;voyage-3-large&quot;,</text>
+<text x="300" y="716" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">input_type: &quot;query&quot;, output_dimension: 1024 }</text>
+<text x="830" y="701" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Un vecteur de 1024 nombres = le « sens » de la phrase.</text>
+<text x="830" y="716" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Gardé en cache (256 phrases) pour économiser le quota Voyage.</text>
+<circle cx="55" cy="751.0" r="11" fill="#127a76"/><text x="55" y="755.0" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">7</text>
+<text x="90" y="755" font-size="12" font-weight="600" fill="#1d2d3d" text-anchor="start" xml:space="preserve">FastAPI ↔ PostgreSQL</text>
+<text x="300" y="747" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Le vecteur + device_type → requête pgvector</text>
+<text x="300" y="762" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">(distance cosinus sur intervention_symptom.embedding)</text>
+<text x="830" y="747" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Symptômes proches (similarité ≥ 0,5) → interventions, actions, technicien,</text>
+<text x="830" y="762" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">fiabilité. 3 cas max. Aucun cas → stats agrégées par symptôme/action.</text>
+<rect x="30" y="774" width="1340" height="46" fill="#f6f9fc"/>
+<circle cx="55" cy="797.0" r="11" fill="#c98410"/><text x="55" y="801.0" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">8</text>
+<text x="90" y="801" font-size="12" font-weight="600" fill="#1d2d3d" text-anchor="start" xml:space="preserve">FastAPI → Claude (appel 2)</text>
+<text x="300" y="793" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Consignes + symptôme + les cas mis en texte</text>
+<text x="300" y="808" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">(technicien, site, actions tentées, résultat, fiabilité)</text>
+<text x="830" y="793" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Un texte en français pour le technicien.</text>
+<text x="830" y="808" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Si Claude ne répond pas : la liste brute des cas est affichée.</text>
+<circle cx="55" cy="843.0" r="11" fill="#127a76"/><text x="55" y="847.0" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">9</text>
+<text x="90" y="847" font-size="12" font-weight="600" fill="#1d2d3d" text-anchor="start" xml:space="preserve">FastAPI → PostgreSQL</text>
+<text x="300" y="839" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Le message « assistant » + le contexte mis à jour,</text>
+<text x="300" y="854" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">puis COMMIT de toute la transaction</text>
+<text x="830" y="839" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Garde l&#x27;échange dans conversation_message et la dernière</text>
+<text x="830" y="854" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">recherche dans conversation_context pour la suite.</text>
+<rect x="30" y="866" width="1340" height="46" fill="#f6f9fc"/>
+<circle cx="55" cy="889.0" r="11" fill="#10243a"/><text x="55" y="893.0" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">10</text>
+<text x="90" y="893" font-size="12" font-weight="600" fill="#1d2d3d" text-anchor="start" xml:space="preserve">FastAPI → navigateur</text>
+<text x="300" y="885" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">{ conversation_id, reply }</text>
+<text x="300" y="900" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">(repasse par server.py)</text>
+<text x="830" y="885" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Le navigateur affiche la réponse et réutilise conversation_id</text>
+<text x="830" y="900" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">au message suivant pour rester dans la même discussion.</text>
+<line x1="30" y1="912" x2="1370" y2="912" stroke="#9fb3c8"/>
+<text x="30" y="936" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">Une conversation (« bonjour », hors-sujet) ne fait que les étapes 1-4, 8, 9, 10 : pas de Voyage ni de recherche. Si rien n&#x27;est trouvé en 7, la réponse est fixe, sans appel 2.</text>
+<text x="30" y="953" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">Le fournisseur d&#x27;IA est choisi par LLM_PROVIDER (claude en version finale ; gemini ou ollama possibles en développement) — le flux reste identique.</text>
+</svg>

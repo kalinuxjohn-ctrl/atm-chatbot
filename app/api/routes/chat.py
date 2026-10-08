@@ -40,7 +40,7 @@ def rechercher_symptome(payload: SymptomSearchRequest, db: Session = Depends(get
     )
     try:
         result = find_ranked_solutions(db, raw_text=payload.raw_text, device_type=payload.device_type)
-        resume = summarize_solutions(payload.raw_text, result["solutions"])
+        resume = summarize_solutions(payload.raw_text, result["solutions"], device_type=payload.device_type)
         response = SymptomSearchResponse(**result, summary=resume)
     except Exception as error:
         trace(

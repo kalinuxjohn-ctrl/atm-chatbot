@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
     llm_provider: str = "ollama"  # "ollama" | "gemini"
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-3.8-flash"
+    gemini_model: str = "gemini-3.5-flash-lite"
     # Utilisés par ClaudeProvider (llm_service.py) quand llm_provider="claude".
     claude_api_key: str = ""
     claude_model: str = "claude-sonnet-5-5"

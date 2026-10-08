@@ -51,11 +51,11 @@ def handle_chat_message(
     )
 
     if device_type is not None:
-        context["device_type"] = device_type  # device_type explicite du frontend, prioritaire au départ
+        context["device_type"] = device_type  # choix de l'interface : prime sur ce que dit le message
 
     conversation_service.save_message(db, conversation.conversation_id, "user", message)
 
-    understood = message_understanding_service.understand_message(message)
+    understood = message_understanding_service.understand_message(message, device_type=context.get("device_type"))
     trace(
         "ROUTING",
         "Orientation du message selon son intention",
@@ -105,7 +105,9 @@ def _route_message(db: Session, context: dict, message: str, understood: Underst
 
         trace("ROUTING", "Demande de détail sans référence exploitable, réponse conversationnelle")
         return llm_service.generate_reply(
-            "Tu es un assistant pour techniciens de maintenance ATM. Le technicien semble demander "
+            "Tu es un assistant pour techniciens de maintenance ATM. "
+            f"{llm_service.device_type_instruction(context.get('device_type'))}"
+            "Le technicien semble demander "
             "un détail, mais aucune recherche récente n'est disponible. Invite-le à décrire son problème. "
             f"Message : « {message} »"
         )
@@ -114,9 +116,18 @@ def _route_message(db: Session, context: dict, message: str, understood: Underst
         return _handle_symptom_search(db, context, understood, message)
 
     trace("ROUTING", "Réponse conversationnelle sans recherche vectorielle")
+    # C'est ICI, et non dans le prompt de compréhension (qui ne renvoie que
+    # du JSON), que se décide la réponse aux messages hors-sujet.
     return llm_service.generate_reply(
-        "Tu es un assistant pour techniciens de maintenance ATM. Réponds brièvement "
-        f"au message suivant, sans inventer de données techniques : « {message} »"
+        "Tu es un assistant pour techniciens de maintenance ATM (GAB et TPE). Tu ne réponds "
+        "qu'aux sujets liés à la maintenance de ces équipements.\n"
+        f"{llm_service.device_type_instruction(context.get('device_type'))}"
+        "- Salutation ou remerciement : réponds brièvement et poliment.\n"
+        "- Message sans rapport avec la maintenance d'un GAB ou d'un TPE : réponds exactement "
+        "« Désolé, je ne suis pas fait pour répondre à ce type de question. Voulez-vous de "
+        "l'aide avec votre équipement à la place ? »\n"
+        "N'invente aucune donnée technique.\n"
+        f"Message du technicien : « {message} »"
     )
 
 
@@ -127,10 +138,10 @@ def _handle_symptom_search(
     # remplir la reformulation ne doit pas lancer une recherche à vide.
     search_text = (understood.reformulated_problem_text or "").strip() or (message or "").strip()
 
-    # Résolution déterministe -- mémorisée dans le contexte dès maintenant,
-    # mais PAS ENCORE utilisée comme filtre SQL par case_retrieval_service/
-    # retrieval_service (prochaine étape : pour l'instant device_type reste
-    # le seul filtre réel appliqué à la recherche).
+    # Résolution déterministe, mémorisée dans le contexte. Les IDs résolus
+    # (model_id, error_code_id) ne servent pas encore de filtre SQL : la
+    # recherche filtre par device_type, et par NOM de modèle si le message
+    # en cite un (voir model_name plus bas).
     resolved = technical_reference_resolver_service.resolve_technical_references(
         db,
         device_type_text=understood.device_type_text,
@@ -139,9 +150,11 @@ def _handle_symptom_search(
     )
     context.update({key: value for key, value in resolved.items() if key != "device_type"})
 
-    # Seule une valeur VALIDÉE ("gab"/"tpe") par le résolveur peut
-    # remplacer celle du contexte -- jamais le texte brut du LLM.
-    device_type = resolved.get("device_type") or context.get("device_type")
+    # Le type choisi dans l'interface (déjà dans le contexte) PRIME sur celui
+    # que le technicien mentionne. Le message ne sert que si aucun type n'a
+    # été choisi -- et seulement une valeur VALIDÉE ("gab"/"tpe") par le
+    # résolveur, jamais le texte brut du LLM.
+    device_type = context.get("device_type") or resolved.get("device_type")
     if device_type:
         context["device_type"] = device_type
 
@@ -153,7 +166,7 @@ def _handle_symptom_search(
     )
     trace(
         "CONTEXT",
-        "Références mémorisées, filtre de recherche limité au type d'appareil",
+        "Références mémorisées, filtres de recherche : type d'appareil (+ modèle si cité)",
         reference_count=len(resolved),
         has_device_type=bool(device_type),
     )
@@ -168,7 +181,14 @@ def _handle_symptom_search(
     # Service d'embedding indisponible : EmbeddingUnavailableError remonte
     # telle quelle -> 503 « chatbot saturé » (app/main.py), cause précise
     # dans les journaux. Aucun message technique dans la conversation.
-    cases = case_retrieval_service.find_similar_cases(db, raw_text=search_text, device_type=device_type)
+    # Modèle pris dans le JSON de CE message uniquement (pas dans le contexte) :
+    # un modèle cité dans un message précédent ne doit pas filtrer celui-ci.
+    # null -> aucun filtre modèle, seul device_type s'applique.
+    model_name = (understood.model_name_text or "").strip() or None
+
+    cases = case_retrieval_service.find_similar_cases(
+        db, raw_text=search_text, device_type=device_type, model_name=model_name
+    )
 
     if cases:
         results = [
@@ -186,11 +206,13 @@ def _handle_symptom_search(
         context_service.record_last_search(context, query=search_text, results=results)
         context["intent"] = "diagnostic"
         trace("CONTEXT", "Cas réels mémorisés pour le suivi", result_count=len(results))
-        return _summarize_cases(search_text, cases)
+        return _summarize_cases(search_text, cases, device_type)
 
     # Repli : aucun cas réel, mais peut-être des stats agrégées.
     trace("SEARCH", "Aucun cas réel, recherche de statistiques agrégées")
-    aggregated = retrieval_service.find_ranked_solutions(db, raw_text=search_text, device_type=device_type)
+    aggregated = retrieval_service.find_ranked_solutions(
+        db, raw_text=search_text, device_type=device_type, model_name=model_name
+    )
 
     solutions = aggregated["solutions"]
 
@@ -199,10 +221,17 @@ def _handle_symptom_search(
         context_service.record_last_search(context, query=search_text, results=results)
         context["intent"] = "diagnostic"
         trace("CONTEXT", "Solutions agrégées mémorisées pour le suivi", result_count=len(results))
-        return llm_service.summarize_solutions(search_text, solutions)
+        return llm_service.summarize_solutions(search_text, solutions, device_type=device_type)
 
     context_service.record_last_search(context, query=search_text, results=[])
-    trace("RESPONSE", "Aucun cas ni solution, réponse déterministe sans LLM de synthèse")
+    trace("RESPONSE", "Aucun cas ni solution, réponse déterministe sans LLM de synthèse", has_model_filter=bool(model_name))
+    if model_name:
+        # Le filtre modèle a pu tout éliminer : on le dit explicitement, pour
+        # que le technicien sache que la recherche portait sur CE modèle.
+        return (
+            f"Aucune intervention ni statistique connue pour ce symptôme sur un "
+            f"{device_type.upper()} de modèle « {model_name} »."
+        )
     return "Aucune intervention ni statistique connue pour ce symptôme dans l'historique."
 
 
@@ -248,7 +277,9 @@ def _handle_result_detail_request(db: Session, context: dict, position: int, mes
             return "Ce cas ne semble plus disponible en base."
         case_text = _format_case(case)
         prompt = (
-            "Tu es un assistant pour techniciens de maintenance ATM. Voici le cas que le "
+            "Tu es un assistant pour techniciens de maintenance ATM. "
+            f"{llm_service.device_type_instruction(context.get('device_type'))}"
+            "Voici le cas que le "
             f"technicien approfondit :\n{case_text}\n\n"
             f"Le technicien demande : « {message} ». Réponds UNIQUEMENT à partir de ces informations, "
             "sans en inventer d'autres."
@@ -281,7 +312,7 @@ def _format_stat_result(resultat: dict) -> str:
     )
 
 
-def _summarize_cases(raw_text: str, cases: list[dict]) -> str:
+def _summarize_cases(raw_text: str, cases: list[dict], device_type: str | None = None) -> str:
     if not cases:
         return "Aucun cas similaire trouvé dans l'historique."
 
@@ -289,6 +320,7 @@ def _summarize_cases(raw_text: str, cases: list[dict]) -> str:
 
     prompt = (
         "Tu es un assistant pour techniciens de maintenance ATM. "
+        f"{llm_service.device_type_instruction(device_type)}"
         f"Un technicien décrit ce symptôme : « {raw_text} ».\n"
         "Voici des cas réels déjà enregistrés, du plus au moins pertinent :\n"
         f"{lignes}\n\n"
