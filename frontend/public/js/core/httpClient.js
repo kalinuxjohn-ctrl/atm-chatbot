@@ -1,7 +1,7 @@
 /**
  * SEUL endroit de l'application qui appelle fetch().
- * Les services API passent tous par postJson() : gestion du délai, des
- * erreurs réseau et du JSON invalide écrite une seule fois.
+ * Les services API passent tous par postJson() / getJson() : gestion du
+ * délai, des erreurs réseau et du JSON invalide écrite une seule fois.
  */
 
 import { API_BASE_URL, REQUEST_TIMEOUT_MS } from "../config.js";
@@ -12,21 +12,35 @@ import { API_BASE_URL, REQUEST_TIMEOUT_MS } from "../config.js";
  * kind : "timeout" | "network" | "server" | "request" | "invalid-json" | "invalid-response"
  */
 export class ApiRequestError extends Error {
-  constructor(message, { status = null, kind = "api" } = {}) {
+  constructor(message, { status = null, kind = "api", detail = null } = {}) {
     super(message);
     this.name = "ApiRequestError";
     this.status = status;
     this.kind = kind;
+    // Message clair renvoyé par le backend ({ "detail": "..." }), quand il en donne un.
+    this.detail = detail;
   }
 }
 
-export async function postJson(path, body, { timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
+export function postJson(path, body, options = {}) {
+  return requestJson("POST", path, { ...options, body });
+}
+
+export function getJson(path, options = {}) {
+  return requestJson("GET", path, options);
+}
+
+async function requestJson(method, path, { body, headers = {}, timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
   let response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(body),
+      method,
+      headers: {
+        Accept: "application/json",
+        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+        ...headers,
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (error) {
@@ -48,6 +62,7 @@ export async function postJson(path, body, { timeoutMs = REQUEST_TIMEOUT_MS } = 
     throw new ApiRequestError("La requête a échoué.", {
       status: response.status,
       kind: response.status >= 500 ? "server" : "request",
+      detail: typeof payload?.detail === "string" ? payload.detail : null,
     });
   }
 

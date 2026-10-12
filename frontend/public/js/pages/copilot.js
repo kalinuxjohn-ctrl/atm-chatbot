@@ -20,6 +20,7 @@ import { hydrateIcons } from "../components/icons.js";
 import { createSettingsPanel, formatVoiceLabel } from "../components/settingsPanel.js";
 import { createSidebar } from "../components/sidebar.js";
 import { createSuggestionMenus } from "../components/suggestions.js";
+import { createSolutionProposalDialog } from "../components/solutionProposalDialog.js";
 import { createVoiceMode } from "../components/voiceMode.js";
 import { getFriendlyErrorMessage } from "../core/httpClient.js";
 import { createConversationService } from "../services/conversationService.js";
@@ -105,7 +106,28 @@ async function initCopilot({ technicianId, displayName }) {
     conversationElement: elements.conversation,
     getAvatarKind: () => getPreferences().avatar,
     onListen: (text) => void readAloud(text),
+    onProposeSolution: () => openSolutionProposal(),
   });
+
+  // « Proposer une solution » : le problème est relu par le backend, la page
+  // ne transmet que la conversation et le technicien connectés.
+  const solutionProposalDialog = createSolutionProposalDialog({
+    dialog: $("#proposal-dialog"),
+    onSubmitted: (reply) => {
+      chatView.dismissProposalOffer();
+      conversation.addAssistantMessage(reply);
+    },
+  });
+
+  function openSolutionProposal() {
+    if (requestInProgress) return;
+    dictation.cancel();
+    stopReading();
+    void solutionProposalDialog.open({
+      conversationId: conversation.conversationId,
+      technicianId: conversation.technicianId,
+    });
+  }
 
   const devicePicker = createDevicePicker({
     container: $("#device-picker"),

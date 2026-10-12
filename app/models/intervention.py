@@ -68,6 +68,9 @@ class InterventionAction(Base):
     # les symptômes de l'intervention (comportement historique, voir
     # migration 0005 et stats_service.recompute_stats).
     targets_symptom_id = Column(Integer, ForeignKey("intervention_symptom.intervention_symptom_id"))
+    # NULL = action faite pendant la visite d'origine ; sinon = solution
+    # ajoutée après coup par l'approbation d'une proposition (migration 0010).
+    source_proposal_id = Column(Integer, ForeignKey("solution_proposal.proposal_id"))
 
 
 class Diagnosis(Base):

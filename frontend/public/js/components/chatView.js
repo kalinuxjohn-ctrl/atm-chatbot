@@ -18,10 +18,20 @@ const GREETING = [
  *   getAvatarKind: () => string,
  *   onListen: (text: string) => void,                 bouton "Écouter" d'une réponse
  *   createWelcomeExtras?: () => Node | null,          ex. bulles de suggestions du message d'accueil
+ *   onProposeSolution?: () => void,                   « Proposer une solution » (sous une réponse avec solutions)
  * }} options
  */
-export function createChatView({ conversationElement, getAvatarKind, onListen, createWelcomeExtras = () => null }) {
+export function createChatView({
+  conversationElement,
+  getAvatarKind,
+  onListen,
+  createWelcomeExtras = () => null,
+  onProposeSolution = () => {},
+}) {
   let welcomeExtrasSlot = null;
+  // Une seule offre de proposition à la fois : sous la DERNIÈRE réponse qui
+  // contenait des solutions (le backend relit de toute façon le problème actif).
+  let activeProposalOffer = null;
 
   const scrollToBottom = () => {
     conversationElement.scrollTo({
@@ -77,7 +87,42 @@ export function createChatView({ conversationElement, getAvatarKind, onListen, c
     scrollToBottom();
   }
 
-  function appendAssistant({ text, channel, time }, { animate = true } = {}) {
+  /**
+   * Deux étapes, pour ne pas pousser à proposer trop tôt :
+   * « Aucune de ces solutions ne fonctionne » -> « + Proposer une solution ».
+   */
+  function createProposalOffer() {
+    const offer = createElement("div", "proposal-offer");
+    const noneWorkedButton = createElement("button", "proposal-offer-button");
+    noneWorkedButton.type = "button";
+    noneWorkedButton.append(createIcon("alert"), createElement("span", "", "Aucune de ces solutions ne fonctionne"));
+    noneWorkedButton.addEventListener(
+      "click",
+      () => {
+        const hint = createElement(
+          "p",
+          "proposal-offer-hint",
+          "Vous avez trouvé ce qui marche ? Partagez-le : après validation, il aidera les prochains techniciens.",
+        );
+        const proposeButton = createElement("button", "proposal-offer-button is-primary");
+        proposeButton.type = "button";
+        proposeButton.append(createIcon("plus"), createElement("span", "", "Proposer une solution"));
+        proposeButton.addEventListener("click", () => onProposeSolution());
+        offer.replaceChildren(hint, proposeButton);
+        proposeButton.focus();
+      },
+      { once: true },
+    );
+    offer.append(noneWorkedButton);
+    return offer;
+  }
+
+  function dismissProposalOffer() {
+    activeProposalOffer?.remove();
+    activeProposalOffer = null;
+  }
+
+  function appendAssistant({ text, channel, time, canProposeSolution = false }, { animate = true } = {}) {
     const { message, body } = createAssistantShell(time);
     if (!animate) message.classList.remove("message-enter-fade");
     body.append(createTextBubble(text));
@@ -88,6 +133,12 @@ export function createChatView({ conversationElement, getAvatarKind, onListen, c
     listenButton.setAttribute("aria-label", "Écouter cette réponse");
     listenButton.addEventListener("click", () => onListen(text));
     body.append(listenButton);
+
+    if (canProposeSolution) {
+      dismissProposalOffer();
+      activeProposalOffer = createProposalOffer();
+      body.append(activeProposalOffer);
+    }
 
     if (channel === "voice") message.classList.add("voice-exchange");
     conversationElement.append(message);
@@ -141,8 +192,12 @@ export function createChatView({ conversationElement, getAvatarKind, onListen, c
       scrollToBottom();
     },
 
+    /** Retire l'offre « Proposer une solution » (ex. après l'envoi d'une proposition). */
+    dismissProposalOffer,
+
     /** Vide le fil et réaffiche le message d'accueil (avec ses suggestions). */
     reset() {
+      activeProposalOffer = null;
       const { message, body } = createAssistantShell("À l’instant");
       message.classList.remove("message-enter-fade");
       message.classList.add("welcome-message");

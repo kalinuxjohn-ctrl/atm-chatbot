@@ -26,6 +26,10 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     conversation_id: int
     reply: str
+    # True quand CE message a produit des solutions (nouvelle recherche avec
+    # au moins un résultat) : le frontend affiche alors « Aucune de ces
+    # solutions ne fonctionne ». Champ ajouté : les clients existants l'ignorent.
+    solution_proposal_available: bool = False
 
 
     

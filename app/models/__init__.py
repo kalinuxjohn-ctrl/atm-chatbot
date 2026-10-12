@@ -11,6 +11,7 @@ from app.models.catalog import Component, Symptom, Action, SymptomActionOutcomeS
 from app.models.intervention import Intervention, InterventionSymptom, InterventionAction, Diagnosis
 from app.models.fault import Fault, ErrorCode
 from app.models.conversation import Conversation, ConversationMessage, ConversationContext
+from app.models.solution_proposal import SolutionProposal
 
 __all__ = [
     "Technician",
@@ -31,4 +32,5 @@ __all__ = [
     "Conversation",
     "ConversationMessage",
     "ConversationContext",
+    "SolutionProposal",
 ]

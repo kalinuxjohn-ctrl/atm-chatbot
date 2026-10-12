@@ -13,6 +13,14 @@ class InvalidReferenceError(ValueError):
     """Un identifiant existe mais n'est pas cohérent avec la requête (ex. symptôme d'une autre intervention) -> HTTP 422."""
 
 
+class AccessDeniedError(PermissionError):
+    """L'appelant n'a pas le droit d'agir sur cette ressource (conversation d'un autre technicien, clé admin absente) -> HTTP 403."""
+
+
+class StateConflictError(RuntimeError):
+    """L'opération est impossible dans l'état actuel (aucun problème identifié, proposition déjà examinée...) -> HTTP 409."""
+
+
 class ExternalServiceUnavailableError(RuntimeError):
     """
     Un service externe indispensable (IA de langage, API d'embedding) ne répond

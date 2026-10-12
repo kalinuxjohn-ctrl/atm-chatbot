@@ -263,6 +263,53 @@
       </div>
     </dialog>
 
+    <!-- ========== Proposer une solution (solutionProposalDialog.js) ========== -->
+    <dialog class="app-dialog proposal-dialog" id="proposal-dialog" data-state="loading" aria-labelledby="proposal-title">
+      <form class="dialog-form" data-proposal-form novalidate>
+        <header class="dialog-header">
+          <h2 id="proposal-title">Proposer une solution</h2>
+          <p>Décrivez ce qui a marché sur le terrain. Un administrateur la vérifiera avant qu’elle rejoigne les solutions du Copilote.</p>
+        </header>
+
+        <p class="proposal-loading" data-proposal-loading role="status">Récupération du problème en cours…</p>
+        <p class="form-error" data-proposal-error role="alert" hidden></p>
+
+        <!-- Problème actif, envoyé par le backend : affiché, jamais saisi -->
+        <section class="proposal-problem" data-proposal-problem aria-label="Problème concerné" hidden>
+          <dl class="proposal-problem-details" data-proposal-details></dl>
+          <details class="proposal-previous" data-proposal-previous>
+            <summary>Solutions déjà proposées (<span data-proposal-previous-count>0</span>)</summary>
+            <ol data-proposal-previous-list></ol>
+          </details>
+        </section>
+
+        <div class="proposal-fields" data-proposal-fields hidden>
+          <label class="field">
+            <span>Votre solution</span>
+            <textarea name="proposedAction" rows="3" maxlength="2000" required placeholder="Décrivez l’action réalisée…"></textarea>
+          </label>
+          <label class="field">
+            <span>Résultat obtenu</span>
+            <textarea name="resultDescription" rows="3" maxlength="2000" required placeholder="Décrivez ce qui s’est passé…"></textarea>
+          </label>
+          <div class="segmented" role="radiogroup" aria-label="Le problème est-il réglé ?">
+            <label><input type="radio" name="outcomeStatus" value="resolved" checked> <span>Problème réglé</span></label>
+            <label><input type="radio" name="outcomeStatus" value="partial"> <span>Réglé en partie</span></label>
+          </div>
+        </div>
+
+        <div class="proposal-success" data-proposal-success role="status" hidden>
+          <strong>Proposition envoyée</strong>
+          <span>Elle sera examinée par un administrateur. Vous pouvez continuer la conversation.</span>
+        </div>
+
+        <footer class="dialog-actions">
+          <button class="button button-secondary" type="button" data-proposal-cancel>Annuler</button>
+          <button class="button button-primary" type="submit" data-proposal-submit>Envoyer la proposition</button>
+        </footer>
+      </form>
+    </dialog>
+
     <!-- ========== Paramètres (settingsPanel.js, enregistrés dans le navigateur) ========== -->
     <dialog class="app-dialog settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
       <form class="dialog-form" method="dialog">

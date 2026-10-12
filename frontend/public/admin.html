@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f3f6fa">
+    <meta name="description" content="Examen des solutions proposées par les techniciens.">
+    <title>Propositions | ATM-Chatbot</title>
+    <link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/css/assets.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/responsive.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <script type="module" src="/js/pages/admin.js"></script>
+  </head>
+  <body class="admin-page">
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="ATM-Chatbot, accueil">
+        <img class="brand-symbol brand-logo" src="/assets/images/logo.svg" alt="" aria-hidden="true">
+        <span>ATM-<strong>Chatbot</strong></span>
+      </a>
+      <nav class="main-navigation" aria-label="Navigation principale">
+        <a class="navigation-link" href="/">Accueil</a>
+        <a class="navigation-link" href="/copilot.html">Copilote</a>
+        <a class="navigation-link navigation-link-active" href="/admin.html" aria-current="page">Propositions</a>
+      </nav>
+      <a class="header-action" href="/">Retour à l’accueil <span aria-hidden="true">↗</span></a>
+    </header>
+
+    <main class="admin-main">
+      <div class="admin-heading">
+        <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span> Administration</p>
+        <h1>Solutions proposées par les techniciens</h1>
+        <p class="admin-intro">Une proposition approuvée rejoint le catalogue d’actions du Copilote. Une proposition rejetée reste dans l’historique.</p>
+      </div>
+
+      <!-- Clé admin : ADMIN_API_KEY du serveur, gardée seulement pour cet onglet -->
+      <form class="admin-access" id="admin-access-form" autocomplete="off">
+        <label class="field">
+          <span>Clé administrateur</span>
+          <input id="admin-key" name="adminKey" type="password" autocomplete="off" placeholder="ADMIN_API_KEY">
+        </label>
+        <label class="field">
+          <span>Votre nom <em>(signature des décisions)</em></span>
+          <input id="reviewer-name" name="reviewerName" type="text" maxlength="200" placeholder="Ex. Mme Martin">
+        </label>
+        <button class="button button-primary" type="submit">Afficher les propositions</button>
+      </form>
+
+      <div class="admin-tabs" role="tablist" aria-label="Statut des propositions">
+        <button class="admin-tab" type="button" role="tab" data-status="pending" aria-selected="true">En attente</button>
+        <button class="admin-tab" type="button" role="tab" data-status="approved" aria-selected="false">Approuvées</button>
+        <button class="admin-tab" type="button" role="tab" data-status="rejected" aria-selected="false">Rejetées</button>
+      </div>
+
+      <p class="admin-status" id="admin-status" role="status">Saisissez la clé administrateur pour afficher les propositions.</p>
+      <div class="proposal-list" id="proposal-list" aria-live="polite"></div>
+    </main>
+  </body>
+</html>

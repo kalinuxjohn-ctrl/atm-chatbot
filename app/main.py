@@ -24,7 +24,14 @@ from app.api.routes.interventions import router as interventions_router
 from app.api.routes.chat import router as chat_router
 from app.api.routes.catalog import router as catalog_router
 from app.api.routes.error_code import router as error_codes_router
-from app.core.errors import ExternalServiceUnavailableError, InvalidReferenceError, ReferenceNotFoundError
+from app.api.routes.admin import router as admin_router
+from app.core.errors import (
+    AccessDeniedError,
+    ExternalServiceUnavailableError,
+    InvalidReferenceError,
+    ReferenceNotFoundError,
+    StateConflictError,
+)
 from app.core.tracing import trace
 
 # Seul texte renvoyé au client quand une IA externe fait défaut (voir le
@@ -41,6 +48,7 @@ app.include_router(interventions_router)
 app.include_router(chat_router)
 app.include_router(catalog_router)
 app.include_router(error_codes_router)
+app.include_router(admin_router)
 
 
 # Les services lèvent des exceptions métier (app/core/errors.py) ; elles
@@ -53,6 +61,16 @@ def _reference_introuvable(request: Request, error: ReferenceNotFoundError) -> J
 @app.exception_handler(InvalidReferenceError)
 def _reference_invalide(request: Request, error: InvalidReferenceError) -> JSONResponse:
     return JSONResponse(status_code=422, content={"detail": str(error)})
+
+
+@app.exception_handler(AccessDeniedError)
+def _acces_refuse(request: Request, error: AccessDeniedError) -> JSONResponse:
+    return JSONResponse(status_code=403, content={"detail": str(error)})
+
+
+@app.exception_handler(StateConflictError)
+def _etat_incompatible(request: Request, error: StateConflictError) -> JSONResponse:
+    return JSONResponse(status_code=409, content={"detail": str(error)})
 
 
 @app.exception_handler(ExternalServiceUnavailableError)

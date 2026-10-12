@@ -27,10 +27,10 @@ PROXY_TIMEOUT_SECONDS = int(os.environ.get("PROXY_TIMEOUT_SECONDS", "180"))
 FRONTEND_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 PUBLIC_DIRECTORY = os.path.join(FRONTEND_DIRECTORY, "public")
 
-# Certaines routes FastAPI sont DÉJÀ déclarées sous /api (routeurs chat et
+# Certaines routes FastAPI sont DÉJÀ déclarées sous /api (routeurs chat, admin et
 # error_code) : on les relaie telles quelles. Les autres (/health, /catalog,
 # /interventions) n'ont pas ce préfixe : on retire alors le /api du proxy.
-BACKEND_PATHS_WITH_API_PREFIX = ("/api/chat", "/api/error_code")
+BACKEND_PATHS_WITH_API_PREFIX = ("/api/chat", "/api/error_code", "/api/admin")
 
 # ---------- Synthèse vocale (edge-tts) ----------
 try:
@@ -237,7 +237,8 @@ class FrontendRequestHandler(SimpleHTTPRequestHandler):
         request_body = self.rfile.read(body_length) if body_length else None
         request_headers = {
             header: self.headers[header]
-            for header in ("Accept", "Content-Type")
+            # X-Admin-Key : clé de la page d'administration des propositions.
+            for header in ("Accept", "Content-Type", "X-Admin-Key")
             if self.headers.get(header)
         }
         api_request = Request(

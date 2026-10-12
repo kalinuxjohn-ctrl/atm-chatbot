@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 
 from app.core.tracing import trace
 from app.models.intervention import Diagnosis, Intervention
+from app.models.solution_proposal import SolutionProposal
 from app.models.technician import Technician
 from app.services.retrieval_service import fetch_similar_symptoms
 
@@ -64,6 +65,7 @@ def find_similar_cases(
                 intervention_id,
                 device_type=device_type,
                 matched_symptom_text=best_per_intervention[intervention_id]["raw_text"],
+                matched_intervention_symptom_id=best_per_intervention[intervention_id].get("intervention_symptom_id"),
             )
             for intervention_id in ranked_ids
         )
@@ -83,6 +85,7 @@ def build_case(
     intervention_id: int,
     device_type: str | None = None,
     matched_symptom_text: str | None = None,
+    matched_intervention_symptom_id: int | None = None,
 ) -> dict | None:
     """
     Assemble le détail complet d'UNE intervention. Fonction publique à
@@ -109,11 +112,14 @@ def build_case(
         "device_label": getattr(device, "site_name", None) or getattr(device, "serial_number", None) or "appareil non identifié",
         "opened_at": intervention.opened_at,
         "matched_symptom_text": matched_symptom_text,
+        "matched_intervention_symptom_id": matched_intervention_symptom_id,
         "actions": [
             {
                 "description": a.raw_text,
                 "outcome_status": a.outcome_status,
                 "is_confirmed_solution": a.is_confirmed_solution,
+                # Renseigné seulement pour une solution ajoutée après coup (proposition approuvée).
+                "proposed_by": _proposer_name(db, a.source_proposal_id) if a.source_proposal_id else None,
             }
             for a in actions
         ],
@@ -121,6 +127,13 @@ def build_case(
         "final_outcome_status": intervention.final_outcome_status,
         "confidence": _lookup_confidence(db, intervention, actions, device_type),
     }
+
+
+def _proposer_name(db: Session, proposal_id: int) -> str:
+    """Le technicien qui a proposé une solution ajoutée après validation."""
+    proposal = db.get(SolutionProposal, proposal_id)
+    technician = db.get(Technician, proposal.technician_id) if proposal is not None else None
+    return getattr(technician, "full_name", None) or "un technicien"
 
 
 def _keep_best_match_per_intervention(matched_symptoms: list[dict]) -> dict[int, dict]:

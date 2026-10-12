@@ -46,6 +46,14 @@ class Settings(BaseSettings):
     voyage_api_key: str = ""
     voyage_model: str = "voyage-3-large"
 
+    # --- Propositions de solution (solution_proposal_service) ---
+    # Clé des routes /api/admin, envoyée dans l'en-tête X-Admin-Key. Vide =
+    # administration désactivée (toutes les routes admin répondent 403).
+    admin_api_key: str = ""
+    # À l'approbation, une action du catalogue plus proche que cette distance
+    # cosinus (0 = identique) est réutilisée au lieu de créer un doublon.
+    solution_proposal_duplicate_max_distance: float = 0.15
+
     # extra="ignore" : le .env est partagé avec docker-compose --
     # une variable que l'app ne connaît pas ne doit pas
     # empêcher le démarrage.

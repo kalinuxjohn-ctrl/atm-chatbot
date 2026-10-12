@@ -65,6 +65,10 @@ def handle_chat_message(
     )
     conversation_service.save_message(db, conversation.conversation_id, "user", validation.cleaned_text)
 
+    # Comparé après le routage : record_last_search remplace l'objet, donc une
+    # identité différente = une nouvelle recherche a eu lieu pendant CE message.
+    search_before = context.get("last_search")
+
     # La compréhension appelle déjà le LLM : la validation doit la précéder.
     if validation.valid:
         understood = message_understanding_service.understand_message(
@@ -90,7 +94,13 @@ def handle_chat_message(
         conversation_id=conversation.conversation_id,
     )
 
-    return {"conversation_id": conversation.conversation_id, "reply": reply}
+    search_after = context.get("last_search")
+    new_search_with_results = search_after is not search_before and bool((search_after or {}).get("results"))
+    return {
+        "conversation_id": conversation.conversation_id,
+        "reply": reply,
+        "solution_proposal_available": new_search_with_results,
+    }
 
 
 def _route_message(db: Session, context: dict, message: str, understood: UnderstoodMessage) -> str:
@@ -216,6 +226,8 @@ def _handle_symptom_search(
                 # a fait remonter ce cas -- sans lui, « détaille le deuxième »
                 # ne pourrait plus l'afficher (voir _handle_result_detail_request).
                 "matched_symptom_text": case.get("matched_symptom_text"),
+                # Son ID : permet à une proposition de solution de pointer le bon intervention_symptom.
+                "matched_intervention_symptom_id": case.get("matched_intervention_symptom_id"),
             }
             for index, case in enumerate(cases)
         ]
@@ -354,14 +366,24 @@ def _summarize_cases(raw_text: str, cases: list[dict], device_type: str | None =
 
 
 def _format_case(case: dict, index: int | None = None) -> str:
-    actions_txt = " puis ".join(a["description"] for a in case["actions"]) or "aucune action enregistrée"
+    # Les solutions ajoutées après validation d'une proposition ne faisaient
+    # PAS partie de la visite : elles sont présentées à part.
+    visit_actions = [a for a in case["actions"] if not a.get("proposed_by")]
+    validated_additions = [a for a in case["actions"] if a.get("proposed_by")]
+    actions_txt = " puis ".join(a["description"] for a in visit_actions) or "aucune action enregistrée"
     fiabilite = (
         f" (fiabilité connue : {case['confidence']['accuracy_score']:.0%} sur {case['confidence']['attempts']} cas)"
         if case.get("confidence")
         else ""
     )
+    additions_txt = "".join(
+        f" Solution ajoutée ensuite, proposée par {a['proposed_by']} et validée par un administrateur : "
+        f"{a['description']} ({'problème réglé' if a.get('is_confirmed_solution') else 'réglé en partie'})."
+        for a in validated_additions
+    )
     prefixe = f"Cas {index}" if index is not None else "Cas"
     return (
         f"{prefixe} ({case['technician_name']}, {case['device_label']}) : symptôme « {case.get('matched_symptom_text') or 'non précisé'} », "
         f"actions tentées : {actions_txt}, résultat : {case.get('final_outcome_status') or 'non renseigné'}{fiabilite}."
+        f"{additions_txt}"
     )

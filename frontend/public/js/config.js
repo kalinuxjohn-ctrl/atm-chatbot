@@ -24,6 +24,8 @@ export const STORAGE_KEYS = Object.freeze({
   session: "copilot.session", // localStorage : technicien connecté
   conversation: "copilot.conversation", // sessionStorage : conversation de l'onglet
   forceMocks: "copilot.forceMocks", // sessionStorage : mode démo
+  adminKey: "admin.key", // sessionStorage : clé de la page Propositions (onglet seulement)
+  adminReviewer: "admin.reviewer", // sessionStorage : nom qui signe les décisions
 });
 
 /**

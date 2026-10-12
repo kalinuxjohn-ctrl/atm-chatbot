@@ -1777,6 +1777,190 @@
   background: var(--accent-dark);
 }
 
+/* ---------- 11 bis. Proposer une solution ---------- */
+/* Offre sous une réponse contenant des solutions (chatView.js). */
+.proposal-offer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+
+.proposal-offer-button {
+  display: inline-flex;
+  min-height: 36px;
+  gap: 7px;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px solid #ecd3ad;
+  border-radius: 999px;
+  background: #fffaf2;
+  color: #8a5a00;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.proposal-offer-button .icon {
+  width: 17px;
+  height: 17px;
+}
+
+.proposal-offer-button:hover {
+  border-color: #d99a2b;
+  background: #fff3df;
+}
+
+.proposal-offer-button.is-primary {
+  border-color: transparent;
+  background: var(--accent);
+  color: #fff;
+}
+
+.proposal-offer-button.is-primary:hover {
+  background: var(--accent-dark);
+}
+
+.proposal-offer-hint {
+  flex: 1 1 260px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+/* Fenêtre de proposition (solutionProposalDialog.js). */
+.proposal-dialog {
+  width: min(560px, calc(100% - 32px));
+}
+
+.proposal-loading {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.proposal-problem {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid #d9e5f2;
+  border-radius: 12px;
+  background: #f5f9fd;
+}
+
+.proposal-problem-details {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.proposal-problem-details dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.proposal-problem-details dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.proposal-previous summary {
+  color: var(--accent-dark);
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.proposal-previous ol {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding-left: 22px;
+  font-size: 13.5px;
+}
+
+.proposal-previous li {
+  display: grid;
+  gap: 2px;
+}
+
+.proposal-previous-solution {
+  color: var(--ink);
+}
+
+.proposal-previous-symptom {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.proposal-previous li.is-reference .proposal-previous-solution::after {
+  content: " · cas de référence";
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.proposal-fields {
+  display: grid;
+  gap: 14px;
+}
+
+.proposal-fields .field span {
+  font-size: 13px;
+}
+
+.proposal-fields textarea {
+  min-height: 78px;
+  padding: 10px 11px;
+  border: 1px solid #d6e0e8;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 400;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.proposal-fields textarea:focus {
+  border-color: #8db6ea;
+  outline: 3px solid rgba(31, 111, 209, 0.15);
+}
+
+.proposal-fields .segmented label {
+  min-height: 40px;
+  font-size: 14px;
+}
+
+.proposal-success {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid #bfe3d4;
+  border-radius: 12px;
+  background: #effaf5;
+  color: #1d5b45;
+  font-size: 14px;
+}
+
+.proposal-success strong {
+  font-size: 15px;
+}
+
+.proposal-dialog .form-error {
+  font-size: 13.5px;
+}
+
 /* ---------- 12. Finitions visuelles ----------
    Couche d'habillage : dégradés, profondeur, accueil centré. Placée avant
    le responsive pour que les règles mobiles gardent le dernier mot. */

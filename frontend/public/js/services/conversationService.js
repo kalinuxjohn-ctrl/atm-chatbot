@@ -23,8 +23,9 @@ export function createConversationService({ technicianId }) {
   const emit = (event) => listeners.forEach((listener) => listener(event));
   const persist = () => saveConversation(state);
 
-  function addMessage(role, text, channel) {
-    const message = { role, text, channel, time: formatTime() };
+  /** extra : ex. { canProposeSolution: true } quand la réponse contient des solutions. */
+  function addMessage(role, text, channel, extra = {}) {
+    const message = { role, text, channel, time: formatTime(), ...extra };
     state.messages.push(message);
     persist();
     emit({ type: "message", message });
@@ -68,13 +69,14 @@ export function createConversationService({ technicianId }) {
       const result =
         channel === "voice"
           ? await processVoiceConversation({ ...request, transcript: text })
-          : await sendMessage({ ...request, message: text }).then(({ conversationId, reply }) => ({
+          : await sendMessage({ ...request, message: text }).then(({ conversationId, reply, solutionProposalAvailable }) => ({
               conversationId,
               text: reply,
+              solutionProposalAvailable,
             }));
 
       state.conversationId = result.conversationId;
-      addMessage("assistant", result.text, channel);
+      addMessage("assistant", result.text, channel, { canProposeSolution: result.solutionProposalAvailable === true });
       return result;
     },
 
@@ -86,6 +88,19 @@ export function createConversationService({ technicianId }) {
     addLocalExchange(userText, replyText) {
       addMessage("user", userText, "text");
       addMessage("assistant", replyText, "text");
+    },
+
+    /**
+     * Réponse du Copilote produite HORS de ask() (ex. confirmation d'une
+     * proposition de solution) : le backend l'a déjà enregistrée dans son
+     * historique, on l'affiche simplement dans le fil.
+     */
+    addAssistantMessage(text) {
+      addMessage("assistant", text, "text");
+    },
+
+    get technicianId() {
+      return technicianId;
     },
 
     async reset() {

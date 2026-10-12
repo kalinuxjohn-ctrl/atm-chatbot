@@ -1,0 +1,316 @@
+/* ==========================================================================
+   Page Administration : examen des propositions de solution (admin.js).
+   Reprend les jetons de style.css (--navy, --accent, --line…) et les
+   composants partagés (.field, .button, .form-error).
+   ========================================================================== */
+
+.admin-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-main {
+  width: min(960px, calc(100% - 32px));
+  flex: 1;
+  margin: 0 auto;
+  padding: 38px 0 48px;
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+
+.admin-heading h1 {
+  margin: 10px 0 8px;
+  color: var(--navy);
+  font-size: 30px;
+  letter-spacing: -1px;
+}
+
+.admin-intro {
+  max-width: 620px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ---------- Accès ---------- */
+.admin-access {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.admin-access .field span,
+.proposal-review .field span {
+  font-size: 12.5px;
+}
+
+.admin-access .button {
+  height: 40px;
+}
+
+/* ---------- Onglets de statut ---------- */
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-tab {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--navy-soft);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.admin-tab[aria-selected="true"] {
+  border-color: var(--accent);
+  background: var(--accent-pale);
+  color: var(--accent-dark);
+}
+
+.admin-tab:focus-visible {
+  outline: 3px solid rgba(22, 139, 135, 0.25);
+}
+
+.admin-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.admin-status[data-tone="error"] {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* ---------- Carte d'une proposition ---------- */
+.proposal-list {
+  display: grid;
+  gap: 16px;
+}
+
+.proposal-card {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-left: 4px solid #d99a2b;
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.proposal-card[data-status="approved"] {
+  border-left-color: #2f9a6f;
+}
+
+.proposal-card[data-status="rejected"] {
+  border-left-color: #b9c3cd;
+}
+
+.proposal-card-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.proposal-card-header h2 {
+  margin: 0 0 4px;
+  color: var(--navy);
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.proposal-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.proposal-pill {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.proposal-pill.is-pending { background: #fdf0d8; color: #8a5a00; }
+.proposal-pill.is-approved { background: #e1f4ea; color: #1d6b4a; }
+.proposal-pill.is-rejected { background: #edf0f3; color: #56636f; }
+
+.proposal-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 5px 16px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.proposal-facts dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.proposal-facts dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.proposal-texts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.proposal-text {
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--canvas);
+}
+
+.proposal-text h3,
+.proposal-review h3 {
+  margin: 0 0 6px;
+  color: var(--navy-soft);
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.proposal-text p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.proposal-text .proposal-text-extra,
+.proposal-section .proposal-text-extra {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.proposal-section summary {
+  color: var(--accent-dark);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.proposal-section ol {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding-left: 22px;
+  font-size: 14px;
+}
+
+.proposal-section li {
+  display: grid;
+  gap: 2px;
+}
+
+.proposal-section li small {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.proposal-snapshot {
+  max-height: 320px;
+  margin: 10px 0 0;
+  padding: 12px;
+  overflow: auto;
+  border-radius: 8px;
+  background: #0f2133;
+  color: #d9e6f2;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ---------- Décision ---------- */
+.proposal-review {
+  display: grid;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.proposal-review textarea {
+  padding: 9px 11px;
+  border: 1px solid #d6e0e8;
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 400;
+  resize: vertical;
+}
+
+.proposal-review textarea:focus {
+  border-color: #85b8b4;
+  outline: 3px solid rgba(22, 139, 135, 0.15);
+}
+
+.proposal-review-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.proposal-review-actions .button {
+  min-width: 120px;
+  height: 40px;
+}
+
+.proposal-notice {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #bfe3d4;
+  border-radius: 8px;
+  background: #effaf5;
+  color: #1d5b45;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .admin-access,
+  .proposal-texts {
+    grid-template-columns: 1fr;
+  }
+
+  .proposal-card {
+    padding: 16px;
+  }
+
+  .proposal-facts {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .proposal-facts dd {
+    margin-bottom: 6px;
+  }
+}
