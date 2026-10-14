@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
+from app.core.errors import StateConflictError
 from app.core.tracing import trace
 
 
@@ -59,15 +61,16 @@ def recompute_stats(db) -> int:
 def recompute_stats_safely(db) -> bool:
     """
     Variante pour les routes HTTP : appelée APRÈS le commit de la donnée
-    métier (action enregistrée, action cataloguée...), un échec du recalcul
-    ne doit pas transformer une écriture réussie en erreur 500. Les stats
-    seront de toute façon reconstruites au prochain recalcul (ou par
-    app/jobs/recompute_stats.py).
+    métier. Un échec est signalé explicitement en 409 : la donnée est déjà
+    enregistrée, le client ne doit pas répéter l'écriture.
     """
     try:
         recompute_stats(db)
         return True
-    except Exception as error:
+    except SQLAlchemyError as error:
         db.rollback()
         trace("ERROR", "Échec du recalcul des statistiques (donnée métier conservée)", error_type=type(error).__name__)
-        return False
+        raise StateConflictError(
+            "La donnée a été enregistrée, mais le recalcul des statistiques a échoué. "
+            "Ne répétez pas l'enregistrement ; un administrateur doit relancer le recalcul."
+        ) from error

@@ -43,6 +43,39 @@ export async function mockLoginResponse({ technicianId, displayName }) {
   return { technician_id: technicianId, display_name: displayName };
 }
 
+/* ---------- Menus de suggestions (codes d'erreur, pannes fréquentes) ---------- */
+
+const MOCK_ERROR_CODES = [{ id: 1, code: "E42", label: "Capteur de rétention de carte ne répond pas", deviceType: "gab" }];
+const MOCK_USUAL_PROBLEMS = [
+  { id: 1, label: "Le GAB a avalé la carte du client", deviceType: "gab" },
+  { id: 6, label: "Le TPE ne lit pas la carte", deviceType: "tpe" },
+];
+const MOCK_SAVED_REPLY = "Réponse enregistrée (mode démo).\n1. Première vérification.\n2. Deuxième vérification.";
+
+/** Même format que GET /error_code?device_type=... */
+export async function mockErrorCodesResponse({ deviceType }) {
+  await simulateLatency(100, 300);
+  return MOCK_ERROR_CODES.filter((item) => item.deviceType === deviceType).map(({ id, code, label }) => ({ id, code, label }));
+}
+
+/** Même format que GET /error_code/{id}/solution. */
+export async function mockErrorCodeReplyResponse({ errorCodeId }) {
+  await simulateLatency(100, 300);
+  return { id: errorCodeId, reply: MOCK_SAVED_REPLY };
+}
+
+/** Même format que GET /usual_problem?device_type=... */
+export async function mockUsualProblemsResponse({ deviceType }) {
+  await simulateLatency(100, 300);
+  return MOCK_USUAL_PROBLEMS.filter((item) => item.deviceType === deviceType).map(({ id, label }) => ({ id, label }));
+}
+
+/** Même format que GET /usual_problem/{id}/solution. */
+export async function mockUsualProblemReplyResponse({ usualProblemId }) {
+  await simulateLatency(100, 300);
+  return { id: usualProblemId, reply: MOCK_SAVED_REPLY };
+}
+
 /* ---------- Propositions de solution ---------- */
 
 const MOCK_PROPOSAL_CONTEXT = {

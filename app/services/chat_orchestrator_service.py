@@ -313,7 +313,7 @@ def _handle_result_detail_request(db: Session, context: dict, position: int, mes
             "sans en inventer d'autres."
         )
         trace("CONTEXT", "Contexte LLM préparé pour le détail d'un cas", position=position)
-        return llm_service.generate_reply(prompt, fallback=case_text)
+        return llm_service.generate_reply(prompt)
 
     if kind == "stat" and resultat.get("action_text"):
         trace("CONTEXT", "Détail d'un résultat agrégé", position=position)
@@ -361,8 +361,7 @@ def _summarize_cases(raw_text: str, cases: list[dict], device_type: str | None =
         case_count=len(cases),
         prompt_length=len(prompt),
     )
-    # Si le LLM est indisponible, le technicien voit quand même les cas trouvés.
-    return llm_service.generate_reply(prompt, fallback=f"Cas similaires trouvés dans l'historique :\n{lignes}")
+    return llm_service.generate_reply(prompt)
 
 
 def _format_case(case: dict, index: int | None = None) -> str:

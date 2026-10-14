@@ -249,8 +249,7 @@ def approve_proposal(
         db.rollback()
         raise
 
-    # Après le commit, comme catalog_service : un échec du recalcul ne doit
-    # pas annuler l'approbation (les stats se reconstruiront au prochain calcul).
+    # L'approbation est déjà persistée ; un échec du recalcul sera signalé en 409.
     if attached_action is not None:
         stats_service.recompute_stats_safely(db)
 

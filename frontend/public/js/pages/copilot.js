@@ -24,7 +24,8 @@ import { createSolutionProposalDialog } from "../components/solutionProposalDial
 import { createVoiceMode } from "../components/voiceMode.js";
 import { getFriendlyErrorMessage } from "../core/httpClient.js";
 import { createConversationService } from "../services/conversationService.js";
-import { filterErrorCodesForDevice, loadKnownErrorCodes } from "../services/knownErrorCodesService.js";
+import { getErrorCodeReply, listKnownErrorCodes } from "../services/api/errorCodeApi.js";
+import { getUsualProblemReply, listUsualProblems } from "../services/api/usualProblemApi.js";
 import { getPreferences, onPreferencesChange } from "../services/preferencesService.js";
 import { logout, requireSession } from "../services/sessionService.js";
 import {
@@ -83,8 +84,8 @@ async function initCopilot({ technicianId, displayName }) {
   /* ---------- Services et composants ---------- */
   const conversation = createConversationService({ technicianId });
   let requestInProgress = false;
-  // Codes d'erreur à réponse enregistrée (public/data/error-codes), chargés au démarrage.
-  let knownErrorCodes = [];
+  // Entrées des menus de suggestions, lues par le backend pour l'équipement sélectionné.
+  let suggestionLists = { usualProblems: [], errorCodes: [] };
 
   createSidebar({
     shell: elements.shell,
@@ -133,7 +134,7 @@ async function initCopilot({ technicianId, displayName }) {
     container: $("#device-picker"),
     onChange: (deviceType) => {
       conversation.setDeviceType(deviceType);
-      renderSuggestions();
+      void loadSuggestions();
       updateContext();
     },
   });
@@ -290,14 +291,44 @@ async function initCopilot({ technicianId, displayName }) {
   }
 
   /* ---------- Menus de suggestions ---------- */
-  /** Menus de l'équipement sélectionné : pannes fréquentes + codes d'erreur connus. */
+  /**
+   * Relit les deux menus de l'équipement sélectionné auprès du backend
+   * (GET /api/usual_problem et /api/error_code). Un menu dont la lecture
+   * échoue est simplement masqué : le chat reste utilisable.
+   */
+  async function loadSuggestions() {
+    const deviceType = conversation.deviceType;
+    // Vidés tout de suite : les entrées de l'autre équipement ne doivent plus être cliquables.
+    suggestionLists = { usualProblems: [], errorCodes: [] };
+    renderSuggestions();
+
+    const [usualProblems, errorCodes] = await Promise.all([
+      listUsualProblems(deviceType).catch((error) => logSuggestionError("pannes fréquentes", error)),
+      listKnownErrorCodes(deviceType).catch((error) => logSuggestionError("codes d'erreur", error)),
+    ]);
+    // L'équipement a changé pendant la lecture : la réponse arrivée en retard est ignorée.
+    if (deviceType !== conversation.deviceType) return;
+    suggestionLists = { usualProblems, errorCodes };
+    renderSuggestions();
+  }
+
+  function logSuggestionError(menuName, error) {
+    console.warn(`[suggestions] Menu « ${menuName} » indisponible :`, error);
+    return [];
+  }
+
   function renderSuggestions() {
     elements.composerSuggestions.replaceChildren(
       createSuggestionMenus({
-        deviceType: conversation.deviceType,
-        errorCodes: filterErrorCodesForDevice(knownErrorCodes, conversation.deviceType),
-        onPick: pickSuggestion,
-        onPickErrorCode: pickErrorCode,
+        usualProblems: suggestionLists.usualProblems,
+        onPickUsualProblem: (usualProblem) =>
+          void answerWithSavedReply(usualProblem.label, () => getUsualProblemReply(usualProblem.id)),
+        errorCodes: suggestionLists.errorCodes,
+        onPickErrorCode: (errorCode) =>
+          void answerWithSavedReply(
+            errorCode.label ? `Code erreur ${errorCode.code} : ${errorCode.label}` : `Code erreur ${errorCode.code}`,
+            () => getErrorCodeReply(errorCode.id),
+          ),
       }),
     );
     updateSuggestionMenusState();
@@ -311,23 +342,29 @@ async function initCopilot({ technicianId, displayName }) {
   }
 
   /**
-   * Code d'erreur connu : le code et sa réponse enregistrée s'affichent
-   * directement -- AUCUN appel au backend (voir knownErrorCodesService).
+   * Suggestion choisie (panne fréquente ou code d'erreur) : la réponse
+   * enregistrée est lue en base par le backend, SANS IA. L'échange s'affiche
+   * dans le fil mais n'entre pas dans l'historique de la conversation côté
+   * backend (comme avant pour les codes d'erreur).
    */
-  function pickErrorCode(errorCode) {
+  async function answerWithSavedReply(userText, fetchReply) {
     if (requestInProgress) return;
     dictation.cancel();
     stopReading();
-    conversation.addLocalExchange(`Code erreur ${errorCode.code} : ${errorCode.label}`, errorCode.replyText);
-    if (getPreferences().autoRead) void readAloud(errorCode.replyText);
-  }
-
-  /** Panne fréquente : envoyée comme si le technicien l'avait tapée. */
-  function pickSuggestion(text) {
-    if (requestInProgress) return;
-    dictation.cancel();
-    stopReading();
-    void submitMessage(text);
+    setBusy(true);
+    const removeTyping = chatView.showTyping();
+    let reply = null;
+    try {
+      reply = await fetchReply();
+    } catch (caught) {
+      chatView.showError(getFriendlyErrorMessage(caught), () => void answerWithSavedReply(userText, fetchReply));
+      return;
+    } finally {
+      removeTyping();
+      setBusy(false);
+    }
+    conversation.addLocalExchange(userText, reply);
+    if (getPreferences().autoRead) void readAloud(reply);
   }
 
   /* ---------- Événements du chat écrit ---------- */
@@ -405,15 +442,13 @@ async function initCopilot({ technicianId, displayName }) {
   devicePicker.setValue(restored.deviceType);
   chatView.reset();
   restored.messages.forEach((message) => chatView.appendMessage(message, { animate: false }));
-  renderSuggestions();
   updateContext();
   updateComposerState();
   setStatus(READY_STATUS);
 
-  // Sans bloquer le démarrage : les bulles de codes d'erreur apparaissent dès
-  // que leurs fichiers JSON sont lus (en cas d'échec, seules ces bulles manquent).
-  knownErrorCodes = await loadKnownErrorCodes();
-  renderSuggestions();
+  // Sans bloquer le démarrage : les menus apparaissent dès que le backend a
+  // répondu (en cas d'échec, seuls ces menus manquent).
+  void loadSuggestions();
 }
 
 /** "Raoul Dupont" -> "RD" (pastille du technicien). */

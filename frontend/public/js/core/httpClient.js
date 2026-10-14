@@ -30,6 +30,14 @@ export function getJson(path, options = {}) {
   return requestJson("GET", path, options);
 }
 
+export function putJson(path, body, options = {}) {
+  return requestJson("PUT", path, { ...options, body });
+}
+
+export function deleteJson(path, options = {}) {
+  return requestJson("DELETE", path, options);
+}
+
 async function requestJson(method, path, { body, headers = {}, timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
   let response;
   try {
@@ -62,7 +70,7 @@ async function requestJson(method, path, { body, headers = {}, timeoutMs = REQUE
     throw new ApiRequestError("La requête a échoué.", {
       status: response.status,
       kind: response.status >= 500 ? "server" : "request",
-      detail: typeof payload?.detail === "string" ? payload.detail : null,
+      detail: readErrorDetail(payload?.detail),
     });
   }
 
@@ -70,22 +78,19 @@ async function requestJson(method, path, { body, headers = {}, timeoutMs = REQUE
 }
 
 /**
- * Lit un fichier JSON STATIQUE servi par le frontend lui-même (ex.
- * /data/error-codes/E42.json) -- pas de préfixe /api, le backend n'est
- * jamais contacté. Les messages d'erreur sont faits pour la console du
- * développeur qui édite ces fichiers.
+ * Message du backend : texte simple, ou liste d'erreurs de validation
+ * FastAPI (HTTP 422) dont on garde les messages lisibles.
  */
-export async function getStaticJson(url) {
-  const response = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!response.ok) throw new Error(`fichier introuvable (HTTP ${response.status})`);
-  try {
-    return await response.json();
-  } catch {
-    throw new Error("JSON mal formé (virgule en trop, guillemet manquant… ?)");
-  }
+function readErrorDetail(detail) {
+  if (typeof detail === "string") return detail;
+  if (!Array.isArray(detail)) return null;
+  const messages = detail
+    .map((item) => (typeof item?.msg === "string" ? item.msg.replace(/^Value error, /, "") : null))
+    .filter(Boolean);
+  return messages.length ? messages.join(" ") : null;
 }
 
-// HTTP 503 du backend = une IA externe n'a pas répondu (surcharge, quota…).
+// HTTP 503 du backend = une ressource indispensable est indisponible.
 // La cause précise reste dans les journaux du serveur : le technicien n'a
 // pas à savoir quels services travaillent derrière le chatbot.
 const SATURATED_MESSAGE = "Désolé, le chatbot est actuellement saturé. Réessayez dans quelques instants.";
@@ -95,7 +100,9 @@ export function getFriendlyErrorMessage(error) {
   if (!(error instanceof ApiRequestError)) {
     console.error("Erreur inattendue.", error);
   } else if (error.status === 503) {
-    return SATURATED_MESSAGE;
+    return error.detail || SATURATED_MESSAGE;
+  } else if (error.status === 409 && error.detail) {
+    return error.detail;
   } else if (error.kind === "timeout") {
     return "L’analyse prend plus de temps que prévu. Vérifiez votre connexion et réessayez.";
   } else if (error.kind === "network") {

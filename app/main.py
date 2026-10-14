@@ -10,6 +10,7 @@ générée automatiquement par FastAPI).
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 
 # Import volontairement inutilisé directement : le simple fait d'importer
 # le package charge tous les modules de app/models/ (technician, device,
@@ -25,6 +26,9 @@ from app.api.routes.chat import router as chat_router
 from app.api.routes.catalog import router as catalog_router
 from app.api.routes.error_code import router as error_codes_router
 from app.api.routes.admin import router as admin_router
+from app.api.routes.admin_catalog import error_code_router as admin_error_code_router
+from app.api.routes.admin_catalog import usual_problem_router as admin_usual_problem_router
+from app.api.routes.usual_problem import router as usual_problem_router
 from app.core.errors import (
     AccessDeniedError,
     ExternalServiceUnavailableError,
@@ -49,6 +53,9 @@ app.include_router(chat_router)
 app.include_router(catalog_router)
 app.include_router(error_codes_router)
 app.include_router(admin_router)
+app.include_router(usual_problem_router)
+app.include_router(admin_error_code_router)
+app.include_router(admin_usual_problem_router)
 
 
 # Les services lèvent des exceptions métier (app/core/errors.py) ; elles
@@ -88,8 +95,22 @@ def _service_externe_indisponible(request: Request, error: ExternalServiceUnavai
     return JSONResponse(status_code=503, content={"detail": SERVICE_SATURE_MESSAGE})
 
 
+@app.exception_handler(SQLAlchemyError)
+def _erreur_base_de_donnees(request: Request, error: SQLAlchemyError) -> JSONResponse:
+    # L'exception SQL brute peut contenir des paramètres et des données sensibles.
+    trace(
+        "ERROR",
+        "Échec de l'accès à PostgreSQL, réponse 503 envoyée",
+        endpoint=request.url.path,
+        error_type=type(error).__name__,
+    )
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "Le service de données est momentanément indisponible. Réessayez plus tard."},
+    )
+
+
 @app.get("/health")
 def verifier_sante() -> dict:
     """Endpoint simple pour vérifier que l'API répond (utile pour un healthcheck)."""
     return {"status": "ok"}
-

@@ -1,14 +1,20 @@
 /**
- * Page Administration : examen des solutions proposées par les techniciens.
- * ✅ API réelle : /api/admin/solution-proposals (services/api/adminProposalApi.js),
- *    protégée par la clé ADMIN_API_KEY du serveur.
+ * Page Administration, trois rubriques protégées par la clé ADMIN_API_KEY du serveur :
+ * - Propositions     : examen des solutions proposées par les techniciens
+ *                      (/api/admin/solution-proposals, services/api/adminProposalApi.js) ;
+ * - Codes d'erreur   : ajout / modification / suppression (/api/admin/error_code) ;
+ * - Pannes fréquentes : idem (/api/admin/usual_problem).
+ * Les deux dernières alimentent les menus de suggestions du Copilote
+ * (services/api/adminCatalogApi.js, components/adminRecordEditor.js).
  *
  * La page ne décide de rien : elle affiche ce que le backend renvoie et
- * transmet la décision (approuver / rejeter) avec la signature de l'admin.
+ * transmet les décisions et modifications de l'admin.
  */
 
 import { STORAGE_KEYS } from "../config.js";
 import { getFriendlyErrorMessage } from "../core/httpClient.js";
+import { createRecordEditor } from "../components/adminRecordEditor.js";
+import { adminErrorCodes, adminUsualProblems } from "../services/api/adminCatalogApi.js";
 import { listProposals, reviewProposal } from "../services/api/adminProposalApi.js";
 import { createElement } from "../utils/dom.js";
 
@@ -18,6 +24,7 @@ const reviewerInput = document.querySelector("#reviewer-name");
 const statusLine = document.querySelector("#admin-status");
 const list = document.querySelector("#proposal-list");
 const tabs = [...document.querySelectorAll(".admin-tab")];
+const sectionTabs = [...document.querySelectorAll(".admin-section-tab")];
 
 const STATUS_LABELS = { pending: "En attente", approved: "Approuvée", rejected: "Rejetée" };
 const OUTCOME_LABELS = { resolved: "Problème réglé", partial: "Réglé en partie" };
@@ -28,6 +35,7 @@ const INTEGRATION_MESSAGES = {
 };
 
 let currentStatus = "pending";
+let currentSection = "proposals";
 
 /* ---------- Mémoire de l'onglet (clé et signature) ---------- */
 
@@ -262,13 +270,88 @@ function renderReviewForm(proposal, card) {
   return form;
 }
 
+/* ---------- Codes d'erreur et pannes fréquentes ---------- */
+
+const DEVICE_LABELS = { gab: "GAB", tpe: "TPE" };
+const getAdminKey = () => adminKeyInput.value.trim();
+const REPLY_HINT = "Une ligne = un paragraphe dans le chat. Ex. « 1. Mettez l’appareil hors service. »";
+
+const errorCodeEditor = createRecordEditor({
+  statusLine: document.querySelector("#error-code-status"),
+  list: document.querySelector("#error-code-list"),
+  addButton: document.querySelector("#error-code-add"),
+  resource: adminErrorCodes,
+  getAdminKey,
+  describeError,
+  nouns: { one: "code d’erreur", many: "codes d’erreur", none: "Aucun code d’erreur." },
+  fields: [
+    { name: "code", label: "Code", type: "text", required: true, maxLength: 50, hint: "Tel qu’affiché par l’équipement, ex. E42." },
+    { name: "label", label: "Libellé", type: "text", maxLength: 500, hint: "Affiché dans le menu, à côté du code." },
+    {
+      name: "device_type",
+      label: "Équipement",
+      type: "select",
+      options: [["", "Aucun (absent du menu du Copilote)"], ["gab", "GAB"], ["tpe", "TPE"]],
+    },
+    { name: "reply", label: "Réponse du Copilote", type: "textarea", maxLength: 5000, hint: REPLY_HINT },
+  ],
+  renderSummary: (record) => ({
+    title: record.label ? `${record.code} — ${record.label}` : record.code,
+    pills: [
+      record.device_type && record.reply ? `Copilote · ${DEVICE_LABELS[record.device_type]}` : "Absent du Copilote",
+      ...(record.fault ? [`Panne ${record.fault.code || record.fault.name}`] : []),
+    ],
+    body: record.reply || "Aucune réponse enregistrée.",
+  }),
+});
+
+const usualProblemEditor = createRecordEditor({
+  statusLine: document.querySelector("#usual-problem-status"),
+  list: document.querySelector("#usual-problem-list"),
+  addButton: document.querySelector("#usual-problem-add"),
+  resource: adminUsualProblems,
+  getAdminKey,
+  describeError,
+  nouns: { one: "panne fréquente", many: "pannes fréquentes", none: "Aucune panne fréquente." },
+  fields: [
+    { name: "device_type", label: "Équipement", type: "select", required: true, options: [["gab", "GAB"], ["tpe", "TPE"]] },
+    { name: "label", label: "Libellé du menu", type: "text", required: true, maxLength: 300, hint: "Ex. « Le GAB a avalé la carte du client »." },
+    { name: "display_order", label: "Ordre dans le menu", type: "number", hint: "Vide : en fin de menu." },
+    { name: "reply", label: "Réponse du Copilote", type: "textarea", required: true, maxLength: 5000, hint: REPLY_HINT },
+  ],
+  renderSummary: (record) => ({
+    title: record.label,
+    pills: [DEVICE_LABELS[record.device_type] || record.device_type, `Position ${record.display_order}`],
+    body: record.reply,
+  }),
+});
+
+function loadCurrentSection() {
+  if (currentSection === "error-codes") return errorCodeEditor.load();
+  if (currentSection === "usual-problems") return usualProblemEditor.load();
+  return loadProposals();
+}
+
 /* ---------- Événements ---------- */
 
 accessForm.addEventListener("submit", (event) => {
   event.preventDefault();
   writeSession(STORAGE_KEYS.adminKey, adminKeyInput.value.trim());
   writeSession(STORAGE_KEYS.adminReviewer, reviewerInput.value.trim());
-  void loadProposals();
+  void loadCurrentSection();
+});
+
+sectionTabs.forEach((tab) => {
+  tab.addEventListener("click", () => {
+    currentSection = tab.dataset.section;
+    sectionTabs.forEach((other) => {
+      const selected = other === tab;
+      other.setAttribute("aria-selected", String(selected));
+      document.querySelector(`#${other.getAttribute("aria-controls")}`).hidden = !selected;
+    });
+    // Rechargée à chaque ouverture : un autre administrateur a pu modifier la liste.
+    if (adminKeyInput.value.trim()) void loadCurrentSection();
+  });
 });
 
 tabs.forEach((tab) => {
@@ -279,4 +362,4 @@ tabs.forEach((tab) => {
   });
 });
 
-if (adminKeyInput.value) void loadProposals();
+if (adminKeyInput.value) void loadCurrentSection();

@@ -127,7 +127,10 @@ class OrchestratorValidationTests(unittest.TestCase):
         for text in (*NOISE_MESSAGES, "\u200b"):
             with self.subTest(text=text):
                 result = orchestrator.handle_chat_message(self.db, 7, 1, text)
-                self.assertEqual(result, {"conversation_id": 7, "reply": REFORMULATION_REPLY})
+                self.assertEqual(
+                    result,
+                    {"conversation_id": 7, "reply": REFORMULATION_REPLY, "solution_proposal_available": False},
+                )
         for name in ("understand", "route", "llm", "summarize", "search"):
             self.mocks[name].assert_not_called()
         self.assertEqual(self.context["last_search"], {"results": [{"position": 1}]})

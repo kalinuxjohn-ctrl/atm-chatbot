@@ -149,10 +149,9 @@ def _keep_best_match_per_intervention(matched_symptoms: list[dict]) -> dict[int,
 
 def _rank_key(matched_row: dict) -> float:
     """
-    `distance` (chemin pgvector, 0 = identique) si disponible, sinon
-    `similarity` (chemin de repli Python, 1 = identique) inversée pour
-    trier dans le même sens -- isolé ici pour ne pas dupliquer cette
-    logique à chaque appel.
+    La recherche renvoie `similarity` (1 = identique), inversée pour trier
+    dans le même sens qu'une distance. Accepte aussi les anciens résultats
+    portant directement `distance` (0 = identique).
     """
     if "distance" in matched_row:
         return matched_row["distance"]

@@ -12,6 +12,7 @@ from app.models.intervention import Intervention, InterventionSymptom, Intervent
 from app.models.fault import Fault, ErrorCode
 from app.models.conversation import Conversation, ConversationMessage, ConversationContext
 from app.models.solution_proposal import SolutionProposal
+from app.models.usual_problem import UsualProblem
 
 __all__ = [
     "Technician",
@@ -33,4 +34,5 @@ __all__ = [
     "ConversationMessage",
     "ConversationContext",
     "SolutionProposal",
+    "UsualProblem",
 ]

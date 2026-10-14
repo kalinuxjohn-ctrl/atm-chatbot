@@ -30,11 +30,14 @@ function transformSearchResponse(payload) {
   const summaryHasProviderError = LLM_ERROR_MARKERS.some((marker) =>
     payload.summary.toLocaleLowerCase("fr").includes(marker),
   );
+  if (summaryHasProviderError) {
+    throw new ApiRequestError("Le service de synthèse est indisponible.", { status: 503, kind: "server" });
+  }
 
   return {
     matchedSymptomIds: payload.matched_symptom_ids.filter((symptomId) => Number.isInteger(symptomId)),
-    summary: summaryHasProviderError ? "" : payload.summary.trim(),
-    summaryUnavailable: summaryHasProviderError,
+    summary: payload.summary.trim(),
+    summaryUnavailable: false,
     solutions: payload.solutions.map((solution) => ({
       actionId: Number.isInteger(solution?.action_id) ? solution.action_id : null,
       actionText: typeof solution?.action_text === "string" ? solution.action_text.trim() : "",

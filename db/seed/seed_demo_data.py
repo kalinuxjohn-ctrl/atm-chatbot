@@ -187,6 +187,115 @@ SEED_STATEMENTS = [
     """,
 ]
 
+# Réponses enregistrées des menus de suggestions du Copilote (migration 0011),
+# lues telles quelles par /api/error_code et /api/usual_problem -- ni LLM, ni
+# embedding. Une ligne = un paragraphe affiché dans le chat. Ce sont des
+# EXEMPLES de démo : à relire et adapter avec les procédures réelles.
+# Requêtes paramétrées (voir run_seed) : les apostrophes du texte n'ont pas
+# à être échappées à la main.
+ERROR_CODE_REPLIES = [
+    (1, "gab", [
+        "Code E42 : le capteur de rétention de carte ne répond pas (panne P001 – lecteur de carte bloqué).",
+        "1. Mettez le GAB hors service et récupérez la carte retenue si elle est encore dans le lecteur.",
+        "2. Vérifiez que le connecteur du capteur de rétention est bien branché sur la carte du lecteur.",
+        "3. Nettoyez le capteur (poussière, débris de carte) puis redémarrez le lecteur.",
+        "4. Si E42 réapparaît, remplacez le capteur de rétention.",
+        "Si le problème persiste, décrivez-moi ce que vous observez pour chercher des interventions similaires.",
+    ]),
+    (2, "gab", [
+        "Code E43 : le moteur du lecteur de carte est bloqué (panne P001 – lecteur de carte bloqué).",
+        "1. Mettez le GAB hors service puis ouvrez le module lecteur de carte.",
+        "2. Retirez tout objet coincé dans le chemin de la carte (carte, ticket, corps étranger).",
+        "3. Vérifiez que les rouleaux tournent librement à la main, puis réinitialisez le lecteur.",
+        "4. Si le moteur reste bloqué, remplacez le module lecteur de carte.",
+        "Si le problème persiste, décrivez-moi ce que vous observez pour chercher des interventions similaires.",
+    ]),
+    (3, "gab", [
+        "Code E67 : bourrage détecté dans le distributeur de billets (panne P002 – distributeur de billets en défaut).",
+        "1. Mettez le GAB hors service et ouvrez le coffre selon la procédure de sécurité.",
+        "2. Retirez les billets coincés dans le chemin de transport et dans la zone de présentation.",
+        "3. Contrôlez l'état des cassettes (billets froissés ou mal rangés) et remettez-les en place.",
+        "4. Lancez un test de distribution avant de remettre le GAB en service.",
+        "Si le problème persiste, décrivez-moi ce que vous observez pour chercher des interventions similaires.",
+    ]),
+]
+
+_FOLLOW_UP = "Si le problème persiste, décrivez-moi ce que vous observez pour chercher des interventions similaires."
+
+USUAL_PROBLEMS = [
+    # (usual_problem_id, device_type, display_order, label, paragraphes de la réponse)
+    (1, "gab", 1, "Le GAB a avalé la carte du client", [
+        "Carte avalée : le lecteur a retenu la carte (fin de délai, carte invalide ou défaut du lecteur).",
+        "1. Mettez le GAB hors service et récupérez la carte dans le bac de rétention.",
+        "2. Consultez le journal du GAB pour connaître le motif de rétention.",
+        "3. Nettoyez la tête de lecture et le chemin de la carte, puis faites une transaction de test.",
+        _FOLLOW_UP,
+    ]),
+    (2, "gab", 2, "Écran noir au démarrage du GAB", [
+        "Écran noir au démarrage : l'écran n'est pas alimenté, ou le PC du GAB ne démarre pas.",
+        "1. Vérifiez l'alimentation secteur et l'état des disjoncteurs du GAB.",
+        "2. Contrôlez les câbles d'alimentation et vidéo de l'écran.",
+        "3. Écoutez si le PC démarre (ventilateurs, voyants) : sinon, redémarrez-le électriquement.",
+        _FOLLOW_UP,
+    ]),
+    (3, "gab", 3, "Billets bloqués dans le distributeur", [
+        "Billets bloqués : bourrage dans le chemin de transport ou la zone de présentation.",
+        "1. Mettez le GAB hors service et ouvrez le coffre selon la procédure de sécurité.",
+        "2. Retirez les billets coincés et contrôlez l'état des cassettes.",
+        "3. Lancez un test de distribution avant de remettre le GAB en service.",
+        _FOLLOW_UP,
+    ]),
+    (4, "gab", 4, "L'imprimante de tickets ne fonctionne plus", [
+        "Imprimante de tickets en panne : rouleau vide, bourrage ou tête d'impression encrassée.",
+        "1. Vérifiez le rouleau de papier et son sens de mise en place.",
+        "2. Retirez tout morceau de papier coincé, puis nettoyez la tête d'impression.",
+        "3. Lancez une impression de test depuis le menu de maintenance.",
+        _FOLLOW_UP,
+    ]),
+    (5, "gab", 5, "Le GAB est hors service", [
+        "GAB hors service : un module est en défaut, ou la liaison avec le serveur est coupée.",
+        "1. Consultez le journal du GAB pour identifier le module en défaut.",
+        "2. Vérifiez la connexion réseau (câble, voyants du routeur).",
+        "3. Redémarrez le GAB, puis vérifiez qu'il repasse en service.",
+        _FOLLOW_UP,
+    ]),
+    (6, "tpe", 1, "Le TPE ne lit pas la carte", [
+        "Carte non lue : lecteur encrassé, carte abîmée ou mauvais mode de lecture.",
+        "1. Essayez une autre carte, en puce puis en piste, pour isoler le problème.",
+        "2. Nettoyez le lecteur de puce et la piste magnétique avec une carte de nettoyage.",
+        "3. Redémarrez le TPE, puis refaites une transaction de test.",
+        _FOLLOW_UP,
+    ]),
+    (7, "tpe", 2, "Paiement sans contact refusé", [
+        "Sans contact refusé : fonction désactivée, plafond atteint ou antenne en défaut.",
+        "1. Vérifiez que le sans contact est activé dans les paramètres du TPE.",
+        "2. Faites un test avec une autre carte ou un téléphone.",
+        "3. Si tout est refusé, effectuez un téléchargement des paramètres (TMS) puis redémarrez.",
+        _FOLLOW_UP,
+    ]),
+    (8, "tpe", 3, "L'imprimante du TPE n'imprime plus", [
+        "Imprimante du TPE muette : rouleau vide, mal inséré ou capot mal fermé.",
+        "1. Vérifiez le rouleau : papier thermique, face sensible vers la tête d'impression.",
+        "2. Refermez le capot jusqu'au clic, puis lancez un ticket de test.",
+        "3. Nettoyez la tête d'impression si le ticket sort blanc ou pâle.",
+        _FOLLOW_UP,
+    ]),
+    (9, "tpe", 4, "Le TPE ne se connecte pas au réseau", [
+        "TPE sans réseau : liaison coupée (Ethernet, Wi-Fi, 4G) ou paramètres incorrects.",
+        "1. Vérifiez le câble ou le signal (Wi-Fi, 4G) et l'état de la carte SIM le cas échéant.",
+        "2. Lancez un test de connexion depuis le menu du TPE.",
+        "3. Redémarrez le TPE et la box du commerçant, puis refaites le test.",
+        _FOLLOW_UP,
+    ]),
+    (10, "tpe", 5, "L'écran du TPE est figé", [
+        "Écran figé : le logiciel du TPE ne répond plus.",
+        "1. Forcez le redémarrage du TPE (combinaison de touches du constructeur ou retrait de la batterie).",
+        "2. Vérifiez le niveau de batterie et le socle de charge.",
+        "3. Si le blocage revient, faites une mise à jour logicielle via le TMS.",
+        _FOLLOW_UP,
+    ]),
+]
+
 # Après avoir inséré des lignes avec des ID choisis à la main, les séquences
 # SERIAL de Postgres ne sont pas au courant du dernier ID utilisé. Sans ce
 # correctif, le PROCHAIN insert "normal" (sans ID précisé, laissé à SERIAL)
@@ -202,6 +311,7 @@ SEQUENCE_RESETS = [
     "SELECT setval('action_action_id_seq', (SELECT MAX(action_id) FROM action));",
     "SELECT setval('fault_fault_id_seq', (SELECT MAX(fault_id) FROM fault));",
     "SELECT setval('error_code_error_code_id_seq', (SELECT MAX(error_code_id) FROM error_code));",
+    "SELECT setval('usual_problem_usual_problem_id_seq', (SELECT MAX(usual_problem_id) FROM usual_problem));",
     "SELECT setval('intervention_intervention_id_seq', (SELECT MAX(intervention_id) FROM intervention));",
     "SELECT setval('intervention_symptom_intervention_symptom_id_seq', "
     "(SELECT MAX(intervention_symptom_id) FROM intervention_symptom));",
@@ -246,6 +356,21 @@ def run_seed() -> None:
             with connection.cursor() as cursor:
                 for statement in SEED_STATEMENTS:
                     cursor.execute(statement)
+                # Ne remplit que les codes encore sans réponse : une réponse
+                # modifiée depuis par un administrateur n'est pas écrasée.
+                cursor.executemany(
+                    "UPDATE error_code SET device_type = %s, reply = %s "
+                    "WHERE error_code_id = %s AND reply IS NULL",
+                    [(device_type, "\n".join(reply), error_code_id) for error_code_id, device_type, reply in ERROR_CODE_REPLIES],
+                )
+                cursor.executemany(
+                    "INSERT INTO usual_problem (usual_problem_id, device_type, display_order, label, reply) "
+                    "VALUES (%s, %s, %s, %s, %s) ON CONFLICT (usual_problem_id) DO NOTHING",
+                    [
+                        (usual_problem_id, device_type, display_order, label, "\n".join(reply))
+                        for usual_problem_id, device_type, display_order, label, reply in USUAL_PROBLEMS
+                    ],
+                )
                 for statement in SEQUENCE_RESETS:
                     cursor.execute(statement)
                 # UN SEUL appel réseau pour les 6 textes plutôt qu'un par
@@ -262,7 +387,7 @@ def run_seed() -> None:
                     )
         print(
             "Données de démonstration insérées avec succès "
-            "(interventions 3001 et 3045, codes d'erreur E42/E43/E67)."
+            "(interventions 3001 et 3045, codes d'erreur E42/E43/E67, pannes fréquentes)."
         )
     finally:
         connection.close()

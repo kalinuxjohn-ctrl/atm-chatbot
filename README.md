@@ -17,7 +17,8 @@ prompts, réponses LLM brutes, secrets ou données personnelles à `trace()`.
    puis enregistre le texte nettoyé. Un message rejeté reçoit une demande
    de reformulation sans appel LLM, puis passe directement à l'étape 6.
 3. Le LLM de compréhension produit une intention et des références textuelles.
-   Si sa sortie est invalide, le repli existant traite le message en diagnostic.
+   Si sa sortie est invalide, une erreur explicite est remontée (HTTP 503),
+   sans deviner l'intention.
 4. Selon l'intention :
    - conversation : réponse LLM sans recherche vectorielle ;
    - diagnostic : résolution SQL des références, embedding du texte reformulé,
@@ -32,8 +33,41 @@ prompts, réponses LLM brutes, secrets ou données personnelles à `trace()`.
 
 Les références modèle/code d'erreur sont mémorisées, mais ne filtrent pas
 encore la recherche vectorielle : seul le type d'appareil est utilisé.
-Le repli pgvector utilise le cosinus Python. La recherche autonome
+Une panne de pgvector est remontée sans calcul Python de secours. La recherche autonome
 `GET /api/error_code/search` utilise SQL ILIKE, sans embedding ni LLM.
+
+Les menus de suggestions du Copilote répondent aussi sans IA, avec des réponses enregistrées en base (migration 0011) :
+
+| Route | Rôle |
+| --- | --- |
+| `GET /api/usual_problem?device_type=gab` | pannes fréquentes de l'équipement (table `usual_problem`) |
+| `GET /api/usual_problem/{id}/solution` | réponse enregistrée d'une panne fréquente |
+| `GET /api/error_code?device_type=gab` | codes d'erreur ayant une réponse enregistrée (`error_code.device_type` et `error_code.reply`) |
+| `GET /api/error_code/{id}/solution` | réponse enregistrée d'un code d'erreur |
+
+Les administrateurs les gèrent dans `admin.html` (rubriques « Codes d'erreur » et « Pannes fréquentes »), via des routes protégées par `ADMIN_API_KEY` (en-tête `X-Admin-Key`) :
+`GET`/`POST /api/admin/error_code`, `PUT`/`DELETE /api/admin/error_code/{id}`, et de même pour `/api/admin/usual_problem`. Un code cité par une proposition de solution ne peut pas être supprimé (409) : vider sa réponse le retire du Copilote.
+
+## Erreurs des ressources externes
+
+- Claude/Gemini : erreur réseau, délai dépassé, quota, authentification ou
+  réponse inexploitable -> `LLMUnavailableError`, puis HTTP 503. Aucun
+  changement de fournisseur ni texte de secours, même pour la synthèse des cas.
+- Voyage : les erreurs et les embeddings invalides (dimension, valeurs,
+  nombre ou indices incorrects) deviennent `EmbeddingUnavailableError`, puis
+  HTTP 503. Aucun vecteur artificiel ; les textes vides sont refusés en 422.
+  Les nouvelles tentatives bornées sur 429/5xx rappellent la même API :
+  ce ne sont pas des replis vers un autre fournisseur.
+- PostgreSQL/pgvector : échec explicite en HTTP 503, sans recherche alternative.
+  Les savepoints préservent la transaction appelante lors d'une erreur vectorielle.
+- Statistiques recalculées après une écriture déjà validée : un échec renvoie
+  HTTP 409 en précisant que la donnée est enregistrée et ne doit pas être
+  soumise une seconde fois. Aucun succès silencieux.
+
+Les journaux indiquent la cause technique des erreurs d'IA ; les réponses
+HTTP restent neutres et n'exposent ni clés, ni prompts, ni données SQL.
+Une recherche réussie sans résultat reste un cas métier normal, pas une panne.
+Le seed n'a aucun mode dégradé : si Voyage échoue, il s'arrête en erreur.
 
 ## Tests ciblés
 
@@ -43,11 +77,48 @@ Le repli pgvector utilise le cosinus Python. La recherche autonome
 
 `python -B -m unittest discover -s tests -p test_llm_providers.py -v`
 
+`python -B -m unittest discover -s tests -p test_external_services.py -v`
+
+`node --experimental-default-type=module --test tests/test_external_services_frontend.mjs`
+
+`python -B -m unittest discover -s tests -p test_solution_proposal_service.py -v`
+
 Les opérations métier sont simulées, sans appel au LLM ni requête réelle.
 L'import du backend nécessite néanmoins une configuration valide et un
 pilote de base de données disponible. Pour une vérification isolée, lancer
 depuis un répertoire sans `.env`, avec la racine du projet dans `PYTHONPATH`
 et `DATABASE_URL=sqlite:///:memory:` ; aucun schéma SQLite n'est créé.
+
+## Propositions de solution
+
+Quand une réponse du chat contient des solutions, `POST /api/chat` renvoie
+`solution_proposal_available: true` et le Copilote affiche « Aucune de ces
+solutions ne fonctionne », puis « Proposer une solution ».
+
+1. `GET /api/chat/conversations/{id}/solution-proposal-context?technician_id=`
+   relit le problème actif dans `conversation_context` (dernière recherche,
+   résultat sélectionné sinon le premier) et le renvoie pour affichage.
+   409 si aucun problème n'est identifié, 403 si la conversation appartient
+   à un autre technicien.
+2. `POST /api/chat/conversations/{id}/solution-proposals` ne reçoit que
+   l'action, le résultat et `outcome_status`. Le backend relit le contexte,
+   crée une ligne `solution_proposal` (statut `pending`, migration 0009) avec
+   un `conversation_context_snapshot`, et ajoute la confirmation à l'historique.
+3. Page `admin.html`, routes `/api/admin/solution-proposals` protégées par
+   `ADMIN_API_KEY` (en-tête `X-Admin-Key`) : approuver ou rejeter. Une
+   approbation ajoute l'action au catalogue `action`, ou réutilise une action
+   équivalente (distance <= `SOLUTION_PROPOSAL_DUPLICATE_MAX_DISTANCE`, 0.15).
+   L'approbation rattache aussi la solution au problème : une ligne
+   `intervention_action` est ajoutée à l'intervention de référence, avec
+   `targets_symptom_id` = le symptôme du problème (déjà vectorisé, aucun
+   embedding recalculé) et `source_proposal_id` (migration 0010), puis les
+   statistiques sont recalculées. Le chat la présente à part : « Solution
+   ajoutée ensuite, proposée par … et validée par un administrateur ».
+   Une décision est définitive ; un rejet exige un commentaire.
+
+Le « cas de référence » (intervention, symptôme, composant) est le cas passé
+auquel la recherche a rattaché le problème : la conversation n'est pas encore
+liée à une intervention en cours, donc `device_id` reste vide.
 
 ## Validation locale des messages
 

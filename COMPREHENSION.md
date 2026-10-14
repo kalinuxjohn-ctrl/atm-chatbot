@@ -128,8 +128,8 @@ Le modèle est chargé **une seule fois** puis gardé en mémoire (`lru_cache`).
   symptôme de TPE ne sort jamais pour un GAB ;
 - **seuil de pertinence** `SYMPTOM_SIMILARITY_THRESHOLD` (0.5 par défaut) :
   ce qui est en dessous est éliminé ;
-- **repli automatique** : si pgvector échoue, `rollback` puis calcul du
-  cosinus en Python, avec le même format de sortie.
+- **erreur explicite** : si pgvector échoue, annulation du savepoint puis
+  erreur HTTP 503, sans calcul Python de secours.
 
 ### 6.3 Regroupement en cas réels
 
@@ -231,7 +231,8 @@ l'action est cataloguée.
 | Catalogue | `component`, `symptom`, `action` | vocabulaire normalisé |
 | Statistiques | `symptom_action_outcome_stats` | fiabilité de chaque paire (symptôme, action) **par type d'appareil** |
 | Conversation | `conversation`, `conversation_message`, `conversation_context` | fil de chat + mémoire JSON |
-| Codes d'erreur | `fault`, `error_code` | référentiel indépendant (recherche SQL classique) |
+| Codes d'erreur | `fault`, `error_code` | référentiel indépendant (recherche SQL classique) ; `device_type` + `reply` = réponse enregistrée du menu de suggestions |
+| Pannes fréquentes | `usual_problem` | menu de suggestions du Copilote, réponse enregistrée par les admins (sans IA) |
 
 **Migrations** (`db/migrations/`, appliquées dans l'ordre, une seule fois,
 suivies dans `schema_migrations`) :
@@ -279,6 +280,10 @@ Il est lancé par `init-db`, après l'ajout d'une action cataloguée, et par
 | `GET /catalog/actions/similar` | actions du catalogue proches d'un texte (avant d'en créer une) | `catalog_service` |
 | `POST /catalog/actions/resolve` | créer une action au catalogue ou fusionner (`new` / `merge`) + recalcul des stats | `catalog_service` |
 | `GET /api/error_code/search` | recherche de code d'erreur (SQL `ILIKE`, sans IA) | `error_code_service` |
+| `GET /api/error_code?device_type=…`, `GET /api/error_code/{id}/solution` | menu « Codes d'erreur connus » : liste et réponse enregistrée (sans IA) | `error_code_service` |
+| `GET /api/usual_problem?device_type=…`, `GET /api/usual_problem/{id}/solution` | menu « Pannes fréquentes » : liste et réponse enregistrée (sans IA) | `usual_problem_service` |
+| `GET`/`POST /api/admin/error_code`, `PUT`/`DELETE /api/admin/error_code/{id}` | administration des codes d'erreur (clé `X-Admin-Key`) | `error_code_service` |
+| `GET`/`POST /api/admin/usual_problem`, `PUT`/`DELETE /api/admin/usual_problem/{id}` | administration des pannes fréquentes (clé `X-Admin-Key`) | `usual_problem_service` |
 | `GET /health` | l'API répond-elle ? | `main.py` |
 
 Documentation interactive : <http://localhost:8000/docs>.

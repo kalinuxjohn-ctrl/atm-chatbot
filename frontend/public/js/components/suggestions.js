@@ -1,65 +1,53 @@
 /**
  * Menus déroulants de suggestions, affichés juste au-dessus de la zone de saisie.
- * Deux menus, deux comportements :
+ * Les deux menus ont le même comportement : leurs entrées ET leurs réponses
+ * viennent du backend, qui les lit en base SANS IA (ni LLM, ni embedding).
  *
- *   [ Pannes fréquentes      ▾ ]  PROBLÈME FRÉQUENT -> envoyé au backend comme
- *                                 un message tapé par le technicien.
- *                                 Pour en ajouter : compléter SUGGESTIONS_BY_DEVICE.
+ *   [ Pannes fréquentes      ▾ ]  GET /api/usual_problem?device_type=...
+ *   [ Codes d'erreur connus  ▾ ]  GET /api/error_code?device_type=...
  *
- *   [ Codes d'erreur connus  ▾ ]  CODE D'ERREUR CONNU -> réponse enregistrée
- *                                 côté frontend, AUCUN appel au backend.
- *                                 Pour en ajouter : public/data/error-codes/README.md
+ * Pour en ajouter : remplir les tables usual_problem / error_code (colonnes
+ * device_type et reply), voir la migration 0011.
  */
 
 import { createElement } from "../utils/dom.js";
 
-export const SUGGESTIONS_BY_DEVICE = Object.freeze({
-  gab: [
-    "Le GAB a avalé la carte du client",
-    "Écran noir au démarrage du GAB",
-    "Billets bloqués dans le distributeur",
-    "L’imprimante de tickets ne fonctionne plus",
-    "Le GAB est hors service",
-  ],
-  tpe: [
-    "Le TPE ne lit pas la carte",
-    "Paiement sans contact refusé",
-    "L’imprimante du TPE n’imprime plus",
-    "Le TPE ne se connecte pas au réseau",
-    "L’écran du TPE est figé",
-  ],
-});
-
 /**
  * Crée les deux menus : pannes fréquentes, puis codes d'erreur connus.
- * Le menu des codes n'apparaît que s'il y a au moins un code pour cet équipement.
+ * Un menu n'apparaît que s'il a au moins une entrée pour cet équipement.
  * @param {{
- *   deviceType: string,
- *   onPick: (text: string) => void,                                  choix d'une panne fréquente
- *   errorCodes?: import("../services/knownErrorCodesService.js").KnownErrorCode[],  déjà filtrés pour deviceType
- *   onPickErrorCode?: (errorCode: object) => void,                   choix d'un code d'erreur
+ *   usualProblems?: import("../services/api/usualProblemApi.js").UsualProblem[],
+ *   onPickUsualProblem?: (usualProblem: object) => void,
+ *   errorCodes?: import("../services/api/errorCodeApi.js").KnownErrorCode[],
+ *   onPickErrorCode?: (errorCode: object) => void,
  * }} options
  * @returns {HTMLDivElement}
  */
-export function createSuggestionMenus({ deviceType, onPick, errorCodes = [], onPickErrorCode = () => {} }) {
+export function createSuggestionMenus({
+  usualProblems = [],
+  onPickUsualProblem = () => {},
+  errorCodes = [],
+  onPickErrorCode = () => {},
+}) {
   const container = createElement("div", "suggestion-menus");
 
-  const frequentProblems = SUGGESTIONS_BY_DEVICE[deviceType] || SUGGESTIONS_BY_DEVICE.gab;
-  container.append(
-    createMenu({
-      placeholder: "Pannes fréquentes…",
-      ariaLabel: "Choisir une panne fréquente",
-      options: frequentProblems.map((text) => ({ label: text })),
-      onChoose: (index) => onPick(frequentProblems[index]),
-    }),
-  );
+  if (usualProblems.length > 0) {
+    container.append(
+      createMenu({
+        placeholder: "Pannes fréquentes…",
+        ariaLabel: "Choisir une panne fréquente",
+        options: usualProblems.map(({ label }) => ({ label })),
+        onChoose: (index) => onPickUsualProblem(usualProblems[index]),
+      }),
+    );
+  }
 
   if (errorCodes.length > 0) {
     container.append(
       createMenu({
         placeholder: "Codes d’erreur connus…",
         ariaLabel: "Choisir un code d'erreur connu",
-        options: errorCodes.map(({ code, label }) => ({ label: `${code} — ${label}` })),
+        options: errorCodes.map(({ code, label }) => ({ label: label ? `${code} — ${label}` : code })),
         onChoose: (index) => onPickErrorCode(errorCodes[index]),
         className: "error-code-menu",
       }),

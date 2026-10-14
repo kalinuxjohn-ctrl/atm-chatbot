@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1900 1000" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Étape compréhension du message">
+<defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#d9620f"/></marker></defs>
+<rect width="1900" height="1000" fill="#ffffff"/>
+<text x="40" y="42" font-size="23" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">2 · Le message arrive : ce que Claude renvoie et ce que la base lit / écrit</text>
+<text x="40" y="66" font-size="13" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Exemple : premier message du technicien 4. Tables lues en jaune, écrites en vert.</text>
+<circle cx="95" cy="154" r="11" stroke="#10243a" stroke-width="2" fill="#ffffff"/>
+<path d="M95 165V196M78 176H112M95 196L82 218M95 196L108 218" stroke="#10243a" stroke-width="2" fill="none" stroke-linecap="round"/>
+<text x="95" y="237" font-size="13" font-weight="700" fill="#10243a" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Technicien 4</text>
+<text x="95" y="253" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Technicien Test API</text>
+<rect x="170" y="105" width="560" height="176" rx="9" fill="#f6f8fb" stroke="#c9d2de" stroke-width="1.2"/>
+<text x="182" y="123" font-size="12.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Ce que le frontend envoie</text>
+<text x="182" y="139" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">POST /api/chat</text>
+<text x="182" y="155" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">{</text>
+<text x="182" y="171" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">  &quot;conversation_id&quot;: null,        ← 1er message</text>
+<text x="182" y="187" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">  &quot;technician_id&quot;: 4,</text>
+<text x="182" y="203" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">  &quot;device_type&quot;: &quot;gab&quot;,           ← choix dans l&#x27;interface</text>
+<text x="182" y="219" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">  &quot;message&quot;: &quot;Bonjour, sur le GAB Opteva 720 la carte</text>
+<text x="182" y="235" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">              est restée bloquée dans le lecteur,</text>
+<text x="182" y="251" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">              il affiche E42&quot;</text>
+<text x="182" y="267" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">}</text>
+<circle cx="51" cy="355" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="51" y="359.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<text x="70" y="360" font-size="14.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Ouvrir la conversation et charger sa mémoire</text>
+<text x="70" y="378" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">get_or_create_conversation · get_context</text>
+<rect x="70" y="395" width="442.0" height="71" rx="7" fill="#ffffff" stroke="#2f63c8" stroke-width="1.6"/>
+<path d="M70 402a7 7 0 0 1 7 -7h428.0a7 7 0 0 1 7 7v21h-442.0z" fill="#e8effc" stroke="#2f63c8" stroke-width="1.6"/>
+<text x="80" y="414" font-size="13" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">conversation</text>
+<rect x="70.8" y="423" width="440.4" height="20" fill="#f7f8fa"/>
+<text x="78" y="437" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">conversation_id</text>
+<text x="188.5" y="437" font-size="10.0" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">technician_id</text>
+<text x="286.4" y="437" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">created_at</text>
+<text x="403.2" y="437" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">updated_at</text>
+<path d="M70 443H512.0" stroke="#d9dee5"/>
+<rect x="70.8" y="444" width="440.4" height="18" fill="#d4f2df"/>
+<text x="78" y="457" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">15</text>
+<text x="188.5" y="457" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">4</text>
+<text x="286.4" y="457" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">2026-10-10 10:02</text>
+<text x="403.2" y="457" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">2026-10-10 10:02</text>
+<rect x="518.0" y="446" width="49.2" height="15" rx="7.5" fill="#0f7a5f"/>
+<text x="542.6" y="457" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">écrite</text>
+<text x="70" y="484" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">conversation_id = null → INSERT d&#x27;une nouvelle conversation (n° 15).</text>
+<rect x="70" y="506" width="420" height="71" rx="7" fill="#ffffff" stroke="#2f63c8" stroke-width="1.6"/>
+<path d="M70 513a7 7 0 0 1 7 -7h406a7 7 0 0 1 7 7v21h-420z" fill="#e8effc" stroke="#2f63c8" stroke-width="1.6"/>
+<text x="80" y="525" font-size="13" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">conversation_context</text>
+<rect x="70.8" y="534" width="418.4" height="20" fill="#f7f8fa"/>
+<text x="78" y="548" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">conversation_id</text>
+<text x="188.5" y="548" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">context</text>
+<text x="380.9" y="548" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">updated_at</text>
+<path d="M70 554H490" stroke="#d9dee5"/>
+<text x="78" y="568" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">—</text>
+<text x="188.5" y="568" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">aucune ligne → contexte = {}</text>
+<text x="380.9" y="568" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">—</text>
+<text x="70" y="595" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">SELECT … WHERE conversation_id = 15 → rien : la mémoire est vide.</text>
+<path d="M150 260 L150 340" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<circle cx="51" cy="635" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="51" y="639.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">2</text>
+<text x="70" y="640" font-size="14.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Vérifier et enregistrer le message</text>
+<text x="70" y="658" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">validate_and_clean_message (sans base) · save_message</text>
+<rect x="70" y="675" width="568.0" height="71" rx="7" fill="#ffffff" stroke="#2f63c8" stroke-width="1.6"/>
+<path d="M70 682a7 7 0 0 1 7 -7h554.0a7 7 0 0 1 7 7v21h-568.0z" fill="#e8effc" stroke="#2f63c8" stroke-width="1.6"/>
+<text x="80" y="694" font-size="13" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">conversation_message</text>
+<rect x="70.8" y="703" width="566.4" height="20" fill="#f7f8fa"/>
+<text x="78" y="717" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">message_id</text>
+<text x="157.0" y="717" font-size="10.0" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">conversation_id</text>
+<text x="267.5" y="717" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">role</text>
+<text x="308.7" y="717" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">content</text>
+<path d="M70 723H638.0" stroke="#d9dee5"/>
+<rect x="70.8" y="724" width="566.4" height="18" fill="#d4f2df"/>
+<text x="78" y="737" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">101</text>
+<text x="157.0" y="737" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">15</text>
+<text x="267.5" y="737" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">user</text>
+<text x="308.7" y="737" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Bonjour, sur le GAB Opteva 720 la carte est restée…</text>
+<rect x="644.0" y="726" width="49.2" height="15" rx="7.5" fill="#0f7a5f"/>
+<text x="668.6" y="737" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">écrite</text>
+<text x="70" y="764" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Le texte nettoyé est enregistré, qu&#x27;il soit valide ou non.</text>
+<text x="70" y="780" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Invalide (ex. « azertyuiop ») → réponse « reformule », Claude n&#x27;est pas appelé.</text>
+<circle cx="811" cy="100" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="811" y="104.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">3</text>
+<text x="830" y="105" font-size="14.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Claude comprend le message (appel 1, « compréhension »)</text>
+<text x="830" y="123" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">message_understanding_service.understand_message</text>
+<rect x="830" y="140" width="520" height="120" rx="12" fill="#fff8f1" stroke="#d9620f" stroke-width="1.4" stroke-dasharray="5 4"/>
+<text x="844" y="163" font-size="13.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Prompt envoyé à Claude (extrait)</text>
+<text x="844" y="184" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Analyse UNIQUEMENT le message suivant et renvoie</text>
+<text x="844" y="200" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">un JSON strict avec EXACTEMENT ces clés : intent,</text>
+<text x="844" y="216" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">device_type_text, model_name_text, error_code_text,</text>
+<text x="844" y="232" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">reformulated_problem_text …  Message : « Bonjour, sur… »</text>
+<path d="M730 200 L830 200" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<rect x="830" y="300" width="520" height="164.0" rx="9" fill="#fff8f1" stroke="#d9620f" stroke-width="1.2"/>
+<text x="842" y="318" font-size="12.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Réponse de Claude (JSON, du TEXTE uniquement, jamais d&#x27;ID)</text>
+<text x="842" y="334.0" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">{</text>
+<text x="842" y="350.5" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">  &quot;intent&quot;: &quot;diagnostic&quot;,</text>
+<text x="842" y="367.0" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">  &quot;device_type_text&quot;: &quot;gab&quot;,</text>
+<text x="842" y="383.5" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">  &quot;model_name_text&quot;: &quot;Opteva 720&quot;,</text>
+<text x="842" y="400.0" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">  &quot;error_code_text&quot;: &quot;E42&quot;,</text>
+<text x="842" y="416.5" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">  &quot;reformulated_problem_text&quot;:</text>
+<text x="842" y="433.0" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">      &quot;La carte reste bloquée dans le lecteur du GAB&quot;</text>
+<text x="842" y="449.5" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">}</text>
+<path d="M1090 260 L1090 300" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<rect x="1380" y="300" width="470" height="132" rx="9" fill="#f6f8fb" stroke="#c9d2de" stroke-width="1.2"/>
+<text x="1392" y="320" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Selon intent, la suite change :</text>
+<text x="1392" y="339" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">• diagnostic → recherche en base (schéma 3)</text>
+<text x="1392" y="358" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">• detail_request → lit conversation_context.last_search,</text>
+<text x="1392" y="377" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">  aucune recherche vectorielle</text>
+<text x="1392" y="396" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">• conversation → Claude répond directement,</text>
+<text x="1392" y="415" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">  aucune table métier n&#x27;est lue</text>
+<circle cx="811" cy="525" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="811" y="529.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">4</text>
+<text x="830" y="530" font-size="14.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Transformer les textes de Claude en ID de la base</text>
+<text x="830" y="548" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">technical_reference_resolver_service</text>
+<rect x="830" y="600" width="255.9" height="71" rx="7" fill="#ffffff" stroke="#5d6875" stroke-width="1.6"/>
+<path d="M830 607a7 7 0 0 1 7 -7h241.9a7 7 0 0 1 7 7v21h-255.9z" fill="#eceff2" stroke="#5d6875" stroke-width="1.6"/>
+<text x="840" y="619" font-size="13" font-weight="700" fill="#5d6875" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">device_model</text>
+<rect x="830.8" y="628" width="254.3" height="20" fill="#f7f8fa"/>
+<text x="838" y="642" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">model_id</text>
+<text x="904.4" y="642" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">manufacturer_id</text>
+<text x="1014.9" y="642" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">model_name</text>
+<path d="M830 648H1085.9" stroke="#d9dee5"/>
+<rect x="830.8" y="649" width="254.3" height="18" fill="#fff1b8"/>
+<text x="838" y="662" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">10</text>
+<text x="904.4" y="662" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="1014.9" y="662" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Opteva 720</text>
+<rect x="1091.9" y="651" width="30.6" height="15" rx="7.5" fill="#9a6b00"/>
+<text x="1107.2" y="662" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">lue</text>
+<text x="830" y="590" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">SELECT model_id FROM device_model WHERE UPPER(TRIM(model_name)) = &#x27;OPTEVA 720&#x27;</text>
+<rect x="830" y="720" width="492.4" height="90" rx="7" fill="#ffffff" stroke="#6b4fbf" stroke-width="1.6"/>
+<path d="M830 727a7 7 0 0 1 7 -7h478.4a7 7 0 0 1 7 7v21h-492.4z" fill="#efeafb" stroke="#6b4fbf" stroke-width="1.6"/>
+<text x="840" y="739" font-size="13" font-weight="700" fill="#6b4fbf" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">error_code</text>
+<rect x="830.8" y="748" width="490.79999999999995" height="20" fill="#f7f8fa"/>
+<text x="838" y="762" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">error_code_id</text>
+<text x="935.9" y="762" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">code</text>
+<text x="977.1" y="762" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">description</text>
+<text x="1264.0" y="762" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">fault_id</text>
+<path d="M830 768H1322.4" stroke="#d9dee5"/>
+<rect x="830.8" y="769" width="490.79999999999995" height="18" fill="#fff1b8"/>
+<text x="838" y="782" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="935.9" y="782" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">E42</text>
+<text x="977.1" y="782" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Capteur de rétention de carte ne répond pas</text>
+<text x="1264.0" y="782" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<rect x="1328.4" y="771" width="30.6" height="15" rx="7.5" fill="#9a6b00"/>
+<text x="1343.7" y="782" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">lue</text>
+<text x="838" y="801" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">2</text>
+<text x="935.9" y="801" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">E43</text>
+<text x="977.1" y="801" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Moteur du lecteur de carte bloqué</text>
+<text x="1264.0" y="801" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="830" y="710" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">SELECT error_code_id FROM error_code WHERE UPPER(code) = &#x27;E42&#x27;</text>
+<text x="830" y="828" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">&quot;gab&quot; n&#x27;est pas cherché en base : il est juste vérifié (valeur de l&#x27;ENUM device_type : gab | tpe).</text>
+<path d="M830 400 L800 400 L800 640 L830 640" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<circle cx="1391" cy="525" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="1391" y="529.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">5</text>
+<text x="1410" y="530" font-size="14.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">La mémoire est mise à jour… en Python</text>
+<text x="1410" y="548" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">pas encore écrite en base</text>
+<rect x="1410" y="565" width="440" height="133.5" rx="9" fill="#e8effc" stroke="#2f63c8" stroke-width="1.2"/>
+<text x="1422" y="585.0" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">context = {</text>
+<text x="1422" y="601.5" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">  &quot;device_type&quot;:   &quot;gab&quot;,</text>
+<text x="1422" y="618.0" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">  &quot;model_id&quot;:      10,</text>
+<text x="1422" y="634.5" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">  &quot;model_name&quot;:    &quot;Opteva 720&quot;,</text>
+<text x="1422" y="651.0" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">  &quot;error_code_id&quot;: 1,</text>
+<text x="1422" y="667.5" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">  &quot;error_code&quot;:    &quot;E42&quot;</text>
+<text x="1422" y="684.0" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">}</text>
+<path d="M1095.9 640 L1410 640" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<path d="M1332.4 760 L1380 760 L1380 700 L1410 700" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<rect x="1410" y="760" width="440" height="113" rx="9" fill="#f6f8fb" stroke="#c9d2de" stroke-width="1.2"/>
+<text x="1422" y="780" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Important :</text>
+<text x="1422" y="799" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">• Rien n&#x27;est encore « commité » : messages et contexte</text>
+<text x="1422" y="818" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">  partent ensemble en UN seul COMMIT à la fin (schéma 4).</text>
+<text x="1422" y="837" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">• model_id et error_code_id sont gardés en mémoire,</text>
+<text x="1422" y="856" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">  mais seul le NOM du modèle filtre la recherche.</text>
+<text x="40" y="850" font-size="13" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Légende</text>
+<rect x="40" y="861" width="26" height="14" rx="2" fill="#fff1b8" stroke="#c9d2de"/>
+<text x="76" y="872" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">ligne LUE par cette étape</text>
+<rect x="40" y="881" width="26" height="14" rx="2" fill="#d4f2df" stroke="#c9d2de"/>
+<text x="76" y="892" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">ligne ÉCRITE (INSERT / UPDATE) par cette étape</text>
+<text x="40" y="912" font-size="10.5" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK</text>
+<text x="64" y="912" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">clé primaire</text>
+<text x="160" y="912" font-size="10.5" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="184" y="912" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">clé étrangère (colonne bleue)</text>
+<path d="M40 928H80" stroke="#d9620f" stroke-width="2.4" marker-end="url(#flow-arrow)"/>
+<text x="90" y="932" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">flux de données (numéro = ordre)</text>
+</svg>

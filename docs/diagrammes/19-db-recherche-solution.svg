@@ -1,0 +1,284 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1790 1140" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Diagramme UML des tables de la recherche de solution">
+<defs><marker id="diamond" viewBox="0 0 16 10" refX="1" refY="5" markerWidth="14" markerHeight="9" orient="auto"><path d="M1 5L8 1L15 5L8 9z" fill="#3b4f66"/></marker><marker id="flow-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#d9620f"/></marker></defs>
+<rect width="1790" height="1140" fill="#ffffff"/>
+<text x="40" y="40" font-size="22" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">2 · Traitement d&#x27;une recherche de solution</text>
+<text x="40" y="63" font-size="13" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Comment une question devient une liste de cas réels, et comment une proposition approuvée enrichit cette base.</text>
+<path d="M330 280 L370 280" fill="none" stroke="#3b4f66" stroke-width="1.4"/>
+<text x="334" y="272" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">0..1</text>
+<text x="366" y="296" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<path d="M660 280 L700 280" fill="none" stroke="#3b4f66" stroke-width="1.4"/>
+<text x="664" y="272" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<text x="696" y="296" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<path d="M1030 270 L990 270" fill="none" stroke="#3b4f66" stroke-width="1.4"/>
+<text x="1026" y="262" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<text x="994" y="286" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<path d="M740 367 L740 420 L520 420 L520 470" fill="none" stroke="#3b4f66" stroke-width="1.4" marker-start="url(#diamond)"/>
+<text x="748" y="385" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<text x="528" y="464" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<rect x="559.2" y="412" width="121.60000000000001" height="16" rx="3" fill="#ffffff"/>
+<text x="620" y="424" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-style="italic" xml:space="preserve">symptômes observés</text>
+<path d="M850 367 L850 470" fill="none" stroke="#3b4f66" stroke-width="1.4" marker-start="url(#diamond)"/>
+<text x="858" y="385" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<text x="858" y="464" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<rect x="823.3" y="434" width="53.4" height="16" rx="3" fill="#ffffff"/>
+<text x="850" y="446" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-style="italic" xml:space="preserve">actions</text>
+<path d="M960 367 L960 420 L1180 420 L1180 470" fill="none" stroke="#3b4f66" stroke-width="1.4" marker-start="url(#diamond)"/>
+<text x="968" y="385" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<text x="1188" y="464" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<rect x="1079.5" y="412" width="41.0" height="16" rx="3" fill="#ffffff"/>
+<text x="1100" y="424" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-style="italic" xml:space="preserve">cause</text>
+<path d="M700 545 L660 545" fill="none" stroke="#3b4f66" stroke-width="1.4"/>
+<text x="696" y="538" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<text x="664" y="538" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">0..1</text>
+<rect x="662.6" y="550" width="34.8" height="16" rx="3" fill="#ffffff"/>
+<text x="680" y="562" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-style="italic" xml:space="preserve">vise</text>
+<path d="M520 607 L520 790" fill="none" stroke="#3b4f66" stroke-width="1.4"/>
+<text x="528" y="625" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<text x="528" y="784" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">0..1</text>
+<rect x="468.5" y="688" width="103.0" height="16" rx="3" fill="#ffffff"/>
+<text x="520" y="700" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-style="italic" xml:space="preserve">catalogué comme</text>
+<path d="M920 683 L920 740 L1180 740 L1180 790" fill="none" stroke="#3b4f66" stroke-width="1.4"/>
+<text x="928" y="701" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<text x="1188" y="784" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">0..1</text>
+<rect x="1005.4" y="732" width="109.2" height="16" rx="3" fill="#ffffff"/>
+<text x="1060" y="744" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-style="italic" xml:space="preserve">cataloguée comme</text>
+<path d="M660 840 L700 840" fill="none" stroke="#3b4f66" stroke-width="1.4"/>
+<text x="664" y="832" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<text x="696" y="832" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<path d="M1030 840 L990 840" fill="none" stroke="#3b4f66" stroke-width="1.4"/>
+<text x="1026" y="832" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<text x="994" y="832" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<path d="M330 830 L370 830" fill="none" stroke="#3b4f66" stroke-width="1.4"/>
+<text x="334" y="822" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">0..1</text>
+<text x="366" y="846" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<path d="M190 870 L190 985 L1250 985 L1250 889" fill="none" stroke="#3b4f66" stroke-width="1.4"/>
+<text x="198" y="888" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">0..1</text>
+<text x="1258" y="905" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<path d="M330 118 L700 118" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<circle cx="515" cy="118" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="515" y="122.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<path d="M120 160 L120 230" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<circle cx="120" cy="195" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="120" y="199.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">2</text>
+<path d="M250 160 L250 205 L440 205 L440 230" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<circle cx="345" cy="205" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="345" y="209.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">2</text>
+<path d="M60 160 L22 160 L22 520 L40 520" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<circle cx="22" cy="350" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="22" y="354.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">2</text>
+<path d="M800 160 L800 200 L682 200 L682 452 L600 452 L600 470" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<circle cx="682" cy="330" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="682" y="334.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">3</text>
+<path d="M990 560H1012M1030 530H1012" stroke="#d9620f" stroke-width="2.4" fill="none"/>
+<path d="M990 880 L1012 880 L1012 200 L1150 200 L1150 160" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<circle cx="1012" cy="360" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="1012" y="364.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">4</text>
+<path d="M1175 90 L1175 78 L185 78 L185 90" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<circle cx="680" cy="78" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="680" y="82.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">5</text>
+<path d="M700 670 L682 670 L682 1050 L660 1050" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<circle cx="682" cy="1010" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="682" y="1014.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">6</text>
+<path d="M660 1080 L845 1080 L845 946" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<circle cx="760" cy="1080" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="760" y="1084.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">6</text>
+<path d="M1320 1068 L1345 1068 L1345 645 L990 645" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<circle cx="1345" cy="860" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="1345" y="864.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">7</text>
+<path d="M1120 1030 L1120 889" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<circle cx="1120" cy="955" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="1120" y="959.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">8</text>
+<rect x="40" y="230" width="290" height="99" rx="8" fill="#ffffff" stroke="#5d6875" stroke-width="1.6"/>
+<path d="M40 238a8 8 0 0 1 8 -8h274a8 8 0 0 1 8 8v24h-290z" fill="#eceff2" stroke="#5d6875" stroke-width="1.6"/>
+<text x="185.0" y="251" font-size="13" font-weight="700" fill="#5d6875" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">device_model</text>
+<text x="51" y="277" font-size="10" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK</text>
+<text x="74" y="277" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">model_id</text>
+<text x="51" y="296" font-size="10" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="74" y="296" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">manufacturer_id</text>
+<text x="51" y="315" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">model_name</text>
+<rect x="370" y="230" width="290" height="137" rx="8" fill="#ffffff" stroke="#5d6875" stroke-width="1.6"/>
+<path d="M370 238a8 8 0 0 1 8 -8h274a8 8 0 0 1 8 8v24h-290z" fill="#eceff2" stroke="#5d6875" stroke-width="1.6"/>
+<text x="515.0" y="251" font-size="13" font-weight="700" fill="#5d6875" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">device</text>
+<text x="381" y="277" font-size="10" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK</text>
+<text x="404" y="277" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">device_id</text>
+<text x="381" y="296" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">device_type : gab | tpe</text>
+<text x="381" y="315" font-size="10" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="404" y="315" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">model_id</text>
+<text x="381" y="334" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">site_name</text>
+<text x="381" y="353" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">serial_number</text>
+<rect x="700" y="230" width="290" height="137" rx="8" fill="#ffffff" stroke="#0f7a5f" stroke-width="1.6"/>
+<path d="M700 238a8 8 0 0 1 8 -8h274a8 8 0 0 1 8 8v24h-290z" fill="#e3f4ee" stroke="#0f7a5f" stroke-width="1.6"/>
+<text x="845.0" y="251" font-size="13" font-weight="700" fill="#0f7a5f" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention</text>
+<text x="711" y="277" font-size="10" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK</text>
+<text x="734" y="277" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_id</text>
+<text x="711" y="296" font-size="10" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="734" y="296" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">device_id</text>
+<text x="711" y="315" font-size="10" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="734" y="315" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">technician_id</text>
+<text x="711" y="334" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">opened_at</text>
+<text x="711" y="353" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">final_outcome_status</text>
+<rect x="1030" y="230" width="290" height="80" rx="8" fill="#ffffff" stroke="#5d6875" stroke-width="1.6"/>
+<path d="M1030 238a8 8 0 0 1 8 -8h274a8 8 0 0 1 8 8v24h-290z" fill="#eceff2" stroke="#5d6875" stroke-width="1.6"/>
+<text x="1175.0" y="251" font-size="13" font-weight="700" fill="#5d6875" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">technician</text>
+<text x="1041" y="277" font-size="10" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK</text>
+<text x="1064" y="277" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">technician_id</text>
+<text x="1041" y="296" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">full_name</text>
+<rect x="40" y="470" width="290" height="118" rx="8" fill="#ffffff" stroke="#a46200" stroke-width="1.6"/>
+<path d="M40 478a8 8 0 0 1 8 -8h274a8 8 0 0 1 8 8v24h-290z" fill="#fbf0dc" stroke="#a46200" stroke-width="1.6"/>
+<text x="185.0" y="491" font-size="13" font-weight="700" fill="#a46200" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">error_code</text>
+<text x="51" y="517" font-size="10" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK</text>
+<text x="74" y="517" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">error_code_id</text>
+<text x="51" y="536" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">code (unique)</text>
+<text x="51" y="555" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">description</text>
+<text x="51" y="574" font-size="10" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="74" y="574" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">fault_id</text>
+<rect x="370" y="470" width="290" height="137" rx="8" fill="#ffffff" stroke="#0f7a5f" stroke-width="1.6"/>
+<path d="M370 478a8 8 0 0 1 8 -8h274a8 8 0 0 1 8 8v24h-290z" fill="#e3f4ee" stroke="#0f7a5f" stroke-width="1.6"/>
+<text x="515.0" y="491" font-size="13" font-weight="700" fill="#0f7a5f" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_symptom</text>
+<text x="381" y="517" font-size="10" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK</text>
+<text x="404" y="517" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_symptom_id</text>
+<text x="381" y="536" font-size="10" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="404" y="536" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_id</text>
+<text x="381" y="555" font-size="10" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="404" y="555" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">symptom_id (nullable)</text>
+<text x="381" y="574" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">raw_text</text>
+<text x="381" y="593" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">embedding : vector(1024)</text>
+<rect x="700" y="470" width="290" height="213" rx="8" fill="#ffffff" stroke="#0f7a5f" stroke-width="1.6"/>
+<path d="M700 478a8 8 0 0 1 8 -8h274a8 8 0 0 1 8 8v24h-290z" fill="#e3f4ee" stroke="#0f7a5f" stroke-width="1.6"/>
+<text x="845.0" y="491" font-size="13" font-weight="700" fill="#0f7a5f" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_action</text>
+<text x="711" y="517" font-size="10" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK</text>
+<text x="734" y="517" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_action_id</text>
+<text x="711" y="536" font-size="10" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="734" y="536" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_id</text>
+<text x="711" y="555" font-size="10" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="734" y="555" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">action_id</text>
+<text x="711" y="574" font-size="10" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="734" y="574" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">targets_symptom_id</text>
+<text x="711" y="593" font-size="10" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="734" y="593" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">source_proposal_id</text>
+<text x="711" y="612" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">raw_text</text>
+<text x="711" y="631" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">sequence_order</text>
+<text x="711" y="650" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">outcome_status</text>
+<text x="711" y="669" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">is_confirmed_solution</text>
+<rect x="1030" y="470" width="290" height="118" rx="8" fill="#ffffff" stroke="#0f7a5f" stroke-width="1.6"/>
+<path d="M1030 478a8 8 0 0 1 8 -8h274a8 8 0 0 1 8 8v24h-290z" fill="#e3f4ee" stroke="#0f7a5f" stroke-width="1.6"/>
+<text x="1175.0" y="491" font-size="13" font-weight="700" fill="#0f7a5f" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">diagnosis</text>
+<text x="1041" y="517" font-size="10" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK</text>
+<text x="1064" y="517" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">diagnosis_id</text>
+<text x="1041" y="536" font-size="10" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="1064" y="536" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_id</text>
+<text x="1041" y="555" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">description</text>
+<text x="1041" y="574" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">confirmed</text>
+<rect x="40" y="790" width="290" height="80" rx="8" fill="#ffffff" stroke="#a46200" stroke-width="1.6"/>
+<path d="M40 798a8 8 0 0 1 8 -8h274a8 8 0 0 1 8 8v24h-290z" fill="#fbf0dc" stroke="#a46200" stroke-width="1.6"/>
+<text x="185.0" y="811" font-size="13" font-weight="700" fill="#a46200" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">component</text>
+<text x="51" y="837" font-size="10" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK</text>
+<text x="74" y="837" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">component_id</text>
+<text x="51" y="856" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">name</text>
+<rect x="370" y="790" width="290" height="99" rx="8" fill="#ffffff" stroke="#a46200" stroke-width="1.6"/>
+<path d="M370 798a8 8 0 0 1 8 -8h274a8 8 0 0 1 8 8v24h-290z" fill="#fbf0dc" stroke="#a46200" stroke-width="1.6"/>
+<text x="515.0" y="811" font-size="13" font-weight="700" fill="#a46200" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">symptom</text>
+<text x="381" y="837" font-size="10" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK</text>
+<text x="404" y="837" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">symptom_id</text>
+<text x="381" y="856" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">canonical_text</text>
+<text x="381" y="875" font-size="10" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="404" y="875" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">component_id</text>
+<rect x="700" y="790" width="290" height="156" rx="8" fill="#ffffff" stroke="#b4384f" stroke-width="1.6"/>
+<path d="M700 798a8 8 0 0 1 8 -8h274a8 8 0 0 1 8 8v24h-290z" fill="#fbe7eb" stroke="#b4384f" stroke-width="1.6"/>
+<text x="845.0" y="811" font-size="11.5" font-weight="700" fill="#b4384f" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">symptom_action_outcome_stats</text>
+<text x="711" y="837" font-size="10" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK FK</text>
+<text x="755" y="837" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">symptom_id</text>
+<text x="711" y="856" font-size="10" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK FK</text>
+<text x="755" y="856" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">action_id</text>
+<text x="711" y="875" font-size="10" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK</text>
+<text x="734" y="875" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">device_type</text>
+<text x="711" y="894" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">attempts</text>
+<text x="711" y="913" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">successes</text>
+<text x="711" y="932" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">accuracy_score</text>
+<rect x="1030" y="790" width="290" height="99" rx="8" fill="#ffffff" stroke="#a46200" stroke-width="1.6"/>
+<path d="M1030 798a8 8 0 0 1 8 -8h274a8 8 0 0 1 8 8v24h-290z" fill="#fbf0dc" stroke="#a46200" stroke-width="1.6"/>
+<text x="1175.0" y="811" font-size="13" font-weight="700" fill="#a46200" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">action</text>
+<text x="1041" y="837" font-size="10" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK</text>
+<text x="1064" y="837" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">action_id</text>
+<text x="1041" y="856" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">canonical_text</text>
+<text x="1041" y="875" font-size="10" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="1064" y="875" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">component_id</text>
+<rect x="40" y="90" width="290" height="70" rx="12" fill="#fff8f1" stroke="#d9620f" stroke-width="1.4" stroke-dasharray="5 4"/>
+<text x="54" y="114" font-size="13.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Conversation</text>
+<text x="54" y="132" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">conversation_context (diagramme 1)</text>
+<rect x="700" y="90" width="290" height="70" rx="12" fill="#fff8f1" stroke="#d9620f" stroke-width="1.4" stroke-dasharray="5 4"/>
+<text x="714" y="114" font-size="13.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Voyage AI</text>
+<text x="714" y="132" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">vecteur de la question</text>
+<rect x="1030" y="90" width="290" height="70" rx="12" fill="#fff8f1" stroke="#d9620f" stroke-width="1.4" stroke-dasharray="5 4"/>
+<text x="1044" y="114" font-size="13.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Claude</text>
+<text x="1044" y="132" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">rédaction de la réponse</text>
+<rect x="370" y="1030" width="290" height="70" rx="12" fill="#fff8f1" stroke="#d9620f" stroke-width="1.4" stroke-dasharray="5 4"/>
+<text x="384" y="1054" font-size="13.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Job recompute_stats</text>
+<text x="384" y="1072" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">recalcule les taux de réussite</text>
+<rect x="1030" y="1030" width="290" height="76" rx="12" fill="#fff8f1" stroke="#d9620f" stroke-width="1.4" stroke-dasharray="5 4"/>
+<text x="1044" y="1054" font-size="13.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">solution_proposal approuvée</text>
+<text x="1044" y="1072" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">voir diagramme 1</text>
+<text x="1390" y="110" font-size="15" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Flux des données</text>
+<circle cx="1401" cy="134" r="11" fill="#d9620f"/>
+<text x="1401" y="138.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<text x="1420" y="139" font-size="13" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Vecteur de la question</text>
+<text x="1420" y="157" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Le problème reformulé (contexte) est</text>
+<text x="1420" y="173" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">transformé en vecteur par Voyage AI.</text>
+<circle cx="1401" cy="196" r="11" fill="#d9620f"/>
+<text x="1401" y="200.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">2</text>
+<text x="1420" y="201" font-size="13" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Filtres</text>
+<text x="1420" y="219" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Même type d&#x27;appareil (device.device_type),</text>
+<text x="1420" y="235" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">même modèle s&#x27;il est cité (device_model).</text>
+<text x="1420" y="251" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Le code est retrouvé (error_code) mais</text>
+<text x="1420" y="267" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">ne filtre pas encore la recherche.</text>
+<circle cx="1401" cy="290" r="11" fill="#d9620f"/>
+<text x="1401" y="294.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">3</text>
+<text x="1420" y="295" font-size="13" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Recherche par sens</text>
+<text x="1420" y="313" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">pgvector compare ce vecteur aux embeddings</text>
+<text x="1420" y="329" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">de intervention_symptom ; on garde les</text>
+<text x="1420" y="345" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">3 meilleures interventions.</text>
+<circle cx="1401" cy="368" r="11" fill="#d9620f"/>
+<text x="1401" y="372.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">4</text>
+<text x="1420" y="373" font-size="13" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Cas trouvés → Claude</text>
+<text x="1420" y="391" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Actions et résultats (intervention_action),</text>
+<text x="1420" y="407" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">cause (diagnosis), fiabilité (stats),</text>
+<text x="1420" y="423" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">technicien. Sans cas : plan B, les meilleures</text>
+<text x="1420" y="439" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">actions des stats (symptom + action).</text>
+<circle cx="1401" cy="462" r="11" fill="#d9620f"/>
+<text x="1401" y="466.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">5</text>
+<text x="1420" y="467" font-size="13" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Réponse</text>
+<text x="1420" y="485" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Claude rédige ; les résultats numérotés</text>
+<text x="1420" y="501" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">reviennent dans le contexte (diagramme 1).</text>
+<circle cx="1401" cy="524" r="11" fill="#d9620f"/>
+<text x="1401" y="528.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">6</text>
+<text x="1420" y="529" font-size="13" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Statistiques</text>
+<text x="1420" y="547" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Le job compte les actions confirmées, par</text>
+<text x="1420" y="563" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">symptôme catalogué et type d&#x27;appareil.</text>
+<circle cx="1401" cy="586" r="11" fill="#d9620f"/>
+<text x="1401" y="590.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">7</text>
+<text x="1420" y="591" font-size="13" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Rattachement</text>
+<text x="1420" y="609" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Proposition approuvée : nouvelle ligne</text>
+<text x="1420" y="625" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">intervention_action sur le cas de référence,</text>
+<text x="1420" y="641" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">ciblant le symptôme (targets_symptom_id).</text>
+<text x="1420" y="657" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Aucun embedding recalculé.</text>
+<circle cx="1401" cy="680" r="11" fill="#d9620f"/>
+<text x="1401" y="684.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">8</text>
+<text x="1420" y="685" font-size="13" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Catalogue</text>
+<text x="1420" y="703" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">L&#x27;action approuvée rejoint le catalogue</text>
+<text x="1420" y="719" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">action, ou réutilise une action équivalente.</text>
+<text x="1390" y="766" font-size="13" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Légende</text>
+<rect x="1390" y="777" width="15" height="15" rx="3" fill="#eceff2" stroke="#5d6875" stroke-width="1.4"/>
+<text x="1414" y="789" font-size="12" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Parc &amp; personnes</text>
+<rect x="1390" y="798" width="15" height="15" rx="3" fill="#e3f4ee" stroke="#0f7a5f" stroke-width="1.4"/>
+<text x="1414" y="810" font-size="12" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Historique des interventions</text>
+<rect x="1390" y="819" width="15" height="15" rx="3" fill="#fbf0dc" stroke="#a46200" stroke-width="1.4"/>
+<text x="1414" y="831" font-size="12" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Catalogue</text>
+<rect x="1390" y="840" width="15" height="15" rx="3" fill="#fbe7eb" stroke="#b4384f" stroke-width="1.4"/>
+<text x="1414" y="852" font-size="12" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Statistiques</text>
+<path d="M1404 868H1444" stroke="#3b4f66" stroke-width="1.4" marker-start="url(#diamond)"/>
+<text x="1454" y="872" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">clé étrangère (1, *, 0..1) ; ◆ = n&#x27;existe pas sans son parent</text>
+<path d="M1390 889H1444" stroke="#d9620f" stroke-width="2.4" marker-end="url(#flow-arrow)"/>
+<text x="1454" y="893" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">flux de données (numéro = étape)</text>
+<rect x="1390" y="901" width="54" height="17" rx="5" fill="#fff8f1" stroke="#d9620f" stroke-dasharray="5 4"/>
+<text x="1454" y="914" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">acteur ou système externe</text>
+</svg>

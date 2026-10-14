@@ -15,7 +15,7 @@ signatures ne changent pas.
 
 from __future__ import annotations
 
-import logging
+import math
 import re
 import time
 from abc import ABC, abstractmethod
@@ -26,11 +26,8 @@ from typing import Sequence
 import requests
 
 from app.core.config import settings
-from app.core.errors import ExternalServiceUnavailableError
+from app.core.errors import ExternalServiceUnavailableError, InvalidReferenceError
 from app.core.tracing import trace
-
-
-logger = logging.getLogger(__name__)
 
 
 DEFAULT_VOYAGE_MODEL_NAME = "voyage-3-large"
@@ -109,7 +106,7 @@ class VoyageProvider(EmbeddingProvider):
 
     def _request_embeddings(self, texts: list[str], is_query: bool) -> list[list[float]]:
         if not self.api_key:
-            raise RuntimeError("Aucune clé API Voyage configurée (VOYAGE_API_KEY).")
+            raise EmbeddingUnavailableError("Aucune clé API Voyage configurée (VOYAGE_API_KEY).")
 
         for tentative in range(1, _MAX_RETRIES_ON_RATE_LIMIT + 1):
             try:
@@ -124,16 +121,16 @@ class VoyageProvider(EmbeddingProvider):
                     },
                     timeout=self.timeout,
                 )
-            except requests.ConnectionError as erreur:
-                raise RuntimeError("Impossible de joindre l'API Voyage -- vérifiez la connexion réseau.") from erreur
             except requests.Timeout as erreur:
-                raise RuntimeError(f"Voyage n'a pas répondu dans le délai imparti ({self.timeout}s).") from erreur
+                raise EmbeddingUnavailableError(f"Voyage n'a pas répondu dans le délai imparti ({self.timeout}s).") from erreur
+            except requests.ConnectionError as erreur:
+                raise EmbeddingUnavailableError("Impossible de joindre l'API Voyage -- vérifiez la connexion réseau.") from erreur
             except requests.RequestException as erreur:
-                raise RuntimeError(f"Erreur réseau lors de l'appel Voyage ({type(erreur).__name__}).") from erreur
+                raise EmbeddingUnavailableError(f"Erreur réseau lors de l'appel Voyage ({type(erreur).__name__}).") from erreur
 
             if response.status_code == 429:
                 if tentative == _MAX_RETRIES_ON_RATE_LIMIT:
-                    raise RuntimeError(
+                    raise EmbeddingUnavailableError(
                         f"Limite de requêtes Voyage atteinte, {_MAX_RETRIES_ON_RATE_LIMIT} tentatives épuisées."
                     )
                 trace(
@@ -155,12 +152,12 @@ class VoyageProvider(EmbeddingProvider):
                 time.sleep(_RETRY_WAIT_SECONDS_ON_SERVER_ERROR)
                 continue
 
-            if response.status_code == 401:
-                raise RuntimeError("Clé API Voyage invalide ou expirée.")
+            if response.status_code in (401, 403):
+                raise EmbeddingUnavailableError("Clé API Voyage invalide ou expirée.")
             try:
                 response.raise_for_status()
             except requests.HTTPError as erreur:
-                raise RuntimeError(f"Voyage a répondu avec une erreur ({response.status_code}).") from erreur
+                raise EmbeddingUnavailableError(f"Voyage a répondu avec une erreur ({response.status_code}).") from erreur
 
             try:
                 payload = response.json()
@@ -168,16 +165,22 @@ class VoyageProvider(EmbeddingProvider):
                 # trié explicitement pour garantir le même ordre que `texts`,
                 # plutôt que de supposer que la réponse arrive déjà triée.
                 ordered = sorted(payload["data"], key=lambda item: item["index"])
+                if [item["index"] for item in ordered] != list(range(len(texts))):
+                    raise ValueError("Indices d'embeddings absents ou dupliqués.")
                 vectors = [item["embedding"] for item in ordered]
-            except (ValueError, KeyError, IndexError, TypeError) as erreur:
-                raise RuntimeError("Voyage n'a renvoyé aucun embedding exploitable pour cette requête.") from erreur
+                for vector in vectors:
+                    _validate_dimensions(vector, self.output_dimension)
+            except (ValueError, KeyError, IndexError, TypeError, OverflowError) as erreur:
+                raise EmbeddingUnavailableError(
+                    f"Voyage a renvoyé des embeddings inexploitables ({type(erreur).__name__}) : {erreur}"
+                ) from erreur
             if len(vectors) != len(texts):
-                raise RuntimeError(
+                raise EmbeddingUnavailableError(
                     f"Voyage a renvoyé {len(vectors)} embedding(s) pour {len(texts)} texte(s) envoyé(s)."
                 )
             return vectors
 
-        raise RuntimeError("Échec inattendu de l'appel Voyage.")  # ne devrait jamais être atteint
+        raise EmbeddingUnavailableError("Échec inattendu de l'appel Voyage.")
 
 
 def _resolve_provider(model_name_override: str | None) -> tuple[EmbeddingProvider, str]:
@@ -187,7 +190,7 @@ def _resolve_provider(model_name_override: str | None) -> tuple[EmbeddingProvide
     modifiant generate_embedding()/generate_embeddings_batch() ou leurs
     appelants.
     """
-    provider_name = settings.embedding_provider or "voyage"
+    provider_name = settings.embedding_provider
 
     if provider_name != "voyage":
         raise RuntimeError(
@@ -208,11 +211,13 @@ def _resolve_provider(model_name_override: str | None) -> tuple[EmbeddingProvide
 
 def _validate_dimensions(vector: Sequence[float], expected_dimensions: int) -> None:
     """
-    Vérifie que la dimension du vecteur correspond à celle attendue.
+    Vérifie la dimension et les valeurs du vecteur reçu.
 
     Un embedding ne doit pas être complété ou tronqué artificiellement :
     une différence de dimension indique une incompatibilité de configuration.
     """
+    if not isinstance(vector, (list, tuple)):
+        raise ValueError("L'embedding reçu n'est pas une liste de nombres.")
     actual_dimensions = len(vector)
 
     if actual_dimensions != expected_dimensions:
@@ -227,6 +232,13 @@ def _validate_dimensions(vector: Sequence[float], expected_dimensions: int) -> N
             f"le modèle produit {actual_dimensions} dimensions, "
             f"mais {expected_dimensions} sont configurées."
         )
+    if not vector or any(
+        isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)
+        for value in vector
+    ):
+        raise ValueError("L'embedding reçu contient des valeurs non numériques ou non finies.")
+    if not any(vector):
+        raise ValueError("Le fournisseur a renvoyé un embedding nul inexploitable.")
 
 
 def generate_embedding(
@@ -255,10 +267,7 @@ def generate_embedding(
     )
 
     if not cleaned_text:
-        logger.warning("[EMBEDDING] Texte vide : génération d'un vecteur nul")
-        vector = [0.0] * vector_dimensions
-        trace("EMBEDDING", "Vecteur nul généré pour un texte vide", dimensions=len(vector))
-        return vector
+        raise InvalidReferenceError("Un texte non vide est requis pour générer un embedding.")
 
     selected_model = model_name or settings.voyage_model or DEFAULT_VOYAGE_MODEL_NAME
 
@@ -278,7 +287,8 @@ def generate_embedding(
         else:
             provider, _ = _resolve_provider(model_name)
             vector = provider.embed(cleaned_text, is_query)
-    except Exception as error:
+        _validate_dimensions(vector, vector_dimensions)
+    except (RuntimeError, ValueError, TypeError, OverflowError) as error:
         trace(
             "ERROR",
             "Échec de la génération de l'embedding",
@@ -290,8 +300,6 @@ def generate_embedding(
         raise EmbeddingUnavailableError(
             f"Impossible de générer l'embedding avec le modèle '{selected_model}' : {error}"
         ) from error
-
-    _validate_dimensions(vector, vector_dimensions)
 
     trace(
         "EMBEDDING",
@@ -323,14 +331,10 @@ def generate_embeddings_batch(
     if not cleaned_texts:
         return []
 
-    # Même règle que generate_embedding() : un texte vide donne un vecteur
-    # nul, sans être envoyé au fournisseur (qui refuserait tout le lot).
-    non_empty_positions = [index for index, text in enumerate(cleaned_texts) if text]
-    if not non_empty_positions:
-        return [[0.0] * vector_dimensions for _ in cleaned_texts]
+    if not all(cleaned_texts):
+        raise InvalidReferenceError("Chaque texte du lot doit être non vide pour générer des embeddings.")
 
-    provider, selected_model = _resolve_provider(model_name)
-
+    selected_model = model_name or settings.voyage_model or DEFAULT_VOYAGE_MODEL_NAME
     trace(
         "EMBEDDING",
         "Génération groupée d'embeddings démarrée",
@@ -342,8 +346,13 @@ def generate_embeddings_batch(
 
     started_at = perf_counter()
     try:
-        computed = provider.embed_batch([cleaned_texts[index] for index in non_empty_positions], is_query)
-    except Exception as error:
+        provider, selected_model = _resolve_provider(model_name)
+        vectors = provider.embed_batch(cleaned_texts, is_query)
+        if len(vectors) != len(cleaned_texts):
+            raise ValueError("Le nombre d'embeddings reçus ne correspond pas au nombre de textes.")
+        for vector in vectors:
+            _validate_dimensions(vector, vector_dimensions)
+    except (RuntimeError, ValueError, TypeError, OverflowError) as error:
         trace(
             "ERROR",
             "Échec de la génération groupée d'embeddings",
@@ -355,13 +364,6 @@ def generate_embeddings_batch(
         raise EmbeddingUnavailableError(
             f"Impossible de générer les embeddings avec le modèle '{selected_model}' : {error}"
         ) from error
-
-    vectors: list[list[float]] = [[0.0] * vector_dimensions for _ in cleaned_texts]
-    for index, vector in zip(non_empty_positions, computed):
-        vectors[index] = vector
-
-    for vector in vectors:
-        _validate_dimensions(vector, vector_dimensions)
 
     trace(
         "EMBEDDING",
@@ -383,7 +385,9 @@ def _cached_query_embedding(cleaned_text: str, model_name: str | None) -> tuple[
     au prochain appel.
     """
     provider, _ = _resolve_provider(model_name)
-    return tuple(provider.embed(cleaned_text, True))
+    vector = provider.embed(cleaned_text, True)
+    _validate_dimensions(vector, settings.embedding_dimensions)
+    return tuple(vector)
 
 
 # Alias conservé pour les appels existants.

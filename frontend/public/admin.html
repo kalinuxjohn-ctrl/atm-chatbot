@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f3f6fa">
-    <meta name="description" content="Examen des solutions proposées par les techniciens.">
-    <title>Propositions | ATM-Chatbot</title>
+    <meta name="description" content="Administration du Copilote : propositions des techniciens, codes d’erreur et pannes fréquentes.">
+    <title>Administration | ATM-Chatbot</title>
     <link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/css/assets.css">
     <link rel="stylesheet" href="/css/style.css">
@@ -23,7 +23,7 @@
       <nav class="main-navigation" aria-label="Navigation principale">
         <a class="navigation-link" href="/">Accueil</a>
         <a class="navigation-link" href="/copilot.html">Copilote</a>
-        <a class="navigation-link navigation-link-active" href="/admin.html" aria-current="page">Propositions</a>
+        <a class="navigation-link navigation-link-active" href="/admin.html" aria-current="page">Administration</a>
       </nav>
       <a class="header-action" href="/">Retour à l’accueil <span aria-hidden="true">↗</span></a>
     </header>
@@ -31,8 +31,8 @@
     <main class="admin-main">
       <div class="admin-heading">
         <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span> Administration</p>
-        <h1>Solutions proposées par les techniciens</h1>
-        <p class="admin-intro">Une proposition approuvée rejoint le catalogue d’actions du Copilote. Une proposition rejetée reste dans l’historique.</p>
+        <h1>Administration du Copilote</h1>
+        <p class="admin-intro">Examinez les solutions proposées par les techniciens et gérez les réponses enregistrées que le Copilote donne sans IA : codes d’erreur connus et pannes fréquentes.</p>
       </div>
 
       <!-- Clé admin : ADMIN_API_KEY du serveur, gardée seulement pour cet onglet -->
@@ -45,17 +45,46 @@
           <span>Votre nom <em>(signature des décisions)</em></span>
           <input id="reviewer-name" name="reviewerName" type="text" maxlength="200" placeholder="Ex. Mme Martin">
         </label>
-        <button class="button button-primary" type="submit">Afficher les propositions</button>
+        <button class="button button-primary" type="submit">Se connecter</button>
       </form>
 
-      <div class="admin-tabs" role="tablist" aria-label="Statut des propositions">
-        <button class="admin-tab" type="button" role="tab" data-status="pending" aria-selected="true">En attente</button>
-        <button class="admin-tab" type="button" role="tab" data-status="approved" aria-selected="false">Approuvées</button>
-        <button class="admin-tab" type="button" role="tab" data-status="rejected" aria-selected="false">Rejetées</button>
-      </div>
+      <nav class="admin-sections" role="tablist" aria-label="Rubriques d’administration">
+        <button class="admin-section-tab" type="button" role="tab" id="tab-proposals" data-section="proposals" aria-controls="section-proposals" aria-selected="true">Propositions</button>
+        <button class="admin-section-tab" type="button" role="tab" id="tab-error-codes" data-section="error-codes" aria-controls="section-error-codes" aria-selected="false">Codes d’erreur</button>
+        <button class="admin-section-tab" type="button" role="tab" id="tab-usual-problems" data-section="usual-problems" aria-controls="section-usual-problems" aria-selected="false">Pannes fréquentes</button>
+      </nav>
 
-      <p class="admin-status" id="admin-status" role="status">Saisissez la clé administrateur pour afficher les propositions.</p>
-      <div class="proposal-list" id="proposal-list" aria-live="polite"></div>
+      <!-- Propositions de solution des techniciens -->
+      <section class="admin-section" id="section-proposals" role="tabpanel" aria-labelledby="tab-proposals">
+        <p class="admin-section-intro">Une proposition approuvée rejoint le catalogue d’actions du Copilote. Une proposition rejetée reste dans l’historique.</p>
+        <div class="admin-tabs" role="tablist" aria-label="Statut des propositions">
+          <button class="admin-tab" type="button" role="tab" data-status="pending" aria-selected="true">En attente</button>
+          <button class="admin-tab" type="button" role="tab" data-status="approved" aria-selected="false">Approuvées</button>
+          <button class="admin-tab" type="button" role="tab" data-status="rejected" aria-selected="false">Rejetées</button>
+        </div>
+        <p class="admin-status" id="admin-status" role="status">Saisissez la clé administrateur pour afficher les propositions.</p>
+        <div class="proposal-list" id="proposal-list" aria-live="polite"></div>
+      </section>
+
+      <!-- Codes d'erreur : menu « Codes d'erreur connus » du Copilote -->
+      <section class="admin-section" id="section-error-codes" role="tabpanel" aria-labelledby="tab-error-codes" hidden>
+        <div class="admin-section-header">
+          <p class="admin-section-intro">Un code apparaît dans le menu « Codes d’erreur connus » du Copilote s’il a un équipement et une réponse. Sans réponse, il reste trouvable par la recherche de codes.</p>
+          <button class="button button-primary" type="button" id="error-code-add">Ajouter un code</button>
+        </div>
+        <p class="admin-status" id="error-code-status" role="status">Saisissez la clé administrateur pour afficher les codes d’erreur.</p>
+        <div class="proposal-list" id="error-code-list" aria-live="polite"></div>
+      </section>
+
+      <!-- Pannes fréquentes : menu « Pannes fréquentes » du Copilote -->
+      <section class="admin-section" id="section-usual-problems" role="tabpanel" aria-labelledby="tab-usual-problems" hidden>
+        <div class="admin-section-header">
+          <p class="admin-section-intro">Chaque panne apparaît dans le menu « Pannes fréquentes » de son équipement, dans l’ordre indiqué. Le Copilote répond avec le texte enregistré, sans IA.</p>
+          <button class="button button-primary" type="button" id="usual-problem-add">Ajouter une panne</button>
+        </div>
+        <p class="admin-status" id="usual-problem-status" role="status">Saisissez la clé administrateur pour afficher les pannes fréquentes.</p>
+        <div class="proposal-list" id="usual-problem-list" aria-live="polite"></div>
+      </section>
     </main>
   </body>
 </html>

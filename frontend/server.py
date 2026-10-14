@@ -27,10 +27,10 @@ PROXY_TIMEOUT_SECONDS = int(os.environ.get("PROXY_TIMEOUT_SECONDS", "180"))
 FRONTEND_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 PUBLIC_DIRECTORY = os.path.join(FRONTEND_DIRECTORY, "public")
 
-# Certaines routes FastAPI sont DÉJÀ déclarées sous /api (routeurs chat, admin et
-# error_code) : on les relaie telles quelles. Les autres (/health, /catalog,
+# Certaines routes FastAPI sont DÉJÀ déclarées sous /api (routeurs chat, admin,
+# error_code et usual_problem) : on les relaie telles quelles. Les autres (/health, /catalog,
 # /interventions) n'ont pas ce préfixe : on retire alors le /api du proxy.
-BACKEND_PATHS_WITH_API_PREFIX = ("/api/chat", "/api/error_code", "/api/admin")
+BACKEND_PATHS_WITH_API_PREFIX = ("/api/chat", "/api/error_code", "/api/admin", "/api/usual_problem")
 
 # ---------- Synthèse vocale (edge-tts) ----------
 try:

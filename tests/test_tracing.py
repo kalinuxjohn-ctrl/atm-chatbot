@@ -6,6 +6,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+from sqlalchemy.exc import OperationalError
+
 from app import main
 from app.api.routes import chat as chat_routes
 from app.core import tracing
@@ -69,13 +71,13 @@ class TracingTests(unittest.TestCase):
         self.assertIn("[ERROR]", self.output.getvalue())
         self.assertNotIn("SECRET", self.output.getvalue())
 
-    def test_llm_failure_raises_without_fallback_and_uses_fallback_otherwise(self):
+    def test_llm_failure_raises_without_fallback(self):
         provider = MagicMock()
         provider.generate.side_effect = llm_service.LLMUnavailableError("Gemini a répondu avec une erreur (503).")
         with patch.object(llm_service, "get_llm_provider", return_value=provider):
             with self.assertRaises(llm_service.LLMUnavailableError):
                 llm_service.generate_reply("prompt")
-            self.assertEqual(llm_service.generate_reply("prompt", fallback="cas trouvés"), "cas trouvés")
+        provider.generate.assert_called_once_with("prompt")
 
     def test_empty_llm_reply_is_an_error(self):
         provider = MagicMock()
@@ -135,22 +137,20 @@ class TracingTests(unittest.TestCase):
         self.assertIn("method=pgvector", self.output.getvalue())
         self.assertNotIn("SECRET", self.output.getvalue())
 
-    def test_cosine_fallback_preserves_rollback_and_results(self):
+    def test_pgvector_failure_raises_without_another_search(self):
         db = MagicMock()
-        db.execute.side_effect = RuntimeError("SECRET_SQL")
-        candidate = {"symptom_id": 1, "similarity": 0.9}
+        db.execute.side_effect = OperationalError("SECRET_SQL", {}, Exception("unavailable"))
         with (
             patch.object(retrieval_service, "generate_embedding", return_value=[1.0, 0.0]),
-            patch.object(retrieval_service, "_fallback_cosine_search", return_value=[candidate]),
             patch.object(retrieval_service.settings, "symptom_similarity_threshold", 0.5),
         ):
-            result = retrieval_service.fetch_similar_symptoms(db, "SECRET_QUERY", "gab")
-        self.assertEqual(result, [candidate])
+            with self.assertRaises(main.ExternalServiceUnavailableError):
+                retrieval_service.fetch_similar_symptoms(db, "SECRET_QUERY", "gab")
+        db.execute.assert_called_once()
         # Seul le savepoint est annulé, jamais toute la transaction de l'appelant.
         db.begin_nested.return_value.rollback.assert_called_once()
         db.rollback.assert_not_called()
-        self.assertIn("method=python_cosine", self.output.getvalue())
-        self.assertIn("error_type=RuntimeError", self.output.getvalue())
+        self.assertIn("error_type=OperationalError", self.output.getvalue())
         self.assertNotIn("SECRET", self.output.getvalue())
 
     def test_conversation_branch_does_not_search(self):

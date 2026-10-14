@@ -7,7 +7,7 @@ Ce fichier permet de trouver les symptômes enregistrés qui ressemblent le plus
 - Convertit la recherche en vecteur d'embedding (via embeddings_service.generate_embedding --
   ce fichier ne sait RIEN du modèle utilisé derrière, local ou API externe demain).
 - Exécute un SELECT optimisé dans PostgreSQL (pgvector) pour trouver les résultats les plus proches.
-- Calcule la similarité à la main en Python (cosinus) si la BDD ne supporte pas l'extension vectorielle.
+- Remonte une erreur explicite si PostgreSQL/pgvector échoue, sans moteur de secours.
 - Élimine les candidats pas assez pertinents (seuil configurable, voir settings.symptom_similarity_threshold)
   avant qu'ils puissent influencer la recherche de solutions.
 - Va ensuite chercher, pour les symptômes catalogués jugés pertinents, les actions déjà
@@ -15,21 +15,23 @@ Ce fichier permet de trouver les symptômes enregistrés qui ressemblent le plus
   tpe), puisqu'une action validée sur un GAB n'a pas la même fiabilité sur un
   TPE (mécaniques différentes -- voir symptom_action_outcome_stats).
 
-Convention de score : "similarity", score élevé = plus pertinent, dans les
-DEUX chemins (pgvector et repli Python). pgvector renvoie nativement une
+Convention de score : "similarity", score élevé = plus pertinent.
+pgvector renvoie nativement une
 distance cosinus (0 = identique) ; elle est convertie en similarité
 (1 - distance) directement dans la requête SQL, pour que le reste du
 fichier -- et tout appelant externe -- n'ait jamais à connaître cette
-différence de convention entre les deux moteurs.
+convention de distance.
 """
 
 import math
 from typing import Sequence
 
 from sqlalchemy import bindparam, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.types import Integer
 
 from app.core.config import settings
+from app.core.errors import ExternalServiceUnavailableError
 from app.core.tracing import trace
 from app.services.embeddings_service import generate_embedding
 
@@ -65,23 +67,8 @@ def _clamp_limit(limit: int, default: int = DEFAULT_SYMPTOM_LIMIT) -> int:
     return min(limit, MAX_SYMPTOM_LIMIT)
 
 
-def _parse_vector_text(embedding_text: str | None) -> list[float]:
-    """'[0.1,0.2,...]' (format texte pgvector) -> liste de floats ; [] si la valeur est vide ou illisible."""
-    if not embedding_text:
-        return []
-    try:
-        return [float(value) for value in embedding_text.strip("[]").split(",") if value.strip()]
-    except ValueError:
-        return []
-
-
 def _apply_relevance_threshold(candidates: list[dict], threshold: float, method: str) -> list[dict]:
-    """
-    Filtre commun aux deux moteurs (pgvector et repli Python) -- c'est ICI,
-    et seulement ici, que la notion de "suffisamment pertinent" est
-    appliquée, pour qu'elle soit garantie identique quel que soit le
-    chemin emprunté.
-    """
+    """Applique le seuil de pertinence aux candidats vectoriels."""
     retained = [c for c in candidates if c["similarity"] >= threshold]
     eliminated_count = len(candidates) - len(retained)
 
@@ -124,48 +111,6 @@ def _model_filter_sql(model_name: str | None) -> tuple[str, dict]:
               )""",
         {"model_name": model_name},
     )
-
-
-def _fallback_cosine_search(
-    db, query_vector: Sequence[float], device_type: str, limit: int, model_name: str | None = None
-) -> list[dict]:
-    """
-    Repli quand pgvector est indisponible. Mêmes colonnes, même clé de
-    score ("similarity", élevé = pertinent), même tri que le chemin
-    pgvector -- ce n'est pas une deuxième logique, juste un calcul fait à
-    la main plutôt que par l'extension SQL.
-    """
-    model_filter, model_params = _model_filter_sql(model_name)
-    rows = db.execute(
-        text(
-            f"""
-            SELECT isym.intervention_symptom_id, isym.intervention_id,
-                   isym.symptom_id, isym.raw_text, isym.embedding::text AS embedding_text
-            FROM intervention_symptom isym
-            JOIN intervention iv ON iv.intervention_id = isym.intervention_id
-            JOIN device d ON d.device_id = iv.device_id
-            WHERE isym.embedding IS NOT NULL
-              AND d.device_type = :device_type{model_filter}
-            """
-        ),
-        {"device_type": device_type, **model_params},
-    ).mappings().all()
-
-    scored = []
-    for row in rows:
-        vector = _parse_vector_text(row["embedding_text"])
-        similarity = cosine_similarity(query_vector, vector)
-        scored.append(
-            {
-                "intervention_symptom_id": row["intervention_symptom_id"],
-                "intervention_id": row["intervention_id"],
-                "symptom_id": row["symptom_id"],
-                "raw_text": row["raw_text"],
-                "similarity": similarity,
-            }
-        )
-    scored.sort(key=lambda item: item["similarity"], reverse=True)
-    return scored[:limit]
 
 
 def fetch_similar_symptoms(
@@ -237,10 +182,10 @@ def fetch_similar_symptoms(
         candidates = [dict(row) for row in rows]
         savepoint.commit()
         method = "pgvector"
-    except Exception as error:
+    except SQLAlchemyError as error:
         trace(
-            "SEARCH",
-            "Recherche pgvector indisponible, utilisation du repli cosinus",
+            "ERROR",
+            "Échec de la recherche PostgreSQL/pgvector",
             error_type=type(error).__name__,
         )
         # Indispensable : la requête précédente a échoué et a laissé la
@@ -248,8 +193,9 @@ def fetch_similar_symptoms(
         # la même session échouerait avec InFailedSqlTransaction tant qu'on
         # n'est pas revenu au savepoint.
         savepoint.rollback()
-        candidates = _fallback_cosine_search(db, query_vector, device_type, limit, model_name=model_name)
-        method = "python_cosine"
+        raise ExternalServiceUnavailableError(
+            f"Recherche PostgreSQL/pgvector indisponible ({type(error).__name__})."
+        ) from error
 
     trace("SEARCH", "Candidats vectoriels récupérés avant filtrage", count=len(candidates), method=method)
     return _apply_relevance_threshold(candidates, threshold, method)
@@ -266,11 +212,10 @@ def find_best_catalog_match(
     NULL) pour ce device_type, celui dont la formulation passée est la plus
     proche de raw_text.
 
-    INCHANGÉE par ce refactor : cette fonction garde sa convention "distance"
+    Cette fonction garde sa convention "distance"
     (plus bas = plus proche), utilisée ailleurs avec son propre seuil
-    (settings.symptom_catalog_match_max_distance, dans du code non modifié
-    ici) -- la faire basculer vers "similarity" casserait ce contrat sans
-    visibilité sur son appelant.
+    (settings.symptom_catalog_match_max_distance). Une panne pgvector
+    remonte une erreur explicite, sans recherche alternative.
     """
     cleaned_text = _clean_search_text(raw_text)
     if not cleaned_text:
@@ -305,32 +250,12 @@ def find_best_catalog_match(
         ).mappings().first()
         savepoint.commit()
         return dict(row) if row else None
-    except Exception:
+    except SQLAlchemyError as error:
         savepoint.rollback()
-        rows = db.execute(
-            text(
-                """
-                SELECT isym.symptom_id, isym.embedding::text AS embedding_text
-                FROM intervention_symptom isym
-                JOIN intervention iv ON iv.intervention_id = isym.intervention_id
-                JOIN device d ON d.device_id = iv.device_id
-                WHERE isym.embedding IS NOT NULL
-                  AND isym.symptom_id IS NOT NULL
-                  AND d.device_type = :device_type
-                """
-            ),
-            {"device_type": device_type},
-        ).mappings().all()
-
-        best = None
-        for row in rows:
-            vector = _parse_vector_text(row["embedding_text"])
-            if not vector:
-                continue
-            distance = 1.0 - cosine_similarity(query_vector, vector)
-            if best is None or distance < best["distance"]:
-                best = {"symptom_id": row["symptom_id"], "distance": distance}
-        return best
+        trace("ERROR", "Échec du rattachement au catalogue via pgvector", error_type=type(error).__name__)
+        raise ExternalServiceUnavailableError(
+            f"Rattachement au catalogue PostgreSQL/pgvector indisponible ({type(error).__name__})."
+        ) from error
 
 
 def store_symptom_embedding(db, intervention_symptom_id: int, vector: Sequence[float]) -> None:

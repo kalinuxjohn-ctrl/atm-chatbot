@@ -64,13 +64,13 @@ class GeminiProvider(LLMProvider):
                 json={"contents": [{"parts": [{"text": prompt}]}]},
                 timeout=self.timeout,
             )
-        except requests.ConnectionError as erreur:
-            raise LLMUnavailableError(
-                "Impossible de joindre l'API Gemini -- vérifiez la connexion réseau du conteneur."
-            ) from erreur
         except requests.Timeout as erreur:
             raise LLMUnavailableError(
                 f"Gemini n'a pas répondu dans le délai imparti ({self.timeout}s)."
+            ) from erreur
+        except requests.ConnectionError as erreur:
+            raise LLMUnavailableError(
+                "Impossible de joindre l'API Gemini -- vérifiez la connexion réseau du conteneur."
             ) from erreur
         except requests.RequestException as erreur:
             raise LLMUnavailableError(
@@ -91,7 +91,10 @@ class GeminiProvider(LLMProvider):
             raise LLMUnavailableError(f"Gemini a répondu avec une erreur ({response.status_code}).") from erreur
 
         try:
-            return response.json()["candidates"][0]["content"]["parts"][0]["text"]
+            reply = response.json()["candidates"][0]["content"]["parts"][0]["text"]
+            if not isinstance(reply, str) or not reply.strip():
+                raise ValueError("Texte absent ou vide.")
+            return reply
         except (ValueError, KeyError, IndexError, TypeError) as erreur:
             # Arrive par exemple si Gemini bloque la réponse (finishReason="SAFETY") --
             # pas une panne réseau, mais pas de texte exploitable non plus.
@@ -136,20 +139,20 @@ class ClaudeProvider(LLMProvider):
                 },
                 timeout=self.timeout,
             )
-        except requests.ConnectionError as erreur:
-            raise LLMUnavailableError(
-                "Impossible de joindre l'API Claude -- vérifiez la connexion réseau du conteneur."
-            ) from erreur
         except requests.Timeout as erreur:
             raise LLMUnavailableError(
                 f"Claude n'a pas répondu dans le délai imparti ({self.timeout}s)."
+            ) from erreur
+        except requests.ConnectionError as erreur:
+            raise LLMUnavailableError(
+                "Impossible de joindre l'API Claude -- vérifiez la connexion réseau du conteneur."
             ) from erreur
         except requests.RequestException as erreur:
             raise LLMUnavailableError(
                 f"Erreur réseau lors de l'appel à Claude ({type(erreur).__name__})."
             ) from erreur
 
-        if response.status_code == 401:
+        if response.status_code in (401, 403):
             raise LLMUnavailableError("Clé API Claude invalide ou expirée.")
         if response.status_code == 429:
             raise LLMUnavailableError("Limite de requêtes Claude atteinte -- réessayez plus tard.")
@@ -163,7 +166,12 @@ class ClaudeProvider(LLMProvider):
         try:
             # Le premier bloc n'est pas forcément du texte : on prend le premier bloc "text".
             blocks = response.json()["content"]
-            return next(block["text"] for block in blocks if block.get("type") == "text")
+            if not isinstance(blocks, list) or not all(isinstance(block, dict) for block in blocks):
+                raise ValueError("Blocs de contenu non conformes.")
+            reply = next(block["text"] for block in blocks if block.get("type") == "text")
+            if not isinstance(reply, str) or not reply.strip():
+                raise ValueError("Texte absent ou vide.")
+            return reply
         except (ValueError, KeyError, IndexError, TypeError, StopIteration) as erreur:
             raise LLMUnavailableError("Claude n'a renvoyé aucun texte exploitable pour cette requête.") from erreur
 
@@ -193,19 +201,12 @@ def get_llm_provider() -> LLMProvider:
         )
 
 
-def generate_reply(prompt: str, fallback: str | None = None) -> str:
+def generate_reply(prompt: str) -> str:
     """
     Demande une réponse au LLM configuré.
 
-    LLM indisponible (réseau, surcharge 503, quota, mauvaise config...) ou
-    réponse vide :
-    - SANS `fallback` : lève LLMUnavailableError. La requête HTTP se termine
-      alors en 503 et le technicien voit « chatbot saturé » -- jamais le
-      message technique, qui trahirait le fournisseur d'IA utilisé.
-    - AVEC `fallback` : renvoie ce texte déjà prêt à la place. Réservé aux
-      cas où l'appelant a des données factuelles à montrer même sans
-      reformulation (ex. les cas trouvés dans l'historique).
-    Dans les deux cas, la cause précise est écrite dans les journaux.
+    Toute panne ou réponse inexploitable lève LLMUnavailableError :
+    aucun texte de secours ni changement implicite de fournisseur.
     """
     try:
         reply = get_llm_provider().generate(prompt)
@@ -214,10 +215,8 @@ def generate_reply(prompt: str, fallback: str | None = None) -> str:
         if not isinstance(reply, str) or not reply.strip():
             raise LLMUnavailableError("Le LLM a répondu sans aucun texte.")
     except LLMUnavailableError as erreur:
-        if fallback is None:
-            raise
-        trace("ERROR", "LLM indisponible, texte de secours utilisé", cause=str(erreur))
-        return fallback
+        trace("ERROR", "Échec de l'appel au LLM", cause=str(erreur))
+        raise
     return reply.strip()
 
 

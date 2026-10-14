@@ -78,7 +78,7 @@ def understand_message(technician_message: str, device_type: str | None = None) 
     try:
         parsed = _parse_json_response(raw_response)
         understood = UnderstoodMessage(**parsed)
-    except Exception as error:
+    except (ValueError, TypeError) as error:
         # La réponse brute n'est pas journalisée : elle peut reprendre le
         # texte du technicien.
         trace("ERROR", "Réponse de compréhension inexploitable", error_type=type(error).__name__)

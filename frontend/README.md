@@ -28,7 +28,7 @@ Correspondance des chemins dans le proxy (`server.py`) :
 | Appel du navigateur | Route backend |
 | --- | --- |
 | `/api/chat`, `/api/chat/search-symptom` | identiques (le routeur FastAPI est déjà préfixé par `/api`) |
-| `/api/error_code/...` | identique |
+| `/api/error_code/...`, `/api/usual_problem/...` | identiques |
 | `/api/health`, `/api/catalog/...`, `/api/interventions/...` | `/api` retiré : `/health`, `/catalog/...`, `/interventions/...` |
 
 Le premier appel au LLM peut dépasser une minute (chargement du modèle) : le proxy attend jusqu’à 180 s (`PROXY_TIMEOUT_SECONDS`).
@@ -71,6 +71,7 @@ Dans ce mode, il utilise par défaut `http://127.0.0.1:8000` comme adresse de l�
 | `copilot.html` | Copilote : sidebar rétractable, chat écrit, dictée, Chat vocal immersif, panneau de contexte, paramètres. |
 | `diagnostic.html` | Recherche directe dans l’historique des symptômes. |
 | `flow-presentation.html` | Présentation animée du flux de connexion simulée et de traitement d’un message. |
+| `admin.html` | Administration (clé `ADMIN_API_KEY`) : propositions des techniciens, codes d’erreur et pannes fréquentes du Copilote. |
 
 ## Structure
 
@@ -84,9 +85,6 @@ public/
 │   ├── home.css          animations de l’accueil
 │   ├── copilot.css       page Copilote complète (palette bleue, sidebar, chat, Chat vocal, paramètres, responsive)
 │   └── responsive.css    petits écrans des pages Accueil / Diagnostic + prefers-reduced-motion
-├── data/
-│   └── error-codes/      codes d'erreur fréquents : un JSON par code, réponse affichée SANS backend
-│                         (mode d'emploi : data/error-codes/README.md)
 └── js/
     ├── config.js                     constantes (URL API, langue, mode démo)
     ├── core/httpClient.js            SEUL endroit qui appelle fetch
@@ -95,7 +93,6 @@ public/
     │   │   └── mocks.js              réponses simulées
     │   ├── speech/                   reconnaissance vocale, synthèse vocale, niveau du micro
     │   ├── conversationService.js    fil de conversation partagé texte + voix
-    │   ├── knownErrorCodesService.js lecture et vérification des fichiers data/error-codes/
     │   ├── preferencesService.js     paramètres (localStorage)
     │   └── sessionService.js         technicien connecté
     ├── components/
@@ -105,7 +102,7 @@ public/
     │   ├── contextPanel.js           panneau "Contexte" (colonne ou tiroir)
     │   ├── chatView.js               affichage des messages
     │   ├── devicePicker.js           sélecteur GAB / TPE
-    │   ├── suggestions.js            bulles (codes d'erreur connus + cas fréquents) + animation vers la conversation
+    │   ├── suggestions.js            menus « Pannes fréquentes » et « Codes d'erreur connus » (données et réponses lues par le backend, sans IA)
     │   ├── composerDictation.js      micro de la zone de saisie (dictée)
     │   ├── voiceMode.js              Chat vocal immersif
     │   ├── settingsPanel.js          paramètres (avatar, voix française, options)

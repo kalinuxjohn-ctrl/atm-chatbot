@@ -5,7 +5,7 @@ Modèles ORM pour le référentiel des codes d'erreur affichés sur les
 jamais de pipeline vectoriel ici.
 """
 
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Column, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -33,5 +33,9 @@ class ErrorCode(Base):
     code = Column(String, nullable=False)
     description = Column(String)
     fault_id = Column(Integer, ForeignKey("fault.fault_id"))
+    # Réponse enregistrée du menu « Codes d'erreur connus » (migration 0011) :
+    # le code n'y apparaît que si ces deux colonnes sont remplies.
+    device_type = Column(Enum("gab", "tpe", name="device_type", create_type=False))
+    reply = Column(String)
 
     fault = relationship("Fault")
