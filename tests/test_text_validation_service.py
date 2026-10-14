@@ -109,9 +109,13 @@ class OrchestratorValidationTests(unittest.TestCase):
             "save_message": patch.object(orchestrator.conversation_service, "save_message"),
             "save_context": patch.object(orchestrator.context_service, "save_context"),
             "active": patch.object(orchestrator.conversation_service, "mark_conversation_active"),
+            "history": patch.object(
+                orchestrator.conversation_service, "get_recent_messages",
+                return_value=[SimpleNamespace(role="user", content="avant"), SimpleNamespace(role="assistant", content="réponse")],
+            ),
             "understand": patch.object(
                 orchestrator.message_understanding_service, "understand_message",
-                return_value=UnderstoodMessage(intent="conversation"),
+                return_value=UnderstoodMessage(intent="conversation", reply="reply"),
             ),
             "route": patch.object(orchestrator, "_route_message", return_value="reply"),
             "llm": patch.object(orchestrator.llm_service, "generate_reply"),
@@ -131,7 +135,7 @@ class OrchestratorValidationTests(unittest.TestCase):
                     result,
                     {"conversation_id": 7, "reply": REFORMULATION_REPLY, "solution_proposal_available": False},
                 )
-        for name in ("understand", "route", "llm", "summarize", "search"):
+        for name in ("history", "understand", "route", "llm", "summarize", "search"):
             self.mocks[name].assert_not_called()
         self.assertEqual(self.context["last_search"], {"results": [{"position": 1}]})
         self.assertEqual(self.mocks["save_message"].call_count, 2 * (len(NOISE_MESSAGES) + 1))
@@ -140,7 +144,15 @@ class OrchestratorValidationTests(unittest.TestCase):
     def test_accepted_text_is_cleaned_at_every_step(self):
         result = orchestrator.handle_chat_message(self.db, 7, 1, "  VPN\t KO\u200b  ")
         self.assertEqual(result["reply"], "reply")
-        self.mocks["understand"].assert_called_once_with("VPN KO", device_type="gab")
+        self.mocks["understand"].assert_called_once()
+        call = self.mocks["understand"].call_args
+        self.assertEqual(call.args, ("VPN KO",))
+        self.assertEqual(call.kwargs["device_type"], "gab")
+        # Toute la conversation précédente est transmise au LLM, sans le message courant.
+        self.assertEqual(
+            call.kwargs["history"],
+            [{"role": "user", "content": "avant"}, {"role": "assistant", "content": "réponse"}],
+        )
         self.assertEqual(self.mocks["route"].call_args.args[2], "VPN KO")
         self.mocks["save_message"].assert_any_call(self.db, 7, "user", "VPN KO")
         self.mocks["save_message"].assert_any_call(self.db, 7, "assistant", "reply")

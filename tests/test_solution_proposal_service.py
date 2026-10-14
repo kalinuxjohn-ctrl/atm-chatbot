@@ -396,12 +396,13 @@ class CaseDisplayTests(unittest.TestCase):
             "final_outcome_status": "resolved",
             "confidence": None,
             "actions": [
-                {"description": "Nettoyer le lecteur", "is_confirmed_solution": False, "proposed_by": None},
+                {"description": "Nettoyer le lecteur", "outcome_status": "no_effect",
+                 "is_confirmed_solution": False, "proposed_by": None},
                 {"description": "Remplacer le capteur", "is_confirmed_solution": True, "proposed_by": "Alan"},
             ],
         }
         text = orchestrator._format_case(case, 1)
-        self.assertIn("actions tentées : Nettoyer le lecteur,", text)
+        self.assertIn("actions tentées : Nettoyer le lecteur (sans effet),", text)
         self.assertIn("Solution ajoutée ensuite, proposée par Alan et validée par un administrateur : Remplacer le capteur", text)
         self.assertNotIn("Nettoyer le lecteur puis Remplacer le capteur", text)
 

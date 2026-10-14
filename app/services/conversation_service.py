@@ -58,10 +58,9 @@ def save_message(db: Session, conversation_id: int, role: str, content: str) -> 
 
 def get_recent_messages(db: Session, conversation_id: int, limit: int = 10) -> list[ConversationMessage]:
     """
-    Les `limit` derniers messages, en ordre chronologique. Volontairement
-    PAS l'historique complet (spec §3/§11) -- utile seulement si on veut un
-    jour ajouter un peu de fil conversationnel brut en plus du contexte
-    structuré, pas utilisé par le workflow actuel.
+    Les `limit` derniers messages, en ordre chronologique. Sert à envoyer la
+    conversation au LLM à chaque message (chat_orchestrator_service, limite
+    settings.chat_history_max_messages) et à la photo d'une proposition de solution.
     """
     return (
         db.query(ConversationMessage)

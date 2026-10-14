@@ -93,8 +93,9 @@ Le technicien 4 écrit : *« Bonjour, sur le GAB Opteva 720 la carte est restée
 
 **Le champ `intent` décide de la suite :**
 - `diagnostic` → recherche en base (étape 3) ;
-- `detail_request` → lecture de `conversation_context.last_search`, sans recherche vectorielle ;
-- `conversation` → Claude répond directement, sans lire aucune table métier.
+- `conversation` → tout le reste (demande de détail, suivi, question générale) :
+  Claude a déjà rédigé sa réponse dans le même appel, avec toute la conversation
+  et les résultats de `conversation_context.last_search` relus en base.
 
 ---
 
@@ -164,11 +165,12 @@ Contenu de `conversation_context.context` après ce message :
 ```
 
 3. **Message suivant, « détaille le deuxième »** :
-   - Claude classe le message en `detail_request` ;
-   - le backend lit `last_search.results`, trouve la position 2, donc l'intervention 3045 ;
-   - `build_case(3045)` relit le dossier de cette intervention ;
-   - Claude explique ce cas ;
-   - le backend écrit `selected_result` dans le contexte.
+   - avant l'appel, le backend lit `last_search.results` et relit chaque cas
+     en base (`build_case(3001)`, `build_case(3045)`) ;
+   - Claude reçoit toute la conversation et ces cas, classe le message en
+     `conversation`, explique le cas 2 et renvoie `result_position = 2` ;
+   - le backend vérifie que la position 2 existe et écrit `selected_result`
+     (intervention 3045) dans le contexte.
 
    Il n'y a **aucun embedding ni aucune requête pgvector** à cette étape.
 

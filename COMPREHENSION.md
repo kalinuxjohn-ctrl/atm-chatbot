@@ -90,17 +90,18 @@ c'est ce qui relie les messages entre eux.
 
 ## 5. Comment le message est aiguillé (`_route_message`)
 
-Dans `chat_orchestrator_service.py`, **dans cet ordre** :
+Le message validé part en **un seul appel LLM** (`message_understanding_service`)
+avec toute la conversation (mise en cache chez Claude) et le détail des résultats de
+la dernière recherche relus en base (`_describe_last_search`). Le LLM renvoie
+une intention, et sa réponse si ce n'est pas un diagnostic. Puis, dans
+`chat_orchestrator_service.py` :
 
-1. **Le message cite une position ET une recherche existe déjà** dans le
-   contexte (« donne-moi plus d'aide sur le **deuxième** ») →
-   `_handle_result_detail_request` : on recharge ce cas précis depuis la base
-   et le LLM répond **uniquement** à partir de ce cas.
-2. **Le message ressemble à un symptôme** (`_looks_like_symptom_description`) :
-   au moins 15 caractères et pas de mot de relance (« pourquoi », « quelle
-   action », « plus de détail »…) → `_handle_symptom_search` : recherche
+1. **`diagnostic`** (nouvelle panne) → `_handle_symptom_search` : recherche
    sémantique, puis résumé LLM.
-3. **Sinon** → réponse courte du LLM, sans données techniques.
+2. **`conversation`** (tout le reste : « détaille le cas 2 », « ça n'a pas
+   marché », l'heure…) → la réponse du LLM est renvoyée telle quelle. Si le LLM
+   indique un résultat (`result_position`), le backend vérifie qu'il existe
+   dans la dernière recherche et le retient comme `selected_result`.
 
 ---
 
@@ -179,18 +180,17 @@ Contenu typique du contexte :
 Comment ça marche :
 - après chaque recherche, `record_last_search()` mémorise **les cas affichés
   avec leur numéro** (et efface l'ancienne sélection) ;
-- quand le technicien écrit « le **deuxième** », `resolve_position_reference()`
-  trouve **2** grâce à une simple table d'ordinaux (premier/1er … quatrième/4ème),
-  **sans LLM** : c'est 100 % prévisible ;
-- `select_result_by_position()` retrouve l'`intervention_id` correspondant ;
-  le cas est **relu en base** (`build_case`) puis envoyé au LLM avec la question ;
+- à chaque message, les résultats mémorisés sont **relus en base**
+  (`build_case`) et envoyés au LLM avec toute la conversation : c'est lui qui
+  comprend « le **cas 2** », « le deuxième » ou « celui d'Alan » ;
+- le LLM renvoie le numéro du résultat visé ; `select_result_by_position()`
+  vérifie qu'il existe et le retient (référence d'une proposition de solution) ;
 - `device_type` est mémorisé une fois et réutilisé aux tours suivants.
 
 **Limites actuelles, à connaître :**
-- une relance **sans ordinal** (« pourquoi ? », « plus de détail ») n'est pas
-  reliée au cas précédent : elle part dans la réponse LLM générique ;
-- l'historique brut des messages est stocké mais **pas renvoyé au LLM**
-  (`conversation_service.get_recent_messages()` existe mais n'est pas utilisée) ;
+- les échanges des menus de suggestions (pannes fréquentes, codes d'erreur)
+  ne sont pas enregistrés côté backend : le LLM ne les voit pas ;
+- l'historique envoyé est limité aux `CHAT_HISTORY_MAX_MESSAGES` (100) derniers messages ;
 - si aucun `device_type` n'a été donné, la recherche filtre sur `NULL` et ne
   trouve rien : le front doit l'envoyer au moins au premier message ;
 - un `technician_id` inexistant provoque une erreur de clé étrangère (500).

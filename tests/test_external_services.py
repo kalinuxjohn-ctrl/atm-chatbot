@@ -192,27 +192,27 @@ class ExternalPipelineTests(unittest.TestCase):
         self.assertEqual(provider.embed.call_count, 2)
 
     def test_understanding_rejects_invalid_content(self):
-        for response in ('{}', '{"intent":"unknown"}', "not JSON", None):
+        # '{"intent":"conversation"}' : hors diagnostic, une réponse est obligatoire.
+        for response in ('{}', '{"intent":"unknown"}', '{"intent":"conversation"}', "not JSON", None):
             with self.subTest(response=response):
-                with patch.object(llm_service, "generate_reply", return_value=response):
+                with patch.object(llm_service, "generate_chat_reply", return_value=response):
                     with self.assertRaises(llm_service.LLMUnavailableError):
                         understanding.understand_message("message")
 
-    def test_case_summary_and_detail_do_not_hide_llm_failures(self):
+    def test_case_summary_does_not_hide_llm_failures(self):
         failure = llm_service.LLMUnavailableError("unavailable")
         with (
             patch.object(orchestrator, "_format_case", return_value="case text"),
             patch.object(llm_service, "generate_reply", side_effect=failure) as generate,
-            patch.object(orchestrator.context_service, "select_result_by_position",
-                         return_value={"kind": "case", "intervention_id": 1}),
-            patch.object(orchestrator.case_retrieval_service, "build_case", return_value={}),
         ):
             with self.assertRaises(llm_service.LLMUnavailableError):
                 orchestrator._summarize_cases("query", [{}])
+        generate.assert_called_once()
+
+    def test_conversation_failure_is_not_hidden(self):
+        with patch.object(llm_service, "generate_chat_reply", side_effect=llm_service.LLMUnavailableError("down")):
             with self.assertRaises(llm_service.LLMUnavailableError):
-                orchestrator._handle_result_detail_request(MagicMock(), {}, 1, "details")
-        self.assertEqual(generate.call_count, 2)
-        self.assertTrue(all(not call.kwargs for call in generate.call_args_list))
+                understanding.understand_message("détaille le cas 2", history=[{"role": "user", "content": "x"}])
 
     def test_catalog_match_does_not_retry_with_python(self):
         db = MagicMock()

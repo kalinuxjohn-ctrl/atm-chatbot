@@ -16,16 +16,23 @@ prompts, réponses LLM brutes, secrets ou données personnelles à `trace()`.
    nettoie et valide le message localement avec `text_validation_service`,
    puis enregistre le texte nettoyé. Un message rejeté reçoit une demande
    de reformulation sans appel LLM, puis passe directement à l'étape 6.
-3. Le LLM de compréhension produit une intention et des références textuelles.
-   Si sa sortie est invalide, une erreur explicite est remontée (HTTP 503),
-   sans deviner l'intention.
+3. Un seul appel au LLM (`message_understanding_service`) reçoit toute la
+   conversation (au plus `CHAT_HISTORY_MAX_MESSAGES` anciens messages), le type
+   d'appareil et le détail des résultats de la dernière recherche, relus en
+   base. Avec Claude, la consigne système et les anciens messages sont mis en
+   cache (1 h) : d'un message à l'autre, ils sont relus à ~10 % du prix ; seul
+   le dernier message (contexte du tour + message du technicien) est payé plein
+   tarif. La trace `[LLM] Utilisation du cache Claude` donne les jetons lus en cache. Il renvoie une intention, des
+   références textuelles et, hors diagnostic, sa réponse. Si sa sortie est
+   invalide, une erreur explicite est remontée (HTTP 503), sans deviner.
 4. Selon l'intention :
-   - conversation : réponse LLM sans recherche vectorielle ;
+   - conversation (tout ce qui n'est pas une nouvelle panne : « détaille le
+     cas 2 », suivi, question générale…) : la réponse du LLM est renvoyée telle
+     quelle, sans second appel ni recherche vectorielle. Le résultat dont il
+     parle (`result_position`) est vérifié puis retenu comme `selected_result` ;
    - diagnostic : résolution SQL des références, embedding du texte reformulé,
      recherche vectorielle filtrée par type d'appareil et seuil de pertinence,
-     préparation des cas réels, puis synthèse LLM ;
-   - détail : résolution d'une position dans la dernière recherche, chargement
-     du cas sélectionné et réponse LLM à partir de ce cas.
+     préparation des cas réels, puis synthèse LLM.
 5. Sans cas réel, le diagnostic tente les statistiques agrégées. Sans résultat,
    une réponse déterministe est retournée sans LLM de synthèse.
 6. L'orchestrateur sauvegarde la réponse et le contexte, valide la transaction,

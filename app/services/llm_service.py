@@ -37,8 +37,20 @@ class LLMProvider(ABC):
     """Interface commune à tout backend LLM."""
 
     @abstractmethod
+    def generate_chat(self, system: str | None, messages: list[dict], cache_history: bool = False) -> str:
+        """
+        Renvoie le texte généré pour une conversation, ou lève LLMUnavailableError
+        avec un message clair. `messages` : [{"role": "user" | "assistant",
+        "content": str}, ...], en ordre chronologique, terminé par "user".
+
+        `cache_history` : la consigne système et tous les messages sauf le
+        dernier sont identiques d'un tour à l'autre ; un fournisseur qui sait
+        les mettre en cache peut le faire (Claude). Les autres l'ignorent.
+        """
+
     def generate(self, prompt: str) -> str:
-        """Renvoie le texte généré, ou lève LLMUnavailableError avec un message clair."""
+        """Un seul message utilisateur, sans consigne système."""
+        return self.generate_chat(None, [{"role": "user", "content": prompt}])
 
 
 class GeminiProvider(LLMProvider):
@@ -51,17 +63,28 @@ class GeminiProvider(LLMProvider):
         self.model = model
         self.timeout = timeout
 
-    def generate(self, prompt: str) -> str:
+    def generate_chat(self, system: str | None, messages: list[dict], cache_history: bool = False) -> str:
+        # cache_history ignoré : pas de cache explicite branché pour Gemini.
         if not self.api_key:
             raise LLMUnavailableError(
                 "Aucune clé API Gemini configurée (GEMINI_API_KEY) -- impossible d'utiliser ce fournisseur."
             )
 
+        # Gemini nomme "model" le rôle de l'assistant.
+        payload = {
+            "contents": [
+                {"role": "model" if message["role"] == "assistant" else "user", "parts": [{"text": message["content"]}]}
+                for message in messages
+            ]
+        }
+        if system:
+            payload["systemInstruction"] = {"parts": [{"text": system}]}
+
         try:
             response = requests.post(
                 self._ENDPOINT_TEMPLATE.format(model=self.model),
                 headers={"x-goog-api-key": self.api_key, "Content-Type": "application/json"},
-                json={"contents": [{"parts": [{"text": prompt}]}]},
+                json=payload,
                 timeout=self.timeout,
             )
         except requests.Timeout as erreur:
@@ -111,18 +134,27 @@ class ClaudeProvider(LLMProvider):
 
     _ENDPOINT = "https://api.anthropic.com/v1/messages"
     _API_VERSION = "2023-06-01"
+    # Cache d'1 heure : un technicien sur le terrain met souvent plus de 5
+    # minutes (durée par défaut) entre deux messages.
+    _CACHE_CONTROL = {"type": "ephemeral", "ttl": "1h"}
 
-    def __init__(self, api_key: str, model: str, max_tokens: int = 1024, timeout: int = 60):
+    def __init__(self, api_key: str, model: str, max_tokens: int = 2048, timeout: int = 60):
         self.api_key = api_key
         self.model = model
         self.max_tokens = max_tokens
         self.timeout = timeout
 
-    def generate(self, prompt: str) -> str:
+    def generate_chat(self, system: str | None, messages: list[dict], cache_history: bool = False) -> str:
         if not self.api_key:
             raise LLMUnavailableError(
                 "Aucune clé API Claude configurée (CLAUDE_API_KEY) -- impossible d'utiliser ce fournisseur."
             )
+
+        payload = {"model": self.model, "max_tokens": self.max_tokens, "messages": messages}
+        if system:
+            payload["system"] = system
+        if cache_history:
+            payload.update(self._with_cache_markers(system, messages))
 
         try:
             response = requests.post(
@@ -132,11 +164,7 @@ class ClaudeProvider(LLMProvider):
                     "anthropic-version": self._API_VERSION,
                     "Content-Type": "application/json",
                 },
-                json={
-                    "model": self.model,
-                    "max_tokens": self.max_tokens,
-                    "messages": [{"role": "user", "content": prompt}],
-                },
+                json=payload,
                 timeout=self.timeout,
             )
         except requests.Timeout as erreur:
@@ -171,9 +199,48 @@ class ClaudeProvider(LLMProvider):
             reply = next(block["text"] for block in blocks if block.get("type") == "text")
             if not isinstance(reply, str) or not reply.strip():
                 raise ValueError("Texte absent ou vide.")
-            return reply
         except (ValueError, KeyError, IndexError, TypeError, StopIteration) as erreur:
             raise LLMUnavailableError("Claude n'a renvoyé aucun texte exploitable pour cette requête.") from erreur
+        if cache_history:
+            self._trace_cache_usage(response)
+        return reply
+
+    @classmethod
+    def _with_cache_markers(cls, system: str | None, messages: list[dict]) -> dict:
+        """
+        Deux points de cache : la consigne système (fixe) et le dernier ancien
+        message. Au tour suivant, tout ce début est identique : Claude le relit
+        depuis le cache (facturé ~10 % du prix normal) au lieu de le retraiter.
+        Le dernier message (contexte du tour + message du technicien) change à
+        chaque fois : il reste après le dernier point de cache.
+        """
+        cached = {}
+        if system:
+            cached["system"] = [{"type": "text", "text": system, "cache_control": cls._CACHE_CONTROL}]
+        if len(messages) >= 2:
+            marked = [dict(message) for message in messages]
+            last_history = marked[-2]
+            last_history["content"] = [
+                {"type": "text", "text": last_history["content"], "cache_control": cls._CACHE_CONTROL}
+            ]
+            cached["messages"] = marked
+        return cached
+
+    @staticmethod
+    def _trace_cache_usage(response) -> None:
+        """Nombres de jetons seulement : permet de vérifier que le cache sert vraiment."""
+        try:
+            usage = response.json().get("usage") or {}
+        except (ValueError, AttributeError):
+            return
+        trace(
+            "LLM",
+            "Utilisation du cache Claude",
+            cache_read_tokens=usage.get("cache_read_input_tokens", 0),
+            cache_write_tokens=usage.get("cache_creation_input_tokens", 0),
+            uncached_input_tokens=usage.get("input_tokens", 0),
+            output_tokens=usage.get("output_tokens", 0),
+        )
 
 
 _PROVIDERS = {
@@ -208,8 +275,20 @@ def generate_reply(prompt: str) -> str:
     Toute panne ou réponse inexploitable lève LLMUnavailableError :
     aucun texte de secours ni changement implicite de fournisseur.
     """
+    return _checked_reply(lambda provider: provider.generate(prompt))
+
+
+def generate_chat_reply(system: str, messages: list[dict], cache_history: bool = False) -> str:
+    """
+    Comme generate_reply(), mais avec une consigne système et toute une
+    conversation (voir LLMProvider.generate_chat, dont cache_history).
+    """
+    return _checked_reply(lambda provider: provider.generate_chat(system, messages, cache_history=cache_history))
+
+
+def _checked_reply(call) -> str:
     try:
-        reply = get_llm_provider().generate(prompt)
+        reply = call(get_llm_provider())
         # Un LLM peut répondre "avec succès" mais sans aucun texte : traité
         # comme une panne, jamais renvoyé comme une bulle vide.
         if not isinstance(reply, str) or not reply.strip():

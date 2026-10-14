@@ -1,22 +1,24 @@
 """
 Coordination du endpoint POST /api/chat.
 
-ORCHESTRE seulement : text_validation_service (nettoyage et validation locale),
-message_understanding_service (Niveau 1, comprendre),
-technical_reference_resolver_service (résoudre le texte en IDs réels),
-context_service (mémoire + position), case_retrieval_service/
-retrieval_service (recherche, inchangés), llm_service (Niveau 2, synthèse,
-inchangé).
+ORCHESTRE seulement : text_validation_service (nettoyage et validation
+locale, AVANT tout appel au LLM : le bruit ne coûte aucun jeton),
+message_understanding_service (un appel LLM : comprendre ET répondre hors
+diagnostic), technical_reference_resolver_service (résoudre le texte en IDs
+réels), context_service (mémoire de la conversation), case_retrieval_service/
+retrieval_service (recherche en base), llm_service (synthèse d'un diagnostic).
 
-Le routage suit l'intention renvoyée par message_understanding_service --
-chaque message validé passe par le LLM de compréhension (voir diagramme :
-Technicien -> message -> Chat Orchestrator -> Niveau 1).
+Partage des rôles : le LLM gère tout ce qui est langage (comprendre, détailler
+un résultat, répondre aux questions), avec toute la conversation sous les yeux ;
+la base gère les données (historique des interventions, statistiques).
+Seul un diagnostic déclenche une recherche en base.
 """
 
 from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.tracing import trace
 from app.schemas.message_understanding_schema import UnderstoodMessage
 from app.services import (
@@ -29,6 +31,15 @@ from app.services import (
     technical_reference_resolver_service,
 )
 from app.services.text_validation_service import REFORMULATION_REPLY, validate_and_clean_message
+
+# Résultat de chaque action d'un cas (ENUM action_outcome, migration 0002).
+_OUTCOME_LABELS = {
+    "resolved": "problème réglé",
+    "partial": "réglé en partie",
+    "no_effect": "sans effet",
+    "made_worse": "a aggravé le problème",
+    "unknown": "résultat inconnu",
+}
 
 _DEVICE_TYPE_REQUIRED_REPLY = (
     "Je n'ai pas pu déterminer le type d'appareil concerné. Sélectionne GAB ou TPE "
@@ -63,6 +74,8 @@ def handle_chat_message(
         valid=validation.valid,
         reason=validation.reason,
     )
+    # Lu AVANT d'enregistrer le message courant : il est envoyé à part au LLM.
+    history = _load_history(db, conversation.conversation_id) if validation.valid else []
     conversation_service.save_message(db, conversation.conversation_id, "user", validation.cleaned_text)
 
     # Comparé après le routage : record_last_search remplace l'objet, donc une
@@ -72,7 +85,10 @@ def handle_chat_message(
     # La compréhension appelle déjà le LLM : la validation doit la précéder.
     if validation.valid:
         understood = message_understanding_service.understand_message(
-            validation.cleaned_text, device_type=context.get("device_type")
+            validation.cleaned_text,
+            device_type=context.get("device_type"),
+            history=history,
+            search_results_text=_describe_last_search(db, context),
         )
         trace(
             "ROUTING",
@@ -104,57 +120,54 @@ def handle_chat_message(
 
 
 def _route_message(db: Session, context: dict, message: str, understood: UnderstoodMessage) -> str:
-    if understood.intent == "detail_request":
-        last_search = context.get("last_search")
-        last_results = (last_search or {}).get("results") or []
-        position = context_service.resolve_position_reference(message)
-
-        # Pas d'ordinal dans le message ("pourquoi ça a marché ?") : on
-        # reste sur le résultat déjà sélectionné, ou sur l'unique résultat.
-        if position is None and last_results:
-            selected = context.get("selected_result")
-            if selected and selected.get("position") is not None:
-                position = selected["position"]
-            elif len(last_results) == 1:
-                position = last_results[0].get("position", 1)
-
-        if position is not None and last_search:
-            trace("ROUTING", "Demande de détail sur un résultat précédent", position=position)
-            return _handle_result_detail_request(db, context, position, message)
-
-        if last_results:
-            trace("ROUTING", "Demande de détail ambiguë, précision demandée", result_count=len(last_results))
-            return (
-                f"La dernière recherche a donné {len(last_results)} résultats : lequel veux-tu détailler ? "
-                "(par exemple « le premier » ou « le deuxième »)"
-            )
-
-        trace("ROUTING", "Demande de détail sans référence exploitable, réponse conversationnelle")
-        return llm_service.generate_reply(
-            "Tu es un assistant pour techniciens de maintenance ATM. "
-            f"{llm_service.device_type_instruction(context.get('device_type'))}"
-            "Le technicien semble demander "
-            "un détail, mais aucune recherche récente n'est disponible. Invite-le à décrire son problème. "
-            f"Message : « {message} »"
-        )
-
     if understood.intent == "diagnostic":
         return _handle_symptom_search(db, context, understood, message)
 
-    trace("ROUTING", "Réponse conversationnelle sans recherche vectorielle")
-    # C'est ICI, et non dans le prompt de compréhension (qui ne renvoie que
-    # du JSON), que se décide la réponse aux messages hors-sujet.
-    return llm_service.generate_reply(
-        "Tu es un assistant pour techniciens de maintenance ATM (GAB et TPE). Tu ne réponds "
-        "qu'aux sujets liés à la maintenance de ces équipements.\n"
-        f"{llm_service.device_type_instruction(context.get('device_type'))}"
-        "- Salutation ou remerciement : réponds brièvement et poliment.\n"
-        "- Message sans rapport avec la maintenance d'un GAB ou d'un TPE : réponds exactement "
-        "« Désolé, je ne suis pas fait pour répondre à ce type de question. Voulez-vous de "
-        "l'aide avec votre équipement à la place ? »\n"
-        "N'invente aucune donnée technique.\n"
-        f"Message du technicien : « {message} »"
-    )
+    # Tout le reste : le LLM a déjà rédigé sa réponse, avec la conversation et
+    # les résultats de la dernière recherche sous les yeux. Le backend retient
+    # seulement le résultat dont il parle (sert de référence à une proposition
+    # de solution), après avoir vérifié qu'il existe vraiment.
+    if understood.result_position is not None:
+        selected = context_service.select_result_by_position(context, understood.result_position)
+        trace("CONTEXT", "Résultat de la dernière recherche désigné", found=selected is not None)
+    trace("ROUTING", "Réponse rédigée par le LLM, sans recherche vectorielle")
+    return understood.reply
+
+
+def _load_history(db: Session, conversation_id: int) -> list[dict]:
+    """Anciens messages de la conversation, du plus ancien au plus récent (les plus récents si elle est très longue)."""
+    return [
+        {"role": message.role, "content": message.content}
+        for message in conversation_service.get_recent_messages(
+            db, conversation_id, limit=settings.chat_history_max_messages
+        )
+    ]
+
+
+def _describe_last_search(db: Session, context: dict) -> str | None:
+    """
+    Détail, lu en base, des résultats de la dernière recherche : c'est ce que
+    le LLM utilise pour répondre à « détaille le cas 2 ». None sans recherche.
+    """
+    last_search = context.get("last_search") or {}
+    descriptions = []
+    for resultat in last_search.get("results") or []:
+        kind = resultat.get("kind") or _infer_legacy_kind(resultat)
+        if kind == "case":
+            case = case_retrieval_service.build_case(
+                db,
+                resultat["intervention_id"],
+                device_type=context.get("device_type"),
+                matched_symptom_text=resultat.get("matched_symptom_text"),
+            )
+            if case is not None:  # intervention supprimée depuis la recherche
+                descriptions.append(_format_case(case, resultat.get("position")))
+        elif resultat.get("action_text"):
+            descriptions.append(_format_stat_result(resultat))
+    if not descriptions:
+        return None
+    query = last_search.get("query") or "non précisé"
+    return "\n".join([f"Problème recherché : « {query} »", *descriptions])
 
 
 def _handle_symptom_search(
@@ -224,7 +237,7 @@ def _handle_symptom_search(
                 "intervention_id": case["intervention_id"],
                 # Gardé en mémoire : c'est la recherche qui sait QUEL symptôme
                 # a fait remonter ce cas -- sans lui, « détaille le deuxième »
-                # ne pourrait plus l'afficher (voir _handle_result_detail_request).
+                # ne pourrait plus l'afficher (voir _describe_last_search).
                 "matched_symptom_text": case.get("matched_symptom_text"),
                 # Son ID : permet à une proposition de solution de pointer le bon intervention_symptom.
                 "matched_intervention_symptom_id": case.get("matched_intervention_symptom_id"),
@@ -283,46 +296,6 @@ def _stat_result(position: int, solution: dict) -> dict:
     }
 
 
-def _handle_result_detail_request(db: Session, context: dict, position: int, message: str) -> str:
-    resultat = context_service.select_result_by_position(context, position)
-    if resultat is None:
-        trace("CONTEXT", "Position absente de la dernière recherche", position=position)
-        return f"Je n'ai pas de résultat en position {position} dans la dernière recherche."
-
-    kind = resultat.get("kind") or _infer_legacy_kind(resultat)
-
-    if kind == "case":
-        case = case_retrieval_service.build_case(
-            db,
-            resultat["intervention_id"],
-            device_type=context.get("device_type"),
-            # .get() : les recherches enregistrées avant ce champ ne l'ont pas
-            # -- elles retombent simplement sur « non précisé », sans erreur.
-            matched_symptom_text=resultat.get("matched_symptom_text"),
-        )
-        if case is None:
-            trace("SEARCH", "Cas sélectionné indisponible", position=position)
-            return "Ce cas ne semble plus disponible en base."
-        case_text = _format_case(case)
-        prompt = (
-            "Tu es un assistant pour techniciens de maintenance ATM. "
-            f"{llm_service.device_type_instruction(context.get('device_type'))}"
-            "Voici le cas que le "
-            f"technicien approfondit :\n{case_text}\n\n"
-            f"Le technicien demande : « {message} ». Réponds UNIQUEMENT à partir de ces informations, "
-            "sans en inventer d'autres."
-        )
-        trace("CONTEXT", "Contexte LLM préparé pour le détail d'un cas", position=position)
-        return llm_service.generate_reply(prompt)
-
-    if kind == "stat" and resultat.get("action_text"):
-        trace("CONTEXT", "Détail d'un résultat agrégé", position=position)
-        return _format_stat_result(resultat)
-
-    trace("CONTEXT", "Résultat d'ancien format non détaillable", position=position)
-    return "Ce résultat vient d'une ancienne recherche et n'est plus détaillable dans ce format -- relance une nouvelle recherche."
-
-
 def _infer_legacy_kind(resultat: dict) -> str:
     return "case" if "intervention_id" in resultat else "stat"
 
@@ -369,7 +342,13 @@ def _format_case(case: dict, index: int | None = None) -> str:
     # PAS partie de la visite : elles sont présentées à part.
     visit_actions = [a for a in case["actions"] if not a.get("proposed_by")]
     validated_additions = [a for a in case["actions"] if a.get("proposed_by")]
-    actions_txt = " puis ".join(a["description"] for a in visit_actions) or "aucune action enregistrée"
+    actions_txt = " puis ".join(
+        f"{a['description']} ({_OUTCOME_LABELS.get(a.get('outcome_status'), 'résultat non renseigné')})"
+        for a in visit_actions
+    ) or "aucune action enregistrée"
+    opened_at = case.get("opened_at")
+    date_txt = f", le {opened_at:%d/%m/%Y}" if hasattr(opened_at, "strftime") else ""
+    diagnostic_txt = f" Diagnostic : {case['diagnosis']}." if case.get("diagnosis") else ""
     fiabilite = (
         f" (fiabilité connue : {case['confidence']['accuracy_score']:.0%} sur {case['confidence']['attempts']} cas)"
         if case.get("confidence")
@@ -382,7 +361,7 @@ def _format_case(case: dict, index: int | None = None) -> str:
     )
     prefixe = f"Cas {index}" if index is not None else "Cas"
     return (
-        f"{prefixe} ({case['technician_name']}, {case['device_label']}) : symptôme « {case.get('matched_symptom_text') or 'non précisé'} », "
+        f"{prefixe} ({case['technician_name']}, {case['device_label']}{date_txt}) : symptôme « {case.get('matched_symptom_text') or 'non précisé'} », "
         f"actions tentées : {actions_txt}, résultat : {case.get('final_outcome_status') or 'non renseigné'}{fiabilite}."
-        f"{additions_txt}"
+        f"{diagnostic_txt}{additions_txt}"
     )

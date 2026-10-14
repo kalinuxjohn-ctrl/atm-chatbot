@@ -1,38 +1,21 @@
 """
-Contexte actif d'une conversation : chargement, sauvegarde, et résolution
-DÉTERMINISTE des références relatives ("le deuxième", "cette solution"...).
+Contexte actif d'une conversation : chargement, sauvegarde, dernière
+recherche et résultat sélectionné.
 
-Principe clé (spec §10) : ce fichier décide que "deuxième" = position 2 =
-tel intervention_symptom_id, en code normal -- jamais en demandant un ID
-au LLM. Pas besoin du LLM ici du tout : une table de correspondance
-d'ordinaux suffit et reste 100% prévisible.
+Le LLM dit de quel résultat parle le technicien (« le cas 2 » -> 2, voir
+message_understanding_service) ; ce fichier vérifie en code normal que ce
+numéro existe dans la dernière recherche avant de le retenir -- jamais un ID
+demandé au LLM.
 """
 
 from __future__ import annotations
 
 import copy
-import re
 
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.models.conversation import ConversationContext
-
-# Table volontairement simple plutôt qu'un parseur NLP : suffisant pour
-# "le premier/deuxième/troisième", extensible en ajoutant une ligne si un
-# nouveau tour de phrase apparaît en usage réel. Formes féminines
-# ("la première solution") et "second(e)" incluses.
-_ORDINAL_PATTERNS: dict[str, int] = {
-    r"\bpremi(?:er|[eè]re)\b": 1,
-    r"\b1(?:er|[eè]re)\b": 1,
-    r"\bdeuxi[eè]me\b": 2,
-    r"\b2(?:[eè]me|nde?)\b": 2,
-    r"\bseconde?\b": 2,
-    r"\btroisi[eè]me\b": 3,
-    r"\b3[eè]me\b": 3,
-    r"\bquatri[eè]me\b": 4,
-    r"\b4[eè]me\b": 4,
-}
 
 
 def get_context(db: Session, conversation_id: int) -> dict:
@@ -57,20 +40,6 @@ def save_context(db: Session, conversation_id: int, context: dict) -> None:
         # modification pour garantir l'UPDATE (et la mise à jour d'updated_at).
         flag_modified(row, "context")
     db.flush()
-
-
-def resolve_position_reference(message: str) -> int | None:
-    """
-    Extrait une position ("le deuxième" -> 2) si le message en contient
-    une, sinon None. Ne regarde que le texte -- ne sait rien du contexte,
-    donc ne peut jamais halluciner une position sans recherche existante
-    (c'est à l'appelant de vérifier last_search avant d'utiliser le résultat).
-    """
-    texte = message.lower()
-    for motif, position in _ORDINAL_PATTERNS.items():
-        if re.search(motif, texte):
-            return position
-    return None
 
 
 def select_result_by_position(context: dict, position: int) -> dict | None:

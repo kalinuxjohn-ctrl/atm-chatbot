@@ -54,7 +54,7 @@ class TracingTests(unittest.TestCase):
             '{"intent":"diagnostic","model_name_text":"SECRET_MODEL",'
             '"error_code_text":"SECRET_CODE","reformulated_problem_text":"SECRET_PROBLEM"}'
         )
-        with patch.object(understanding.llm_service, "generate_reply", return_value=response):
+        with patch.object(understanding.llm_service, "generate_chat_reply", return_value=response):
             result = understanding.understand_message("SECRET_MESSAGE")
         self.assertEqual(result.intent, "diagnostic")
         self.assertEqual(result.model_name_text, "SECRET_MODEL")
@@ -65,7 +65,7 @@ class TracingTests(unittest.TestCase):
     def test_unreadable_understanding_raises_instead_of_guessing_diagnostic(self):
         # Avant : une réponse illisible faisait traiter le message comme une
         # panne (un « bonjour » affichait des cas). Désormais : erreur 503.
-        with patch.object(understanding.llm_service, "generate_reply", return_value="SECRET_RESPONSE"):
+        with patch.object(understanding.llm_service, "generate_chat_reply", return_value="SECRET_RESPONSE"):
             with self.assertRaises(llm_service.LLMUnavailableError):
                 understanding.understand_message("SECRET_MESSAGE")
         self.assertIn("[ERROR]", self.output.getvalue())
@@ -155,13 +155,15 @@ class TracingTests(unittest.TestCase):
 
     def test_conversation_branch_does_not_search(self):
         with (
-            patch.object(orchestrator.llm_service, "generate_reply", return_value="reply"),
+            patch.object(orchestrator.llm_service, "generate_reply") as generate,
             patch.object(orchestrator.case_retrieval_service, "find_similar_cases") as search,
         ):
             result = orchestrator._route_message(
-                MagicMock(), {}, "hello", UnderstoodMessage(intent="conversation")
+                MagicMock(), {}, "hello", UnderstoodMessage(intent="conversation", reply="reply")
             )
+        # La réponse vient de l'appel de compréhension : aucun second appel au LLM.
         self.assertEqual(result, "reply")
+        generate.assert_not_called()
         search.assert_not_called()
         self.assertIn("sans recherche vectorielle", self.output.getvalue())
 
@@ -208,18 +210,24 @@ class TracingTests(unittest.TestCase):
                 self.assertEqual(len(context["last_search"]["results"]), len(solutions))
                 self.assertEqual(summarize.call_count, int(bool(solutions)))
 
-    def test_detail_branch_uses_previous_position_without_new_search(self):
-        context = {"last_search": {"results": []}}
-        with (
-            patch.object(orchestrator, "_handle_result_detail_request", return_value="detail") as detail,
-            patch.object(orchestrator.case_retrieval_service, "find_similar_cases") as search,
-        ):
+    def test_detail_request_selects_the_designated_result_without_new_search(self):
+        context = {"last_search": {"results": [{"position": 1}, {"position": 2, "intervention_id": 9}]}}
+        with patch.object(orchestrator.case_retrieval_service, "find_similar_cases") as search:
             result = orchestrator._route_message(
-                MagicMock(), context, "le deuxième", UnderstoodMessage(intent="detail_request")
+                MagicMock(), context, "détaille le cas 2",
+                UnderstoodMessage(intent="conversation", reply="detail", result_position=2),
             )
         self.assertEqual(result, "detail")
-        self.assertEqual(detail.call_args.args[2], 2)
+        self.assertEqual(context["selected_result"]["intervention_id"], 9)
         search.assert_not_called()
+
+    def test_unknown_result_position_is_ignored(self):
+        context = {"last_search": {"results": [{"position": 1}]}}
+        result = orchestrator._route_message(
+            MagicMock(), context, "le cas 5", UnderstoodMessage(intent="conversation", reply="r", result_position=5)
+        )
+        self.assertEqual(result, "r")
+        self.assertNotIn("selected_result", context)
 
     def test_persistence_and_http_response(self):
         db = MagicMock()
@@ -229,9 +237,9 @@ class TracingTests(unittest.TestCase):
             patch.object(orchestrator.context_service, "get_context", return_value={}),
             patch.object(orchestrator.conversation_service, "save_message") as save,
             patch.object(orchestrator.context_service, "save_context"),
+            patch.object(orchestrator.conversation_service, "get_recent_messages", return_value=[]),
             patch.object(orchestrator.message_understanding_service, "understand_message",
-                         return_value=UnderstoodMessage(intent="conversation")),
-            patch.object(orchestrator.llm_service, "generate_reply", return_value="reply"),
+                         return_value=UnderstoodMessage(intent="conversation", reply="reply")),
         ):
             response = chat_routes.chat(ChatRequest(technician_id=1, message="SECRET"), db)
         self.assertEqual(response.conversation_id, 42)

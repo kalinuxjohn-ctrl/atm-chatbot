@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     claude_api_key: str = ""
     claude_model: str = "claude-sonnet-5-5"
 
+    # --- Conversation avec le LLM (message_understanding_service) ---
+    # Nombre maximal d'anciens messages de la conversation envoyés au LLM à
+    # chaque tour (les plus récents) : garde-fou contre une facture qui
+    # grossit sans fin sur une très longue conversation.
+    chat_history_max_messages: int = 100
+
     # --- Rattachement automatique au catalogue de symptômes ---
     # Distance cosinus maximale (pgvector `<=>`, 0 = identique, 2 = opposé)
     # en dessous de laquelle un nouveau symptôme est considéré comme "le
