@@ -338,8 +338,8 @@ async function initCopilot({ technicianId, displayName }) {
 
   /** Menus inactifs pendant qu'une réponse est en préparation. */
   function updateSuggestionMenusState() {
-    elements.composerSuggestions.querySelectorAll("select").forEach((menu) => {
-      menu.disabled = requestInProgress;
+    elements.composerSuggestions.querySelectorAll(".suggestion-trigger").forEach((trigger) => {
+      trigger.disabled = requestInProgress;
     });
   }
 
@@ -376,6 +376,8 @@ async function initCopilot({ technicianId, displayName }) {
     if (!text || requestInProgress) return;
     dictation.cancel();
     playSendBurst(elements.form);
+    // Le message s'envolera depuis la zone de saisie jusqu'à sa place dans le fil.
+    chatView.launchNextUserMessage(elements.input.getBoundingClientRect());
     elements.input.value = "";
     resizeInput();
     updateComposerState();

@@ -1636,6 +1636,15 @@ kbd {
   --button-gloss: radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 1), rgba(240, 247, 242, 0.8) 60%);
   --row-edge: rgba(101, 163, 13, 0.22);
   --row-background: rgba(255, 255, 255, 0.6);
+
+  /* Relief des bords : arête éclairée en haut à gauche, arête dans l'ombre
+     en bas à droite, lueur intérieure (épaisseur du verre), ombre portée. */
+  --edge-light: rgba(255, 255, 255, 1);
+  --edge-dark: rgba(20, 60, 35, 0.12);
+  --edge-glow: rgba(34, 197, 94, 0.07);
+  --edge-drop: rgba(13, 40, 22, 0.2);
+  --bezel-seam: rgba(20, 60, 35, 0.18);
+  --bezel-shine: rgba(255, 255, 255, 1);
 }
 
 :root[data-theme="dark"] .copilot-page {
@@ -1671,6 +1680,33 @@ kbd {
   --button-gloss: radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.12), rgba(12, 18, 14, 0.95) 62%);
   --row-edge: rgba(163, 230, 53, 0.2);
   --row-background: rgba(2, 6, 4, 0.55);
+
+  --edge-light: rgba(225, 255, 235, 0.2);
+  --edge-dark: rgba(0, 0, 0, 0.65);
+  --edge-glow: rgba(170, 230, 190, 0.08);
+  --edge-drop: rgba(0, 0, 0, 0.8);
+  --bezel-seam: rgba(0, 0, 0, 0.85);
+  --bezel-shine: rgba(235, 255, 240, 0.6);
+}
+
+/* Ombres du relief, partagées par toutes les zones. */
+:root .copilot-page {
+  --glass-3d:
+    inset 1px 1.5px 0 var(--edge-light),
+    inset -1px -1.5px 0 var(--edge-dark),
+    inset 0 0 26px var(--edge-glow),
+    inset 0 14px 22px -20px var(--edge-light),
+    0 22px 44px -24px var(--edge-drop);
+  --glass-3d-small:
+    inset 1px 1px 0 var(--edge-light),
+    inset -1px -1px 0 var(--edge-dark),
+    inset 0 0 12px var(--edge-glow),
+    0 10px 20px -14px var(--edge-drop);
+  --sphere-3d:
+    inset 0 1.5px 0 var(--edge-light),
+    inset 0 -8px 12px -8px var(--edge-dark),
+    inset 0 6px 10px -6px var(--edge-glow),
+    0 10px 18px -10px var(--edge-drop);
 }
 
 /* Fond : verre cannelé posé sur les nappes de vert. */
@@ -1686,7 +1722,24 @@ kbd {
   border-color: transparent;
   background: var(--light-leak), var(--frame-background);
   background-clip: padding-box;
-  box-shadow: var(--bezel-shadow);
+  box-shadow:
+    inset 0 0 0 1px var(--bezel-seam),
+    inset 0 3px 14px -4px var(--bezel-seam),
+    var(--bezel-shadow);
+}
+
+/* Arête extérieure du tube : reflet en haut, ombre en bas. */
+.app-frame::after {
+  position: absolute;
+  inset: -7px;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 2px 1px -1px var(--bezel-shine),
+    inset 2px 0 2px -1px var(--bezel-shine),
+    inset 0 -2px 2px -1px var(--edge-dark),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  content: "";
+  pointer-events: none;
 }
 
 .app-frame::before {
@@ -1723,7 +1776,7 @@ kbd {
   background:
     radial-gradient(560px 420px at 50% 36%, var(--card-glow), transparent 70%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 30%);
-  box-shadow: inset 0 1px 0 var(--rim-light);
+  box-shadow: var(--glass-3d);
 }
 
 .copilot-page .message-composer {
@@ -1733,7 +1786,7 @@ kbd {
     radial-gradient(420px 200px at 35% 100%, rgba(45, 212, 191, 0.1), transparent 70%),
     radial-gradient(300px 160px at 95% 0%, rgba(163, 230, 53, 0.07), transparent 70%),
     var(--chip-background);
-  box-shadow: inset 0 1px 0 var(--rim-light), 0 24px 48px -30px var(--rim-shade);
+  box-shadow: var(--glass-3d);
 }
 
 /* Panneau de contexte : il défile, donc liseré par ombres internes. */
@@ -1743,9 +1796,7 @@ kbd {
     radial-gradient(260px 220px at 0% 0%, rgba(140, 210, 185, 0.45), transparent 70%),
     radial-gradient(280px 200px at 45% 30%, rgba(160, 185, 45, 0.36), transparent 70%),
     var(--card-background);
-  box-shadow:
-    inset 0 1px 0 var(--rim-light),
-    inset 1px 0 0 rgba(134, 239, 172, 0.12);
+  box-shadow: var(--glass-3d), inset 2px 0 0 -1px rgba(134, 239, 172, 0.12);
 }
 
 /* Lignes du panneau : verre sombre, bord vert-olive, reflet en haut. */
@@ -1753,16 +1804,16 @@ kbd {
 .context-card-note p {
   border-color: var(--row-edge);
   background: var(--chip-gloss), var(--row-background);
-  box-shadow: inset 0 1px 0 var(--rim-light), 0 10px 20px -16px var(--rim-shade);
+  box-shadow: var(--glass-3d-small);
 }
 
 .context-list div::before,
 .context-card-note p::before {
-  box-shadow: inset 0 1px 0 var(--rim-light);
+  box-shadow: var(--sphere-3d);
 }
 
 .context-new-button {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 8px 18px -10px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--glass-3d-small);
 }
 
 /* Pilules du haut : verre avec reflet. */
@@ -1770,11 +1821,11 @@ kbd {
 .topbar-tools,
 .copilot-page .assistant-identity {
   background: var(--chip-gloss), var(--chip-background);
-  box-shadow: inset 0 1px 0 var(--rim-light), 0 10px 24px -16px var(--rim-shade);
+  box-shadow: var(--glass-3d-small);
 }
 
 .copilot-page .assistant-identity {
-  box-shadow: inset 0 1px 0 var(--rim-light), 0 0 20px -8px rgba(74, 222, 128, 0.6);
+  box-shadow: var(--glass-3d-small), 0 0 20px -8px rgba(74, 222, 128, 0.6);
 }
 
 /* Onglet actif : anneau vert plus vif en bas, comme un néon reflété. */
@@ -1798,7 +1849,7 @@ kbd {
 .device-trigger,
 .suggestion-menu,
 .copilot-page .pill-button {
-  box-shadow: inset 0 1px 0 var(--rim-light), 0 8px 16px -10px var(--rim-shade);
+  box-shadow: var(--sphere-3d);
 }
 
 .copilot-page .icon-button,
@@ -1822,9 +1873,8 @@ kbd {
       radial-gradient(circle at 60% 90%, color-mix(in srgb, var(--rim) 35%, transparent), transparent 70%),
       var(--button-gloss);
     box-shadow:
-      inset 0 1px 0 var(--rim-light),
-      inset -2px -3px 6px -4px var(--rim),
-      0 8px 16px -10px var(--rim-shade);
+      var(--sphere-3d),
+      inset -2px -3px 6px -4px var(--rim);
   }
 
   /* Une teinte de liseré par bouton, comme sur la maquette. */
@@ -1858,6 +1908,495 @@ kbd {
   background:
     radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.55), transparent 45%),
     linear-gradient(135deg, #d9f99d 0%, #4ade80 50%, #14b8a6 100%);
+}
+
+/* ----- Vitres et bulles ----- */
+/* Chaque zone est une vitre plate posée dans le cadre (rail, carte, contexte,
+   saisie, messages) ; les boutons sont des bulles de verre posées sur ces
+   vitres. Une vitre : remplissage translucide + flou de ce qui est derrière +
+   relief des bords (--glass-3d). */
+:root .copilot-page {
+  --sidebar-compact-width: 70px;
+
+  --pane-fill: linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.42) 45%, rgba(255, 255, 255, 0.62));
+  --pane-border: rgba(20, 60, 35, 0.1);
+  --popover-fill: rgba(255, 255, 255, 0.96);
+  --bubble-fill:
+    radial-gradient(circle at 32% 26%, #ffffff 0 2px, rgba(255, 255, 255, 0.9) 4px, transparent 11px),
+    radial-gradient(120% 120% at 30% 20%, rgba(255, 255, 255, 0.95), rgba(240, 248, 243, 0.7) 55%, rgba(220, 238, 226, 0.75));
+  --sphere-3d:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.9),
+    inset 0 -10px 14px -8px rgba(20, 60, 35, 0.14),
+    inset 0 8px 12px -8px #ffffff,
+    0 10px 18px -10px rgba(13, 40, 22, 0.28);
+  --user-glass: linear-gradient(135deg, rgba(74, 222, 128, 0.32), rgba(187, 247, 208, 0.45));
+  --button-gloss: var(--bubble-fill);
+}
+
+:root[data-theme="dark"] .copilot-page {
+  --pane-fill: linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.015) 45%, rgba(255, 255, 255, 0.04));
+  --pane-border: rgba(255, 255, 255, 0.08);
+  --popover-fill: rgba(9, 16, 12, 0.95);
+  --bubble-fill:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.6) 0 1.5px, rgba(255, 255, 255, 0.16) 4px, transparent 10px),
+    radial-gradient(120% 120% at 30% 20%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.03) 45%, rgba(255, 255, 255, 0.07));
+  --sphere-3d:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 -10px 14px -8px rgba(0, 0, 0, 0.65),
+    inset 0 8px 12px -8px rgba(255, 255, 255, 0.28),
+    0 10px 18px -10px rgba(0, 0, 0, 0.85);
+  --user-glass: linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(74, 222, 128, 0.05));
+  --button-gloss: var(--bubble-fill);
+}
+
+/* Vitres principales */
+.copilot-page .workspace,
+.context-panel {
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+.copilot-page .workspace {
+  background:
+    radial-gradient(560px 420px at 50% 36%, var(--card-glow), transparent 70%),
+    var(--pane-fill);
+}
+
+.context-panel {
+  background:
+    radial-gradient(260px 220px at 0% 0%, rgba(140, 210, 185, 0.45), transparent 70%),
+    radial-gradient(280px 200px at 45% 30%, rgba(160, 185, 45, 0.36), transparent 70%),
+    var(--pane-fill);
+}
+
+/* Le rail : une vitre rectangulaire aux coins arrondis. */
+@media (min-width: 720px) {
+  .copilot-page .app-sidebar {
+    padding: 14px 0;
+    border: 1px solid var(--pane-border);
+    border-radius: 30px;
+    background: var(--pane-fill);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: var(--glass-3d);
+  }
+
+  .app-shell[data-sidebar="expanded"] .app-sidebar {
+    padding-inline: 12px;
+  }
+}
+
+/* La zone de saisie : une vitre, ses boutons sont des bulles. */
+.copilot-page .message-composer {
+  background:
+    radial-gradient(420px 200px at 35% 100%, rgba(45, 212, 191, 0.1), transparent 70%),
+    var(--pane-fill);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+
+.copilot-page .icon-button,
+.sidebar-collapse-button,
+.copilot-page .mic-button,
+.composer-voice-button {
+  background: var(--bubble-fill);
+  box-shadow: var(--sphere-3d);
+}
+
+.topbar-tools .icon-button {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* ----- Avatar du Copilote dans la barre du haut ----- */
+.topbar-avatar {
+  overflow: hidden;
+  padding: 0;
+}
+
+.topbar-avatar .toolbar-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 11px;
+  background: linear-gradient(160deg, #e9f9ee, #c9ecd5);
+  box-shadow: none;
+}
+
+/* Plus de pastille d'identité : les actions restent à droite. */
+.workspace-actions {
+  margin-left: auto;
+}
+
+/* ----- Messages : des vitres ----- */
+.copilot-page .message:not(.welcome-message) .message-bubble,
+.copilot-page .conversation > .welcome-message:not(:only-child) .message-bubble,
+.copilot-page .typing-indicator {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--pane-border);
+  background: var(--pane-fill);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: var(--glass-3d-small);
+  color: var(--text-soft);
+}
+
+.copilot-page .user-message .message-bubble {
+  border-color: var(--user-bubble-border);
+  background: var(--user-glass);
+  color: var(--user-bubble-text);
+}
+
+/* Reflet qui traverse la vitre quand un message arrive. */
+.copilot-page .message-bubble::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.32) 48%, transparent 60%);
+  content: "";
+  pointer-events: none;
+  transform: translateX(-130%);
+}
+
+.copilot-page .message-bubble.is-landing {
+  animation: bubble-land 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.copilot-page .message-bubble.is-landing::after,
+.copilot-page .message-enter-fade .message-bubble::after {
+  animation: glass-sheen 900ms ease-out 120ms;
+}
+
+.copilot-page .message-enter-fade {
+  animation: glass-rise 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes glass-sheen {
+  from { transform: translateX(-130%); }
+  to { transform: translateX(130%); }
+}
+
+@keyframes bubble-land {
+  0% { box-shadow: var(--glass-3d-small), 0 0 0 0 rgba(74, 222, 128, 0.55); }
+  18% { transform: scale(1.035); }
+  45% { transform: scale(0.99); }
+  70% { transform: none; }
+  100% { box-shadow: var(--glass-3d-small), 0 0 0 14px rgba(74, 222, 128, 0); }
+}
+
+@keyframes glass-rise {
+  from { opacity: 0; filter: blur(6px); transform: translateY(14px) scale(0.97); }
+  to { opacity: 1; filter: none; transform: none; }
+}
+
+/* Copie de la bulle pendant son envol (chatView.js, flyIntoPlace). */
+.message-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  display: block;
+  max-width: none;
+  margin: 0;
+  pointer-events: none;
+  transform-origin: 0 0;
+  will-change: transform, opacity, filter;
+}
+
+.message-ghost .message-bubble {
+  box-shadow: var(--glass-3d-small), 0 0 26px -6px rgba(74, 222, 128, 0.7);
+}
+
+/* ----- Menus « Pannes fréquentes » / « Codes d'erreur » ----- */
+.suggestion-dropdown {
+  position: relative;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.suggestion-trigger {
+  display: inline-flex;
+  max-width: 100%;
+  height: 42px;
+  gap: 8px;
+  align-items: center;
+  padding: 0 12px 0 5px;
+  border: 1px solid var(--chip-border);
+  border-radius: 999px;
+  background: var(--chip-gloss), var(--chip-background);
+  box-shadow: var(--glass-3d-small);
+  color: var(--text-soft);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  transition: border-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+
+.suggestion-trigger:hover:not(:disabled),
+.suggestion-dropdown.is-open .suggestion-trigger {
+  border-color: var(--accent-border);
+  box-shadow: var(--glass-3d-small), 0 0 18px -6px rgba(74, 222, 128, 0.6);
+  color: var(--text);
+}
+
+.error-code-menu .suggestion-trigger:hover:not(:disabled),
+.error-code-menu.is-open .suggestion-trigger {
+  border-color: var(--amber-border);
+  box-shadow: var(--glass-3d-small), 0 0 18px -6px rgba(251, 191, 36, 0.5);
+}
+
+.suggestion-trigger:disabled {
+  cursor: progress;
+  opacity: 0.5;
+}
+
+.suggestion-trigger-icon,
+.suggestion-popover-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.35), transparent 45%), var(--accent-fill);
+  box-shadow: var(--sphere-3d);
+  color: var(--accent-text);
+}
+
+.error-code-menu .suggestion-trigger-icon,
+.error-code-menu .suggestion-popover-icon {
+  background: radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.35), transparent 45%), var(--amber-fill);
+  color: var(--amber);
+}
+
+.suggestion-trigger-icon .icon,
+.suggestion-popover-icon .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.suggestion-trigger-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestion-trigger-chevron {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  transition: transform 220ms ease;
+}
+
+.suggestion-dropdown.is-open .suggestion-trigger-chevron {
+  transform: rotate(180deg);
+}
+
+/* Le panneau s'ouvre AU-DESSUS de la saisie, comme une vitre qui se lève. */
+.suggestion-popover {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  z-index: 30;
+  width: min(380px, calc(100vw - 48px));
+  padding: 10px;
+  border: 1px solid var(--pane-border);
+  border-radius: 22px;
+  background: var(--popover-fill);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: var(--glass-3d), 0 30px 60px -24px var(--edge-drop);
+  transform-origin: 30px 100%;
+  animation: popover-in 240ms cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}
+
+.suggestion-popover[hidden] {
+  display: none;
+}
+
+@keyframes popover-in {
+  from { opacity: 0; filter: blur(4px); transform: translateY(10px) scale(0.94); }
+  to { opacity: 1; filter: none; transform: none; }
+}
+
+.suggestion-popover-header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 4px 6px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.suggestion-popover-title {
+  display: grid;
+  gap: 1px;
+}
+
+.suggestion-popover-title strong {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.suggestion-popover-title small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.suggestion-filter {
+  display: flex;
+  height: 38px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--soft-fill);
+  color: var(--text-muted);
+}
+
+.suggestion-filter:focus-within {
+  border-color: var(--accent-border);
+}
+
+.suggestion-filter .icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.suggestion-filter input {
+  min-width: 0;
+  flex: 1 1 auto;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.suggestion-list {
+  display: grid;
+  max-height: min(300px, 42vh);
+  gap: 4px;
+  margin: 0;
+  padding: 2px;
+  overflow-y: auto;
+  list-style: none;
+  outline: 0;
+  scrollbar-width: thin;
+}
+
+.suggestion-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px 8px 8px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-size: 13.5px;
+  line-height: 1.35;
+  animation: option-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--index, 0) * 28ms);
+}
+
+.suggestion-option[hidden] {
+  display: none;
+}
+
+.suggestion-option.is-active {
+  border-color: var(--accent-border);
+  background: var(--chip-gloss), var(--accent-fill);
+  box-shadow: inset 0 1px 0 var(--rim-light);
+  color: var(--text);
+}
+
+.error-code-menu .suggestion-option.is-active {
+  border-color: var(--amber-border);
+  background: var(--chip-gloss), var(--amber-fill);
+}
+
+@keyframes option-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.suggestion-option-icon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--bubble-fill);
+  box-shadow: var(--sphere-3d);
+  color: var(--accent-text);
+}
+
+.suggestion-option-icon .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.suggestion-option-badge {
+  padding: 4px 8px;
+  border: 1px solid var(--amber-border);
+  border-radius: 9px;
+  background: var(--amber-fill);
+  color: var(--amber);
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.suggestion-empty {
+  margin: 0;
+  padding: 14px;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ----- Envoi : l'avion en papier de la maquette ----- */
+/* L'icône est foncée (style.css colore le dernier span du bouton en clair). */
+.copilot-page .send-button span:last-child {
+  color: #03200d;
+}
+
+.copilot-page .send-button .icon {
+  width: 21px;
+  height: 21px;
+  stroke-width: 2.3;
+  transform: translate(-1px, 1px);
+  transition: transform 200ms ease;
+}
+
+.copilot-page .send-button:hover:not(:disabled) .icon {
+  transform: translate(1px, -1px) rotate(-6deg);
+}
+
+.copilot-page .send-button:disabled {
+  filter: saturate(0.8);
+  opacity: 0.8;
+}
+
+/* Les deux menus restent sur une ligne : leurs libellés se raccourcissent. */
+@media (min-width: 720px) {
+  .composer-toolbar .suggestion-menus {
+    flex-wrap: nowrap;
+  }
+}
+
+/* Le fil s'efface en haut et en bas au lieu d'être coupé net. */
+.copilot-page .conversation {
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 28px, #000 calc(100% - 10px), transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0, #000 28px, #000 calc(100% - 10px), transparent 100%);
 }
 
 /* ----- Tailles d'écran ----- */
@@ -1910,6 +2449,14 @@ kbd {
     order: 0;
     flex-basis: auto;
     min-height: 56px;
+  }
+
+  .suggestion-dropdown {
+    flex: 1 1 140px;
+  }
+
+  .suggestion-trigger {
+    width: 100%;
   }
 
   .suggestion-menu {

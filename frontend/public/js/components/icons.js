@@ -21,7 +21,10 @@ const ICON_PATHS = {
   mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21M8.5 21h7"/>',
   "mic-off":
     '<path d="M15 10V6a3 3 0 0 0-5.7-1.3"/><path d="M9 9v2a3 3 0 0 0 4.6 2.5"/><path d="M5.5 11a6.5 6.5 0 0 0 10.6 5"/><path d="M18.5 11a6.4 6.4 0 0 1-.4 2.2"/><path d="M12 17.5V21M8.5 21h7"/><path d="M3 3l18 18"/>',
-  send: '<path d="M12 19V5"/><path d="M6 11l6-6 6 6"/>',
+  // Avion en papier, pointe en haut à droite.
+  send: '<path d="M14.5 21.7a.5.5 0 0 0 .9 0l6.5-19a.5.5 0 0 0-.6-.6l-19 6.5a.5.5 0 0 0 0 .9l7.9 3.2a2 2 0 0 1 1.1 1.1z"/><path d="M21.9 2.1 10.9 13.1"/>',
+  wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
   stop: '<rect x="6.5" y="6.5" width="11" height="11" rx="2"/>',
   speaker: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/>',
   close: '<path d="M6 6l12 12M18 6 6 18"/>',

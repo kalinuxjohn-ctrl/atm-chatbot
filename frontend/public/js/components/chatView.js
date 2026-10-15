@@ -37,6 +37,9 @@ export function createChatView({
   // Une seule offre de proposition à la fois : sous la DERNIÈRE réponse qui
   // contenait des solutions (le backend relit de toute façon le problème actif).
   let activeProposalOffer = null;
+  // Position de la zone de saisie au moment de l'envoi : le prochain message
+  // du technicien s'envole depuis là (voir flyIntoPlace).
+  let pendingLaunch = null;
 
   const scrollToBottom = () => {
     conversationElement.scrollTo({
@@ -89,6 +92,16 @@ export function createChatView({
     );
     message.append(body);
     conversationElement.append(message);
+
+    const launchOrigin = pendingLaunch;
+    pendingLaunch = null;
+    if (animate && launchOrigin && !prefersReducedMotion()) {
+      message.classList.remove(`message-enter-${animate}`);
+      // Défilement immédiat : la bulle doit être à sa place définitive avant l'envol.
+      conversationElement.scrollTop = conversationElement.scrollHeight;
+      flyIntoPlace(message.querySelector(".message-bubble"), launchOrigin);
+      return;
+    }
     scrollToBottom();
   }
 
@@ -157,6 +170,11 @@ export function createChatView({
   }
 
   return {
+    /** Le prochain message du technicien partira de ce rectangle (la zone de saisie). */
+    launchNextUserMessage(originRect) {
+      pendingLaunch = originRect;
+    },
+
     /** Affiche un message enregistré (conversationService). */
     appendMessage(message, options = {}) {
       if (message.role === "user") appendUser(message, { animate: options.animate === false ? false : options.userAnimation || "up" });
@@ -222,6 +240,49 @@ export function createChatView({
       });
     },
   };
+}
+
+/**
+ * Envol d'un message : une copie de la bulle part de la zone de saisie et
+ * rejoint la vraie bulle (cachée pendant le vol), en suivant sa position à
+ * chaque image (le fil peut encore bouger, ex. arrivée des points « réfléchit »).
+ * À l'arrivée, un reflet traverse la vitre.
+ */
+function flyIntoPlace(bubble, originRect) {
+  const DURATION = 620;
+  const start = bubble.getBoundingClientRect();
+  const ghostMessage = createElement("div", "message user-message message-ghost");
+  const ghost = bubble.cloneNode(true);
+  ghostMessage.append(ghost);
+  ghostMessage.style.width = `${start.width}px`;
+  document.body.append(ghostMessage);
+  bubble.style.visibility = "hidden";
+
+  const fromX = originRect.left + 18;
+  const fromY = originRect.top + 4;
+  const easeOutBack = (t) => 1 + 2.2 * (t - 1) ** 3 + 1.2 * (t - 1) ** 2;
+  const startTime = performance.now();
+
+  function frame(now) {
+    const progress = Math.min((now - startTime) / DURATION, 1);
+    const eased = easeOutBack(progress);
+    const target = bubble.getBoundingClientRect();
+    const x = fromX + (target.left - fromX) * eased;
+    const y = fromY + (target.top - fromY) * eased;
+    const scale = 0.82 + 0.18 * eased;
+    ghostMessage.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+    ghostMessage.style.opacity = String(Math.min(1, 0.25 + progress * 1.6));
+    ghostMessage.style.filter = `blur(${(1 - progress) * 5}px)`;
+    if (progress < 1) {
+      requestAnimationFrame(frame);
+      return;
+    }
+    ghostMessage.remove();
+    bubble.style.visibility = "";
+    bubble.classList.add("is-landing");
+    bubble.addEventListener("animationend", () => bubble.classList.remove("is-landing"), { once: true });
+  }
+  requestAnimationFrame(frame);
 }
 
 /**

@@ -36,8 +36,9 @@
       <button class="icon-button mobile-menu-button" type="button" data-open-sidebar aria-controls="app-sidebar" aria-label="Ouvrir le menu">
         <span data-icon="menu"></span>
       </button>
-      <a class="topbar-logo" href="/" aria-label="ATM-Chatbot, accueil">
-        <img src="/assets/images/logo.svg" alt="" aria-hidden="true">
+      <!-- Avatar du Copilote (choisi dans les paramètres), rempli par copilot.js -->
+      <a class="topbar-logo topbar-avatar" href="/" aria-label="ATM-Chatbot, accueil" title="ATM-Chatbot">
+        <span class="toolbar-avatar" id="toolbar-avatar" aria-hidden="true"></span>
       </a>
       <nav class="topbar-tabs" aria-label="Pages">
         <a class="topbar-tab" href="/">Accueil</a>
@@ -115,13 +116,8 @@
       <!-- ========== Espace de conversation ========== -->
       <main class="workspace">
         <header class="workspace-header">
-          <div class="assistant-identity">
-            <span class="toolbar-avatar" id="toolbar-avatar" aria-hidden="true"></span>
-            <span class="assistant-identity-text">
-              <strong>ATM-Chatbot</strong>
-              <small aria-live="polite"><i></i> <span id="copilot-status">Prêt à vous aider</span></small>
-            </span>
-          </div>
+          <!-- Statut du Copilote, annoncé aux lecteurs d'écran (l'avatar est dans la barre du haut). -->
+          <p class="visually-hidden" aria-live="polite">ATM-Chatbot : <span id="copilot-status">Prêt à vous aider</span></p>
 
           <div class="workspace-actions">
             <span class="demo-badge" id="demo-badge" hidden title="Ajoutez ?mock=0 à l’adresse pour revenir au backend réel">Mode démo</span>

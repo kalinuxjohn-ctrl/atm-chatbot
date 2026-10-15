@@ -32,7 +32,10 @@ prompts, réponses LLM brutes, secrets ou données personnelles à `trace()`.
      parle (`result_position`) est vérifié puis retenu comme `selected_result` ;
    - diagnostic : résolution SQL des références, embedding du texte reformulé,
      recherche vectorielle filtrée par type d'appareil et seuil de pertinence,
-     préparation des cas réels, puis synthèse LLM.
+     préparation des cas réels, puis synthèse LLM. Le prompt demande au LLM
+     de vérifier leur pertinence technique, d'écarter les cas sans lien établi
+     et de signaler si aucun ne convient. Ce contrôle porte sur la réponse :
+     les candidats mémorisés dans le contexte restent inchangés.
 5. Sans cas réel, le diagnostic tente les statistiques agrégées. Sans résultat,
    une réponse déterministe est retournée sans LLM de synthèse.
 6. L'orchestrateur sauvegarde la réponse et le contexte, valide la transaction,
