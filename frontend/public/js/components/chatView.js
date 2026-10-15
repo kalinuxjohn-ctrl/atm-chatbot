@@ -7,14 +7,18 @@ import { createElement, formatTime, prefersReducedMotion } from "../utils/dom.js
 import { renderAvatar } from "./avatar.js";
 import { createIcon } from "./icons.js";
 
-const GREETING = [
-  "Bonjour, je suis votre Copilote de maintenance.",
-  "Décrivez le problème observé sur le GAB ou le TPE, à l’écrit ou au micro, ou choisissez un cas fréquent dans les menus au-dessus de la zone de saisie.",
-];
+/** Message d'accueil : titre personnalisé, puis la consigne. */
+function greeting(userName) {
+  return [
+    userName ? `Bonjour ${userName} ! Comment puis-je vous aider ?` : "Bonjour ! Comment puis-je vous aider ?",
+    "Décrivez le problème observé sur le GAB ou le TPE, à l’écrit ou au micro, ou choisissez un cas fréquent dans les menus de la zone de saisie.",
+  ];
+}
 
 /**
  * @param {{
  *   conversationElement: HTMLElement,
+ *   userName?: string,                                prénom affiché dans le message d'accueil
  *   getAvatarKind: () => string,
  *   onListen: (text: string) => void,                 bouton "Écouter" d'une réponse
  *   createWelcomeExtras?: () => Node | null,          ex. bulles de suggestions du message d'accueil
@@ -23,6 +27,7 @@ const GREETING = [
  */
 export function createChatView({
   conversationElement,
+  userName = "",
   getAvatarKind,
   onListen,
   createWelcomeExtras = () => null,
@@ -202,7 +207,7 @@ export function createChatView({
       message.classList.remove("message-enter-fade");
       message.classList.add("welcome-message");
       welcomeExtrasSlot = createElement("div", "welcome-extras");
-      body.append(createTextBubble(GREETING.join("\n")), welcomeExtrasSlot);
+      body.append(createTextBubble(greeting(userName).join("\n")), welcomeExtrasSlot);
       conversationElement.replaceChildren(message);
       renderWelcomeExtras();
     },

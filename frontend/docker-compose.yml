@@ -21,6 +21,10 @@ services:
       PORT: "5173"
       API_BASE_URL: "http://host.docker.internal:8000"
 
+    # Fichiers web locaux relus à chaque requête, sans reconstruire l'image.
+    volumes:
+      - ./public:/app/public:ro
+
     # Contrôle périodiquement que la page d'accueil est servie.
     healthcheck:
       test:

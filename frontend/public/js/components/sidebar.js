@@ -1,8 +1,7 @@
 /**
  * Sidebar rétractable de la page Copilote.
  *
- *   ≥ 1100 px  : visible, large par défaut ; réductible en barre d'icônes
- *   720-1099 px : compacte (icônes) par défaut ; extensible
+ *   ≥ 720 px   : rail d'icônes par défaut ; extensible (libellés visibles)
  *   < 720 px   : cachée, s'ouvre en tiroir par-dessus la conversation
  *
  * L'état est posé sur l'élément racine :
@@ -26,7 +25,8 @@ export function createSidebar({ shell, sidebar, collapseButton, openButtons, bac
 
   function isCollapsed() {
     const { sidebarCollapsed } = getPreferences();
-    if (sidebarCollapsed === null || sidebarCollapsed === undefined) return !DESKTOP_QUERY.matches;
+    // Par défaut : rail d'icônes, quelle que soit la largeur (libellés en info-bulle).
+    if (sidebarCollapsed === null || sidebarCollapsed === undefined) return true;
     return sidebarCollapsed;
   }
 

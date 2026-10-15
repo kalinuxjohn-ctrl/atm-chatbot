@@ -19,7 +19,13 @@ docker compose up --build -d
 
 Ouvrez <http://localhost:5173>. Le backend reste accessible sur <http://localhost:8000>.
 
-> Après une modification du frontend, relancez toujours avec `--build` : les fichiers sont copiés dans l’image, sans volume. Un simple `docker compose up` réutilise l’ancienne image. Le serveur envoie `Cache-Control: no-cache` : le navigateur revérifie donc HTML, CSS et JS à chaque chargement. Le Copilote refait se trouve sur <http://localhost:5173/copilot.html>, après connexion depuis l’accueil.
+> Le dossier local `public` est monté dans le conteneur en lecture seule.
+> Après une modification HTML, CSS, JavaScript ou d'image dans ce dossier,
+> enregistrez puis rafraîchissez la page : aucun redémarrage ni rebuild n'est
+> nécessaire. Le serveur envoie `Cache-Control: no-cache` : le navigateur
+> revérifie les fichiers à chaque chargement. Cela ne recharge pas
+> automatiquement une page déjà ouverte.
+> Le Copilote se trouve sur <http://localhost:5173/copilot.html>, après connexion depuis l’accueil.
 
 Le conteneur frontend relaie `/api/*` vers `http://host.docker.internal:8000`, c’est-à-dire le port hôte publié par le service `web` du Compose backend. Le navigateur appelle le frontend seulement ; l’adresse du backend reste côté serveur.
 
@@ -33,7 +39,16 @@ Correspondance des chemins dans le proxy (`server.py`) :
 
 Le premier appel au LLM peut dépasser une minute (chargement du modèle) : le proxy attend jusqu’à 180 s (`PROXY_TIMEOUT_SECONDS`).
 
-Pour reconstruire le frontend après une modification :
+Si le conteneur existait avant l'ajout du volume, appliquez une seule fois
+la nouvelle configuration depuis le dossier `frontend` :
+
+```powershell
+docker compose up -d --no-deps --force-recreate frontend
+```
+
+Les changements dans `public` seront ensuite visibles au rafraîchissement.
+Les fichiers `server.py`, `requirements.txt` et `Dockerfile` restent copiés
+dans l'image : après leur modification, reconstruisez le frontend :
 
 ```powershell
 docker compose up --build -d

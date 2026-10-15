@@ -63,7 +63,8 @@ async function initCopilot({ technicianId, displayName }) {
     technicianName: $("#technician-name"),
     technicianNumber: $("#technician-number"),
     logoutButton: $("#logout-button"),
-    newConversationButton: $("#new-conversation-button"),
+    // Deux boutons : dans la barre latérale et en tête du panneau de contexte.
+    newConversationButtons: $$("[data-new-conversation]"),
     toolbarAvatar: $("#toolbar-avatar"),
     status: $("#copilot-status"),
     demoBadge: $("#demo-badge"),
@@ -105,6 +106,7 @@ async function initCopilot({ technicianId, displayName }) {
 
   const chatView = createChatView({
     conversationElement: elements.conversation,
+    userName: displayName,
     getAvatarKind: () => getPreferences().avatar,
     onListen: (text) => void readAloud(text),
     onProposeSolution: () => openSolutionProposal(),
@@ -253,7 +255,7 @@ async function initCopilot({ technicianId, displayName }) {
   function setBusy(isBusy) {
     requestInProgress = isBusy;
     elements.chatPanel.setAttribute("aria-busy", String(isBusy));
-    elements.newConversationButton.disabled = isBusy;
+    elements.newConversationButtons.forEach((button) => (button.disabled = isBusy));
     updateSuggestionMenusState();
     devicePicker.setDisabled(isBusy);
     setStatus(isBusy ? "Le Copilote réfléchit…" : READY_STATUS, isBusy ? "processing" : "idle");
@@ -404,12 +406,14 @@ async function initCopilot({ technicianId, displayName }) {
   elements.settingsButtons.forEach((button) => button.addEventListener("click", () => settingsPanel.open()));
   elements.stopReadingButton.addEventListener("click", stopReading);
 
-  elements.newConversationButton.addEventListener("click", () => {
-    if (requestInProgress) return;
-    dictation.cancel();
-    stopReading();
-    void conversation.reset();
-  });
+  elements.newConversationButtons.forEach((button) =>
+    button.addEventListener("click", () => {
+      if (requestInProgress) return;
+      dictation.cancel();
+      stopReading();
+      void conversation.reset();
+    })
+  );
 
   elements.logoutButton.addEventListener("click", async () => {
     dictation.cancel();

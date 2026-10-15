@@ -23,12 +23,36 @@
   <body class="copilot-page">
     <!--
       Structure :
-        .app-shell
-          ├─ aside.app-sidebar        navigation rétractable (sidebar.js)
-          ├─ main.workspace           barre du Copilote + conversation + saisie
-          └─ aside.context-panel      contexte de la session (contextPanel.js)
+        .app-frame                    cadre arrondi de l'application
+          ├─ header.app-topbar        logo, onglets des pages, thème, paramètres
+          └─ .app-shell
+               ├─ aside.app-sidebar   rail d'icônes rétractable (sidebar.js)
+               ├─ main.workspace      carte : barre du Copilote + conversation + saisie
+               └─ aside.context-panel contexte de la session (contextPanel.js)
       Les états d'affichage (sidebar, panneau) sont des attributs data-* de .app-shell.
     -->
+    <div class="app-frame">
+    <header class="app-topbar">
+      <button class="icon-button mobile-menu-button" type="button" data-open-sidebar aria-controls="app-sidebar" aria-label="Ouvrir le menu">
+        <span data-icon="menu"></span>
+      </button>
+      <a class="topbar-logo" href="/" aria-label="ATM-Chatbot, accueil">
+        <img src="/assets/images/logo.svg" alt="" aria-hidden="true">
+      </a>
+      <nav class="topbar-tabs" aria-label="Pages">
+        <a class="topbar-tab" href="/">Accueil</a>
+        <a class="topbar-tab is-active" href="/copilot.html" aria-current="page">Copilote</a>
+        <a class="topbar-tab" href="/diagnostic.html">Diagnostic</a>
+        <a class="topbar-tab" href="/flow-presentation.html">Présentation</a>
+      </nav>
+      <!-- Le bouton clair / sombre est ajouté ici par themeToggle.js. -->
+      <div class="topbar-tools">
+        <button class="icon-button" type="button" data-open-settings aria-label="Paramètres du Copilote" title="Paramètres">
+          <span data-icon="settings"></span>
+        </button>
+      </div>
+    </header>
+
     <div class="app-shell" id="app-shell" data-sidebar="expanded" data-sidebar-drawer="closed" data-context-panel="closed">
 
       <!-- ========== Sidebar ========== -->
@@ -62,7 +86,7 @@
           </a>
 
           <p class="sidebar-section-title">Actions</p>
-          <button class="sidebar-link" id="new-conversation-button" type="button" data-sidebar-label="Nouvelle conversation" data-closes-drawer>
+          <button class="sidebar-link" id="new-conversation-button" type="button" data-new-conversation data-sidebar-label="Nouvelle conversation" data-closes-drawer>
             <span data-icon="plus"></span><span class="sidebar-link-label">Nouvelle conversation</span>
           </button>
           <button class="sidebar-link" type="button" data-open-voice-mode data-sidebar-label="Chat vocal" data-closes-drawer>
@@ -91,10 +115,6 @@
       <!-- ========== Espace de conversation ========== -->
       <main class="workspace">
         <header class="workspace-header">
-          <button class="icon-button mobile-menu-button" type="button" data-open-sidebar aria-controls="app-sidebar" aria-label="Ouvrir le menu">
-            <span data-icon="menu"></span>
-          </button>
-
           <div class="assistant-identity">
             <span class="toolbar-avatar" id="toolbar-avatar" aria-hidden="true"></span>
             <span class="assistant-identity-text">
@@ -121,33 +141,36 @@
           <!-- Fil de conversation (rempli par chatView.js) -->
           <div class="conversation" id="conversation" aria-live="polite" aria-relevant="additions text"></div>
 
-          <!-- Zone de saisie -->
+          <!-- Zone de saisie : le texte en haut, les outils en dessous -->
           <div class="composer-area">
-            <!-- Menus déroulants : pannes fréquentes + codes d'erreur (suggestions.js) -->
-            <div class="composer-suggestions" id="composer-suggestions"></div>
-
             <form class="message-composer" id="message-form">
-              <div class="device-picker" id="device-picker"></div>
-
               <label class="visually-hidden" for="message-input">Votre message au Copilote</label>
               <textarea
                 id="message-input"
-                rows="1"
+                rows="2"
                 maxlength="2000"
                 placeholder="Décrivez le problème observé…"
                 aria-describedby="character-count dictation-status"
                 required
               ></textarea>
 
-              <button class="mic-button" id="mic-button" type="button" aria-pressed="false" aria-label="Dicter votre message au micro" title="Dicter au micro">
-                <span data-icon="mic"></span>
-              </button>
-              <button class="composer-voice-button" type="button" data-open-voice-mode aria-label="Démarrer le Chat vocal" title="Parler au Copilote">
-                <span data-icon="voice"></span><span class="composer-voice-button-label">Vocal</span>
-              </button>
-              <button class="send-button" id="send-button" type="submit" disabled aria-label="Envoyer le message">
-                <span class="send-button-label">Envoyer</span><span data-icon="send"></span>
-              </button>
+              <div class="composer-toolbar">
+                <div class="device-picker" id="device-picker"></div>
+                <!-- Menus déroulants : pannes fréquentes + codes d'erreur (suggestions.js) -->
+                <div class="composer-suggestions" id="composer-suggestions"></div>
+
+                <div class="composer-buttons">
+                  <button class="mic-button" id="mic-button" type="button" aria-pressed="false" aria-label="Dicter votre message au micro" title="Dicter au micro">
+                    <span data-icon="mic"></span>
+                  </button>
+                  <button class="composer-voice-button" type="button" data-open-voice-mode aria-label="Démarrer le Chat vocal" title="Parler au Copilote">
+                    <span data-icon="voice"></span><span class="composer-voice-button-label">Vocal</span>
+                  </button>
+                  <button class="send-button" id="send-button" type="submit" disabled aria-label="Envoyer le message" title="Envoyer">
+                    <span class="send-button-label">Envoyer</span><span data-icon="send"></span>
+                  </button>
+                </div>
+              </div>
             </form>
 
             <!-- États de la dictée : écoute, traitement, erreur micro (composerDictation.js) -->
@@ -166,6 +189,9 @@
       <aside class="context-panel" id="context-panel" aria-label="Contexte de la session">
         <header class="context-panel-header">
           <h2>Contexte</h2>
+          <button class="context-new-button" type="button" data-new-conversation>
+            <span data-icon="plus"></span><span>Nouvelle conversation</span>
+          </button>
           <button class="icon-button" id="context-close-button" type="button" aria-label="Fermer le contexte">
             <span data-icon="close"></span>
           </button>
@@ -198,6 +224,7 @@
         </section>
       </aside>
       <div class="context-backdrop" id="context-backdrop" aria-hidden="true"></div>
+    </div>
     </div>
 
     <!-- ========== Mode Chat vocal (voiceMode.js, état dans data-state) ==========
