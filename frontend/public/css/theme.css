@@ -1,0 +1,1421 @@
+/* ==========================================================================
+   THÈME VISUEL COMMUN -- clair par défaut, sombre au choix
+   --------------------------------------------------------------------------
+   Chargé EN DERNIER sur toutes les pages : il ne touche qu'à l'apparence
+   (couleurs, fonds, typographie, ombres), jamais à la mise en page.
+
+   Le mode sombre s'active avec <html data-theme="dark"> : bouton soleil /
+   lune ajouté par js/components/themeToggle.js, choix mémorisé dans le
+   navigateur. Toutes les couleurs passent par les jetons de la section 1 :
+   pour retoucher un mode, on ne change QUE ses jetons.
+
+   Plan :
+     1. Jetons (clair, puis sombre)
+     2. Base commune (corps, en-tête, boutons, champs, dialogues)
+     3. Bouton de thème
+     4. Accueil
+     5. Copilote
+     6. Diagnostic
+     7. Administration
+     8. Présentation du parcours
+   ========================================================================== */
+
+/* ---------- 1. Jetons ---------- */
+:root,
+:root .copilot-page {
+  color-scheme: light;
+  --font: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
+
+  --bg: #f4f7fb;
+  --bg-raised: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f7fafd;
+  --border: rgba(15, 39, 66, 0.1);
+  --border-strong: rgba(15, 39, 66, 0.18);
+  --soft-fill: rgba(15, 39, 66, 0.04);
+  --soft-fill-hover: rgba(15, 39, 66, 0.08);
+  --glass: rgba(255, 255, 255, 0.78);
+  --panel: linear-gradient(180deg, #ffffff, #f9fbfe);
+
+  --text: #0f1f33;
+  --text-soft: #2b3d52;
+  --text-muted: #5b6b80;
+  --text-faint: #8a98ab;
+  --accent-text: #0f766e;
+
+  --teal: #14b8a6;
+  --teal-strong: #0f9f90;
+  --accent-fill: rgba(13, 148, 136, 0.1);
+  --accent-border: rgba(13, 148, 136, 0.45);
+  --gradient: linear-gradient(135deg, #0f9f90 0%, #2563eb 100%);
+  --gradient-text: linear-gradient(90deg, #2563eb, #0d9488);
+  --title-gradient: linear-gradient(90deg, #0f1f33 0%, #1e40af 55%, #0d9488 100%);
+  --glow: 0 14px 30px -14px rgba(15, 159, 144, 0.55);
+
+  --amber: #b45309;
+  --amber-fill: rgba(245, 158, 11, 0.1);
+  --amber-border: rgba(217, 119, 6, 0.35);
+  --red: #b91c1c;
+  --red-fill: rgba(239, 68, 68, 0.07);
+  --red-border: rgba(220, 38, 38, 0.3);
+  --green: #15803d;
+  --green-fill: rgba(34, 197, 94, 0.1);
+  --green-border: rgba(22, 163, 74, 0.3);
+
+  --shadow-card: 0 12px 30px -20px rgba(15, 39, 66, 0.35);
+  --shadow-pop: 0 30px 60px -24px rgba(15, 39, 66, 0.35);
+  --backdrop: rgba(15, 31, 51, 0.4);
+
+  --glow-1: rgba(13, 148, 136, 0.08);
+  --glow-2: rgba(59, 130, 246, 0.09);
+  --grid-line: rgba(15, 39, 66, 0.035);
+
+  /* Anciens jetons des autres feuilles, redirigés vers la palette active. */
+  --navy: var(--text);
+  --navy-soft: var(--text-soft);
+  --ink: var(--text-soft);
+  --muted: var(--text-muted);
+  --faint: var(--text-faint);
+  --line: var(--border);
+  --canvas: var(--bg);
+  --accent: var(--teal-strong);
+  --accent-dark: var(--accent-text);
+  --accent-pale: var(--accent-fill);
+  --accent-soft: var(--accent-fill);
+  --accent-gradient: var(--gradient);
+  --glow-accent: var(--glow);
+  --danger: var(--red);
+  --warning-bg: var(--amber-fill);
+  --warning-ink: var(--amber);
+  --shadow-soft: var(--shadow-card);
+
+  /* Fond d'application : lueurs + quadrillage discret, sans image. */
+  --app-background:
+    radial-gradient(900px 520px at 8% -8%, var(--glow-1), transparent 60%),
+    radial-gradient(900px 600px at 102% 4%, var(--glow-2), transparent 60%),
+    linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 44px 44px,
+    var(--bg);
+}
+
+:root[data-theme="dark"],
+:root[data-theme="dark"] .copilot-page {
+  color-scheme: dark;
+
+  --bg: #070f1c;
+  --bg-raised: #0a1628;
+  --surface: #0f1d31;
+  --surface-2: #142640;
+  --border: rgba(148, 178, 214, 0.14);
+  --border-strong: rgba(148, 178, 214, 0.26);
+  --soft-fill: rgba(148, 178, 214, 0.06);
+  --soft-fill-hover: rgba(148, 178, 214, 0.12);
+  --glass: rgba(7, 15, 28, 0.72);
+  --panel: linear-gradient(180deg, rgba(20, 38, 64, 0.92), rgba(15, 29, 49, 0.92));
+
+  --text: #e8eef7;
+  --text-soft: #c3d0e0;
+  --text-muted: #94a6bd;
+  --text-faint: #6a7d96;
+  --accent-text: #5eead4;
+
+  --teal: #2dd4bf;
+  --accent-fill: rgba(45, 212, 191, 0.12);
+  --accent-border: rgba(45, 212, 191, 0.5);
+  --gradient-text: linear-gradient(90deg, #7cc4ff, #5eead4);
+  --title-gradient: linear-gradient(90deg, #ffffff 0%, #c9e6ff 45%, #5eead4 100%);
+  --glow: 0 14px 34px -14px rgba(45, 212, 191, 0.55);
+
+  --amber: #fbbf24;
+  --amber-fill: rgba(251, 191, 36, 0.1);
+  --amber-border: rgba(251, 191, 36, 0.38);
+  --red: #fca5a5;
+  --red-fill: rgba(248, 113, 113, 0.08);
+  --red-border: rgba(248, 113, 113, 0.35);
+  --green: #4ade80;
+  --green-fill: rgba(74, 222, 128, 0.1);
+  --green-border: rgba(74, 222, 128, 0.35);
+
+  --shadow-card: 0 16px 36px -24px rgba(0, 0, 0, 0.9);
+  --shadow-pop: 0 30px 70px -24px rgba(0, 0, 0, 0.9);
+  --backdrop: rgba(3, 8, 16, 0.65);
+
+  --glow-1: rgba(45, 212, 191, 0.13);
+  --glow-2: rgba(59, 130, 246, 0.16);
+  --grid-line: rgba(148, 178, 214, 0.035);
+}
+
+/* ---------- 2. Base commune ---------- */
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--font);
+}
+
+body {
+  background: var(--app-background);
+  background-attachment: fixed;
+  color: var(--text-soft);
+}
+
+::selection {
+  background: rgba(20, 184, 166, 0.3);
+}
+
+* {
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+/* En-tête des pages Accueil / Diagnostic / Administration */
+.site-header {
+  border-bottom-color: var(--border);
+}
+
+.brand {
+  color: var(--text);
+  font-size: 17px;
+}
+
+.brand strong {
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.navigation-link {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.navigation-link:hover,
+.navigation-link-active {
+  border-bottom-color: var(--teal);
+  color: var(--text);
+}
+
+.header-action {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.header-action span {
+  color: var(--accent-text);
+}
+
+.eyebrow {
+  width: fit-content;
+  padding: 6px 12px;
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  background: var(--accent-fill);
+  color: var(--accent-text);
+  font-size: 11.5px;
+}
+
+.eyebrow-mark {
+  background: var(--teal);
+  box-shadow: 0 0 0 4px var(--accent-fill);
+}
+
+/* Boutons */
+.button {
+  border-radius: 12px;
+  font-size: 14.5px;
+}
+
+.button-primary,
+.copilot-page .button-primary {
+  border-color: transparent;
+  background: var(--gradient);
+  box-shadow: var(--glow);
+  color: #fff;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.button-primary:hover,
+.copilot-page .button-primary:hover {
+  background: var(--gradient);
+  transform: translateY(-1px);
+}
+
+.button-icon,
+.button-primary .button-icon {
+  color: #fff;
+}
+
+.button-secondary {
+  border-color: var(--border-strong);
+  background: var(--soft-fill);
+  color: var(--text);
+}
+
+.button-secondary:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-fill);
+}
+
+.button-danger {
+  border-color: var(--red-border);
+  background: var(--red-fill);
+  color: var(--red);
+}
+
+.button-danger:hover {
+  border-color: var(--red);
+}
+
+/* Champs */
+.field {
+  color: var(--text-soft);
+  font-size: 13px;
+}
+
+.field small {
+  font-size: 12px;
+}
+
+.field input,
+.field select,
+.field textarea,
+.proposal-fields textarea,
+.proposal-review textarea,
+.record-form textarea {
+  border-color: var(--border-strong);
+  border-radius: 10px;
+  background: var(--bg-raised);
+  color: var(--text);
+  font-size: 14.5px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-faint);
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus,
+.proposal-fields textarea:focus,
+.proposal-review textarea:focus,
+.record-form textarea:focus {
+  border-color: var(--accent-border);
+  outline: 3px solid var(--accent-fill);
+}
+
+select option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.form-error {
+  border-color: var(--red-border);
+  background: var(--red-fill);
+  color: var(--red);
+  font-size: 13px;
+}
+
+kbd {
+  border-color: var(--border-strong);
+  background: var(--soft-fill);
+  color: var(--text-muted);
+}
+
+/* Dialogues */
+.app-dialog {
+  border: 1px solid var(--border-strong);
+  background: var(--panel), var(--surface);
+  color: var(--text-soft);
+  box-shadow: var(--shadow-pop);
+}
+
+.app-dialog::backdrop {
+  background: var(--backdrop);
+  backdrop-filter: blur(4px);
+}
+
+.dialog-header h2 {
+  color: var(--text);
+}
+
+.dialog-header p {
+  color: var(--text-muted);
+}
+
+/* Pied de page */
+.site-footer {
+  border-top-color: var(--border);
+  background: var(--glass);
+}
+
+.site-footer p {
+  color: var(--text-faint);
+}
+
+.page-transition {
+  background: var(--bg);
+}
+
+/* ---------- 3. Bouton de thème (themeToggle.js) ---------- */
+.theme-toggle {
+  display: inline-grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--soft-fill);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+.theme-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Soleil en mode sombre (pour revenir au clair), lune en mode clair. */
+.theme-toggle .theme-icon-sun,
+:root[data-theme="dark"] .theme-toggle .theme-icon-moon {
+  display: none;
+}
+
+:root[data-theme="dark"] .theme-toggle .theme-icon-sun {
+  display: block;
+}
+
+/* Dans les en-têtes : placé juste avant le lien de droite. */
+.header-tools {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.copilot-page .theme-toggle {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+}
+
+/* ---------- 4. Accueil ---------- */
+.home-page {
+  background: var(--app-background);
+  background-attachment: fixed;
+  color: var(--text-soft);
+}
+
+.home-page .site-header {
+  border-bottom-color: var(--border);
+}
+
+.home-page .brand,
+.home-page .header-action {
+  color: var(--text);
+}
+
+.home-page .header-action span {
+  color: var(--accent-text);
+}
+
+.home-page .navigation-link {
+  color: var(--text-muted);
+}
+
+.home-page .navigation-link:hover,
+.home-page .navigation-link-active {
+  border-bottom-color: var(--teal);
+  color: var(--text);
+}
+
+.home-page .eyebrow {
+  border-color: var(--accent-border);
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+.home-page .hero-copy h1 {
+  color: var(--text);
+  letter-spacing: -1.5px;
+  text-shadow: none;
+}
+
+.home-page .hero-copy h1 span {
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.home-page .hero-description {
+  color: var(--text-muted);
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.home-page .hero-button {
+  min-height: 52px;
+  padding: 0 24px;
+  border-radius: 14px;
+  background: var(--gradient);
+  box-shadow: var(--glow);
+  font-size: 15.5px;
+}
+
+.home-page .trust-note {
+  color: var(--text-muted);
+  font-size: 13.5px;
+}
+
+.home-page .trust-icon {
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+/* La scène (GAB + techniciens) garde son animation : seul le cadre change. */
+.home-page .hero-visual {
+  border-color: var(--border-strong);
+  background:
+    radial-gradient(420px 300px at 50% 40%, var(--glow-1), transparent 70%),
+    var(--panel);
+  box-shadow: var(--shadow-pop);
+}
+
+.home-page .visual-orbit {
+  border-color: var(--accent-border);
+  opacity: 0.5;
+}
+
+.home-page .character-avatar {
+  border-color: #fff;
+  box-shadow: 0 0 0 6px var(--accent-fill), var(--shadow-card);
+}
+
+.home-page .character-bubble {
+  border-color: var(--accent-border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+.home-page .steps-section {
+  border-top-color: var(--border);
+  background: transparent;
+}
+
+.home-page .section-heading h2 {
+  color: var(--text);
+  letter-spacing: -0.8px;
+}
+
+.home-page .step-card {
+  border-color: var(--border);
+  border-radius: 18px;
+  background: var(--panel);
+  box-shadow: var(--shadow-card);
+}
+
+.home-page .step-card:hover {
+  border-color: var(--accent-border);
+  background: var(--panel);
+  transform: translateY(-3px);
+}
+
+.home-page .step-index {
+  background: var(--gradient);
+  color: #fff;
+}
+
+.home-page .step-card h3 {
+  color: var(--text);
+  font-size: 17px;
+}
+
+.home-page .step-card p {
+  color: var(--text-muted);
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+.home-page .site-footer {
+  border-top-color: var(--border);
+  background: var(--glass);
+}
+
+.home-page .site-footer p {
+  color: var(--text-faint);
+}
+
+/* ---------- 5. Copilote ---------- */
+.copilot-page {
+  background: var(--bg);
+  color: var(--text-soft);
+}
+
+/* Barre latérale : bleu nuit dans les deux modes (repère visuel fixe). */
+.app-sidebar {
+  background:
+    radial-gradient(360px 240px at 0% 0%, rgba(45, 212, 191, 0.14), transparent 70%),
+    linear-gradient(180deg, #0b1a2e 0%, #0d1f37 100%);
+  box-shadow: inset -1px 0 0 rgba(148, 178, 214, 0.12);
+  color: #c3d0e0;
+}
+
+.sidebar-brand-text strong {
+  background: linear-gradient(90deg, #7cc4ff, #5eead4);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.sidebar-brand-avatar {
+  border-color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.3);
+}
+
+.sidebar-collapse-button {
+  border-color: rgba(148, 178, 214, 0.16);
+  background: rgba(148, 178, 214, 0.06);
+  color: #c3d0e0;
+}
+
+.sidebar-greeting {
+  border-color: rgba(45, 212, 191, 0.2);
+  background: linear-gradient(135deg, rgba(45, 212, 191, 0.1), rgba(59, 130, 246, 0.08));
+}
+
+.sidebar-greeting-text {
+  color: #94a6bd;
+}
+
+.sidebar-section-title {
+  color: #6a7d96;
+}
+
+.sidebar-link {
+  color: #a9b9cd;
+}
+
+.sidebar-link:hover {
+  background: rgba(148, 178, 214, 0.08);
+  color: #fff;
+}
+
+.sidebar-link.is-active {
+  background: linear-gradient(90deg, rgba(45, 212, 191, 0.22), rgba(45, 212, 191, 0.03));
+  box-shadow: inset 3px 0 0 #2dd4bf;
+  color: #fff;
+}
+
+.sidebar-footer {
+  border-top-color: rgba(148, 178, 214, 0.12);
+}
+
+.technician-avatar {
+  background: var(--gradient);
+}
+
+.technician-card-text small {
+  color: #6a7d96;
+}
+
+/* Zone de travail : fond quadrillé, sans image. */
+.copilot-page .workspace {
+  background: var(--app-background);
+}
+
+.workspace-header {
+  border-bottom-color: var(--border);
+  background: var(--glass);
+  backdrop-filter: saturate(140%) blur(14px);
+}
+
+.toolbar-avatar,
+.copilot-page .copilot-avatar-slot {
+  background: linear-gradient(160deg, #e6f6f4, #cfe3f5);
+}
+
+.copilot-page .assistant-identity strong {
+  color: var(--text);
+}
+
+.copilot-page .assistant-identity small {
+  color: var(--text-muted);
+}
+
+.copilot-page .assistant-identity small i {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.icon-button,
+.pill-button {
+  border-color: var(--border);
+  background: var(--soft-fill);
+  color: var(--text);
+}
+
+.icon-button:hover,
+.icon-button[aria-expanded="true"] {
+  border-color: var(--accent-border);
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+.copilot-page .pill-button-primary {
+  border-color: transparent;
+  background: var(--gradient);
+  box-shadow: var(--glow);
+  color: #fff;
+}
+
+.pill-button-warning,
+.demo-badge {
+  border: 1px solid var(--amber-border);
+  background: var(--amber-fill);
+  color: var(--amber);
+}
+
+/* Messages */
+.copilot-page .message-author {
+  color: var(--text-soft);
+}
+
+.copilot-page .message-author time {
+  color: var(--text-faint);
+}
+
+.copilot-page .copilot-avatar-slot {
+  box-shadow: 0 0 0 2px var(--accent-border), var(--shadow-card);
+}
+
+.copilot-page .message-bubble,
+.copilot-page .assistant-message .message-bubble {
+  border: 1px solid var(--border);
+  background: var(--panel), var(--surface);
+  box-shadow: var(--shadow-card);
+  color: var(--text-soft);
+}
+
+.copilot-page .user-message .message-bubble {
+  border-color: transparent;
+  background: var(--gradient);
+  box-shadow: var(--glow);
+  color: #fff;
+}
+
+.copilot-page .voice-exchange .message-bubble {
+  border-left: 3px solid var(--teal);
+}
+
+.message-listen-button {
+  border: 1px solid var(--border);
+  background: var(--soft-fill);
+  color: var(--accent-text);
+}
+
+.message-listen-button:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-fill);
+}
+
+.copilot-page .friendly-error {
+  border-color: var(--red-border);
+  background: var(--red-fill);
+  color: var(--text-soft);
+}
+
+.copilot-page .friendly-error strong {
+  color: var(--red);
+}
+
+.retry-button {
+  border-color: var(--border-strong);
+  background: var(--soft-fill);
+  color: var(--text);
+}
+
+.retry-button:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-fill);
+}
+
+.typing-indicator {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.copilot-page .typing-indicator span,
+.typing-indicator span {
+  background: var(--teal);
+}
+
+/* Écran d'accueil de la conversation */
+.conversation > .welcome-message:only-child .copilot-avatar-slot {
+  box-shadow:
+    0 0 0 6px var(--bg),
+    0 0 0 8px rgba(20, 184, 166, 0.55),
+    0 0 60px 10px rgba(20, 184, 166, 0.22);
+  animation: welcome-glow 3.2s ease-in-out infinite;
+}
+
+@keyframes welcome-glow {
+  50% {
+    box-shadow:
+      0 0 0 6px var(--bg),
+      0 0 0 8px rgba(59, 130, 246, 0.6),
+      0 0 80px 16px rgba(59, 130, 246, 0.22);
+  }
+}
+
+.conversation > .welcome-message:only-child .message-bubble {
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--text-muted);
+}
+
+.conversation > .welcome-message:only-child .message-bubble p:first-child {
+  background: var(--title-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Proposer une solution (sous une réponse) */
+.proposal-offer {
+  border-top-color: var(--border);
+}
+
+.proposal-offer-button {
+  border-color: var(--amber-border);
+  background: var(--amber-fill);
+  color: var(--amber);
+}
+
+.proposal-offer-button:hover {
+  border-color: var(--amber);
+  background: var(--amber-fill);
+}
+
+.proposal-offer-button.is-primary {
+  border-color: transparent;
+  background: var(--gradient);
+  color: #fff;
+}
+
+/* Zone de saisie */
+.copilot-page .message-composer {
+  border-color: var(--border-strong);
+  background: var(--glass);
+  box-shadow: var(--shadow-pop);
+}
+
+.copilot-page .message-composer:focus-within {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 4px var(--accent-fill), var(--shadow-pop);
+}
+
+.copilot-page .message-composer textarea {
+  background: transparent;
+  color: var(--text);
+}
+
+.device-trigger {
+  border-color: var(--border-strong);
+  background: var(--bg-raised);
+  color: var(--text);
+}
+
+.device-trigger:hover:not(:disabled),
+.device-picker.is-open .device-trigger {
+  border-color: var(--accent-border);
+  background: var(--accent-fill);
+}
+
+.device-trigger-icon,
+.device-option-icon {
+  background: var(--gradient);
+}
+
+.device-menu {
+  border-color: var(--border-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+}
+
+.device-option:hover,
+.device-option.is-active {
+  background: var(--accent-fill);
+}
+
+.device-option:not([aria-selected="true"]) .device-option-icon {
+  background: var(--soft-fill-hover);
+  color: var(--text-soft);
+}
+
+.device-option-check {
+  color: var(--accent-text);
+}
+
+.mic-button,
+.copilot-page .mic-button {
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+.mic-button:hover {
+  background: var(--accent-fill);
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+}
+
+.mic-button.is-listening {
+  background: #e11d48;
+  color: #fff;
+}
+
+.composer-voice-button {
+  background: linear-gradient(135deg, #12284a, #1d4f8f);
+}
+
+.copilot-page .send-button:disabled {
+  background: var(--soft-fill-hover);
+  box-shadow: none;
+  color: var(--text-faint);
+}
+
+.dictation-status {
+  color: var(--accent-text);
+}
+
+.dictation-status[data-state="listening"] {
+  color: #e11d48;
+}
+
+.dictation-status[data-state="error"] {
+  border-color: var(--red-border);
+  background: var(--red-fill);
+  color: var(--red);
+}
+
+.dictation-status-action {
+  background: transparent;
+}
+
+.composer-meta {
+  color: var(--text-faint);
+}
+
+/* Menus de réponses enregistrées */
+.suggestion-menu {
+  border-color: var(--border-strong);
+  background: var(--glass) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%238a98ab' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+  color: var(--text-soft);
+}
+
+.suggestion-menu:hover:not(:disabled) {
+  border-color: var(--accent-border);
+  background-color: var(--accent-fill);
+}
+
+.error-code-menu {
+  border-color: var(--amber-border);
+}
+
+.error-code-menu:hover:not(:disabled) {
+  border-color: var(--amber);
+  background-color: var(--amber-fill);
+}
+
+/* Panneau de contexte */
+.context-panel {
+  border-left-color: var(--border);
+  background: var(--bg-raised);
+}
+
+.context-panel-header h2 {
+  color: var(--text);
+}
+
+.context-card,
+.copilot-page .context-card {
+  border-color: var(--border);
+  background: var(--surface-2);
+  box-shadow: none;
+}
+
+.context-card h3,
+.text-button {
+  color: var(--accent-text);
+}
+
+.context-list dd {
+  color: var(--text);
+}
+
+.app-shell[data-context-panel="open"] .context-backdrop,
+.app-shell[data-sidebar-drawer="open"] .sidebar-backdrop {
+  background: var(--backdrop);
+}
+
+/* Paramètres et proposition */
+.settings-group {
+  border-color: var(--border);
+  background: var(--soft-fill);
+}
+
+.settings-group legend,
+.proposal-previous summary {
+  color: var(--accent-text);
+}
+
+.avatar-choice,
+.segmented label {
+  border-color: var(--border-strong);
+  color: var(--text-muted);
+}
+
+.avatar-choice:has(input:checked),
+.segmented label:has(input:checked) {
+  border-color: var(--teal);
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+.voice-active,
+.switch {
+  color: var(--text-soft);
+}
+
+.switch-track {
+  background: var(--border-strong);
+}
+
+.switch input:checked + .switch-track {
+  background: var(--teal-strong);
+}
+
+.settings-warning {
+  border-color: var(--amber-border);
+}
+
+.proposal-problem {
+  border-color: var(--border);
+  background: var(--surface-2);
+}
+
+.proposal-success,
+.proposal-notice {
+  border-color: var(--green-border);
+  background: var(--green-fill);
+  color: var(--green);
+}
+
+/* Mode vocal : écran d'appel, sombre dans les deux modes. */
+.voice-dialog {
+  background:
+    radial-gradient(1200px 700px at 50% 38%, color-mix(in srgb, var(--state-color) 22%, transparent), transparent 60%),
+    radial-gradient(900px 600px at 85% 110%, rgba(45, 212, 191, 0.18), transparent 60%),
+    linear-gradient(180deg, #050c18 0%, #081426 55%, #070f1c 100%);
+}
+
+.voice-dialog::backdrop {
+  background: #070f1c;
+}
+
+/* ---------- 6. Diagnostic ---------- */
+.diagnostic-heading h1 {
+  color: var(--text);
+}
+
+.diagnostic-heading h1 span {
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.diagnostic-intro {
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.diagnostic-page .chat-panel {
+  border-color: var(--border-strong);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+}
+
+.diagnostic-page .chat-toolbar,
+.diagnostic-page .composer-footer {
+  border-color: var(--border);
+}
+
+.diagnostic-page .assistant-identity strong {
+  color: var(--text);
+}
+
+.diagnostic-page .assistant-identity small,
+.connection-status {
+  color: var(--text-muted);
+}
+
+.assistant-avatar,
+.message-avatar {
+  background: var(--gradient);
+  color: #fff;
+}
+
+.user-avatar {
+  background: var(--soft-fill-hover);
+  color: var(--text);
+}
+
+.diagnostic-page .conversation {
+  background: transparent;
+}
+
+.diagnostic-page .message-author {
+  color: var(--text-soft);
+}
+
+.diagnostic-page .message-bubble {
+  border-color: var(--border);
+  background: var(--surface-2);
+  color: var(--text-soft);
+  font-size: 14.5px;
+}
+
+.diagnostic-page .user-message .message-bubble {
+  border-color: transparent;
+  background: var(--gradient);
+  color: #fff;
+}
+
+/* Textes secondaires trop petits dans l'ancien style. */
+.diagnostic-page .message-author,
+.diagnostic-page .assistant-identity small,
+.diagnostic-page .connection-status {
+  font-size: 12.5px;
+}
+
+.diagnostic-page .device-picker-label,
+.diagnostic-page .composer-hint,
+.diagnostic-page .keyboard-hint,
+.diagnostic-page .safety-note {
+  font-size: 12px;
+}
+
+.summary-card {
+  border-color: var(--accent-border);
+  border-left-color: var(--teal);
+  background: var(--accent-fill);
+}
+
+.identified-heading,
+.solutions-heading,
+.solution-copy strong {
+  color: var(--text);
+}
+
+.summary-card p,
+.solution-symptom,
+.solution-stats {
+  color: var(--text-muted);
+}
+
+.symptom-badge {
+  border-color: var(--border-strong);
+  background: var(--soft-fill);
+  color: var(--text-soft);
+}
+
+.solution-card {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.solution-index {
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+.accuracy-value {
+  color: var(--accent-text);
+}
+
+.summary-warning {
+  border-color: var(--amber-border);
+  background: var(--amber-fill);
+  color: var(--text-soft);
+}
+
+.diagnostic-page .composer-area {
+  border-top-color: var(--border);
+  background: transparent;
+}
+
+.diagnostic-page .device-picker,
+.diagnostic-page .message-composer {
+  border-color: var(--border-strong);
+  background: var(--bg-raised);
+}
+
+.diagnostic-page .device-picker select,
+.diagnostic-page .message-composer textarea {
+  background: transparent;
+  color: var(--text);
+}
+
+.diagnostic-page .message-composer:focus-within {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px var(--accent-fill);
+}
+
+.diagnostic-page .send-button {
+  background: var(--gradient);
+}
+
+.diagnostic-page .send-button:disabled {
+  background: var(--soft-fill-hover);
+  color: var(--text-faint);
+}
+
+.safety-note,
+.composer-hint,
+.keyboard-hint,
+.device-picker-label {
+  color: var(--text-faint);
+}
+
+/* ---------- 7. Administration ---------- */
+.admin-heading h1 {
+  color: var(--text);
+}
+
+.admin-intro,
+.admin-section-intro,
+.admin-status {
+  color: var(--text-muted);
+  font-size: 14.5px;
+}
+
+.admin-access {
+  border-color: var(--border-strong);
+  border-radius: 16px;
+  background: var(--panel), var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.admin-sections {
+  border-bottom-color: var(--border);
+}
+
+.admin-section-tab {
+  color: var(--text-muted);
+  font-size: 14.5px;
+}
+
+.admin-section-tab[aria-selected="true"] {
+  border-bottom-color: var(--teal);
+  color: var(--text);
+}
+
+.admin-tab {
+  border-color: var(--border-strong);
+  background: var(--soft-fill);
+  color: var(--text-soft);
+}
+
+.admin-tab[aria-selected="true"] {
+  border-color: var(--teal);
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+.proposal-card {
+  border-color: var(--border);
+  border-left-color: var(--amber);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.proposal-card[data-status="approved"] {
+  border-left-color: var(--green);
+}
+
+.proposal-card[data-status="rejected"] {
+  border-left-color: var(--text-faint);
+}
+
+.record-card {
+  border-left-color: var(--teal);
+}
+
+.record-form {
+  border-left-color: var(--amber);
+}
+
+.proposal-card-header h2,
+.record-form h3 {
+  color: var(--text);
+}
+
+.proposal-text {
+  background: var(--surface-2);
+  color: var(--text-soft);
+}
+
+.proposal-review {
+  border-top-color: var(--border);
+}
+
+.proposal-review h3 {
+  color: var(--text-soft);
+}
+
+.proposal-pill.is-pending { background: var(--amber-fill); color: var(--amber); }
+.proposal-pill.is-approved { background: var(--green-fill); color: var(--green); }
+.proposal-pill.is-rejected { background: var(--soft-fill-hover); color: var(--text-muted); }
+
+/* ---------- 8. Présentation du parcours ---------- */
+.flow-page {
+  --server: #4f6fd0;
+  --database: #9a5fc0;
+  background: var(--app-background);
+  color: var(--text-soft);
+}
+
+:root[data-theme="dark"] .flow-page {
+  --server: #7aa2ff;
+  --database: #c084fc;
+}
+
+.flow-page .topbar {
+  border-bottom-color: var(--border);
+}
+
+.flow-page .topbar-tools {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.flow-page .brand-icon {
+  background: var(--gradient);
+}
+
+.flow-page .intro h1 {
+  color: var(--text);
+}
+
+.flow-page .journey-card {
+  border-color: var(--border-strong);
+  background: var(--panel), var(--surface);
+  box-shadow: var(--shadow-pop);
+}
+
+.flow-page .journey-tab:hover {
+  background: var(--soft-fill);
+}
+
+.flow-page .journey-tab.is-selected {
+  border-color: var(--accent-border);
+}
+
+.flow-page .status-pill {
+  background: var(--soft-fill-hover);
+  color: var(--text-muted);
+}
+
+.flow-page .flow-node {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.flow-page .flow-node.is-active {
+  border-color: var(--accent-border);
+  background: linear-gradient(150deg, var(--surface) 25%, var(--accent-fill));
+  box-shadow: var(--glow);
+}
+
+.flow-page .flow-node.is-complete {
+  border-color: var(--accent-border);
+  background: var(--accent-fill);
+}
+
+.flow-page .node-icon,
+.flow-page .flow-node[data-kind="server"] .node-icon,
+.flow-page .flow-node[data-kind="database"] .node-icon,
+.flow-page .explanation-icon {
+  background: var(--soft-fill-hover);
+}
+
+.flow-page .flow-link {
+  background: var(--border-strong);
+}
+
+.flow-page .flow-link::after {
+  border-left-color: var(--border-strong);
+}
+
+.flow-page .flow-link.is-complete {
+  background: var(--teal);
+}
+
+.flow-page .flow-link.is-complete::after {
+  border-left-color: var(--teal);
+}
+
+.flow-page .flow-link.is-active span {
+  border-color: var(--surface);
+}
+
+.flow-page .explanation {
+  border-color: var(--border);
+  background: var(--surface-2);
+}
+
+.flow-page .explanation h3,
+.flow-page .explanation-copy strong,
+.flow-page .legend strong,
+.flow-page .takeaway strong {
+  color: var(--text);
+}
+
+.flow-page .explanation-copy > p:not(.step-label),
+.flow-page .truth-note,
+.flow-page .takeaway {
+  color: var(--text-muted);
+}
+
+.flow-page .control-button.secondary {
+  border-color: var(--border-strong);
+  background: transparent;
+  color: var(--text-soft);
+}
+
+.flow-page .control-button.secondary:hover:not(:disabled) {
+  background: var(--soft-fill);
+}
+
+.flow-page .control-button.primary {
+  border-color: transparent;
+  background: var(--gradient);
+}
+
+.flow-page .takeaway {
+  border-color: var(--border);
+  background: var(--glass);
+}

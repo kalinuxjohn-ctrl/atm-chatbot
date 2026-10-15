@@ -3,15 +3,22 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#f3f6fa">
+    <meta name="theme-color" content="#f4f7fb">
+    <!-- Thème sombre appliqué avant l'affichage (clé STORAGE_KEYS.theme de js/config.js) -->
+    <script>try{if(localStorage.getItem("copilot.theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
     <meta name="description" content="ATM-Chatbot : l’assistant de maintenance des techniciens GAB et TPE, à l’écrit ou à la voix.">
     <title>ATM-Chatbot | Assistant de maintenance GAB & TPE</title>
     <link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="/css/assets.css">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/components.css">
     <link rel="stylesheet" href="/css/home.css">
     <link rel="stylesheet" href="/css/responsive.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <script type="module" src="/js/components/themeToggle.js"></script>
     <script type="module" src="/js/pages/home.js"></script>
   </head>
   <body class="home-page">

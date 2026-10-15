@@ -16,6 +16,7 @@ export const SPEECH_LANG = "fr-FR";
 
 export const STORAGE_KEYS = Object.freeze({
   preferences: "copilot.preferences", // localStorage : conservé entre les sessions
+  theme: "copilot.theme", // localStorage : "dark" ou "light" (aussi lu dans le <head> de chaque page)
   session: "copilot.session", // localStorage : technicien connecté
   conversation: "copilot.conversation", // sessionStorage : conversation de l'onglet
   forceMocks: "copilot.forceMocks", // sessionStorage : mode démo
