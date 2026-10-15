@@ -318,7 +318,7 @@ def device_type_instruction(device_type: str | None) -> str:
     )
 
 
-def summarize_solutions(raw_text: str, solutions: list[dict], device_type: str | None = None) -> str:
+def summarize_solutions(problem_text: str, solutions: list[dict], device_type: str | None = None) -> str:
     """
     Résume en français les cas déjà connus retrouvés par la recherche
     (retrieval_service.find_ranked_solutions). Le prompt interdit
@@ -338,7 +338,7 @@ def summarize_solutions(raw_text: str, solutions: list[dict], device_type: str |
     prompt = (
         "Tu es un assistant pour techniciens de maintenance. "
         f"{device_type_instruction(device_type)}"
-        f"Un technicien décrit ce symptôme : « {raw_text} ».\n"
+        f"Un technicien décrit ce symptôme : « {problem_text} ».\n"
         "Voici les cas déjà enregistrés dans l'historique, classés du plus au moins fiable :\n"
         f"{lignes_cas}\n\n"
         "Résume ces cas en 2-3 phrases claires, en français, pour aider le technicien à choisir "

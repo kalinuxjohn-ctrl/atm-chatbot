@@ -226,7 +226,7 @@ def _handle_symptom_search(
     model_name = (understood.model_name_text or "").strip() or None
 
     cases = case_retrieval_service.find_similar_cases(
-        db, raw_text=search_text, device_type=device_type, model_name=model_name
+        db, search_text=search_text, device_type=device_type, model_name=model_name
     )
 
     if cases:
@@ -252,7 +252,7 @@ def _handle_symptom_search(
     # Repli : aucun cas réel, mais peut-être des stats agrégées.
     trace("SEARCH", "Aucun cas réel, recherche de statistiques agrégées")
     aggregated = retrieval_service.find_ranked_solutions(
-        db, raw_text=search_text, device_type=device_type, model_name=model_name
+        db, search_text=search_text, device_type=device_type, model_name=model_name
     )
 
     solutions = aggregated["solutions"]
@@ -313,7 +313,7 @@ def _format_stat_result(resultat: dict) -> str:
     )
 
 
-def _summarize_cases(raw_text: str, cases: list[dict], device_type: str | None = None) -> str:
+def _summarize_cases(problem_text: str, cases: list[dict], device_type: str | None = None) -> str:
     if not cases:
         return "Aucun cas similaire trouvé dans l'historique."
 
@@ -322,7 +322,7 @@ def _summarize_cases(raw_text: str, cases: list[dict], device_type: str | None =
     prompt = (
         "Tu es un assistant pour techniciens de maintenance ATM. "
         f"{llm_service.device_type_instruction(device_type)}"
-        f"Un technicien décrit ce symptôme : « {raw_text} ».\n"
+        f"Un technicien décrit ce symptôme : « {problem_text} ».\n"
         "Voici des cas réels déjà enregistrés, du plus au moins pertinent :\n"
         f"{lignes}\n\n"
         "Résume ces cas en langage naturel pour le technicien, en les distinguant clairement "

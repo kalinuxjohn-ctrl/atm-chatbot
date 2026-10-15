@@ -187,7 +187,7 @@ class DirectSearchValidationTests(unittest.TestCase):
             result = chat_routes.rechercher_symptome(
                 SymptomSearchRequest(raw_text="VPN\t  KO\u200b", device_type="gab"), db
             )
-        search.assert_called_once_with(db, raw_text="VPN KO", device_type="gab")
+        search.assert_called_once_with(db, search_text="VPN KO", device_type="gab")
         summarize.assert_called_once_with("VPN KO", [], device_type="gab")
         self.assertEqual(result.summary, "summary")
 

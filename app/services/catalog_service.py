@@ -16,7 +16,7 @@ from app.services.retrieval_service import MAX_SYMPTOM_LIMIT, cosine_similarity
 from app.services.stats_service import recompute_stats_safely
 
 
-def find_similar_actions(db: Session, raw_text: str, limit: int = 5) -> list[dict]:
+def find_similar_actions(db: Session, action_text: str, limit: int = 5) -> list[dict]:
     """
     Compare un texte au catalogue d'actions existant, pour aider un
     technicien à juger si sa solution est vraiment nouvelle.
@@ -27,14 +27,14 @@ def find_similar_actions(db: Session, raw_text: str, limit: int = 5) -> list[dic
     est vectorisé en UN seul appel groupé (et non un appel par action).
     """
     limit = max(1, min(limit, MAX_SYMPTOM_LIMIT))
-    if not (raw_text or "").strip():
+    if not (action_text or "").strip():
         return []
 
     catalogue = db.execute(text("SELECT action_id, canonical_text FROM action")).mappings().all()
     if not catalogue:
         return []
 
-    texte_recherche = generate_embedding(raw_text, is_query=True)
+    texte_recherche = generate_embedding(action_text, is_query=True)
     vecteurs_catalogue = generate_embeddings_batch([entree["canonical_text"] for entree in catalogue], is_query=False)
 
     candidats = []

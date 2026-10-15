@@ -29,14 +29,14 @@ from app.services.retrieval_service import fetch_similar_symptoms
 
 def find_similar_cases(
     db: Session,
-    raw_text: str,
+    search_text: str,
     device_type: str,
     symptom_limit: int = 8,
     case_limit: int = 3,
     model_name: str | None = None,
 ) -> list[dict]:
     """
-    Jusqu'à `case_limit` interventions passées similaires à `raw_text`,
+    Jusqu'à `case_limit` interventions passées similaires à `search_text`,
     triées de la plus à la moins pertinente. Limitées aux appareils du
     modèle `model_name` s'il est fourni.
 
@@ -46,7 +46,7 @@ def find_similar_cases(
     pertinente juste parce qu'un seul de ses symptômes a été retenu.
     """
     matched_symptoms = fetch_similar_symptoms(
-        db, raw_text, device_type, limit=symptom_limit, model_name=model_name
+        db, search_text, device_type, limit=symptom_limit, model_name=model_name
     )
     if not matched_symptoms:
         trace("SEARCH", "Aucun cas similaire trouvé", count=0)

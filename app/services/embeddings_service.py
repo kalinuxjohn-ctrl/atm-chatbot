@@ -57,11 +57,11 @@ class EmbeddingUnavailableError(ExternalServiceUnavailableError):
     """
 
 
-def _clean_text(raw_text: str | None) -> str:
+def _clean_text(input_text: str | None) -> str:
     """Nettoie et normalise un texte avant sa vectorisation."""
-    if raw_text is None:
+    if input_text is None:
         return ""
-    return re.sub(r"\s+", " ", raw_text).strip()
+    return re.sub(r"\s+", " ", input_text).strip()
 
 
 class EmbeddingProvider(ABC):
@@ -242,7 +242,7 @@ def _validate_dimensions(vector: Sequence[float], expected_dimensions: int) -> N
 
 
 def generate_embedding(
-    raw_text: str | None,
+    input_text: str | None,
     model_name: str | None = None,
     dimensions: int | None = None,
     is_query: bool = False,
@@ -257,12 +257,12 @@ def generate_embedding(
     en requêtes par minute.
     """
     vector_dimensions = dimensions or settings.embedding_dimensions or 1024
-    cleaned_text = _clean_text(raw_text)
+    cleaned_text = _clean_text(input_text)
 
     trace(
         "PROCESSING",
         "Texte préparé pour l'embedding",
-        input_length=len(raw_text) if raw_text is not None else 0,
+        input_length=len(input_text) if input_text is not None else 0,
         cleaned_length=len(cleaned_text),
     )
 
@@ -314,7 +314,7 @@ def generate_embedding(
 
 
 def generate_embeddings_batch(
-    raw_texts: list[str],
+    input_texts: list[str],
     model_name: str | None = None,
     dimensions: int | None = None,
     is_query: bool = False,
@@ -327,7 +327,7 @@ def generate_embeddings_batch(
     unitaire (qui reste generate_embedding()).
     """
     vector_dimensions = dimensions or settings.embedding_dimensions or 1024
-    cleaned_texts = [_clean_text(text) for text in raw_texts]
+    cleaned_texts = [_clean_text(text) for text in input_texts]
     if not cleaned_texts:
         return []
 

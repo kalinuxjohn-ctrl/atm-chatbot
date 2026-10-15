@@ -60,7 +60,7 @@ def rechercher_symptome(payload: SymptomSearchRequest, db: Session = Depends(get
         )
         if not validation.valid:
             return SymptomSearchResponse(summary=REFORMULATION_REPLY)
-        result = find_ranked_solutions(db, raw_text=validation.cleaned_text, device_type=payload.device_type)
+        result = find_ranked_solutions(db, search_text=validation.cleaned_text, device_type=payload.device_type)
         resume = summarize_solutions(validation.cleaned_text, result["solutions"], device_type=payload.device_type)
         response = SymptomSearchResponse(**result, summary=resume)
     except Exception as error:

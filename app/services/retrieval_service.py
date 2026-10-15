@@ -56,8 +56,8 @@ def cosine_similarity(left: Sequence[float], right: Sequence[float]) -> float:
     return dot_product / (left_norm * right_norm)
 
 
-def _clean_search_text(raw_text: str | None) -> str:
-    return (raw_text or "").strip()
+def _clean_search_text(search_text: str | None) -> str:
+    return (search_text or "").strip()
 
 
 def _clamp_limit(limit: int, default: int = DEFAULT_SYMPTOM_LIMIT) -> int:
@@ -114,7 +114,7 @@ def _model_filter_sql(model_name: str | None) -> tuple[str, dict]:
 
 
 def fetch_similar_symptoms(
-    db, raw_text: str, device_type: str, limit: int = DEFAULT_SYMPTOM_LIMIT, model_name: str | None = None
+    db, search_text: str, device_type: str, limit: int = DEFAULT_SYMPTOM_LIMIT, model_name: str | None = None
 ) -> list[dict]:
     """
     Les symptômes enregistrés les plus proches d'une recherche texte, DÉJÀ
@@ -133,7 +133,7 @@ def fetch_similar_symptoms(
     vectorielle n'est lancée dans ce cas), ou si aucun candidat ne dépasse
     le seuil de pertinence.
     """
-    cleaned_text = _clean_search_text(raw_text)
+    cleaned_text = _clean_search_text(search_text)
     trace("PROCESSING", "Texte de recherche nettoyé", cleaned_length=len(cleaned_text))
     if not cleaned_text:
         trace("SEARCH", "Texte de recherche vide, recherche vectorielle ignorée", device_type=device_type)
@@ -205,19 +205,19 @@ retrieve_similar_symptoms = fetch_similar_symptoms
 
 
 def find_best_catalog_match(
-    db, raw_text: str, device_type: str, query_vector: Sequence[float] | None = None
+    db, symptom_text: str, device_type: str, query_vector: Sequence[float] | None = None
 ) -> dict | None:
     """
     Cherche, parmi les symptômes DÉJÀ rattachés au catalogue (symptom_id non
     NULL) pour ce device_type, celui dont la formulation passée est la plus
-    proche de raw_text.
+    proche de symptom_text.
 
     Cette fonction garde sa convention "distance"
     (plus bas = plus proche), utilisée ailleurs avec son propre seuil
     (settings.symptom_catalog_match_max_distance). Une panne pgvector
     remonte une erreur explicite, sans recherche alternative.
     """
-    cleaned_text = _clean_search_text(raw_text)
+    cleaned_text = _clean_search_text(symptom_text)
     if not cleaned_text:
         return None
 
@@ -278,7 +278,7 @@ def store_symptom_embedding(db, intervention_symptom_id: int, vector: Sequence[f
 
 def find_ranked_solutions(
     db,
-    raw_text: str,
+    search_text: str,
     device_type: str,
     symptom_limit: int = DEFAULT_SYMPTOM_LIMIT,
     solution_limit: int = 10,
@@ -306,7 +306,7 @@ def find_ranked_solutions(
     solution_limit = _clamp_limit(solution_limit, default=10)
     # model_name ne filtre que les symptômes retenus : les stats elles-mêmes
     # restent calculées par device_type (pas de colonne modèle dans la table).
-    similar = fetch_similar_symptoms(db, raw_text, device_type, limit=symptom_limit, model_name=model_name)
+    similar = fetch_similar_symptoms(db, search_text, device_type, limit=symptom_limit, model_name=model_name)
 
     if not similar:
         return {"matched_symptom_ids": [], "solutions": [], "no_relevant_match": True}
