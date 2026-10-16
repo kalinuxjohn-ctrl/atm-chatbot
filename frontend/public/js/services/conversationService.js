@@ -69,14 +69,18 @@ export function createConversationService({ technicianId }) {
       const result =
         channel === "voice"
           ? await processVoiceConversation({ ...request, transcript: text })
-          : await sendMessage({ ...request, message: text }).then(({ conversationId, reply, solutionProposalAvailable }) => ({
+          : await sendMessage({ ...request, message: text }).then(({ conversationId, reply, ...availability }) => ({
               conversationId,
               text: reply,
-              solutionProposalAvailable,
+              ...availability,
             }));
 
       state.conversationId = result.conversationId;
-      addMessage("assistant", result.text, channel, { canProposeSolution: result.solutionProposalAvailable === true });
+      addMessage("assistant", result.text, channel, {
+        canProposeSolution: result.solutionProposalAvailable === true,
+        canAddIntervention: result.interventionAddAvailable === true,
+        interventionProblem: result.interventionAddProblem ?? null,
+      });
       return result;
     },
 
@@ -92,8 +96,8 @@ export function createConversationService({ technicianId }) {
 
     /**
      * Réponse du Copilote produite HORS de ask() (ex. confirmation d'une
-     * proposition de solution) : le backend l'a déjà enregistrée dans son
-     * historique, on l'affiche simplement dans le fil.
+     * proposition de solution ou d'intervention). Cette confirmation est
+     * conservée dans l'historique local de l'onglet.
      */
     addAssistantMessage(text) {
       addMessage("assistant", text, "text");
@@ -101,6 +105,14 @@ export function createConversationService({ technicianId }) {
 
     get technicianId() {
       return technicianId;
+    },
+
+    dismissContributionOffers() {
+      state.messages.forEach((message) => {
+        message.canAddIntervention = false;
+        message.canProposeSolution = false;
+      });
+      persist();
     },
 
     async reset() {

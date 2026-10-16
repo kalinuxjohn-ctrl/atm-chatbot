@@ -235,7 +235,7 @@ def approve_proposal(
         else:
             candidates = catalog_service.find_similar_actions(db, canonical_text, limit=1)
             closest = candidates[0] if candidates else None
-            if closest is not None and closest["distance"] <= settings.solution_proposal_duplicate_max_distance:
+            if closest is not None and closest["distance"] <= settings.action_catalog_match_max_distance:
                 action_id, integration = closest["action_id"], "existing_action_reused"
             else:
                 action_id = catalog_service.create_action_in_catalog(db, canonical_text, proposal.component_id).action_id

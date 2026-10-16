@@ -30,6 +30,8 @@ class ChatResponse(BaseModel):
     # au moins un résultat) : le frontend affiche alors « Aucune de ces
     # solutions ne fonctionne ». Champ ajouté : les clients existants l'ignorent.
     solution_proposal_available: bool = False
+    intervention_add_available: bool = False
+    intervention_add_problem: Optional[str] = None
 
 
     

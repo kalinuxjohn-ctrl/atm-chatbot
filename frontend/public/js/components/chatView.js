@@ -48,6 +48,7 @@ function createWelcomeReactor() {
  *   onListen: (text: string) => void,                 bouton "Écouter" d'une réponse
  *   createWelcomeExtras?: () => Node | null,          ex. bulles de suggestions du message d'accueil
  *   onProposeSolution?: () => void,                   « Proposer une solution » (sous une réponse avec solutions)
+ *   onAddIntervention?: (problemText: string|null) => void,
  * }} options
  */
 export function createChatView({
@@ -57,6 +58,7 @@ export function createChatView({
   onListen,
   createWelcomeExtras = () => null,
   onProposeSolution = () => {},
+  onAddIntervention = () => {},
 }) {
   let welcomeExtrasSlot = null;
   // Une seule offre de proposition à la fois : sous la DERNIÈRE réponse qui
@@ -170,7 +172,7 @@ export function createChatView({
     activeProposalOffer = null;
   }
 
-  function appendAssistant({ text, channel, time, canProposeSolution = false }, { animate = true } = {}) {
+  function appendAssistant({ text, channel, time, canProposeSolution = false, canAddIntervention = false, interventionProblem = null }, { animate = true } = {}) {
     const { message, body } = createAssistantShell(time);
     if (!animate) message.classList.remove("message-enter-fade");
     body.append(createTextBubble(text, true));
@@ -182,7 +184,18 @@ export function createChatView({
     listenButton.addEventListener("click", () => onListen(text));
     body.append(listenButton);
 
-    if (canProposeSolution) {
+    if (canAddIntervention) {
+      dismissProposalOffer();
+      activeProposalOffer = createElement("div", "proposal-offer intervention-offer");
+      const title = createElement("strong", "", "Vous avez rencontré et traité cette panne ?");
+      const hint = createElement("p", "proposal-offer-hint", "Partagez votre intervention. Un administrateur la vérifiera avant son ajout à la base.");
+      const button = createElement("button", "proposal-offer-button is-primary");
+      button.type = "button";
+      button.append(createIcon("intervention"), createElement("span", "", "Proposer une intervention"));
+      button.addEventListener("click", () => onAddIntervention(interventionProblem));
+      activeProposalOffer.append(title, hint, button);
+      body.append(activeProposalOffer);
+    } else if (canProposeSolution) {
       dismissProposalOffer();
       activeProposalOffer = createProposalOffer();
       body.append(activeProposalOffer);

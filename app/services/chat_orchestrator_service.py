@@ -111,11 +111,25 @@ def handle_chat_message(
     )
 
     search_after = context.get("last_search")
-    new_search_with_results = search_after is not search_before and bool((search_after or {}).get("results"))
+    new_search = search_after is not search_before
+    new_search_with_results = new_search and bool((search_after or {}).get("results"))
+    # Le LLM peut aussi écarter tous les candidats : reconnaître les formules
+    # imposées par les prompts, pas seulement une liste SQL vide.
+    normalized_reply = " ".join(reply.replace("*", "").replace("’", "'").casefold().split())
+    no_relevant_history = any(
+        sentence in normalized_reply
+        for sentence in (
+            "aucune intervention correspondant à ce problème n'a été trouvée dans notre base de données",
+            "aucune solution correspondant à ce problème n'a été trouvée dans notre base de données",
+        )
+    )
+    intervention_add_available = new_search and (not new_search_with_results or no_relevant_history)
     return {
         "conversation_id": conversation.conversation_id,
         "reply": reply,
-        "solution_proposal_available": new_search_with_results,
+        "solution_proposal_available": new_search_with_results and not intervention_add_available,
+        "intervention_add_available": intervention_add_available,
+        "intervention_add_problem": search_after.get("query") if intervention_add_available else None,
     }
 
 

@@ -35,6 +35,7 @@ Correspondance des chemins dans le proxy (`server.py`) :
 | --- | --- |
 | `/api/chat`, `/api/chat/search-symptom` | identiques (le routeur FastAPI est déjà préfixé par `/api`) |
 | `/api/error_code/...`, `/api/usual_problem/...` | identiques |
+| `/api/intervention_add/...`, `/api/admin/...` | identiques |
 | `/api/health`, `/api/catalog/...`, `/api/interventions/...` | `/api` retiré : `/health`, `/catalog/...`, `/interventions/...` |
 
 Le premier appel au LLM peut dépasser une minute (chargement du modèle) : le proxy attend jusqu’à 180 s (`PROXY_TIMEOUT_SECONDS`).
@@ -105,6 +106,29 @@ Contexte présente les libellés et valeurs avec des séparateurs sobres et un f
 liseré coloré, sans bulles. Son bord blanc éclairé et son ombre asymétrique donnent
 un effet de plaque de verre soulevée à gauche. De petits cercles décorent les choix des menus et
 se remplissent sur l'entrée active, en suivant les couleurs du thème.
+
+### Proposer une intervention
+
+Le bouton ambré « Ajouter une intervention » du menu gauche (icône de fiche,
+distincte du `+` de « Nouvelle conversation ») ouvre un formulaire indépendant.
+Une offre « Proposer une intervention » apparaît aussi sous une nouvelle recherche
+sans résultat pertinent : le premier symptôme est alors prérempli avec le problème
+recherché et la proposition conserve le lien à la conversation.
+
+Le formulaire permet de renseigner un appareil **déjà enregistré** (numéro de
+série ou identifiant en base), le ticket, les dates locales, plusieurs symptômes
+et leur gravité, les actions dans l'ordre avec leur résultat et le symptôme visé,
+la solution confirmée, le bilan, la cause et le résumé. Il appelle
+`POST /api/intervention_add` : la confirmation affiche un numéro de proposition
+**en attente**, jamais une intervention déjà publiée. Les erreurs sont affichées
+sans effacer la saisie ; un double envoi est bloqué.
+
+Les indicateurs `intervention_add_available` et `intervention_add_problem` de
+`POST /api/chat` pilotent cette offre (chat écrit et vocal). Ils sont mémorisés
+avec le message lors d'un rechargement. Le mode `?mock=1` simule l'envoi sans
+écrire en base ; sa troisième réponse simule l'absence de cas.
+L'administration de ces ajouts utilise les routes `/api/admin/intervention_add`
+documentées dans le README racine ; ce formulaire est l'interface technicien.
 
 | Page | Rôle |
 | --- | --- |

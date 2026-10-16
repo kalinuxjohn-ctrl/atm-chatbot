@@ -124,7 +124,7 @@ solutions ne fonctionne », puis « Proposer une solution ».
 3. Page `admin.html`, routes `/api/admin/solution-proposals` protégées par
    `ADMIN_API_KEY` (en-tête `X-Admin-Key`) : approuver ou rejeter. Une
    approbation ajoute l'action au catalogue `action`, ou réutilise une action
-   équivalente (distance <= `SOLUTION_PROPOSAL_DUPLICATE_MAX_DISTANCE`, 0.15).
+   équivalente (distance <= `ACTION_CATALOG_MATCH_MAX_DISTANCE`, 0.15).
    L'approbation rattache aussi la solution au problème : une ligne
    `intervention_action` est ajoutée à l'intervention de référence, avec
    `targets_symptom_id` = le symptôme du problème (déjà vectorisé, aucun
@@ -136,6 +136,50 @@ solutions ne fonctionne », puis « Proposer une solution ».
 Le « cas de référence » (intervention, symptôme, composant) est le cas passé
 auquel la recherche a rattaché le problème : la conversation n'est pas encore
 liée à une intervention en cours, donc `device_id` reste vide.
+
+## Ajout d'intervention
+
+Pour ajouter à l'historique un problème que le Copilote ne connaît pas, avec
+tout ce que le technicien a fait. Rien n'est visible dans la recherche avant
+la validation d'un administrateur.
+
+1. `POST /api/intervention_add` : le technicien envoie l'appareil
+   (`device_id` ou `device_serial_number`), `final_outcome_status`, les
+   `symptoms`, les `actions` dans l'ordre (`targets_symptom_number` = n° du
+   symptôme visé, 1 = le premier) et, s'il l'a trouvée, la cause (`diagnosis`).
+   Une ligne `intervention_add` est créée (statut `pending`, migration 0012).
+   Règles vérifiées (sinon 422) : une intervention `resolved` a une action
+   `is_confirmed_solution`, qui a `outcome_status = resolved`, et inversement.
+   `GET /api/intervention_add?technician_id=` liste ses demandes.
+2. Routes `/api/admin/intervention_add` (clé `X-Admin-Key`) :
+   - `GET /{id}` : contenu actuel et envoi d'origine (`submitted_content`, jamais modifié) ;
+   - `GET /{id}/preview` : **ce que l'approbation écrira, table par table**
+     (`intervention`, `intervention_symptom`, `intervention_action`,
+     `diagnosis`, nouvelles entrées des catalogues `symptom` et `action`).
+     Pour chaque symptôme et chaque action, `catalog_link` dit d'où vient le
+     rattachement au catalogue : `chosen_by_admin`, `matched_existing`
+     (distance ≤ `SYMPTOM_CATALOG_MATCH_MAX_DISTANCE` ou
+     `ACTION_CATALOG_MATCH_MAX_DISTANCE`) ou `new_catalog_entry` ;
+   - `PUT /{id}` : corriger le contenu ou imposer `catalog_symptom_id`,
+     `catalog_action_id`, `catalog_text`, `root_cause_component_id` ;
+   - `POST /{id}/approve` : écrit tout en une transaction (embeddings calculés
+     avant : si Voyage ne répond pas, rien n'est écrit), puis recalcule les
+     statistiques. L'aperçu et l'approbation utilisent le même code.
+   - `POST /{id}/reject` : commentaire obligatoire, rien n'est écrit.
+
+Les écritures directes `POST /interventions` et `POST /interventions/{id}/actions`
+sont désormais réservées à l'administrateur (`X-Admin-Key`).
+
+Le Copilote expose le formulaire technicien depuis le menu gauche et sous les
+réponses sans cas pertinent. `POST /api/chat` renvoie
+`intervention_add_available` et `intervention_add_problem` pour cette offre :
+nouvelle recherche vide, ou déclaration d'absence de résultat selon les formules
+imposées au LLM (y compris lorsqu'il écarte les candidats). Dans ce dernier cas,
+une reformulation libre de cette déclaration par le modèle ne déclenche pas
+l'offre ; le bouton du menu reste toujours accessible. Une réponse de suivi ou
+un message rejeté par la validation locale ne déclenche pas de nouvelle offre.
+La migration `db/migrations/0012_intervention_add.sql` doit être appliquée aux
+bases existantes avant l'envoi d'une proposition.
 
 ## Validation locale des messages
 

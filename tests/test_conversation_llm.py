@@ -85,6 +85,66 @@ class LastSearchDescriptionTests(unittest.TestCase):
         self.assertIsNone(orchestrator._describe_last_search(MagicMock(), {}))
 
 
+class InterventionAddAvailabilityTests(unittest.TestCase):
+    def run_turn(self, *, results=None, reply="Conseils", new_search=True, valid=True):
+        context = {}
+        if not new_search:
+            context["last_search"] = {"query": "ancienne panne", "results": []}
+
+        def route(*args):
+            if new_search:
+                context["last_search"] = {"query": "nouvelle panne", "results": results or []}
+            return reply
+
+        with (
+            patch.object(orchestrator.conversation_service, "get_or_create_conversation",
+                         return_value=MagicMock(conversation_id=15)),
+            patch.object(orchestrator.context_service, "get_context", return_value=context),
+            patch.object(orchestrator.context_service, "save_context"),
+            patch.object(orchestrator.conversation_service, "save_message"),
+            patch.object(orchestrator.conversation_service, "mark_conversation_active"),
+            patch.object(orchestrator, "_load_history", return_value=[]),
+            patch.object(orchestrator, "_describe_last_search", return_value=None),
+            patch.object(orchestrator, "validate_and_clean_message",
+                         return_value=MagicMock(valid=valid, cleaned_text="panne", reason=None)),
+            patch.object(orchestrator.message_understanding_service, "understand_message",
+                         return_value=MagicMock(intent="diagnostic")),
+            patch.object(orchestrator, "_route_message", side_effect=route),
+        ):
+            return orchestrator.handle_chat_message(MagicMock(), 15, 4, "panne", "gab")
+
+    def test_empty_search_offers_an_intervention_not_a_solution_attachment(self):
+        result = self.run_turn()
+        self.assertTrue(result["intervention_add_available"])
+        self.assertEqual(result["intervention_add_problem"], "nouvelle panne")
+        self.assertFalse(result["solution_proposal_available"])
+
+    def test_relevant_cases_keep_the_solution_attachment(self):
+        result = self.run_turn(results=[{"intervention_id": 3001}])
+        self.assertFalse(result["intervention_add_available"])
+        self.assertIsNone(result["intervention_add_problem"])
+        self.assertTrue(result["solution_proposal_available"])
+
+    def test_candidates_rejected_by_synthesis_offer_a_new_intervention(self):
+        for subject in ("intervention", "solution"):
+            with self.subTest(subject=subject):
+                result = self.run_turn(
+                    results=[{"intervention_id": 3001}],
+                    reply=f"**Aucune {subject} correspondant à ce problème n’a été trouvée dans notre base de données.**",
+                )
+                self.assertTrue(result["intervention_add_available"])
+                self.assertFalse(result["solution_proposal_available"])
+
+    def test_followup_does_not_offer_an_intervention_from_an_old_search(self):
+        result = self.run_turn(new_search=False)
+        self.assertFalse(result["intervention_add_available"])
+        self.assertFalse(result["solution_proposal_available"])
+
+    def test_invalid_input_does_not_offer_an_intervention(self):
+        result = self.run_turn(valid=False)
+        self.assertFalse(result["intervention_add_available"])
+
+
 def ok_response(payload):
     response = MagicMock(status_code=200)
     response.json.return_value = payload

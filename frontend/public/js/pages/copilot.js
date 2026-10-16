@@ -21,6 +21,7 @@ import { createSettingsPanel, formatVoiceLabel } from "../components/settingsPan
 import { createSidebar } from "../components/sidebar.js";
 import { createSuggestionMenus } from "../components/suggestions.js";
 import { createSolutionProposalDialog } from "../components/solutionProposalDialog.js";
+import { createInterventionAddDialog } from "../components/interventionAddDialog.js";
 import { createVoiceMode } from "../components/voiceMode.js";
 import { getFriendlyErrorMessage } from "../core/httpClient.js";
 import { createConversationService } from "../services/conversationService.js";
@@ -110,6 +111,7 @@ async function initCopilot({ technicianId, displayName }) {
     getAvatarKind: () => getPreferences().avatar,
     onListen: (text) => void readAloud(text),
     onProposeSolution: () => openSolutionProposal(),
+    onAddIntervention: (problemText) => openInterventionAdd(problemText || "", true),
   });
 
   // « Proposer une solution » : le problème est relu par le backend, la page
@@ -121,6 +123,28 @@ async function initCopilot({ technicianId, displayName }) {
       conversation.addAssistantMessage(reply);
     },
   });
+
+  const interventionAddDialog = createInterventionAddDialog({
+    dialog: $("#intervention-add-dialog"),
+    onSubmitted: ({ id, conversationId }) => {
+      if (conversationId !== null && conversationId === conversation.conversationId) {
+        chatView.dismissProposalOffer();
+        conversation.dismissContributionOffers();
+        conversation.addAssistantMessage(`Votre proposition d’intervention n° ${id} a été envoyée. Elle sera ajoutée à la base uniquement après validation par un administrateur.`);
+      }
+    },
+  });
+
+  function openInterventionAdd(problemText = "", fromChat = false) {
+    if (requestInProgress) return;
+    dictation.cancel();
+    stopReading();
+    interventionAddDialog.open({
+      technicianId: conversation.technicianId,
+      conversationId: fromChat ? conversation.conversationId : null,
+      problemText: problemText || "",
+    });
+  }
 
   function openSolutionProposal() {
     if (requestInProgress) return;
@@ -406,6 +430,7 @@ async function initCopilot({ technicianId, displayName }) {
     }),
   );
   elements.settingsButtons.forEach((button) => button.addEventListener("click", () => settingsPanel.open()));
+  $$("[data-add-intervention]").forEach((button) => button.addEventListener("click", () => openInterventionAdd()));
   elements.stopReadingButton.addEventListener("click", stopReading);
 
   elements.newConversationButtons.forEach((button) =>

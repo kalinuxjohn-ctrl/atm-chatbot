@@ -29,6 +29,8 @@ from app.api.routes.admin import router as admin_router
 from app.api.routes.admin_catalog import error_code_router as admin_error_code_router
 from app.api.routes.admin_catalog import usual_problem_router as admin_usual_problem_router
 from app.api.routes.usual_problem import router as usual_problem_router
+from app.api.routes.intervention_add import router as intervention_add_router
+from app.api.routes.admin_intervention_add import router as admin_intervention_add_router
 from app.core.errors import (
     AccessDeniedError,
     ExternalServiceUnavailableError,
@@ -56,6 +58,8 @@ app.include_router(admin_router)
 app.include_router(usual_problem_router)
 app.include_router(admin_error_code_router)
 app.include_router(admin_usual_problem_router)
+app.include_router(intervention_add_router)
+app.include_router(admin_intervention_add_router)
 
 
 # Les services lèvent des exceptions métier (app/core/errors.py) ; elles

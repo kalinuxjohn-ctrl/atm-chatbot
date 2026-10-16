@@ -10,6 +10,7 @@ const ICON_PATHS = {
   home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/>',
   chat: '<path d="M4 5.5h16v10H9.5L5 19.5v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/>',
   diagnostic: '<path d="M9 4h6v3H9z"/><path d="M15 5.5h3.5v15h-13v-15H9"/><path d="M8.5 13h2l1.5-3 2 6 1.5-3h1.5"/>',
+  intervention: '<rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v4H9zM8 11h8M8 15h3M15 14v5M12.5 16.5h5"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   voice: '<path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/>',
   settings:

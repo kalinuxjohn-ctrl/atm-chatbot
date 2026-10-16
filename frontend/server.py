@@ -28,9 +28,9 @@ FRONTEND_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 PUBLIC_DIRECTORY = os.path.join(FRONTEND_DIRECTORY, "public")
 
 # Certaines routes FastAPI sont DÉJÀ déclarées sous /api (routeurs chat, admin,
-# error_code et usual_problem) : on les relaie telles quelles. Les autres (/health, /catalog,
+# error_code, usual_problem, intervention_add) : on les relaie telles quelles. Les autres (/health, /catalog,
 # /interventions) n'ont pas ce préfixe : on retire alors le /api du proxy.
-BACKEND_PATHS_WITH_API_PREFIX = ("/api/chat", "/api/error_code", "/api/admin", "/api/usual_problem")
+BACKEND_PATHS_WITH_API_PREFIX = ("/api/chat", "/api/error_code", "/api/admin", "/api/usual_problem", "/api/intervention_add")
 
 # ---------- Synthèse vocale (edge-tts) ----------
 try:

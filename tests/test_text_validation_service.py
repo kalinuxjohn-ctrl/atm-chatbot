@@ -133,7 +133,13 @@ class OrchestratorValidationTests(unittest.TestCase):
                 result = orchestrator.handle_chat_message(self.db, 7, 1, text)
                 self.assertEqual(
                     result,
-                    {"conversation_id": 7, "reply": REFORMULATION_REPLY, "solution_proposal_available": False},
+                    {
+                        "conversation_id": 7,
+                        "reply": REFORMULATION_REPLY,
+                        "solution_proposal_available": False,
+                        "intervention_add_available": False,
+                        "intervention_add_problem": None,
+                    },
                 )
         for name in ("history", "understand", "route", "llm", "summarize", "search"):
             self.mocks[name].assert_not_called()

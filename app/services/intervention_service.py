@@ -47,16 +47,6 @@ def create_intervention_with_symptoms(db: Session, payload: InterventionCreate) 
     if db.get(Technician, payload.technician_id) is None:
         raise ReferenceNotFoundError(f"Technicien {payload.technician_id} introuvable.")
 
-    # Deux appels groupés au fournisseur d'embedding, quel que soit le nombre
-    # de symptômes (au lieu d'un appel par symptôme) -- important avec un
-    # quota de quelques requêtes par minute. Deux versions du même texte
-    # car Voyage vectorise différemment selon l'usage :
-    # - "document" (is_query=False) : le vecteur STOCKÉ, que les futures recherches retrouveront ;
-    # - "query" (is_query=True) : le vecteur qui sert à CHERCHER un symptôme déjà catalogué.
-    textes_symptomes = [symptome.raw_text for symptome in payload.symptoms]
-    vecteurs_a_stocker = generate_embeddings_batch(textes_symptomes, is_query=False)
-    vecteurs_de_recherche = generate_embeddings_batch(textes_symptomes, is_query=True)
-
     nouvelle_intervention = Intervention(
         device_id=payload.device_id,
         technician_id=payload.technician_id,
@@ -66,16 +56,12 @@ def create_intervention_with_symptoms(db: Session, payload: InterventionCreate) 
 
     a_ecrire: list[tuple[InterventionSymptom, list[float]]] = []
     nouveaux_symptomes = []
+    vecteurs_et_matchs = embed_symptoms_and_match_catalog(
+        db, [symptome.raw_text for symptome in payload.symptoms], device.device_type
+    )
 
-    for symptome, vecteur_a_stocker, vecteur_de_recherche in zip(
-        payload.symptoms, vecteurs_a_stocker, vecteurs_de_recherche
-    ):
-        symptom_id_trouve = None
-        match = find_best_catalog_match(
-            db, symptome.raw_text, device.device_type, query_vector=vecteur_de_recherche
-        )
-        if match is not None and match["distance"] <= settings.symptom_catalog_match_max_distance:
-            symptom_id_trouve = match["symptom_id"]
+    for symptome, (vecteur_a_stocker, match) in zip(payload.symptoms, vecteurs_et_matchs):
+        symptom_id_trouve = match["symptom_id"] if match is not None else None
 
         symptome_orm = InterventionSymptom(
             raw_text=symptome.raw_text,
@@ -100,6 +86,31 @@ def create_intervention_with_symptoms(db: Session, payload: InterventionCreate) 
 
     db.refresh(nouvelle_intervention)
     return nouvelle_intervention
+
+
+def embed_symptoms_and_match_catalog(
+    db: Session, symptom_texts: list[str], device_type: str
+) -> list[tuple[list[float], dict | None]]:
+    """
+    Pour chaque texte de symptôme : (vecteur à stocker, symptôme du catalogue
+    assez proche ou None). Le match est un dict {"symptom_id", "distance"}.
+
+    Deux appels groupés au fournisseur d'embedding, quel que soit le nombre
+    de symptômes -- important avec un quota de quelques requêtes par minute.
+    Deux versions du même texte, car Voyage vectorise différemment selon l'usage :
+    - "document" (is_query=False) : le vecteur STOCKÉ, que les futures recherches retrouveront ;
+    - "query" (is_query=True) : le vecteur qui sert à CHERCHER un symptôme déjà catalogué.
+    """
+    vecteurs_a_stocker = generate_embeddings_batch(symptom_texts, is_query=False)
+    vecteurs_de_recherche = generate_embeddings_batch(symptom_texts, is_query=True)
+
+    resultats = []
+    for texte, vecteur_a_stocker, vecteur_de_recherche in zip(symptom_texts, vecteurs_a_stocker, vecteurs_de_recherche):
+        match = find_best_catalog_match(db, texte, device_type, query_vector=vecteur_de_recherche)
+        if match is not None and match["distance"] > settings.symptom_catalog_match_max_distance:
+            match = None  # trop éloigné : mieux vaut pas de rattachement qu'un mauvais
+        resultats.append((vecteur_a_stocker, match))
+    return resultats
 
 
 def get_intervention_by_id(db: Session, intervention_id: int) -> Intervention | None:

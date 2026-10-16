@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="/css/components.css">
     <link rel="stylesheet" href="/css/copilot.css">
     <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="/css/intervention-add.css">
     <script type="module" src="/js/components/themeToggle.js"></script>
     <script type="module" src="/js/pages/copilot.js"></script>
   </head>
@@ -89,6 +90,9 @@
           <p class="sidebar-section-title">Actions</p>
           <button class="sidebar-link" id="new-conversation-button" type="button" data-new-conversation data-sidebar-label="Nouvelle conversation" data-closes-drawer>
             <span data-icon="plus"></span><span class="sidebar-link-label">Nouvelle conversation</span>
+          </button>
+          <button class="sidebar-link sidebar-intervention-add" type="button" data-add-intervention data-sidebar-label="Ajouter une intervention" data-closes-drawer aria-haspopup="dialog" aria-controls="intervention-add-dialog">
+            <span data-icon="intervention"></span><span class="sidebar-link-label">Ajouter une intervention</span>
           </button>
           <button class="sidebar-link" type="button" data-open-voice-mode data-sidebar-label="Chat vocal" data-closes-drawer>
             <span data-icon="voice"></span><span class="sidebar-link-label">Chat vocal</span>
@@ -341,6 +345,70 @@
     </dialog>
 
     <!-- ========== Paramètres (settingsPanel.js, enregistrés dans le navigateur) ========== -->
+    <dialog class="app-dialog intervention-add-dialog" id="intervention-add-dialog" aria-labelledby="intervention-add-title" aria-describedby="intervention-add-description">
+      <form class="dialog-form" data-intervention-form novalidate>
+        <header class="dialog-header intervention-add-header">
+          <span class="intervention-add-emblem" data-icon="intervention"></span>
+          <div>
+            <span class="intervention-add-eyebrow">Partager une expérience terrain</span>
+            <h2 id="intervention-add-title">Ajouter une intervention</h2>
+            <p id="intervention-add-description">Décrivez ce que vous avez constaté et réalisé. Votre proposition sera vérifiée par un administrateur avant de rejoindre la base.</p>
+          </div>
+        </header>
+        <div data-intervention-fields>
+          <section class="intervention-section" aria-labelledby="intervention-device-title">
+            <h3 id="intervention-device-title"><span>1</span> Appareil et intervention</h3>
+            <div class="intervention-grid">
+              <label class="field">Identifier l’appareil par
+                <select name="deviceReferenceType"><option value="serial">Numéro de série</option><option value="id">Identifiant de l’appareil en base</option></select>
+              </label>
+              <label class="field"><span data-device-reference-label>Numéro de série de l’appareil *</span>
+                <input name="deviceReference" type="text" maxlength="100" required autocomplete="off">
+                <small>L’appareil doit déjà être enregistré dans la base.</small>
+              </label>
+              <label class="field">Référence du ticket <em>facultatif</em>
+                <input name="ticketReference" maxlength="100">
+              </label>
+              <label class="field">Bilan de l’intervention *
+                <select name="finalOutcome"><option value="resolved">Résolue</option><option value="partially_resolved">Partiellement résolue</option><option value="unresolved">Non résolue</option><option value="escalated">Transmise au niveau supérieur</option></select>
+              </label>
+              <label class="field">Début <em>facultatif</em><input type="datetime-local" name="openedAt"></label>
+              <label class="field">Fin <em>facultatif</em><input type="datetime-local" name="closedAt"></label>
+            </div>
+          </section>
+          <section class="intervention-section" aria-labelledby="intervention-symptoms-title">
+            <h3 id="intervention-symptoms-title"><span>2</span> Symptômes constatés</h3>
+            <p class="intervention-section-hint">Un symptôme par fiche, dans vos propres mots.</p>
+            <div class="intervention-rows" data-intervention-symptoms></div>
+            <button type="button" class="intervention-add-row" data-add-symptom><span data-icon="plus"></span>Ajouter un symptôme</button>
+          </section>
+          <section class="intervention-section" aria-labelledby="intervention-actions-title">
+            <h3 id="intervention-actions-title"><span>3</span> Actions et résultats</h3>
+            <p class="intervention-section-hint">Gardez l’ordre des essais et indiquez l’action qui a réellement résolu la panne.</p>
+            <div class="intervention-rows" data-intervention-actions></div>
+            <button type="button" class="intervention-add-row" data-add-action><span data-icon="plus"></span>Ajouter une action</button>
+          </section>
+          <section class="intervention-section" aria-labelledby="intervention-diagnosis-title">
+            <h3 id="intervention-diagnosis-title"><span>4</span> Cause et résumé <em>facultatif</em></h3>
+            <label class="field">Cause identifiée
+              <textarea name="diagnosis" rows="2" maxlength="2000" placeholder="Quelle était la cause de la panne ?"></textarea>
+            </label>
+            <label class="intervention-check"><input type="checkbox" name="diagnosisConfirmed">Cette cause a été confirmée</label>
+            <label class="field">Résumé de l’intervention
+              <textarea name="summary" rows="2" maxlength="2000" placeholder="Informations utiles aux prochains techniciens…"></textarea>
+            </label>
+          </section>
+        </div>
+        <p class="form-error" data-intervention-error role="alert" hidden></p>
+        <div class="intervention-success" data-intervention-success role="status" tabindex="-1" hidden></div>
+        <footer class="dialog-actions intervention-add-footer">
+          <span class="intervention-review-note" data-intervention-note>Validation administrateur obligatoire</span>
+          <button class="button button-secondary" type="button" data-intervention-cancel>Annuler</button>
+          <button class="button button-primary" type="submit" data-intervention-submit>Envoyer pour validation</button>
+        </footer>
+      </form>
+    </dialog>
+
     <dialog class="app-dialog settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
       <form class="dialog-form" method="dialog">
         <header class="dialog-header">

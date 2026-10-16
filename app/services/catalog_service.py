@@ -26,24 +26,43 @@ def find_similar_actions(db: Session, action_text: str, limit: int = 5) -> list[
     -- pas besoin d'une colonne/migration dédiée pour ça. Tout le catalogue
     est vectorisé en UN seul appel groupé (et non un appel par action).
     """
-    limit = max(1, min(limit, MAX_SYMPTOM_LIMIT))
     if not (action_text or "").strip():
         return []
+    return rank_catalog_actions(db, [action_text], limit=limit)[0]
 
+
+def rank_catalog_actions(db: Session, action_texts: list[str], limit: int = 5) -> list[list[dict]]:
+    """
+    Même comparaison que find_similar_actions, pour plusieurs textes à la fois :
+    2 appels d'embedding au total (les textes, puis le catalogue), quel que soit
+    le nombre de textes. Renvoie une liste de candidats par texte, dans l'ordre.
+    """
+    limit = max(1, min(limit, MAX_SYMPTOM_LIMIT))
     catalogue = db.execute(text("SELECT action_id, canonical_text FROM action")).mappings().all()
-    if not catalogue:
-        return []
+    if not action_texts or not catalogue:
+        return [[] for _ in action_texts]
 
-    texte_recherche = generate_embedding(action_text, is_query=True)
+    # Un seul texte : generate_embedding, qui met les recherches en cache.
+    vecteurs_recherche = (
+        [generate_embedding(action_texts[0], is_query=True)]
+        if len(action_texts) == 1
+        else generate_embeddings_batch(action_texts, is_query=True)
+    )
     vecteurs_catalogue = generate_embeddings_batch([entree["canonical_text"] for entree in catalogue], is_query=False)
 
-    candidats = []
-    for entree, vecteur_entree in zip(catalogue, vecteurs_catalogue):
-        distance = 1.0 - cosine_similarity(texte_recherche, vecteur_entree)
-        candidats.append({"action_id": entree["action_id"], "canonical_text": entree["canonical_text"], "distance": distance})
-
-    candidats.sort(key=lambda candidat: candidat["distance"])
-    return candidats[:limit]
+    classements = []
+    for vecteur_recherche in vecteurs_recherche:
+        candidats = [
+            {
+                "action_id": entree["action_id"],
+                "canonical_text": entree["canonical_text"],
+                "distance": 1.0 - cosine_similarity(vecteur_recherche, vecteur_entree),
+            }
+            for entree, vecteur_entree in zip(catalogue, vecteurs_catalogue)
+        ]
+        candidats.sort(key=lambda candidat: candidat["distance"])
+        classements.append(candidats[:limit])
+    return classements
 
 
 def create_action_in_catalog(db: Session, canonical_text: str, component_id: int | None = None) -> Action:

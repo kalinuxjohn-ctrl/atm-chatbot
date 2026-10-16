@@ -17,6 +17,15 @@ spec.loader.exec_module(frontend_server)
 
 
 class FrontendStaticFilesTests(unittest.TestCase):
+    def test_intervention_add_proxy_keeps_the_api_prefix(self):
+        for path in (
+            "/api/intervention_add",
+            "/api/intervention_add/42",
+            "/api/admin/intervention_add/42/approve",
+        ):
+            with self.subTest(path=path):
+                self.assertTrue(path.startswith(frontend_server.BACKEND_PATHS_WITH_API_PREFIX))
+
     def test_saved_assets_are_visible_without_server_restart(self):
         with tempfile.TemporaryDirectory() as directory:
             with patch.object(frontend_server, "PUBLIC_DIRECTORY", directory):

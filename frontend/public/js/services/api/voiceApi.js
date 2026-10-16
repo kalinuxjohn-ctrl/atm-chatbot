@@ -16,20 +16,26 @@ import { sendMessage } from "./chatApi.js";
 import { mockVoiceResponse } from "./mocks.js";
 
 /**
- * @returns {Promise<{conversationId: number, text: string, audio: null}>}
+ * @returns {Promise<{conversationId: number, text: string, audio: null,
+ *   solutionProposalAvailable: boolean, interventionAddAvailable: boolean, interventionAddProblem: string|null}>}
  *          audio = null : la voix est générée par le navigateur.
  */
 export async function processVoiceConversation({ transcript, technicianId, conversationId = null, deviceType = null }) {
   if (FORCE_MOCKS) {
-    const mock = await mockVoiceResponse({ conversationId });
-    return { conversationId: mock.conversation_id, text: mock.text, audio: mock.audio };
+    const mock = await mockVoiceResponse({ conversationId, transcript });
+    return {
+      conversationId: mock.conversation_id, text: mock.text, audio: mock.audio,
+      solutionProposalAvailable: mock.solution_proposal_available === true,
+      interventionAddAvailable: mock.intervention_add_available === true,
+      interventionAddProblem: mock.intervention_add_problem ?? null,
+    };
   }
 
-  const { conversationId: id, reply } = await sendMessage({
+  const { conversationId: id, reply, ...availability } = await sendMessage({
     message: transcript,
     technicianId,
     conversationId,
     deviceType,
   });
-  return { conversationId: id, text: reply, audio: null };
+  return { conversationId: id, text: reply, audio: null, ...availability };
 }

@@ -7,7 +7,7 @@
 const MOCK_REPLIES = [
   "Je vous recommande de vérifier le lecteur de carte.",
   "Commencez par contrôler le mécanisme de rétention de carte, puis relancez une transaction de test.",
-  "Si le problème persiste, réinitialisez le lecteur de carte et notez le résultat dans l’intervention.",
+  "Aucune intervention correspondant à ce problème n'a été trouvée dans notre base de données.\n\nNéanmoins, en tant que chatbot d'aide à la maintenance, je peux te conseiller de relever les voyants du lecteur.",
 ];
 
 let nextMockConversationId = 1;
@@ -19,7 +19,7 @@ function simulateLatency(minMs = 600, maxMs = 1200) {
 }
 
 /** Même format que POST /chat : { conversation_id, reply }. */
-export async function mockChatResponse({ conversationId }) {
+export async function mockChatResponse({ conversationId, message = "" }) {
   await simulateLatency();
   const reply = MOCK_REPLIES[mockReplyIndex % MOCK_REPLIES.length];
   mockReplyIndex += 1;
@@ -27,14 +27,16 @@ export async function mockChatResponse({ conversationId }) {
   return {
     conversation_id: conversationId ?? nextMockConversationId++,
     reply,
-    solution_proposal_available: mockReplyIndex <= 2,
+    solution_proposal_available: (mockReplyIndex - 1) % MOCK_REPLIES.length !== 2,
+    intervention_add_available: (mockReplyIndex - 1) % MOCK_REPLIES.length === 2,
+    intervention_add_problem: (mockReplyIndex - 1) % MOCK_REPLIES.length === 2 ? message : null,
   };
 }
 
 /** Format prévu pour une future API vocale : { text, audio }. */
-export async function mockVoiceResponse({ conversationId }) {
-  const chat = await mockChatResponse({ conversationId });
-  return { conversation_id: chat.conversation_id, text: chat.reply, audio: null };
+export async function mockVoiceResponse({ conversationId, transcript }) {
+  const chat = await mockChatResponse({ conversationId, message: transcript });
+  return { ...chat, text: chat.reply, audio: null };
 }
 
 /** Format prévu pour une future API d'authentification. */
@@ -104,6 +106,19 @@ const MOCK_PROPOSAL_CONTEXT = {
 };
 
 const mockProposals = [];
+let nextInterventionAddId = 1000;
+
+export async function mockInterventionAddResponse(content) {
+  await simulateLatency();
+  return {
+    intervention_add_id: nextInterventionAddId++,
+    status: "pending",
+    content: structuredClone(content),
+    submitted_content: structuredClone(content),
+    technician_id: content.technician_id,
+    conversation_id: content.conversation_id,
+  };
+}
 
 /** Même format que GET /chat/conversations/{id}/solution-proposal-context. */
 export async function mockProposalContextResponse({ conversationId }) {
