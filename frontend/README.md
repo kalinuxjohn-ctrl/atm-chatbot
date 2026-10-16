@@ -85,6 +85,26 @@ et un état ouvert/fermé visible. Le bouton « Contexte » affiche son libellé
 grand écran ; son libellé accessible et son info-bulle suivent l'état du panneau.
 Le thème clair utilise des fonds blancs aux nuances de bleu, y compris le panneau
 Contexte et l'animation de maintenance. Le thème sombre conserve sa palette verte.
+Pendant l'attente d'une réponse, les trois points restent affichés et l'avatar SVG
+anime une pose de réflexion (main au menton, tête inclinée et regard vers le haut).
+Les avatars personnalisés sous forme d'image s'inclinent uniquement. En mode
+mouvements réduits, la pose reste fixe.
+Les paramètres proposent trois avatars : technicienne, technicien et robot.
+Le robot utilise les mêmes animations de réflexion, parole et erreur et son
+choix est mémorisé comme celui des avatars humains.
+Lors d'une erreur, l'avatar baisse la tête, fronce les sourcils et fait un petit
+mouvement de désaccord, puis revient au repos après une seule séquence de 2,8 s.
+Les images personnalisées bougent sans modification du visage. Cette animation
+est désactivée en mode mouvements réduits ; le message et « Réessayer » restent accessibles.
+Les réponses du chatbot affichent un sous-ensemble Markdown : gras, italique,
+titres, listes et code. Le texte utilisateur reste littéral ; le HTML et les
+liens renvoyés par le modèle ne sont jamais exécutés ni rendus comme liens actifs.
+Les entrées des suggestions sont des lignes de texte sans icône de conversation
+répétée ; les codes d'erreur restent identifiables par leur code. Le panneau
+Contexte présente les libellés et valeurs avec des séparateurs sobres et un fin
+liseré coloré, sans bulles. Son bord blanc éclairé et son ombre asymétrique donnent
+un effet de plaque de verre soulevée à gauche. De petits cercles décorent les choix des menus et
+se remplissent sur l'entrée active, en suivant les couleurs du thème.
 
 | Page | Rôle |
 | --- | --- |

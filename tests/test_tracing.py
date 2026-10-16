@@ -189,7 +189,7 @@ class TracingTests(unittest.TestCase):
     def test_diagnostic_aggregate_and_empty_branches(self):
         for solutions, expected in (
             ([{"symptom_id": 1, "action_id": 2}], "aggregate reply"),
-            ([], "Aucune intervention ni statistique connue pour ce symptôme dans l'historique."),
+            ([], "chatbot suggestions"),
         ):
             with self.subTest(solutions=solutions):
                 context = {"device_type": "gab"}
@@ -201,6 +201,8 @@ class TracingTests(unittest.TestCase):
                                  return_value={"solutions": solutions}),
                     patch.object(orchestrator.llm_service, "summarize_solutions",
                                  return_value="aggregate reply") as summarize,
+                    patch.object(orchestrator, "_summarize_cases",
+                                 return_value="chatbot suggestions") as suggest,
                 ):
                     result = orchestrator._handle_symptom_search(
                         MagicMock(), context,
@@ -209,6 +211,7 @@ class TracingTests(unittest.TestCase):
                 self.assertEqual(result, expected)
                 self.assertEqual(len(context["last_search"]["results"]), len(solutions))
                 self.assertEqual(summarize.call_count, int(bool(solutions)))
+                self.assertEqual(suggest.call_count, int(not solutions))
 
     def test_detail_request_selects_the_designated_result_without_new_search(self):
         context = {"last_search": {"results": [{"position": 1}, {"position": 2, "intervention_id": 9}]}}

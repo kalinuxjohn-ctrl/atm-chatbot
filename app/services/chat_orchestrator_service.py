@@ -265,15 +265,16 @@ def _handle_symptom_search(
         return llm_service.summarize_solutions(search_text, solutions, device_type=device_type)
 
     context_service.record_last_search(context, query=search_text, results=[])
-    trace("RESPONSE", "Aucun cas ni solution, réponse déterministe sans LLM de synthèse", has_model_filter=bool(model_name))
+    trace("RESPONSE", "Aucun cas ni solution, suggestions du chatbot demandées", has_model_filter=bool(model_name))
+    suggestions = _summarize_cases(search_text, [], device_type)
     if model_name:
         # Le filtre modèle a pu tout éliminer : on le dit explicitement, pour
         # que le technicien sache que la recherche portait sur CE modèle.
         return (
             f"Aucune intervention ni statistique connue pour ce symptôme sur un "
-            f"{device_type.upper()} de modèle « {model_name} »."
+            f"{device_type.upper()} de modèle « {model_name} ».\n\n{suggestions}"
         )
-    return "Aucune intervention ni statistique connue pour ce symptôme dans l'historique."
+    return suggestions
 
 
 def _stat_result(position: int, solution: dict) -> dict:
@@ -314,10 +315,7 @@ def _format_stat_result(resultat: dict) -> str:
 
 
 def _summarize_cases(problem_text: str, cases: list[dict], device_type: str | None = None) -> str:
-    if not cases:
-        return "Aucun cas similaire trouvé dans l'historique."
-
-    lignes = "\n".join(_format_case(case, index + 1) for index, case in enumerate(cases))
+    lignes = "\n".join(_format_case(case, index + 1) for index, case in enumerate(cases)) or "Aucun cas candidat."
 
     prompt = (
         "Tu es un assistant pour techniciens de maintenance ATM. "
@@ -337,13 +335,29 @@ def _summarize_cases(problem_text: str, cases: list[dict], device_type: str | No
         "ne suffit pas non plus à établir ce lien.\n"
         "Présente uniquement les cas dont les informations fournies établissent un lien technique "
         "avec le problème. Écarte ceux sans lien établi ou qui le contredisent. "
-        "Si aucun cas ne convient, réponds uniquement : "
-        "« Aucun cas suffisamment pertinent pour le problème décrit n'a été trouvé dans l'historique. » "
-        "Ne propose alors ni les actions des cas écartés ni une solution issue de tes connaissances.\n"
+        "Si aucun cas ne convient, indique : "
+        "« Aucune intervention correspondant à ce problème n'a été trouvée dans notre base de données. » "
+        "Ne présente pas les actions des cas écartés comme des solutions historiques pertinentes.\n"
         "Sinon, résume les seuls cas pertinents en langage naturel, en expliquant brièvement "
         "le lien avec le problème et les éventuelles limites. Conserve leurs numéros d'origine "
         "(par exemple Cas 2 reste Cas 2 si Cas 1 est écarté). "
-        "N'invente AUCUNE information absente des cas fournis."
+        "N'invente AUCUNE information historique absente des cas fournis. "
+        "Tu peux présenter une piste indirecte dans une section **Pistes indirectes de l'historique**, "
+        "uniquement si les détails fournis établissent un lien de composant ou de fonction précis ; "
+        "explique les différences de symptômes et ne la présente pas comme une correspondance directe. "
+        "Par exemple, une réinitialisation de lecteur ayant rétabli l'acceptation des cartes peut être "
+        "une piste indirecte pour des cartes rejetées, même si le symptôme initial était une carte retenue.\n"
+        "Que des cas conviennent ou non, propose si possible 2 à 4 vérifications adaptées au problème "
+        "en les introduisant simplement par : "
+        "« Néanmoins, en tant que chatbot d'aide à la maintenance, je peux te conseiller ces vérifications : » "
+        "si aucun cas ne convient ; sinon utilise « En complément, voici mes conseils de chatbot : ». "
+        "Cette introduction suffit à distinguer tes conseils des faits de la base : "
+        "n'ajoute pas de long avertissement, de titre « hors base de données » ni de formule « Notez bien ». "
+        "Présente-les comme des pistes à vérifier, pas comme un diagnostic certain. "
+        "Privilégie les contrôles non destructifs et les procédures constructeur ; "
+        "n'invente ni code de maintenance ni contournement des sécurités. "
+        "Si les informations ne suffisent pas, demande les précisions utiles plutôt que d'inventer.\n"
+        "Utilise du Markdown simple : **Cas 1**, titres et listes courtes ; pas de bloc de code autour de la réponse."
     )
     trace(
         "CONTEXT",

@@ -30,11 +30,48 @@ export const AVATARS = Object.freeze({
     hairBack: "",
     hairFront: "M37 50 C34 30 46 21 60 21 C75 21 87 30 83 50 C80 41 73 35 60 35 C48 35 40 41 37 50 Z",
   },
+  robot: {
+    label: "Robot",
+    robotic: true,
+  },
 });
 
 export const DEFAULT_AVATAR = "female";
 
-function buildSvg({ skin, hairColor, hairBack, hairFront }) {
+function buildSvg({ skin, hairColor, hairBack, hairFront, robotic = false }) {
+  if (robotic) {
+    return `
+      <svg viewBox="0 0 120 120" role="img" focusable="false" aria-hidden="true">
+        <path class="avatar-body" d="M22 120 V103 Q22 86 40 86 H80 Q98 86 98 103 V120" fill="#183a55"/>
+        <rect x="43" y="96" width="34" height="19" rx="6" fill="#0b243c" stroke="#91d9f4" stroke-width="2"/>
+        <circle cx="53" cy="105" r="3" fill="#5ce5d1"/>
+        <path d="M62 105 H70" stroke="#91d9f4" stroke-width="3" stroke-linecap="round"/>
+        <rect x="51" y="74" width="18" height="16" rx="4" fill="#779eb8"/>
+        <g class="avatar-head">
+          <path d="M60 23 V14" stroke="#91d9f4" stroke-width="4"/>
+          <circle cx="60" cy="12" r="5" fill="#5ce5d1"/>
+          <rect x="25" y="43" width="9" height="22" rx="4" fill="#779eb8"/>
+          <rect x="86" y="43" width="9" height="22" rx="4" fill="#779eb8"/>
+          <rect x="31" y="25" width="58" height="55" rx="17" fill="#c4e3ef" stroke="#779eb8" stroke-width="2"/>
+          <rect x="37" y="35" width="46" height="36" rx="11" fill="#0b243c"/>
+          <g stroke="#91d9f4" stroke-width="2" stroke-linecap="round">
+            <path class="avatar-brow-left" d="M44 44 H53"/>
+            <path class="avatar-brow-right" d="M67 44 H76"/>
+          </g>
+          <g class="avatar-eyes" fill="#5ce5d1">
+            <rect x="45" y="48" width="7" height="8" rx="3"/>
+            <rect x="68" y="48" width="7" height="8" rx="3"/>
+          </g>
+          <ellipse class="avatar-mouth" cx="60" cy="63" rx="6" ry="1.5" fill="#91d9f4"/>
+        </g>
+        <g class="avatar-thinking-arm">
+          <path d="M87 109 Q97 99 81 86" fill="none" stroke="#779eb8" stroke-width="13" stroke-linecap="round"/>
+          <path d="M81 86 L73 74" fill="none" stroke="#c4e3ef" stroke-width="9" stroke-linecap="round"/>
+          <path d="M74 76 H64 Q59 76 59 71 V67 M64 71 V65" fill="none" stroke="#c4e3ef" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="84" cy="89" r="4" fill="#5ce5d1"/>
+        </g>
+      </svg>`;
+  }
   return `
     <svg viewBox="0 0 120 120" role="img" focusable="false" aria-hidden="true">
       ${hairBack ? `<path d="${hairBack}" fill="${hairColor}"/>` : ""}
@@ -42,9 +79,13 @@ function buildSvg({ skin, hairColor, hairBack, hairFront }) {
       <path d="M47 83 L60 99 L73 83" fill="none" stroke="#168b87" stroke-width="4" stroke-linejoin="round"/>
       <rect x="72" y="102" width="12" height="7" rx="1.5" fill="#85d2c9"/>
       <rect x="52" y="68" width="16" height="17" rx="6" fill="${skin}"/>
+      <g class="avatar-head">
       <ellipse cx="60" cy="52" rx="23" ry="25" fill="${skin}"/>
       <path d="${hairFront}" fill="${hairColor}"/>
-      <path d="M48 46 Q52 44 55 46 M65 46 Q68 44 72 46" fill="none" stroke="${hairColor}" stroke-width="2" stroke-linecap="round"/>
+      <g fill="none" stroke="${hairColor}" stroke-width="2" stroke-linecap="round">
+        <path class="avatar-brow-left" d="M48 46 Q52 44 55 46"/>
+        <path class="avatar-brow-right" d="M65 46 Q68 44 72 46"/>
+      </g>
       <g class="avatar-eyes" fill="#1d2d3d">
         <ellipse cx="51.5" cy="53" rx="2.3" ry="2.9"/>
         <ellipse cx="68.5" cy="53" rx="2.3" ry="2.9"/>
@@ -57,6 +98,12 @@ function buildSvg({ skin, hairColor, hairBack, hairFront }) {
       <rect x="82" y="46" width="7" height="13" rx="3.5" fill="#10243a"/>
       <path d="M35 58 C37 70 44 74 52 73" fill="none" stroke="#10243a" stroke-width="2.4" stroke-linecap="round"/>
       <circle cx="53.5" cy="73" r="2.6" fill="#168b87"/>
+      </g>
+      <g class="avatar-thinking-arm">
+        <path d="M87 109 Q95 99 83 87" fill="none" stroke="#183a55" stroke-width="15" stroke-linecap="round"/>
+        <path d="M83 87 L72 73" fill="none" stroke="${skin}" stroke-width="10" stroke-linecap="round"/>
+        <path d="M72 74 Q66 77 59 73 L57 70 Q57 67 60 68 L66 70 L66 63 Q66 60 69 61 L74 69 Z" fill="${skin}" stroke="#b77e61" stroke-width="0.8" stroke-linejoin="round"/>
+      </g>
     </svg>`;
 }
 

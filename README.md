@@ -34,10 +34,17 @@ prompts, réponses LLM brutes, secrets ou données personnelles à `trace()`.
      recherche vectorielle filtrée par type d'appareil et seuil de pertinence,
      préparation des cas réels, puis synthèse LLM. Le prompt demande au LLM
      de vérifier leur pertinence technique, d'écarter les cas sans lien établi
-     et de signaler si aucun ne convient. Ce contrôle porte sur la réponse :
+     et de signaler si aucun ne convient. Les pistes indirectes doivent expliquer
+     leurs limites. Les suggestions générales sont introduites brièvement par
+     « En complément, voici mes conseils de chatbot », sans inventer de faits
+     historiques ni de fiabilité. Ces consignes sont communes à Gemini et Claude.
+     Ce contrôle porte sur la réponse :
      les candidats mémorisés dans le contexte restent inchangés.
 5. Sans cas réel, le diagnostic tente les statistiques agrégées. Sans résultat,
-   une réponse déterministe est retournée sans LLM de synthèse.
+   le LLM est appelé pour proposer des vérifications explicitement identifiées
+   comme des conseils du chatbot après une phrase signalant l'absence de résultat,
+   sans avertissement répétitif. Une panne
+   fournisseur continue de remonter en erreur, sans réponse de secours.
 6. L'orchestrateur sauvegarde la réponse et le contexte, valide la transaction,
    puis la route retourne `{conversation_id, reply}`.
 

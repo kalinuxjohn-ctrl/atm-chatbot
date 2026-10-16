@@ -320,14 +320,9 @@ def device_type_instruction(device_type: str | None) -> str:
 
 def summarize_solutions(problem_text: str, solutions: list[dict], device_type: str | None = None) -> str:
     """
-    Résume en français les cas déjà connus retrouvés par la recherche
-    (retrieval_service.find_ranked_solutions). Le prompt interdit
-    explicitement d'inventer quoi que ce soit hors de cette liste -- le LLM
-    reformule, il ne diagnostique jamais tout seul.
+    Distingue les résultats historiques des suggestions générales du chatbot,
+    y compris lorsque la recherche ne renvoie aucune solution.
     """
-    if not solutions:
-        return "Aucune solution connue n'a été trouvée pour ce symptôme dans l'historique."
-
     lignes_cas = "\n".join(
         f"- Symptôme « {solution['symptom_text']} » : action « {solution['action_text']} » "
         f"réussie {solution['successes']}/{solution['attempts']} fois "
@@ -340,11 +335,22 @@ def summarize_solutions(problem_text: str, solutions: list[dict], device_type: s
         f"{device_type_instruction(device_type)}"
         f"Un technicien décrit ce symptôme : « {problem_text} ».\n"
         "Voici les cas déjà enregistrés dans l'historique, classés du plus au moins fiable :\n"
-        f"{lignes_cas}\n\n"
+        f"{lignes_cas or 'Aucune solution historique trouvée.'}\n\n"
         "Résume ces cas en 2-3 phrases claires, en français, pour aider le technicien à choisir "
-        "quoi essayer en premier. N'invente AUCUNE information absente de la liste ci-dessus, et "
-        "ne propose aucune action qui n'y figure pas. Si la liste est vide donne des solutions adaptées au symptôme."
-        "en utilisant tes connaissances et ton expérience, mais indique clairement que la solution viens de toi."
+        "quoi essayer en premier. N'invente AUCUNE information historique absente de la liste ci-dessus, et "
+        "ne présente pas une action extérieure à cette liste comme issue de la base. "
+        "Vérifie la pertinence technique des résultats ; distingue les pistes indirectes des correspondances directes. "
+        "Si la liste est vide ou non pertinente, dis : "
+        "« Aucune solution correspondant à ce problème n'a été trouvée dans notre base de données. » "
+        "Tu peux aussi proposer 2 à 4 vérifications adaptées, introduites simplement par : "
+        "« Néanmoins, en tant que chatbot d'aide à la maintenance, je peux te conseiller ces vérifications : » "
+        "si aucun résultat ne convient ; sinon utilise « En complément, voici mes conseils de chatbot : ». "
+        "Cette introduction suffit à distinguer tes conseils des faits de la base : "
+        "n'ajoute pas de long avertissement, de titre « hors base de données » ni de formule « Notez bien ». "
+        "Ce sont des pistes, pas un diagnostic certain. "
+        "Privilégie les contrôles non destructifs et les procédures constructeur ; "
+        "n'invente ni code de maintenance ni contournement des sécurités. "
+        "Demande les précisions manquantes si nécessaire. Utilise du Markdown simple : **gras**, titres et listes."
     )
 
     return generate_reply(prompt)

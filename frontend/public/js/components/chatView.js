@@ -6,6 +6,7 @@
 import { createElement, formatTime, prefersReducedMotion } from "../utils/dom.js";
 import { renderAvatar } from "./avatar.js";
 import { createIcon } from "./icons.js";
+import { renderMessageMarkdown } from "../utils/messageMarkdown.js";
 
 /** Message d'accueil : titre personnalisé, puis la consigne. */
 function greeting(userName) {
@@ -95,8 +96,13 @@ export function createChatView({
   }
 
   /** Un paragraphe par ligne non vide : le LLM renvoie souvent du texte multi-lignes. */
-  function createTextBubble(text) {
+  function createTextBubble(text, markdown = false) {
     const bubble = createElement("div", "message-bubble");
+    if (markdown) {
+      bubble.classList.add("message-markdown");
+      bubble.append(renderMessageMarkdown(text));
+      return bubble;
+    }
     text
       .split(/\n+/)
       .map((line) => line.trim())
@@ -167,7 +173,7 @@ export function createChatView({
   function appendAssistant({ text, channel, time, canProposeSolution = false }, { animate = true } = {}) {
     const { message, body } = createAssistantShell(time);
     if (!animate) message.classList.remove("message-enter-fade");
-    body.append(createTextBubble(text));
+    body.append(createTextBubble(text, true));
 
     const listenButton = createElement("button", "message-listen-button");
     listenButton.type = "button";
@@ -208,6 +214,8 @@ export function createChatView({
     /** Indicateur "le Copilote réfléchit" ; renvoie la fonction qui le retire. */
     showTyping() {
       const { message, body } = createAssistantShell(formatTime());
+      message.classList.add("thinking-message");
+      message.querySelector(".avatar").dataset.state = "thinking";
       const indicator = createElement("div", "typing-indicator");
       indicator.setAttribute("role", "status");
       indicator.setAttribute("aria-label", "Le Copilote prépare sa réponse");
@@ -220,6 +228,8 @@ export function createChatView({
 
     showError(errorMessage, onRetry) {
       const { message, body } = createAssistantShell(formatTime());
+      message.classList.add("error-message");
+      message.querySelector(".avatar").dataset.state = "error";
       const card = createElement("div", "friendly-error");
       card.setAttribute("role", "alert");
       card.append(createElement("strong", "", "Un problème est survenu"), createElement("span", "", errorMessage));
@@ -261,7 +271,10 @@ export function createChatView({
     /** Change l'avatar de tous les messages déjà affichés (après un changement de paramètres). */
     refreshAvatars() {
       conversationElement.querySelectorAll(".copilot-avatar-slot").forEach((slot) => {
-        slot.replaceChildren(renderAvatar(getAvatarKind()));
+        const avatar = renderAvatar(getAvatarKind());
+        if (slot.closest(".thinking-message")) avatar.dataset.state = "thinking";
+        else if (slot.closest(".error-message")) avatar.dataset.state = "error";
+        slot.replaceChildren(avatar);
       });
     },
   };

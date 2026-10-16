@@ -128,10 +128,8 @@ function createMenu({ title, ariaLabel, icon, options, onChoose, className = "" 
     item.id = `${menuId}-${index}`;
     item.setAttribute("role", "option");
     item.style.setProperty("--index", String(Math.min(index, 10)));
-    const marker = createElement("span", badge ? "suggestion-option-badge" : "suggestion-option-icon");
-    if (badge) marker.textContent = badge;
-    else marker.append(createIcon("chat"));
-    item.append(marker, createElement("span", "suggestion-option-label", label));
+    if (badge) item.append(createElement("span", "suggestion-option-badge", badge));
+    item.append(createElement("span", "suggestion-option-label", label));
     item.addEventListener("click", () => choose(index));
     item.addEventListener("pointermove", () => setActive(item));
     listbox.append(item);
