@@ -114,8 +114,98 @@
   backdrop-filter: blur(14px);
 }
 
-.home-page .visual-orbit {
-  border-color: rgba(143, 233, 222, 0.18);
+.hologram-orbits {
+  position: absolute;
+  width: min(88%, 390px);
+  aspect-ratio: 1;
+  perspective: 850px;
+  pointer-events: none;
+}
+
+.hologram-plane {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.hologram-plane-equator {
+  --orbit-color: #19b6a6;
+  transform: rotateX(64deg) rotateY(-16deg);
+}
+
+.hologram-plane-meridian {
+  --orbit-color: #488cf0;
+  transform: rotateX(24deg) rotateY(64deg) rotateZ(-25deg);
+}
+
+.hologram-plane-diagonal {
+  --orbit-color: #35c7dc;
+  inset: 5%;
+  transform: rotateX(-48deg) rotateY(30deg) rotateZ(20deg);
+}
+
+.hologram-track {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--orbit-color);
+  border-radius: 50%;
+  background: conic-gradient(from 20deg, transparent 55%, color-mix(in srgb, var(--orbit-color) 18%, transparent));
+  box-shadow:
+    0 0 12px color-mix(in srgb, var(--orbit-color) 25%, transparent),
+    inset 0 0 12px color-mix(in srgb, var(--orbit-color) 15%, transparent);
+  animation: hologram-orbit 14s linear infinite;
+}
+
+.hologram-track::after {
+  position: absolute;
+  inset: 9px;
+  border: 1px dashed var(--orbit-color);
+  border-radius: inherit;
+  opacity: 0.3;
+  content: "";
+}
+
+.hologram-plane-meridian .hologram-track {
+  animation-duration: 19s;
+  animation-direction: reverse;
+}
+
+.hologram-plane-diagonal .hologram-track {
+  animation-duration: 24s;
+  animation-delay: -8s;
+}
+
+.hologram-node {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  border: 2px solid #edffff;
+  border-radius: 50%;
+  background: var(--orbit-color);
+  box-shadow: 0 0 8px var(--orbit-color), 0 0 22px var(--orbit-color);
+  transform: translate(-50%, -50%);
+}
+
+.hologram-platform {
+  position: absolute;
+  bottom: 10px;
+  width: min(82%, 350px);
+  height: 66px;
+  border: 1px solid rgba(25, 182, 166, 0.45);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(25, 182, 166, 0.22), transparent 68%);
+  box-shadow: 0 8px 22px rgba(25, 182, 166, 0.12), inset 0 0 20px rgba(25, 182, 166, 0.12);
+  pointer-events: none;
+}
+
+.hologram-platform::after {
+  position: absolute;
+  inset: 9px 24px;
+  border: 1px solid rgba(25, 182, 166, 0.25);
+  border-radius: inherit;
+  content: "";
 }
 
 .home-page .visual-glow {
@@ -193,22 +283,14 @@
   animation: atm-float 6s ease-in-out infinite;
 }
 
-.home-scene .orbit-one {
-  animation: orbit-pulse 7s ease-in-out infinite;
-}
-
-.home-scene .orbit-two {
-  animation: orbit-pulse 7s ease-in-out 1.2s infinite;
-}
-
 @keyframes atm-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
 }
 
-@keyframes orbit-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.04); opacity: 0.55; }
+@keyframes hologram-orbit {
+  from { transform: rotateZ(0deg); }
+  to { transform: rotateZ(360deg); }
 }
 
 /* ---------- Personnages ---------- */
@@ -285,6 +367,20 @@
 
 .is-leaving .page-transition {
   clip-path: circle(150% at 50% 50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page .hologram-track,
+  .home-page .atm-machine,
+  .home-page .home-character,
+  .home-page .character-bubble,
+  .home-page .home-reveal {
+    animation: none;
+  }
+
+  .home-page .page-transition {
+    transition: none;
+  }
 }
 
 /* ---------- Petits écrans ---------- */

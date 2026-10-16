@@ -18,7 +18,12 @@ export function createContextPanel({ shell, panel, toggleButtons, closeButton, b
 
   function setOpen(open, opener) {
     shell.dataset.contextPanel = open ? "open" : "closed";
-    toggleButtons.forEach((button) => button.setAttribute("aria-expanded", String(open)));
+    toggleButtons.forEach((button) => {
+      button.setAttribute("aria-expanded", String(open));
+      const label = open ? "Masquer le contexte de la session" : "Afficher le contexte de la session";
+      button.setAttribute("aria-label", label);
+      button.title = label;
+    });
     // En tiroir fermé, le panneau sort de l'ordre de tabulation.
     panel.inert = !open;
     if (open && !WIDE_QUERY.matches) {

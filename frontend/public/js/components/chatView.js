@@ -15,6 +15,30 @@ function greeting(userName) {
   ];
 }
 
+function createWelcomeReactor() {
+  const reactor = createElement("div", "welcome-reactor");
+  reactor.setAttribute("aria-hidden", "true");
+  const scene = createElement("div", "reactor-scene");
+  const heart = createElement("span", "reactor-heart");
+  const gear = createElement("span", "reactor-gear");
+  const teeth = [];
+  for (let index = 0; index < 48; index += 1) {
+    const angle = index / 48 * Math.PI * 2;
+    const radius = index % 4 === 0 || index % 4 === 3 ? 42 : 50;
+    teeth.push(`${50 + Math.cos(angle) * radius}% ${50 + Math.sin(angle) * radius}%`);
+  }
+  gear.style.clipPath = `polygon(${teeth.join(",")})`;
+  heart.append(gear, createIcon("wrench"));
+  scene.append(heart);
+  for (let index = 0; index < 6; index += 1) {
+    const plane = createElement("span", `reactor-filament-plane reactor-filament-plane-${index}`);
+    plane.append(createElement("span", "reactor-filament"));
+    scene.append(plane);
+  }
+  reactor.append(scene);
+  return reactor;
+}
+
 /**
  * @param {{
  *   conversationElement: HTMLElement,
@@ -224,6 +248,7 @@ export function createChatView({
       const { message, body } = createAssistantShell("À l’instant");
       message.classList.remove("message-enter-fade");
       message.classList.add("welcome-message");
+      message.prepend(createWelcomeReactor());
       welcomeExtrasSlot = createElement("div", "welcome-extras");
       body.append(createTextBubble(greeting(userName).join("\n")), welcomeExtrasSlot);
       conversationElement.replaceChildren(message);

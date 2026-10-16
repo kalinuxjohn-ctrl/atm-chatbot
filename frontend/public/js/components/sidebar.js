@@ -29,6 +29,7 @@ export function createSidebar({ shell, sidebar, collapseButton, openButtons, bac
     if (sidebarCollapsed === null || sidebarCollapsed === undefined) return true;
     return sidebarCollapsed;
   }
+  collapseButton.title = collapseButton.getAttribute("aria-label");
 
   function render() {
     const collapsed = isCollapsed();

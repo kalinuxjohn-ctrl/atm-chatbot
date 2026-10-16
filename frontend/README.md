@@ -80,10 +80,16 @@ Dans ce mode, il utilise par défaut `http://127.0.0.1:8000` comme adresse de l�
 
 ## Pages
 
+Dans le Copilote, les commandes du menu et du contexte ont un contour accentué
+et un état ouvert/fermé visible. Le bouton « Contexte » affiche son libellé sur
+grand écran ; son libellé accessible et son info-bulle suivent l'état du panneau.
+Le thème clair utilise des fonds blancs aux nuances de bleu, y compris le panneau
+Contexte et l'animation de maintenance. Le thème sombre conserve sa palette verte.
+
 | Page | Rôle |
 | --- | --- |
-| `index.html` | Accueil animé (GAB + deux techniciens) et connexion. |
-| `copilot.html` | Copilote : sidebar rétractable, chat écrit, dictée, Chat vocal immersif, panneau de contexte, paramètres. |
+| `index.html` | Accueil animé (GAB, anneaux holographiques en perspective 3D et deux techniciens) et connexion. Les animations sont arrêtées si la préférence de réduction des mouvements est activée. |
+| `copilot.html` | Copilote : engrenage animé avec clé de mécanicien et anneaux tournant en 3D autour du centre (bleus en mode clair, verts en mode sombre), à l'ouverture d'une conversation (sans animation en mode mouvements réduits), sidebar rétractable, chat écrit, dictée, Chat vocal immersif, panneau de contexte, paramètres. |
 | `diagnostic.html` | Recherche directe dans l’historique des symptômes. |
 | `flow-presentation.html` | Présentation animée du flux de connexion simulée et de traitement d’un message. |
 | `admin.html` | Administration (clé `ADMIN_API_KEY`) : propositions des techniciens, codes d’erreur et pannes fréquentes du Copilote. |
