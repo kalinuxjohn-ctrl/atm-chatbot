@@ -143,10 +143,16 @@ Pour ajouter à l'historique un problème que le Copilote ne connaît pas, avec
 tout ce que le technicien a fait. Rien n'est visible dans la recherche avant
 la validation d'un administrateur.
 
-1. `POST /api/intervention_add` : le technicien envoie l'appareil
-   (`device_id` ou `device_serial_number`), `final_outcome_status`, les
-   `symptoms`, les `actions` dans l'ordre (`targets_symptom_number` = n° du
-   symptôme visé, 1 = le premier) et, s'il l'a trouvée, la cause (`diagnosis`).
+1. `POST /api/intervention_add` : le technicien envoie l'appareil (`device` :
+   `device_id`, ou `serial_number`, `device_type`, `model_name`, `site_name`,
+   `address`), `final_outcome_status`, les `symptoms`, les `actions` dans
+   l'ordre (`targets_symptom_number` = n° du symptôme visé, 1 = le premier ;
+   `performed_at` facultatif) et, s'il l'a trouvée, la cause (`diagnosis`).
+   L'appareil existant est cherché par `device_id`, sinon `serial_number`,
+   sinon type + modèle + site (`model_name` est cherché dans `device_model`).
+   S'il n'existe pas, il sera **créé à l'approbation**, avec son modèle s'il
+   est absent de `device_model` ; `device_type` est alors obligatoire. La
+   recherche est refaite à l'approbation : rien n'est créé en double.
    Une ligne `intervention_add` est créée (statut `pending`, migration 0012).
    Règles vérifiées (sinon 422) : une intervention `resolved` a une action
    `is_confirmed_solution`, qui a `outcome_status = resolved`, et inversement.

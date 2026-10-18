@@ -17,7 +17,8 @@ class DeviceModel(Base):
     __tablename__ = "device_model"
 
     model_id = Column(Integer, primary_key=True)
-    manufacturer_id = Column(Integer, ForeignKey("manufacturer.manufacturer_id"), nullable=False)
+    # Nullable en base (migration 0001) : fabricant pas toujours connu, ex. modèle ajouté par un technicien.
+    manufacturer_id = Column(Integer, ForeignKey("manufacturer.manufacturer_id"))
     model_name = Column(String, nullable=False)
     category = Column(String)
     release_year = Column(Integer)

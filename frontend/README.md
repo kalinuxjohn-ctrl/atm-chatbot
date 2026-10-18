@@ -84,8 +84,11 @@ Dans ce mode, il utilise par défaut `http://127.0.0.1:8000` comme adresse de l�
 Dans le Copilote, les commandes du menu et du contexte ont un contour accentué
 et un état ouvert/fermé visible. Le bouton « Contexte » affiche son libellé sur
 grand écran ; son libellé accessible et son info-bulle suivent l'état du panneau.
-Le thème clair utilise des fonds blancs aux nuances de bleu, y compris le panneau
-Contexte et l'animation de maintenance. Le thème sombre conserve sa palette verte.
+Le thème clair associe une sidebar bleu nuit, une navigation active bleu vif,
+des surfaces blanc glacier et des cartes de contexte bordées de bleu pâle.
+Les commandes vocales, l'envoi, l'animation de maintenance et le formulaire
+d'intervention suivent la même palette bleue. Le contenu et les interactions
+restent identiques ; le thème sombre conserve sa palette verte.
 Pendant l'attente d'une réponse, les trois points restent affichés et l'avatar SVG
 anime une pose de réflexion (main au menton, tête inclinée et regard vers le haut).
 Les avatars personnalisés sous forme d'image s'inclinent uniquement. En mode
@@ -109,14 +112,20 @@ se remplissent sur l'entrée active, en suivant les couleurs du thème.
 
 ### Proposer une intervention
 
-Le bouton ambré « Ajouter une intervention » du menu gauche (icône de fiche,
+Le bouton « Ajouter une intervention » du menu gauche (bleu sur fond nuit en
+mode clair, ambré en mode sombre ; icône de fiche,
 distincte du `+` de « Nouvelle conversation ») ouvre un formulaire indépendant.
 Une offre « Proposer une intervention » apparaît aussi sous une nouvelle recherche
 sans résultat pertinent : le premier symptôme est alors prérempli avec le problème
 recherché et la proposition conserve le lien à la conversation.
 
-Le formulaire permet de renseigner un appareil **déjà enregistré** (numéro de
-série ou identifiant en base), le ticket, les dates locales, plusieurs symptômes
+Le formulaire envoie un objet `device` avec le type GAB/TPE prérempli depuis
+la sélection du Copilote et modifiable, le modèle, le numéro de série,
+l'identifiant facultatif, le site et l'adresse. Le backend seul résout
+l'appareil et son rattachement ; aucun appel de recherche ni contrôle métier
+n'est effectué par le formulaire. Les erreurs de validation du backend sont
+affichées sans effacer les champs. Le formulaire recueille aussi le ticket,
+les dates locales, plusieurs symptômes
 et leur gravité, les actions dans l'ordre avec leur résultat et le symptôme visé,
 la solution confirmée, le bilan, la cause et le résumé. Il appelle
 `POST /api/intervention_add` : la confirmation affiche un numéro de proposition

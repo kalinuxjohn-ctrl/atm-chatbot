@@ -33,6 +33,7 @@ from app.schemas.intervention_add_schema import (
     InsertionPreview,
     InterventionAddRequest,
     PlannedAction,
+    PlannedDevice,
     PlannedDiagnosis,
     PlannedIntervention,
     PlannedSymptom,
@@ -40,8 +41,9 @@ from app.schemas.intervention_add_schema import (
     InterventionAddEdit,
     InterventionAddRejection,
     ReviewedInterventionContent,
+    SubmittedDevice,
 )
-from app.services import catalog_service, intervention_service, stats_service
+from app.services import catalog_service, intervention_service, stats_service, technical_reference_resolver_service
 from app.services.retrieval_service import store_symptom_embedding
 from app.services.solution_proposal_service import load_conversation_for_technician
 
@@ -57,6 +59,9 @@ class InsertionPlan:
 @dataclass
 class WrittenRows:
     intervention_id: int
+    device_id: int
+    created_device: bool
+    created_model: bool
     intervention_symptom_ids: list[int]
     intervention_action_ids: list[int]
     diagnosis_id: int | None
@@ -73,11 +78,10 @@ def submit_intervention_add(db: Session, submission: InterventionAddRequest) -> 
     if submission.conversation_id is not None:
         load_conversation_for_technician(db, submission.conversation_id, submission.technician_id)
 
-    device = _find_device(db, submission.device_id, submission.device_serial_number)
     content = ReviewedInterventionContent.model_validate(
         {
             **submission.model_dump(exclude={"technician_id", "conversation_id"}),
-            "device_id": device.device_id,
+            "device": _resolve_submitted_device(db, submission.device),
             "opened_at": submission.opened_at or datetime.now(timezone.utc),
         }
     )
@@ -137,15 +141,13 @@ def get_intervention_add(db: Session, intervention_add_id: int, lock: bool = Fal
 def describe_intervention_add(db: Session, intervention_add: InterventionAdd) -> dict:
     """La demande + des libellés lisibles (technicien, appareil) pour l'écran admin."""
     technician = db.get(Technician, intervention_add.technician_id)
-    device_id = (intervention_add.content or {}).get("device_id")
-    device = db.get(Device, device_id) if device_id is not None else None
     return {
         "intervention_add_id": intervention_add.intervention_add_id,
         "status": intervention_add.status,
         "technician_id": intervention_add.technician_id,
         "technician_name": getattr(technician, "full_name", None),
         "conversation_id": intervention_add.conversation_id,
-        "device_label": _device_label(db, device),
+        "device_label": _device_label((intervention_add.content or {}).get("device") or {}),
         "created_at": intervention_add.created_at,
         "last_edited_at": intervention_add.last_edited_at,
         "last_edited_by": intervention_add.last_edited_by,
@@ -255,8 +257,9 @@ def build_insertion_plan(db: Session, intervention_add: InterventionAdd) -> Inse
 
     preview = InsertionPreview(
         intervention_add_id=intervention_add.intervention_add_id,
+        device=device,
         intervention=PlannedIntervention(
-            device_id=content.device_id,
+            device_id=device.device_id,
             technician_id=intervention_add.technician_id,
             ticket_reference=content.ticket_reference,
             opened_at=content.opened_at or intervention_add.created_at or datetime.now(timezone.utc),
@@ -327,6 +330,7 @@ def _plan_actions(db: Session, content: ReviewedInterventionContent) -> list[Pla
                 outcome_status=action.outcome_status,
                 is_confirmed_solution=action.is_confirmed_solution,
                 targets_symptom_number=action.targets_symptom_number,
+                performed_at=action.performed_at,
                 action_id=getattr(entry, "action_id", None),
                 catalog_link=link,
                 catalog_text=getattr(entry, "canonical_text", None) or action.catalog_text or action.text,
@@ -361,12 +365,33 @@ def _write_plan(db: Session, plan: InsertionPlan) -> WrittenRows:
                 new_action_ids[key] = catalog_service.create_action_in_catalog(db, planned.catalog_text).action_id
             planned.action_id = new_action_ids[key]
 
-    # 2. intervention : la visite.
+    # 2. device_model puis device : seulement s'ils ne sont pas encore en base.
+    if preview.device.is_new_model:
+        model_row = DeviceModel(model_name=preview.device.model_name.strip())
+        db.add(model_row)
+        db.flush()
+        preview.device.model_id = model_row.model_id
+
+    if preview.device.is_new:
+        device_row = Device(
+            device_type=preview.device.device_type,
+            serial_number=preview.device.serial_number,
+            model_id=preview.device.model_id,
+            site_name=preview.device.site_name,
+            address=preview.device.address,
+            status="active",
+        )
+        db.add(device_row)
+        db.flush()
+        preview.device.device_id = device_row.device_id
+        preview.intervention.device_id = device_row.device_id
+
+    # 3. intervention : la visite.
     intervention = Intervention(**preview.intervention.model_dump())
     db.add(intervention)
     db.flush()
 
-    # 3. intervention_symptom : les problèmes, puis leur vecteur (colonne non mappée, SQL direct).
+    # 4. intervention_symptom : les problèmes, puis leur vecteur (colonne non mappée, SQL direct).
     symptom_rows = []
     for planned in preview.intervention_symptom:
         row = InterventionSymptom(
@@ -381,7 +406,7 @@ def _write_plan(db: Session, plan: InsertionPlan) -> WrittenRows:
     for row, vector in zip(symptom_rows, plan.symptom_vectors):
         store_symptom_embedding(db, row.intervention_symptom_id, vector)
 
-    # 4. intervention_action : dans l'ordre de la demande ; le numéro de symptôme devient son ID.
+    # 5. intervention_action : dans l'ordre de la demande ; le numéro de symptôme devient son ID.
     action_rows = []
     for planned in preview.intervention_action:
         target = planned.targets_symptom_number
@@ -394,11 +419,12 @@ def _write_plan(db: Session, plan: InsertionPlan) -> WrittenRows:
             outcome_status=planned.outcome_status,
             is_confirmed_solution=planned.is_confirmed_solution,
             targets_symptom_id=symptom_rows[target - 1].intervention_symptom_id if target else None,
+            performed_at=planned.performed_at,
         )
         db.add(row)
         action_rows.append(row)
 
-    # 5. diagnosis : la cause, si le technicien l'a trouvée.
+    # 6. diagnosis : la cause, si le technicien l'a trouvée.
     diagnosis_row = None
     if preview.diagnosis is not None:
         diagnosis_row = Diagnosis(intervention_id=intervention.intervention_id, **preview.diagnosis.model_dump())
@@ -407,6 +433,9 @@ def _write_plan(db: Session, plan: InsertionPlan) -> WrittenRows:
 
     return WrittenRows(
         intervention_id=intervention.intervention_id,
+        device_id=preview.device.device_id,
+        created_device=preview.device.is_new,
+        created_model=preview.device.is_new_model,
         intervention_symptom_ids=[row.intervention_symptom_id for row in symptom_rows],
         intervention_action_ids=[row.intervention_action_id for row in action_rows],
         diagnosis_id=getattr(diagnosis_row, "diagnosis_id", None),
@@ -417,11 +446,9 @@ def _write_plan(db: Session, plan: InsertionPlan) -> WrittenRows:
 # Vérifications et libellés
 # ====================================================================
 
-def _check_references(db: Session, content: ReviewedInterventionContent) -> Device:
-    """Tous les ID du contenu existent bien (404 sinon). Renvoie l'appareil."""
-    device = db.get(Device, content.device_id)
-    if device is None:
-        raise ReferenceNotFoundError(f"Appareil {content.device_id} introuvable.")
+def _check_references(db: Session, content: ReviewedInterventionContent) -> PlannedDevice:
+    """Tous les ID du contenu existent bien (404 sinon). Renvoie l'appareil prévu."""
+    device = _plan_device(db, content)
     for number, symptom in enumerate(content.symptoms, start=1):
         if symptom.catalog_symptom_id is not None and db.get(Symptom, symptom.catalog_symptom_id) is None:
             raise ReferenceNotFoundError(f"Symptôme {number} : symptom {symptom.catalog_symptom_id} introuvable au catalogue.")
@@ -434,28 +461,121 @@ def _check_references(db: Session, content: ReviewedInterventionContent) -> Devi
     return device
 
 
-def _find_device(db: Session, device_id: int | None, serial_number: str | None) -> Device:
-    if device_id is not None:
-        device = db.get(Device, device_id)
-        if device is None:
-            raise ReferenceNotFoundError(f"Appareil {device_id} introuvable.")
-        return device
+def _resolve_submitted_device(db: Session, submitted: SubmittedDevice) -> dict:
+    """
+    À l'envoi : l'appareil existant (ses vraies valeurs en base), sinon la
+    description du nouvel appareil, qui sera créé à l'approbation.
+    """
+    model_id = _find_model_id(db, None, submitted.model_name)
+    existing = _find_existing_device(db, submitted, model_id)
+    if existing is not None:
+        if submitted.device_type and submitted.device_type != existing.device_type:
+            raise InvalidReferenceError(
+                f"L'appareil {existing.device_id} est un {existing.device_type.upper()}, pas un {submitted.device_type.upper()}."
+            )
+        return _existing_device_values(db, existing)
 
-    # serial_number n'est pas unique en base (saisie terrain) : il doit désigner UN seul appareil.
-    matches = db.query(Device).filter(Device.serial_number == serial_number.strip()).limit(2).all()
-    if not matches:
-        raise ReferenceNotFoundError(f"Aucun appareil avec le numéro de série « {serial_number} ».")
-    if len(matches) > 1:
-        raise InvalidReferenceError(f"Plusieurs appareils ont le numéro de série « {serial_number} » : indiquez device_id.")
-    return matches[0]
+    if submitted.device_type is None:
+        raise InvalidReferenceError(
+            "Appareil introuvable en base : précisez device_type (gab ou tpe) pour l'ajouter comme nouvel appareil."
+        )
+    return {**submitted.model_dump(), "device_id": None, "model_id": model_id}
 
 
-def _device_label(db: Session, device: Device | None) -> str | None:
-    if device is None:
+def _plan_device(db: Session, content: ReviewedInterventionContent) -> PlannedDevice:
+    """
+    L'appareil à utiliser à l'approbation. La recherche est refaite ici : un
+    appareil (ou un modèle) ajouté depuis l'envoi est réutilisé, pas dupliqué.
+    """
+    device = content.device
+    model_id = _find_model_id(db, device.model_id, device.model_name)
+    existing = _find_existing_device(db, device, model_id)
+    if existing is not None:
+        return PlannedDevice(**_existing_device_values(db, existing), is_new=False)
+
+    model = db.get(DeviceModel, model_id) if model_id is not None else None
+    return PlannedDevice(
+        device_id=None,
+        is_new=True,
+        device_type=device.device_type,
+        serial_number=device.serial_number,
+        model_id=model_id,
+        model_name=getattr(model, "model_name", None) or device.model_name,
+        # Modèle cité mais absent de device_model : il sera créé lui aussi.
+        is_new_model=model_id is None and bool((device.model_name or "").strip()),
+        site_name=device.site_name,
+        address=device.address,
+    )
+
+
+def _find_model_id(db: Session, model_id: int | None, model_name: str | None) -> int | None:
+    """Le modèle choisi par l'admin (404 s'il n'existe pas), sinon celui qui porte ce nom, sinon None."""
+    if model_id is not None:
+        if db.get(DeviceModel, model_id) is None:
+            raise ReferenceNotFoundError(f"Modèle {model_id} introuvable dans device_model.")
+        return model_id
+    if not (model_name or "").strip():
         return None
-    model = db.get(DeviceModel, device.model_id) if device.model_id else None
-    parts = (device.device_type.upper(), getattr(model, "model_name", None), device.site_name or device.serial_number)
-    return " · ".join(part for part in parts if part)
+    # Même comparaison que dans le chat : insensible à la casse et aux espaces.
+    return technical_reference_resolver_service.resolve_technical_references(
+        db, device_type_text=None, model_name_text=model_name, error_code_text=None
+    ).get("model_id")
+
+
+def _find_existing_device(db: Session, device: SubmittedDevice, model_id: int | None) -> Device | None:
+    """
+    L'appareil déjà en base, cherché dans cet ordre :
+    1. device_id (404 s'il n'existe pas) ;
+    2. serial_number -- un numéro inconnu = un autre appareil, on ne cherche pas plus loin ;
+    3. sans numéro de série : même type + même modèle + même site.
+    None = aucun appareil de ce genre, il faudra le créer.
+    """
+    if device.device_id is not None:
+        existing = db.get(Device, device.device_id)
+        if existing is None:
+            raise ReferenceNotFoundError(f"Appareil {device.device_id} introuvable.")
+        return existing
+
+    serial_number = (device.serial_number or "").strip()
+    site_name = (device.site_name or "").strip()
+    if serial_number:
+        matches = db.query(Device).filter(Device.serial_number == serial_number).limit(2).all()
+        description = f"le numéro de série « {serial_number} »"
+    elif device.device_type and model_id is not None and site_name:
+        same_model = db.query(Device).filter(Device.device_type == device.device_type, Device.model_id == model_id).all()
+        # Site comparé sans tenir compte des majuscules ni des espaces : saisie libre du technicien.
+        matches = [row for row in same_model if " ".join((row.site_name or "").split()).casefold() == " ".join(site_name.split()).casefold()]
+        description = f"ce type, ce modèle et le site « {site_name} »"
+    else:
+        return None  # pas assez d'informations pour reconnaître un appareil existant
+
+    # Aucune de ces valeurs n'est unique en base (saisie terrain) : elles doivent désigner UN seul appareil.
+    if len(matches) > 1:
+        raise InvalidReferenceError(f"Plusieurs appareils correspondent à {description} : indiquez device_id.")
+    return matches[0] if matches else None
+
+
+def _existing_device_values(db: Session, existing: Device) -> dict:
+    """Les valeurs EN BASE de l'appareil : c'est elles qui font foi, pas celles saisies."""
+    model = db.get(DeviceModel, existing.model_id) if existing.model_id else None
+    return {
+        "device_id": existing.device_id,
+        "serial_number": existing.serial_number,
+        "device_type": existing.device_type,
+        "model_id": existing.model_id,
+        "model_name": getattr(model, "model_name", None),
+        "site_name": existing.site_name,
+        "address": existing.address,
+    }
+
+
+def _device_label(device: dict) -> str | None:
+    """Ex. « GAB · Opteva 720 · Branch 14, Main St », ou « … (nouvel appareil) »."""
+    if not device:
+        return None
+    parts = [(device.get("device_type") or "").upper(), device.get("model_name"), device.get("site_name") or device.get("serial_number")]
+    label = " · ".join(part for part in parts if part)
+    return label if device.get("device_id") is not None else f"{label} (nouvel appareil)"
 
 
 def _unique_texts(texts) -> list[str]:

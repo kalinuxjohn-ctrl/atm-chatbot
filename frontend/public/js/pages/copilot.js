@@ -143,6 +143,7 @@ async function initCopilot({ technicianId, displayName }) {
       technicianId: conversation.technicianId,
       conversationId: fromChat ? conversation.conversationId : null,
       problemText: problemText || "",
+      deviceType: conversation.deviceType,
     });
   }
 

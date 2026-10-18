@@ -16,7 +16,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
-from app.schemas.device_type import NonEmptyStr
+from app.schemas.device_type import DeviceType, NonEmptyStr
 from app.schemas.intervention_schema import ActionOutcome
 
 InterventionAddStatus = Literal["pending", "approved", "rejected"]
@@ -48,6 +48,7 @@ class SubmittedAction(BaseModel):
     is_confirmed_solution: bool = False
     # Numéro du symptôme visé dans la liste `symptoms` (1 = le premier). Vide = tous les symptômes.
     targets_symptom_number: Optional[int] = Field(None, ge=1)
+    performed_at: Optional[datetime] = None
 
 
 class SubmittedDiagnosis(BaseModel):
@@ -57,10 +58,24 @@ class SubmittedDiagnosis(BaseModel):
     confirmed: bool = False
 
 
-class SubmittedInterventionContent(BaseModel):
-    # L'appareil : son ID, ou son numéro de série (le backend retrouve l'ID).
+class SubmittedDevice(BaseModel):
+    """
+    L'appareil réparé → une ligne device. Le backend cherche d'abord un appareil
+    existant (device_id, sinon serial_number, sinon type + modèle + site) ;
+    sinon un NOUVEL appareil (et au besoin son modèle) sera créé à l'approbation,
+    et device_type devient obligatoire.
+    """
+
     device_id: Optional[int] = None
-    device_serial_number: Optional[str] = Field(None, max_length=100)
+    serial_number: Optional[str] = Field(None, max_length=100)
+    device_type: Optional[DeviceType] = None  # gab | tpe
+    model_name: Optional[str] = Field(None, max_length=200)  # ex. "Opteva 720", cherché dans device_model
+    site_name: Optional[str] = Field(None, max_length=200)
+    address: Optional[str] = Field(None, max_length=500)
+
+
+class SubmittedInterventionContent(BaseModel):
+    device: SubmittedDevice
     ticket_reference: Optional[str] = Field(None, max_length=100)
     opened_at: Optional[datetime] = None
     closed_at: Optional[datetime] = None
@@ -105,9 +120,20 @@ class ReviewedDiagnosis(SubmittedDiagnosis):
     root_cause_component_id: Optional[int] = None
 
 
+class ReviewedDevice(SubmittedDevice):
+    # Ligne device_model trouvée à partir de model_name (modifiable par l'admin). Vide = modèle inconnu.
+    model_id: Optional[int] = None
+
+    @model_validator(mode="after")
+    def check_new_device_has_a_type(self):
+        if self.device_id is None and self.device_type is None:
+            raise ValueError("Nouvel appareil : device_type (gab ou tpe) est obligatoire.")
+        return self
+
+
 class ReviewedInterventionContent(SubmittedInterventionContent):
-    # Toujours connu une fois la demande enregistrée (le numéro de série est résolu à l'envoi).
-    device_id: int
+    # device_id rempli si l'appareil existe déjà ; vide = nouvel appareil créé à l'approbation.
+    device: ReviewedDevice
     symptoms: list[ReviewedSymptom] = Field(..., min_length=1, max_length=MAX_SYMPTOMS)
     actions: list[ReviewedAction] = Field(..., min_length=1, max_length=MAX_ACTIONS)
     diagnosis: Optional[ReviewedDiagnosis] = None
@@ -115,8 +141,9 @@ class ReviewedInterventionContent(SubmittedInterventionContent):
 
 def _check_intervention_consistency(content: SubmittedInterventionContent) -> None:
     """Règles qui gardent les statistiques justes (sinon 422 avant tout enregistrement)."""
-    if content.device_id is None and not (content.device_serial_number or "").strip():
-        raise ValueError("Indiquez l'appareil : device_id ou device_serial_number.")
+    device = content.device
+    if device.device_id is None and not (device.serial_number or "").strip() and device.device_type is None:
+        raise ValueError("Indiquez l'appareil : device_id, serial_number, ou device_type pour un nouvel appareil.")
     if content.opened_at and content.closed_at and content.closed_at < content.opened_at:
         raise ValueError("closed_at ne peut pas être avant opened_at.")
 
@@ -181,8 +208,20 @@ class InterventionAddOut(BaseModel):
 CatalogLink = Literal["chosen_by_admin", "matched_existing", "new_catalog_entry"]
 
 
+class PlannedDevice(BaseModel):
+    device_id: Optional[int] = None  # vide = nouvel appareil, créé à l'approbation
+    is_new: bool
+    device_type: str
+    serial_number: Optional[str] = None
+    model_id: Optional[int] = None
+    model_name: Optional[str] = None
+    is_new_model: bool = False  # modèle absent de device_model : créé à l'approbation
+    site_name: Optional[str] = None
+    address: Optional[str] = None
+
+
 class PlannedIntervention(BaseModel):
-    device_id: int
+    device_id: Optional[int] = None  # vide tant que le nouvel appareil n'est pas créé
     technician_id: int
     ticket_reference: Optional[str] = None
     opened_at: datetime
@@ -209,6 +248,7 @@ class PlannedAction(BaseModel):
     outcome_status: str
     is_confirmed_solution: bool
     targets_symptom_number: Optional[int] = None
+    performed_at: Optional[datetime] = None
     action_id: Optional[int] = None
     catalog_link: CatalogLink
     catalog_text: str
@@ -225,6 +265,7 @@ class InsertionPreview(BaseModel):
     """Ce que l'approbation écrira, table par table (rien n'est écrit pour l'instant)."""
 
     intervention_add_id: int
+    device: PlannedDevice  # → table device (ligne existante, ou nouvelle)
     intervention: PlannedIntervention
     intervention_symptom: list[PlannedSymptom]
     intervention_action: list[PlannedAction]
@@ -238,6 +279,8 @@ class InterventionAddApprovalResult(BaseModel):
     intervention_add: InterventionAddOut
     written: InsertionPreview  # ce qui a été écrit, avec les ID définitifs
     created_intervention_id: int
+    created_device_id: Optional[int] = None  # rempli seulement si un nouvel appareil a été créé
+    created_device_model_id: Optional[int] = None  # rempli seulement si un nouveau modèle a été créé
     created_intervention_symptom_ids: list[int]
     created_intervention_action_ids: list[int]
     created_diagnosis_id: Optional[int] = None

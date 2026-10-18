@@ -139,37 +139,53 @@ export function createInterventionAddDialog({ dialog, onSubmitted = () => {} }) 
     return row;
   }
 
-  function updateDeviceReference() {
-    const byId = form.elements.deviceReferenceType.value === "id";
-    const input = form.elements.deviceReference;
-    input.type = byId ? "number" : "text";
-    if (byId) {
-      input.min = "1";
-      input.step = "1";
-    } else {
-      input.removeAttribute("min");
-      input.removeAttribute("step");
+  /**
+   * Mêmes règles que le backend (intervention_add_schema.py), vérifiées avant
+   * l'envoi pour afficher un message clair sur le bon champ. Le backend
+   * revérifie tout : ceci n'est qu'un confort.
+   */
+  function findInvalidField() {
+    const value = (name) => form.elements[name].value.trim();
+    if (!value("deviceType")) return ["Choisissez le type d’appareil (GAB ou TPE).", form.elements.deviceType];
+    if (value("deviceId") && !/^\d+$/.test(value("deviceId"))) {
+      return ["L’identifiant de l’appareil doit être un nombre.", form.elements.deviceId];
     }
-    dialog.querySelector("[data-device-reference-label]").textContent = byId
-      ? "Identifiant de l’appareil en base *" : "Numéro de série de l’appareil *";
+    for (const [index, row] of [...symptoms.children].entries()) {
+      if (!get(row, "text").value) return [`Décrivez le symptôme ${index + 1}.`, get(row, "text")];
+    }
+    const actionRows = [...actions.children];
+    for (const [index, row] of actionRows.entries()) {
+      if (!get(row, "text").value) return [`Décrivez l’action ${index + 1}.`, get(row, "text")];
+      if (!get(row, "result").value) return [`Indiquez le résultat de l’action ${index + 1}.`, get(row, "result")];
+    }
+    const solved = actionRows.some((row) => get(row, "confirmed").checked);
+    if (value("finalOutcome") === "resolved" && !solved) {
+      return ["Intervention résolue : cochez l’action qui a résolu le problème.", get(actionRows.at(-1), "confirmed")];
+    }
+    if (solved && value("finalOutcome") !== "resolved") {
+      return ["Une action a résolu le problème : choisissez « Résolue » comme bilan.", form.elements.finalOutcome];
+    }
+    if (value("openedAt") && value("closedAt") && value("closedAt") < value("openedAt")) {
+      return ["La fin de l’intervention ne peut pas être avant son début.", form.elements.closedAt];
+    }
+    if (form.elements.diagnosisConfirmed.checked && !value("diagnosis")) {
+      return ["Décrivez la cause avant de la marquer comme confirmée.", form.elements.diagnosis];
+    }
+    return null;
   }
 
   function readContent() {
     for (const control of form.querySelectorAll("textarea, input:not([type=checkbox])")) {
       control.value = control.value.trim();
     }
-    if (!form.reportValidity()) return null;
+    const invalid = findInvalidField();
+    if (invalid) {
+      showError(...invalid);
+      return null;
+    }
     const value = (name) => form.elements[name].value.trim();
     const openedAt = value("openedAt") ? new Date(value("openedAt")).toISOString() : null;
     const closedAt = value("closedAt") ? new Date(value("closedAt")).toISOString() : null;
-    if (closedAt && !openedAt) {
-      showError("Indiquez aussi la date de début pour renseigner une date de fin.", form.elements.openedAt);
-      return null;
-    }
-    if (openedAt && closedAt && closedAt < openedAt) {
-      showError("La fin de l’intervention doit être après son début.", form.elements.closedAt);
-      return null;
-    }
     const symptomRows = [...symptoms.children];
     const actionValues = [...actions.children].map((row) => ({
       text: get(row, "text").value,
@@ -179,27 +195,17 @@ export function createInterventionAddDialog({ dialog, onSubmitted = () => {} }) 
       targets_symptom_number: get(row, "target").value
         ? symptomRows.findIndex((symptom) => symptom.dataset.key === get(row, "target").value) + 1 : null,
     }));
-    const resolved = actionValues.some((action) => action.is_confirmed_solution);
-    if ((value("finalOutcome") === "resolved") !== resolved) {
-      showError(resolved
-        ? "Une action a résolu la panne : choisissez le bilan « Résolue »."
-        : "Indiquez quelle action a résolu la panne, ou choisissez un autre bilan.", form.elements.finalOutcome);
-      return null;
-    }
-    if (form.elements.diagnosisConfirmed.checked && !value("diagnosis")) {
-      showError("Décrivez la cause avant de la marquer comme confirmée.", form.elements.diagnosis);
-      return null;
-    }
-    const deviceId = form.elements.deviceReferenceType.value === "id" ? Number(value("deviceReference")) : null;
-    if (deviceId !== null && (!Number.isSafeInteger(deviceId) || deviceId < 1)) {
-      showError("Indiquez un identifiant d’appareil entier et positif.", form.elements.deviceReference);
-      return null;
-    }
     return {
       technician_id: target.technicianId,
       conversation_id: target.conversationId,
-      device_id: deviceId,
-      device_serial_number: deviceId === null ? value("deviceReference") : null,
+      device: {
+        device_type: value("deviceType") || null,
+        model_name: value("modelName") || null,
+        serial_number: value("serialNumber") || null,
+        device_id: value("deviceId") ? Number(value("deviceId")) : null,
+        site_name: value("siteName") || null,
+        address: value("deviceAddress") || null,
+      },
       ticket_reference: value("ticketReference") || null,
       opened_at: openedAt,
       closed_at: closedAt,
@@ -210,18 +216,14 @@ export function createInterventionAddDialog({ dialog, onSubmitted = () => {} }) 
         severity: get(row, "severity").value || null,
       })),
       actions: actionValues,
-      diagnosis: value("diagnosis") ? {
-        description: value("diagnosis"), confirmed: form.elements.diagnosisConfirmed.checked,
-      } : null,
+      diagnosis: value("diagnosis")
+        ? { description: value("diagnosis"), confirmed: form.elements.diagnosisConfirmed.checked }
+        : null,
     };
   }
 
   addSymptom.addEventListener("click", () => get(appendSymptom(), "text").focus());
   addAction.addEventListener("click", () => get(appendAction(), "text").focus());
-  form.elements.deviceReferenceType.addEventListener("change", () => {
-    form.elements.deviceReference.value = "";
-    updateDeviceReference();
-  });
   cancel.addEventListener("click", () => dialog.close());
   dialog.addEventListener("cancel", (event) => {
     if (submitting) event.preventDefault();
@@ -275,16 +277,16 @@ export function createInterventionAddDialog({ dialog, onSubmitted = () => {} }) 
   });
 
   return {
-    open({ technicianId, conversationId = null, problemText = "" }) {
+    open({ technicianId, conversationId = null, problemText = "", deviceType }) {
       if (submitting || dialog.open) return;
       opener = document.activeElement;
       target = { technicianId, conversationId };
       form.reset();
+      form.elements.deviceType.value = deviceType;
       symptoms.replaceChildren();
       actions.replaceChildren();
       appendSymptom(problemText || "");
       appendAction();
-      updateDeviceReference();
       fields.hidden = false;
       success.hidden = true;
       submit.hidden = false;
@@ -293,7 +295,7 @@ export function createInterventionAddDialog({ dialog, onSubmitted = () => {} }) 
       dialog.dataset.state = "ready";
       showError("");
       dialog.showModal();
-      form.elements.deviceReference.focus();
+      form.elements.deviceType.focus();
     },
   };
 }

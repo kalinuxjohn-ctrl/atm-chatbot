@@ -373,18 +373,28 @@ def run_seed() -> None:
                 )
                 for statement in SEQUENCE_RESETS:
                     cursor.execute(statement)
-                # UN SEUL appel réseau pour les 6 textes plutôt qu'un par
-                # texte -- indispensable sur le palier gratuit Voyage
-                # (3 requêtes/minute) : 6 appels séquentiels dépassent
-                # systématiquement la limite dès le 2e ou 3e.
-                textes = [raw_text for _, raw_text in EMBEDDING_BACKFILL]
-                vecteurs = generate_embeddings_batch(textes)
-                for (intervention_symptom_id, _), vecteur in zip(EMBEDDING_BACKFILL, vecteurs):
-                    cursor.execute(
-                        "UPDATE intervention_symptom SET embedding = %s::vector "
-                        "WHERE intervention_symptom_id = %s",
-                        (str(vecteur), intervention_symptom_id),
-                    )
+                # Ce script tourne à chaque `docker compose up` : seuls les
+                # symptômes SANS vecteur sont envoyés à Voyage. Base déjà
+                # remplie = aucun appel réseau.
+                cursor.execute(
+                    "SELECT intervention_symptom_id FROM intervention_symptom "
+                    "WHERE intervention_symptom_id = ANY(%s) AND embedding IS NULL",
+                    ([intervention_symptom_id for intervention_symptom_id, _ in EMBEDDING_BACKFILL],),
+                )
+                sans_vecteur = {row[0] for row in cursor.fetchall()}
+                a_vectoriser = [(isym_id, raw_text) for isym_id, raw_text in EMBEDDING_BACKFILL if isym_id in sans_vecteur]
+
+                if a_vectoriser:
+                    # UN SEUL appel réseau pour tous les textes -- indispensable
+                    # sur le palier gratuit Voyage (3 requêtes/minute).
+                    vecteurs = generate_embeddings_batch([raw_text for _, raw_text in a_vectoriser])
+                    for (intervention_symptom_id, _), vecteur in zip(a_vectoriser, vecteurs):
+                        cursor.execute(
+                            "UPDATE intervention_symptom SET embedding = %s::vector "
+                            "WHERE intervention_symptom_id = %s",
+                            (str(vecteur), intervention_symptom_id),
+                        )
+                print(f"Embeddings de démo : {len(a_vectoriser)} calculé(s), {len(EMBEDDING_BACKFILL) - len(a_vectoriser)} déjà en base.")
         print(
             "Données de démonstration insérées avec succès "
             "(interventions 3001 et 3045, codes d'erreur E42/E43/E67, pannes fréquentes)."

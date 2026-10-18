@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from app.core.errors import (
     AccessDeniedError,
     ExternalServiceUnavailableError,
+    InvalidReferenceError,
     ReferenceNotFoundError,
     StateConflictError,
 )
@@ -31,6 +32,8 @@ from app.services import intervention_add_service as service
 
 TECHNICIAN_ID = 4
 OTHER_TECHNICIAN_ID = 8
+# Appareil pas encore en base : sera créé à l'approbation.
+NEW_DEVICE = {"serial_number": "TPE-77-001", "device_type": "TPE", "model_name": "Opteva 720", "site_name": "Agence Nord"}
 
 # Clé primaire de chaque table simulée, et premier ID attribué par le « flush ».
 PRIMARY_KEYS = {
@@ -39,13 +42,35 @@ PRIMARY_KEYS = {
     InterventionSymptom: ("intervention_symptom_id", 9100),
     InterventionAction: ("intervention_action_id", 7100),
     Diagnosis: ("diagnosis_id", 600),
+    Device: ("device_id", 700),
+    DeviceModel: ("model_id", 30),
     Symptom: ("symptom_id", 80),
     Action: ("action_id", 90),
 }
 
 
+class FakeQuery:
+    """query(Model).filter(Model.colonne == valeur).limit(n).all() -- le seul usage du service."""
+
+    def __init__(self, rows):
+        self.rows = rows
+
+    def filter(self, *conditions):
+        rows = self.rows
+        for condition in conditions:
+            column, value = condition.left.key, condition.right.value
+            rows = [row for row in rows if getattr(row, column, None) == value]
+        return FakeQuery(rows)
+
+    def limit(self, count):
+        return FakeQuery(self.rows[:count])
+
+    def all(self):
+        return self.rows
+
+
 class FakeSession:
-    """Juste ce que le service utilise : get / add / flush / commit / rollback."""
+    """Juste ce que le service utilise : get / query / add / flush / commit / rollback."""
 
     def __init__(self, objects):
         self.objects = dict(objects)
@@ -56,6 +81,9 @@ class FakeSession:
 
     def get(self, model, key, with_for_update=False):
         return self.objects.get((model, key))
+
+    def query(self, model):
+        return FakeQuery([obj for (obj_model, _), obj in self.objects.items() if obj_model is model])
 
     def add(self, obj):
         self.added.append(obj)
@@ -83,7 +111,8 @@ def build_session():
     return FakeSession({
         (Technician, TECHNICIAN_ID): SimpleNamespace(technician_id=TECHNICIAN_ID, full_name="Technicien Test API"),
         (Technician, OTHER_TECHNICIAN_ID): SimpleNamespace(technician_id=OTHER_TECHNICIAN_ID, full_name="Bob Nguyen"),
-        (Device, 501): SimpleNamespace(device_id=501, device_type="gab", model_id=10, site_name="Branch 14, Main St", serial_number="ON-DN-88213"),
+        (Device, 501): SimpleNamespace(device_id=501, device_type="gab", model_id=10, site_name="Branch 14, Main St",
+                                       serial_number="ON-DN-88213", address=None),
         (DeviceModel, 10): SimpleNamespace(model_id=10, model_name="Opteva 720"),
         (Symptom, 21): SimpleNamespace(symptom_id=21, canonical_text="Carte retenue par le GAB"),
         (Action, 43): SimpleNamespace(action_id=43, canonical_text="Reinitialize card reader"),
@@ -96,7 +125,7 @@ def intervention_add_payload(**overrides):
     """Une demande complète : 2 symptômes, 3 actions (la 3e règle le problème), une cause."""
     return {
         "technician_id": TECHNICIAN_ID,
-        "device_id": 501,
+        "device": {"device_id": 501},
         "final_outcome_status": "resolved",
         "symptoms": [
             {"text": "Le clavier ne répond plus après une carte insérée"},
@@ -172,8 +201,12 @@ class InterventionContentValidationTests(unittest.TestCase):
             InterventionAddRequest(**payload)
 
     def test_device_is_required(self):
-        with self.assertRaisesRegex(ValidationError, "device_id ou device_serial_number"):
-            InterventionAddRequest(**intervention_add_payload(device_id=None))
+        with self.assertRaisesRegex(ValidationError, "Indiquez l'appareil"):
+            InterventionAddRequest(**intervention_add_payload(device={}))
+
+    def test_device_type_is_checked(self):
+        with self.assertRaises(ValidationError):
+            InterventionAddRequest(**intervention_add_payload(device={"device_type": "atm"}))
 
     def test_unresolved_intervention_without_solution_is_accepted(self):
         payload = intervention_add_payload(final_outcome_status="escalated")
@@ -186,24 +219,57 @@ class SubmissionTests(InterventionAddTestCase):
         intervention_add = self.submit()
         self.assertEqual(intervention_add.status, "pending")
         self.assertEqual(intervention_add.content, intervention_add.submitted_content)
-        self.assertEqual(intervention_add.content["device_id"], 501)
+        self.assertEqual(intervention_add.content["device"]["device_id"], 501)
+        self.assertEqual(intervention_add.content["device"]["model_name"], "Opteva 720")
         self.assertIsNotNone(intervention_add.content["opened_at"])
         self.assertEqual(self.db.added_of(Intervention), [])
         self.assertEqual(self.db.added_of(InterventionSymptom), [])
         self.mocks[0].assert_not_called()  # aucun embedding avant la validation
 
-    def test_device_can_be_given_by_serial_number(self):
-        device = self.db.objects[(Device, 501)]
-        with patch.object(service, "_find_device", return_value=device) as find_device:
-            intervention_add = self.submit(device_id=None, device_serial_number="ON-DN-88213")
-        find_device.assert_called_once_with(self.db, None, "ON-DN-88213")
-        self.assertEqual(intervention_add.content["device_id"], 501)
+    def test_existing_device_is_found_by_type_model_and_site(self):
+        with patch.object(service.technical_reference_resolver_service, "resolve_technical_references",
+                          return_value={"model_id": 10}):
+            intervention_add = self.submit(device={"device_type": "gab", "model_name": "opteva 720", "site_name": "Branch 14, Main St"})
+        self.assertEqual(intervention_add.content["device"]["device_id"], 501)
+
+    def test_site_name_ignores_case_and_spaces(self):
+        with patch.object(service.technical_reference_resolver_service, "resolve_technical_references",
+                          return_value={"model_id": 10}):
+            intervention_add = self.submit(device={"device_type": "gab", "model_name": "Opteva 720", "site_name": "  branch 14,  main st "})
+        self.assertEqual(intervention_add.content["device"]["device_id"], 501)
+
+    def test_same_type_and_model_on_another_site_is_a_new_device(self):
+        with patch.object(service.technical_reference_resolver_service, "resolve_technical_references",
+                          return_value={"model_id": 10}):
+            intervention_add = self.submit(device={"device_type": "gab", "model_name": "Opteva 720", "site_name": "Agence Sud"})
+        self.assertIsNone(intervention_add.content["device"]["device_id"])
+
+    def test_existing_device_is_found_by_serial_number(self):
+        intervention_add = self.submit(device={"serial_number": "ON-DN-88213", "device_type": "gab"})
+        self.assertEqual(intervention_add.content["device"]["device_id"], 501)
+
+    def test_unknown_device_is_described_for_creation(self):
+        with patch.object(service.technical_reference_resolver_service, "resolve_technical_references",
+                          return_value={"model_id": 10, "model_name": "opteva 720"}):
+            intervention_add = self.submit(device=NEW_DEVICE)
+        device = intervention_add.content["device"]
+        self.assertEqual((device["device_id"], device["model_id"], device["device_type"]), (None, 10, "tpe"))
+        self.assertEqual(self.db.added_of(Device), [])  # créé seulement à l'approbation
+        self.assertTrue(service.describe_intervention_add(self.db, intervention_add)["device_label"].endswith("(nouvel appareil)"))
+
+    def test_unknown_device_without_type_is_refused(self):
+        with self.assertRaisesRegex(InvalidReferenceError, "précisez device_type"):
+            self.submit(device={"serial_number": "INCONNU-1"})
+
+    def test_device_type_must_match_the_existing_device(self):
+        with self.assertRaisesRegex(InvalidReferenceError, "est un GAB, pas un TPE"):
+            self.submit(device={"device_id": 501, "device_type": "tpe"})
 
     def test_unknown_technician_or_device_is_refused(self):
         with self.assertRaises(ReferenceNotFoundError):
             self.submit(technician_id=999)
         with self.assertRaises(ReferenceNotFoundError):
-            self.submit(device_id=999)
+            self.submit(device={"device_id": 999})
 
     def test_conversation_of_another_technician_is_refused(self):
         with self.assertRaises(AccessDeniedError):
@@ -293,6 +359,49 @@ class ApprovalTests(InterventionAddTestCase):
         self.assertEqual(self.db.added_of(Diagnosis)[0].intervention_id, written.intervention_id)
         self.assertEqual((intervention_add.status, intervention_add.created_intervention_id), ("approved", written.intervention_id))
         self.mocks[3].assert_called_once()  # statistiques recalculées
+
+    def test_new_device_is_created_before_the_intervention(self):
+        with patch.object(service.technical_reference_resolver_service, "resolve_technical_references",
+                          return_value={"model_id": 10}):
+            intervention_add = self.submit(device=NEW_DEVICE)
+            _, preview, written = self.approve(intervention_add.intervention_add_id)
+
+        device = self.db.added_of(Device)[0]
+        self.assertEqual((device.device_type, device.serial_number, device.model_id), ("tpe", "TPE-77-001", 10))
+        self.assertEqual(self.db.added_of(Intervention)[0].device_id, device.device_id)
+        self.assertEqual(self.db.added_of(DeviceModel), [])  # modèle connu : pas de doublon
+        self.assertTrue(written.created_device)
+        self.assertEqual(preview.device.device_id, device.device_id)
+
+    def test_unknown_model_is_created_with_the_device(self):
+        with patch.object(service.technical_reference_resolver_service, "resolve_technical_references", return_value={}):
+            intervention_add = self.submit(device={**NEW_DEVICE, "model_name": "Ingenico Move 5000"})
+            preview = service.preview_intervention_add(self.db, intervention_add.intervention_add_id)
+            self.assertTrue(preview.device.is_new_model)
+            _, _, written = self.approve(intervention_add.intervention_add_id)
+
+        model = self.db.added_of(DeviceModel)[0]
+        self.assertEqual(model.model_name, "Ingenico Move 5000")
+        self.assertEqual(self.db.added_of(Device)[0].model_id, model.model_id)
+        self.assertTrue(written.created_model)
+
+    def test_device_created_meanwhile_is_reused(self):
+        with patch.object(service.technical_reference_resolver_service, "resolve_technical_references", return_value={}):
+            intervention_add = self.submit(device=NEW_DEVICE)
+            # Entre l'envoi et la validation, un appareil avec ce numéro a été ajouté.
+            self.db.objects[(Device, 650)] = SimpleNamespace(device_id=650, device_type="tpe", model_id=None,
+                                                             site_name=None, serial_number="TPE-77-001", address=None)
+            _, preview, written = self.approve(intervention_add.intervention_add_id)
+        self.assertEqual(self.db.added_of(Device), [])
+        self.assertEqual(self.db.added_of(DeviceModel), [])  # appareil existant : son modèle ne change pas
+        self.assertEqual((written.device_id, written.created_device), (650, False))
+
+    def test_action_date_is_written(self):
+        payload = intervention_add_payload()
+        payload["actions"][0]["performed_at"] = "2026-10-12T09:30:00"
+        intervention_add = service.submit_intervention_add(self.db, InterventionAddRequest(**payload))
+        self.approve(intervention_add.intervention_add_id)
+        self.assertEqual(self.db.added_of(InterventionAction)[0].performed_at.hour, 9)
 
     def test_same_new_text_creates_one_catalog_entry(self):
         payload = intervention_add_payload()

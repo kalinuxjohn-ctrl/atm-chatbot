@@ -359,12 +359,23 @@
           <section class="intervention-section" aria-labelledby="intervention-device-title">
             <h3 id="intervention-device-title"><span>1</span> Appareil et intervention</h3>
             <div class="intervention-grid">
-              <label class="field">Identifier l’appareil par
-                <select name="deviceReferenceType"><option value="serial">Numéro de série</option><option value="id">Identifiant de l’appareil en base</option></select>
+              <label class="field">Type d’appareil
+                <select name="deviceType"><option value="gab">GAB</option><option value="tpe">TPE</option></select>
               </label>
-              <label class="field"><span data-device-reference-label>Numéro de série de l’appareil *</span>
-                <input name="deviceReference" type="text" maxlength="100" required autocomplete="off">
-                <small>L’appareil doit déjà être enregistré dans la base.</small>
+              <label class="field">Modèle <em>facultatif</em>
+                <input name="modelName" maxlength="200" placeholder="Ex. Opteva 720">
+              </label>
+              <label class="field">Numéro de série <em>facultatif</em>
+                <input name="serialNumber" maxlength="100" autocomplete="off">
+              </label>
+              <label class="field">Identifiant de l’appareil en base <em>facultatif</em>
+                <input name="deviceId" type="text" inputmode="numeric" autocomplete="off">
+              </label>
+              <label class="field">Nom du site <em>facultatif</em>
+                <input name="siteName" maxlength="200">
+              </label>
+              <label class="field">Adresse <em>facultatif</em>
+                <input name="deviceAddress" maxlength="500">
               </label>
               <label class="field">Référence du ticket <em>facultatif</em>
                 <input name="ticketReference" maxlength="100">
@@ -375,6 +386,7 @@
               <label class="field">Début <em>facultatif</em><input type="datetime-local" name="openedAt"></label>
               <label class="field">Fin <em>facultatif</em><input type="datetime-local" name="closedAt"></label>
             </div>
+            <p class="intervention-section-hint">Le backend retrouve et rattache l’appareil à partir des informations envoyées. Vous n’avez pas besoin de connaître son identifiant.</p>
           </section>
           <section class="intervention-section" aria-labelledby="intervention-symptoms-title">
             <h3 id="intervention-symptoms-title"><span>2</span> Symptômes constatés</h3>
