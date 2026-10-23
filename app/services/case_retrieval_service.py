@@ -11,8 +11,9 @@ Les deux coexistent volontairement, sans que l'un remplace l'autre :
   interventions réelles similaires, chacune racontée individuellement."
 
 Ce fichier NE duplique PAS la recherche vectorielle : il réutilise
-retrieval_service.fetch_similar_symptoms (déjà publique, déjà filtrée par
-device_type), puis regroupe ses résultats par intervention.
+retrieval_service.fetch_similar_symptoms_per_symptom (une recherche par
+symptôme du technicien, déjà filtrée par device_type), puis regroupe ses
+résultats par intervention.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ from app.core.tracing import trace
 from app.models.intervention import Diagnosis, Intervention
 from app.models.solution_proposal import SolutionProposal
 from app.models.technician import Technician
-from app.services.retrieval_service import fetch_similar_symptoms
+from app.services.retrieval_service import fetch_similar_symptoms_per_symptom
 
 
 def find_similar_cases(
@@ -34,48 +35,66 @@ def find_similar_cases(
     symptom_limit: int = 8,
     case_limit: int = 3,
     model_name: str | None = None,
+    symptoms: list[dict] | None = None,
 ) -> list[dict]:
     """
-    Jusqu'à `case_limit` interventions passées similaires à `search_text`,
+    Jusqu'à `case_limit` interventions passées similaires au problème,
     triées de la plus à la moins pertinente. Limitées aux appareils du
     modèle `model_name` s'il est fourni.
+
+    `symptoms` : symptômes numérotés du technicien ([{"number": 1, "text":
+    ...}], voir UnderstoodMessage.symptoms), cherchés CHACUN séparément.
+    Absent ou vide : `search_text` est cherché comme un seul symptôme.
+
+    Une intervention qui recoupe plusieurs symptômes du technicien passe
+    devant celles qui n'en recoupent qu'un ; à égalité, la meilleure
+    similarité moyenne l'emporte. Chaque cas garde la liste de ses
+    correspondances (matched_symptoms).
 
     symptom_limit > case_limit volontairement : plusieurs symptômes
     catalogués différents peuvent pointer vers la même intervention, donc
     on élargit la recherche en amont pour ne pas rater une intervention
     pertinente juste parce qu'un seul de ses symptômes a été retenu.
     """
-    matched_symptoms = fetch_similar_symptoms(
-        db, search_text, device_type, limit=symptom_limit, model_name=model_name
+    query_symptoms = [s for s in (symptoms or []) if (s.get("text") or "").strip()]
+    if not query_symptoms:
+        query_symptoms = [{"number": 1, "text": search_text}]
+
+    rows_per_symptom = fetch_similar_symptoms_per_symptom(
+        db, [s["text"] for s in query_symptoms], device_type, limit=symptom_limit, model_name=model_name
     )
-    if not matched_symptoms:
-        trace("SEARCH", "Aucun cas similaire trouvé", count=0)
+    matches_by_intervention = _group_matches_by_intervention(query_symptoms, rows_per_symptom)
+    if not matches_by_intervention:
+        trace("SEARCH", "Aucun cas similaire trouvé", count=0, symptom_count=len(query_symptoms))
         return []
 
-    best_per_intervention = _keep_best_match_per_intervention(matched_symptoms)
     ranked_ids = sorted(
-        best_per_intervention, key=lambda iid: _rank_key(best_per_intervention[iid])
+        matches_by_intervention, key=lambda iid: _case_rank_key(matches_by_intervention[iid])
     )[:case_limit]
 
-    cases = [
-        case
-        for case in (
-            build_case(
-                db,
-                intervention_id,
-                device_type=device_type,
-                matched_symptom_text=best_per_intervention[intervention_id]["raw_text"],
-                matched_intervention_symptom_id=best_per_intervention[intervention_id].get("intervention_symptom_id"),
-            )
-            for intervention_id in ranked_ids
+    cases = []
+    for intervention_id in ranked_ids:
+        matched_symptoms = matches_by_intervention[intervention_id]
+        # Le symptôme le plus proche reste LA référence du cas (affichage
+        # court, proposition de solution) ; les autres sont dans matched_symptoms.
+        best_match = max(matched_symptoms, key=lambda m: m["similarity"])
+        case = build_case(
+            db,
+            intervention_id,
+            device_type=device_type,
+            matched_symptom_text=best_match["raw_text"],
+            matched_intervention_symptom_id=best_match["intervention_symptom_id"],
+            matched_symptoms=matched_symptoms,
         )
-        if case is not None
-    ]
+        if case is not None:
+            cases.append(case)
     trace(
         "SEARCH",
         "Cas similaires préparés",
-        matched_symptom_count=len(matched_symptoms),
+        symptom_count=len(query_symptoms),
+        matched_symptom_count=sum(len(rows) for rows in rows_per_symptom),
         case_count=len(cases),
+        matched_symptoms_per_case=[len(case["matched_symptoms"]) for case in cases],
     )
     return cases
 
@@ -86,6 +105,7 @@ def build_case(
     device_type: str | None = None,
     matched_symptom_text: str | None = None,
     matched_intervention_symptom_id: int | None = None,
+    matched_symptoms: list[dict] | None = None,
 ) -> dict | None:
     """
     Assemble le détail complet d'UNE intervention. Fonction publique à
@@ -113,6 +133,7 @@ def build_case(
         "opened_at": intervention.opened_at,
         "matched_symptom_text": matched_symptom_text,
         "matched_intervention_symptom_id": matched_intervention_symptom_id,
+        "matched_symptoms": matched_symptoms or [],
         "actions": [
             {
                 "description": a.raw_text,
@@ -136,26 +157,38 @@ def _proposer_name(db: Session, proposal_id: int) -> str:
     return getattr(technician, "full_name", None) or "un technicien"
 
 
-def _keep_best_match_per_intervention(matched_symptoms: list[dict]) -> dict[int, dict]:
-    """Une intervention peut matcher via plusieurs symptômes -- on ne garde que sa meilleure correspondance pour le classement."""
-    best: dict[int, dict] = {}
-    for row in matched_symptoms:
-        intervention_id = row["intervention_id"]
-        current = best.get(intervention_id)
-        if current is None or _rank_key(row) < _rank_key(current):
-            best[intervention_id] = row
-    return best
+def _group_matches_by_intervention(
+    query_symptoms: list[dict], rows_per_symptom: list[list[dict]]
+) -> dict[int, list[dict]]:
+    """
+    Pour chaque intervention, la meilleure correspondance de CHAQUE symptôme
+    du technicien qui l'a trouvée : {intervention_id: [correspondance, ...]},
+    triées par numéro de symptôme du technicien.
+    """
+    best: dict[int, dict[int, dict]] = {}
+    for query_symptom, rows in zip(query_symptoms, rows_per_symptom):
+        for row in rows:
+            match = {
+                "query_symptom_number": query_symptom["number"],
+                "query_symptom_text": query_symptom["text"],
+                "intervention_symptom_id": row.get("intervention_symptom_id"),
+                "raw_text": row["raw_text"],
+                "similarity": float(row["similarity"]),
+            }
+            per_symptom = best.setdefault(row["intervention_id"], {})
+            current = per_symptom.get(query_symptom["number"])
+            if current is None or match["similarity"] > current["similarity"]:
+                per_symptom[query_symptom["number"]] = match
+    return {
+        intervention_id: [per_symptom[number] for number in sorted(per_symptom)]
+        for intervention_id, per_symptom in best.items()
+    }
 
 
-def _rank_key(matched_row: dict) -> float:
-    """
-    La recherche renvoie `similarity` (1 = identique), inversée pour trier
-    dans le même sens qu'une distance. Accepte aussi les anciens résultats
-    portant directement `distance` (0 = identique).
-    """
-    if "distance" in matched_row:
-        return matched_row["distance"]
-    return 1.0 - matched_row.get("similarity", 0.0)
+def _case_rank_key(matched_symptoms: list[dict]) -> tuple[int, float]:
+    """D'abord le nombre de symptômes du technicien recoupés, puis la similarité moyenne (tri croissant)."""
+    mean_similarity = sum(m["similarity"] for m in matched_symptoms) / len(matched_symptoms)
+    return (-len(matched_symptoms), -mean_similarity)
 
 
 def _lookup_confidence(db: Session, intervention: Intervention, actions: list, device_type: str | None) -> dict | None:

@@ -61,11 +61,14 @@ def select_result_by_position(context: dict, position: int) -> dict | None:
     return None
 
 
-def record_last_search(context: dict, query: str, results: list[dict]) -> None:
+def record_last_search(context: dict, query: str, results: list[dict], symptoms: list[dict] | None = None) -> None:
     """
     Enregistre une nouvelle recherche (mutation en place). `results` doit
     déjà être une liste de {"position": int, "kind": "case" | "stat", ...}.
+    `symptoms` : symptômes numérotés du technicien, cherchés séparément.
     Une nouvelle recherche invalide forcément l'ancienne sélection.
     """
     context["last_search"] = {"query": query, "results": results}
+    if symptoms:
+        context["last_search"]["symptoms"] = symptoms
     context.pop("selected_result", None)

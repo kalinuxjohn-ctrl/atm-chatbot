@@ -9,8 +9,8 @@ Le dossier `frontend/` n'est pas décrit ici.
 
 Un technicien décrit une panne de **GAB** (distributeur de billets) ou de
 **TPE** (terminal de paiement). Le backend retrouve dans la base des
-**interventions passées similaires** (recherche sémantique), puis un **LLM
-local** les reformule en français.
+**interventions passées similaires** (recherche sémantique), puis un **LLM**
+(Claude ou Gemini) les reformule en français.
 
 > **Règle d'or : le système n'invente jamais de solution.** Il retrouve des
 > cas réels et le LLM ne fait que les reformuler. Chaque prompt le lui
@@ -24,11 +24,12 @@ local** les reformule en français.
 | --- | --- | --- |
 | API | Python + FastAPI | `app/main.py` |
 | Base de données | PostgreSQL 16 + extension **pgvector** | `docker-compose.yml` (service `db`) |
-| Embeddings (texte → vecteur) | `OrdalieTech/Solon-embeddings-large-0.1` via `sentence-transformers`, **1024 dimensions**, en local (GPU si dispo) | `app/services/embeddings_service.py` |
+| Embeddings (texte → vecteur) | **Voyage AI** (`voyage-3-large`, API), **1024 dimensions** | `app/services/embeddings_service.py` |
 | LLM | **Claude par défaut**, Gemini disponible | `app/services/llm_service.py` |
-| Déploiement | Docker Compose : `db` → `init-db` → `web` | `docker-compose.yml` |
+| Déploiement | Docker Compose : `db` → `init-db` → `web` (+ `frontend/docker-compose.yml`) | `docker-compose.yml` |
 
-Tout est **gratuit et auto-hébergé** : aucune clé d'API payante.
+Le backend et la base sont auto-hébergés ; le LLM (Claude ou Gemini) et les
+embeddings (Voyage AI) sont des **API externes avec clé** (fichier `.env`).
 
 ---
 
@@ -44,16 +45,16 @@ app/
 ├── services/          TOUTE la logique métier
 └── jobs/              tâches hors requête HTTP (recalcul des stats)
 db/
-├── migrations/        0001 → 0007, SQL appliqué une seule fois par init-db
+├── migrations/        0001 → 0012, SQL appliqué une seule fois par init-db
 └── seed/              données de démo (Alan, Bob, codes d'erreur)
-tests/                 test_embeddings, test_retrieval, test_error_code_search
+tests/                 tests unitaires (unittest), sans réseau ni base réelle
 ```
 
 Règle : **route → service → base**. Une route ne contient jamais de logique.
 
 ---
 
-## 4. Le flux principal : du message à la réponse (`POST /chat`)
+## 4. Le flux principal : du message à la réponse (`POST /api/chat`)
 
 C'est le cœur du projet. Le chef d'orchestre est
 `app/services/chat_orchestrator_service.py` → `handle_chat_message()`.
@@ -97,7 +98,8 @@ une intention, et sa réponse si ce n'est pas un diagnostic. Puis, dans
 `chat_orchestrator_service.py` :
 
 1. **`diagnostic`** (nouvelle panne) → `_handle_symptom_search` : recherche
-   sémantique, puis résumé LLM.
+   sémantique **par symptôme** (le LLM liste et numérote chaque symptôme du
+   message dans `symptoms`), puis résumé LLM.
 2. **`conversation`** (tout le reste : « détaille le cas 2 », « ça n'a pas
    marché », l'heure…) → la réponse du LLM est renvoyée telle quelle. Si le LLM
    indique un résultat (`result_position`), le backend vérifie qu'il existe
@@ -107,26 +109,47 @@ une intention, et sa réponse si ce n'est pas un diagnostic. Puis, dans
 
 ## 6. La recherche sémantique, étape par étape
 
-### 6.1 Embedding de la question
+### 6.0 Un symptôme = une recherche
 
-`embeddings_service.generate_embedding(texte, is_query=True)` :
+Le LLM renvoie, en plus de la reformulation globale, la liste numérotée des
+symptômes du message (`UnderstoodMessage.symptoms`) :
+
+```json
+"symptoms": [
+  {"number": 1, "text": "L'écran du GAB reste noir"},
+  {"number": 2, "text": "La carte reste bloquée dans le lecteur"}
+]
+```
+
+Le schéma nettoie la liste (doublons, vides) et renumérote 1, 2, 3 ;
+l'orchestrateur en garde au plus `MAX_SYMPTOMS_PER_MESSAGE` (5). **Chaque
+symptôme a son propre embedding et sa propre recherche** : un message à
+plusieurs symptômes ne donne plus un vecteur « moyen », loin de chacun d'eux.
+Liste vide : la reformulation sert de symptôme unique (comportement d'avant).
+
+### 6.1 Embedding des symptômes
+
+`embeddings_service.generate_embedding(texte, is_query=True)` (un symptôme) ou
+`generate_embeddings_batch(textes, is_query=True)` (plusieurs symptômes, **un
+seul appel** à Voyage) :
 - nettoie le texte (espaces multiples, bords) ;
-- ajoute le préfixe `"query : "` (attendu par Solon pour une **question**) ;
-- encode avec `normalize_embeddings=True` → vecteur de 1024 nombres ;
+- appelle Voyage AI avec `input_type = "query"` → vecteur de 1024 nombres ;
 - vérifie la dimension (erreur claire si le modèle ne correspond pas à la config).
 
-Le modèle est chargé **une seule fois** puis gardé en mémoire (`lru_cache`).
+Les vecteurs de recherche unitaires sont gardés en cache (`lru_cache`).
 
-> Les textes **stockés** sont encodés avec `is_query=False` (sans préfixe) :
-> Solon distingue « question » et « document ».
+> Les textes **stockés** sont encodés avec `is_query=False`
+> (`input_type = "document"`) : Voyage distingue « question » et « document ».
 
 ### 6.2 Recherche des symptômes proches
 
-`retrieval_service.fetch_similar_symptoms(db, texte, device_type)` :
+`retrieval_service.fetch_similar_symptoms_per_symptom(db, textes, device_type)`
+lance, pour chaque symptôme, `fetch_similar_symptoms(db, texte, device_type)` :
 - requête pgvector sur `intervention_symptom.embedding` avec l'opérateur
   `<=>` (distance cosinus), convertie en `similarity = 1 - distance` ;
 - **filtre par `device_type`** (jointure `intervention` → `device`) : un
   symptôme de TPE ne sort jamais pour un GAB ;
+- **filtre par modèle** si le message en cite un (`model_name_text`) ;
 - **seuil de pertinence** `SYMPTOM_SIMILARITY_THRESHOLD` (0.5 par défaut) :
   ce qui est en dessous est éliminé ;
 - **erreur explicite** : si pgvector échoue, annulation du savepoint puis
@@ -134,19 +157,28 @@ Le modèle est chargé **une seule fois** puis gardé en mémoire (`lru_cache`).
 
 ### 6.3 Regroupement en cas réels
 
-`case_retrieval_service.find_similar_cases()` :
-- cherche 8 symptômes, puis **regroupe par intervention** (une intervention
-  peut matcher via plusieurs symptômes, on garde sa meilleure note) ;
-- garde les **3 meilleures interventions** ;
-- `build_case()` assemble pour chacune : technicien, machine, symptôme
-  trouvé, actions dans l'ordre, diagnostic, résultat final et **fiabilité**
-  (lue dans `symptom_action_outcome_stats` pour l'action qui a résolu le cas).
+`case_retrieval_service.find_similar_cases(..., symptoms=...)` :
+- cherche 8 symptômes enregistrés **par symptôme du technicien**, puis
+  **regroupe par intervention** (`_group_matches_by_intervention`) : pour
+  chaque intervention, la meilleure correspondance de **chaque** symptôme du
+  technicien. Une intervention peut donc recouper plusieurs symptômes ;
+- classe (`_case_rank_key`) d'abord par **nombre de symptômes recoupés**,
+  puis par **similarité moyenne**, et garde les **3 meilleures** ;
+- `build_case()` assemble pour chacune : technicien, machine, symptômes
+  recoupés (`matched_symptoms`), actions dans l'ordre, diagnostic, résultat
+  final et **fiabilité** (lue dans `symptom_action_outcome_stats` pour l'action
+  qui a résolu le cas). La correspondance la plus proche reste la référence
+  unique du cas (`matched_symptom_text`, `matched_intervention_symptom_id`),
+  utilisée par les propositions de solution.
 
 ### 6.4 Restitution par le LLM
 
-`_summarize_cases()` met chaque cas sur une ligne (`_format_case`), construit
-un prompt « résume ces cas, garde l'ordre Cas 1 / Cas 2…, **n'invente rien** »
-et appelle `llm_service.generate_reply()`.
+`_summarize_cases()` met chaque cas sur une ligne (`_format_case`, qui liste
+les symptômes recoupés et le numéro du symptôme du technicien correspondant),
+construit un prompt « résume ces cas, garde l'ordre Cas 1 / Cas 2…, **n'invente
+rien** » et appelle `llm_service.generate_reply()`. Avec plusieurs symptômes, le
+prompt les liste numérotés et demande d'indiquer, pour chaque cas, ceux qu'il
+recoupe, et de signaler un symptôme recoupé par aucun cas.
 
 `llm_service` passe par une interface `LLMProvider` (`ClaudeProvider` ou
 `GeminiProvider`), choisie avec `LLM_PROVIDER`. Une indisponibilité remonte
@@ -167,9 +199,15 @@ Contenu typique du contexte :
   "device_type": "gab",
   "intent": "diagnostic",
   "last_search": {
-    "query": "la carte reste bloquée",
+    "query": "la carte reste bloquée et l'écran est noir",
+    "symptoms": [
+      {"number": 1, "text": "La carte reste bloquée"},
+      {"number": 2, "text": "L'écran est noir"}
+    ],
     "results": [
-      {"position": 1, "kind": "case", "intervention_id": 3001},
+      {"position": 1, "kind": "case", "intervention_id": 3001,
+       "matched_intervention_symptom_id": 9001,
+       "matched_symptoms": [{"query_symptom_number": 1, "intervention_symptom_id": 9001, "...": "..."}]},
       {"position": 2, "kind": "case", "intervention_id": 3045}
     ]
   },
@@ -191,8 +229,8 @@ Comment ça marche :
 - les échanges des menus de suggestions (pannes fréquentes, codes d'erreur)
   ne sont pas enregistrés côté backend : le LLM ne les voit pas ;
 - l'historique envoyé est limité aux `CHAT_HISTORY_MAX_MESSAGES` (100) derniers messages ;
-- si aucun `device_type` n'a été donné, la recherche filtre sur `NULL` et ne
-  trouve rien : le front doit l'envoyer au moins au premier message ;
+- si aucun `device_type` n'a été donné (ni dans l'interface, ni dans le
+  message), aucune recherche n'est lancée : le Copilote demande GAB ou TPE ;
 - un `technician_id` inexistant provoque une erreur de clé étrangère (500).
 
 ---
@@ -238,7 +276,10 @@ l'action est cataloguée.
 suivies dans `schema_migrations`) :
 `0001` parc + interventions · `0002` catalogue + jonctions + diagnostic ·
 `0003` pgvector + index HNSW · `0004` stats · `0005` action liée à un symptôme
-précis · `0006` conversations + contexte · `0007` codes d'erreur.
+précis · `0006` conversations + contexte · `0007` codes d'erreur · `0008`
+embeddings Voyage (1024) · `0009` propositions de solution · `0010` action
+issue d'une proposition · `0011` menus de suggestions · `0012` ajouts
+d'intervention.
 
 **`device_type`** : contrôlé en base (ENUM) et dans l'API par
 `app/schemas/device_type.py`. `" GAB "` et `"Tpe"` sont normalisés en
@@ -272,9 +313,12 @@ Il est lancé par `init-db`, après l'ajout d'une action cataloguée, et par
 
 | Méthode et route | Rôle | Service |
 | --- | --- | --- |
-| `POST /chat` | conversation complète (flux du §4) | `chat_orchestrator_service` |
-| `POST /chat/search-symptom` | recherche « statistique » sans conversation : symptômes proches → actions classées par fiabilité + résumé LLM | `retrieval_service.find_ranked_solutions` + `llm_service.summarize_solutions` |
-| `POST /interventions` | créer une intervention + symptômes (embeddings + rattachement catalogue) | `intervention_service` |
+| `POST /api/chat` | conversation complète (flux du §4) | `chat_orchestrator_service` |
+| `GET /api/chat/conversations/{id}/solution-proposal-context`, `POST /api/chat/conversations/{id}/solution-proposals` | proposer une solution (voir README) | `solution_proposal_service` |
+| `POST`/`GET /api/intervention_add` | proposer une nouvelle intervention (validée par un admin) | `intervention_add_service` |
+| `/api/admin/solution-proposals`, `/api/admin/intervention_add` | validation admin (clé `X-Admin-Key`) | `solution_proposal_service`, `intervention_add_service` |
+| `POST /api/chat/search-symptom` | recherche « statistique » sans conversation : symptômes proches → actions classées par fiabilité + résumé LLM | `retrieval_service.find_ranked_solutions` + `llm_service.summarize_solutions` |
+| `POST /interventions` | créer une intervention + symptômes (embeddings + rattachement catalogue), admin | `intervention_service` |
 | `GET /interventions/{id}` | lire une intervention | `intervention_service` |
 | `POST /interventions/{id}/actions` | ajouter une action tentée | `intervention_service` |
 | `GET /catalog/actions/similar` | actions du catalogue proches d'un texte (avant d'en créer une) | `catalog_service` |
@@ -290,7 +334,7 @@ Documentation interactive : <http://localhost:8000/docs>.
 
 **Deux recherches complémentaires, à ne pas confondre :**
 - `find_similar_cases` (dans `/chat`) répond à la question « **montre-moi des cas réels** », chacun raconté ;
-- `find_ranked_solutions` (dans `/chat/search-symptom`) répond à « **qu'est-ce qui marche le mieux statistiquement** ».
+- `find_ranked_solutions` (dans `/api/chat/search-symptom`, et en repli dans `/api/chat`) répond à « **qu'est-ce qui marche le mieux statistiquement** ».
 
 ---
 
@@ -299,12 +343,16 @@ Documentation interactive : <http://localhost:8000/docs>.
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
 | `DATABASE_URL` | `postgresql+psycopg2://…/atm_chatbot` | connexion BDD |
-| `EMBEDDING_MODEL_NAME` / `EMBEDDING_DIMENSIONS` | Solon / 1024 | modèle d'embedding |
+| `EMBEDDING_PROVIDER` / `VOYAGE_API_KEY` / `VOYAGE_MODEL` / `EMBEDDING_DIMENSIONS` | `voyage` / clé vide / `voyage-3-large` / 1024 | embeddings |
 | `LLM_PROVIDER` | `claude` | fournisseur LLM (`claude` ou `gemini`) |
 | `CLAUDE_API_KEY` / `CLAUDE_MODEL` | clé vide / `claude-sonnet-5-5` | API Claude |
 | `GEMINI_API_KEY` / `GEMINI_MODEL` | clé vide / `gemini-3.5-flash-lite` | API Gemini |
 | `SYMPTOM_SIMILARITY_THRESHOLD` | 0.5 | seuil de pertinence de la recherche |
 | `SYMPTOM_CATALOG_MATCH_MAX_DISTANCE` | 0.15 | seuil de rattachement automatique au catalogue |
+| `ACTION_CATALOG_MATCH_MAX_DISTANCE` | 0.15 | réutilisation d'une action du catalogue à l'approbation |
+| `MAX_SYMPTOMS_PER_MESSAGE` | 5 | symptômes d'un message cherchés séparément |
+| `CHAT_HISTORY_MAX_MESSAGES` | 100 | anciens messages envoyés au LLM |
+| `ADMIN_API_KEY` | vide (admin désactivé) | clé des routes `/api/admin` |
 
 `Settings` ignore les variables inconnues (`extra="ignore"`) : le fichier
 `.env` peut être partagé avec Docker Compose.

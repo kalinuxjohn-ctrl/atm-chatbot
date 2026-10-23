@@ -30,9 +30,12 @@ prompts, réponses LLM brutes, secrets ou données personnelles à `trace()`.
      cas 2 », suivi, question générale…) : la réponse du LLM est renvoyée telle
      quelle, sans second appel ni recherche vectorielle. Le résultat dont il
      parle (`result_position`) est vérifié puis retenu comme `selected_result` ;
-   - diagnostic : résolution SQL des références, embedding du texte reformulé,
-     recherche vectorielle filtrée par type d'appareil et seuil de pertinence,
-     préparation des cas réels, puis synthèse LLM. Le prompt demande au LLM
+   - diagnostic : résolution SQL des références, puis **un embedding par
+     symptôme** listé par le LLM (`symptoms`, numérotés ; un seul appel groupé
+     à Voyage), une recherche vectorielle par symptôme filtrée par type
+     d'appareil (et modèle s'il est cité) et seuil de pertinence, regroupement
+     par intervention (un cas peut recouper plusieurs symptômes et passe alors
+     devant), préparation des cas réels, puis synthèse LLM. Le prompt demande au LLM
      de vérifier leur pertinence technique, d'écarter les cas sans lien établi
      et de signaler si aucun ne convient. Les pistes indirectes doivent expliquer
      leurs limites. Les suggestions générales sont introduites brièvement par
@@ -48,8 +51,8 @@ prompts, réponses LLM brutes, secrets ou données personnelles à `trace()`.
 6. L'orchestrateur sauvegarde la réponse et le contexte, valide la transaction,
    puis la route retourne `{conversation_id, reply}`.
 
-Les références modèle/code d'erreur sont mémorisées, mais ne filtrent pas
-encore la recherche vectorielle : seul le type d'appareil est utilisé.
+Le type d'appareil et le nom de modèle cité filtrent la recherche vectorielle ;
+le code d'erreur est mémorisé mais ne la filtre pas encore.
 Une panne de pgvector est remontée sans calcul Python de secours. La recherche autonome
 `GET /api/error_code/search` utilise SQL ILIKE, sans embedding ni LLM.
 

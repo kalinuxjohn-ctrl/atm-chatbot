@@ -173,6 +173,7 @@ def _describe_last_search(db: Session, context: dict) -> str | None:
                 resultat["intervention_id"],
                 device_type=context.get("device_type"),
                 matched_symptom_text=resultat.get("matched_symptom_text"),
+                matched_symptoms=resultat.get("matched_symptoms"),
             )
             if case is not None:  # intervention supprimée depuis la recherche
                 descriptions.append(_format_case(case, resultat.get("position")))
@@ -181,7 +182,8 @@ def _describe_last_search(db: Session, context: dict) -> str | None:
     if not descriptions:
         return None
     query = last_search.get("query") or "non précisé"
-    return "\n".join([f"Problème recherché : « {query} »", *descriptions])
+    symptoms_txt = _format_query_symptoms(last_search.get("symptoms"))
+    return "\n".join([f"Problème recherché : « {query} »", *([symptoms_txt] if symptoms_txt else []), *descriptions])
 
 
 def _handle_symptom_search(
@@ -190,6 +192,9 @@ def _handle_symptom_search(
     # Repli sur le message brut : un LLM qui classe en "diagnostic" sans
     # remplir la reformulation ne doit pas lancer une recherche à vide.
     search_text = (understood.reformulated_problem_text or "").strip() or (message or "").strip()
+    # Chaque symptôme identifié par le LLM est cherché séparément (un
+    # embedding chacun). Liste vide : le texte complet sert de symptôme unique.
+    query_symptoms = [symptom.model_dump() for symptom in understood.symptoms][: settings.max_symptoms_per_message]
 
     # Résolution déterministe, mémorisée dans le contexte. Les IDs résolus
     # (model_id, error_code_id) ne servent pas encore de filtre SQL : la
@@ -215,6 +220,7 @@ def _handle_symptom_search(
         "PROCESSING",
         "Texte reformulé préparé pour le diagnostic",
         search_text_length=len(search_text),
+        symptom_count=len(query_symptoms),
         has_device_type=bool(device_type),
     )
     trace(
@@ -240,7 +246,7 @@ def _handle_symptom_search(
     model_name = (understood.model_name_text or "").strip() or None
 
     cases = case_retrieval_service.find_similar_cases(
-        db, search_text=search_text, device_type=device_type, model_name=model_name
+        db, search_text=search_text, device_type=device_type, model_name=model_name, symptoms=query_symptoms
     )
 
     if cases:
@@ -255,32 +261,38 @@ def _handle_symptom_search(
                 "matched_symptom_text": case.get("matched_symptom_text"),
                 # Son ID : permet à une proposition de solution de pointer le bon intervention_symptom.
                 "matched_intervention_symptom_id": case.get("matched_intervention_symptom_id"),
+                # Tous les symptômes du technicien que ce cas recoupe.
+                "matched_symptoms": case.get("matched_symptoms") or [],
             }
             for index, case in enumerate(cases)
         ]
-        context_service.record_last_search(context, query=search_text, results=results)
+        context_service.record_last_search(context, query=search_text, results=results, symptoms=query_symptoms)
         context["intent"] = "diagnostic"
         trace("CONTEXT", "Cas réels mémorisés pour le suivi", result_count=len(results))
-        return _summarize_cases(search_text, cases, device_type)
+        return _summarize_cases(search_text, cases, device_type, query_symptoms)
 
     # Repli : aucun cas réel, mais peut-être des stats agrégées.
     trace("SEARCH", "Aucun cas réel, recherche de statistiques agrégées")
     aggregated = retrieval_service.find_ranked_solutions(
-        db, search_text=search_text, device_type=device_type, model_name=model_name
+        db,
+        search_text=search_text,
+        device_type=device_type,
+        model_name=model_name,
+        symptom_texts=[symptom["text"] for symptom in query_symptoms],
     )
 
     solutions = aggregated["solutions"]
 
     if solutions:
         results = [_stat_result(index + 1, s) for index, s in enumerate(solutions)]
-        context_service.record_last_search(context, query=search_text, results=results)
+        context_service.record_last_search(context, query=search_text, results=results, symptoms=query_symptoms)
         context["intent"] = "diagnostic"
         trace("CONTEXT", "Solutions agrégées mémorisées pour le suivi", result_count=len(results))
         return llm_service.summarize_solutions(search_text, solutions, device_type=device_type)
 
-    context_service.record_last_search(context, query=search_text, results=[])
+    context_service.record_last_search(context, query=search_text, results=[], symptoms=query_symptoms)
     trace("RESPONSE", "Aucun cas ni solution, suggestions du chatbot demandées", has_model_filter=bool(model_name))
-    suggestions = _summarize_cases(search_text, [], device_type)
+    suggestions = _summarize_cases(search_text, [], device_type, query_symptoms)
     if model_name:
         # Le filtre modèle a pu tout éliminer : on le dit explicitement, pour
         # que le technicien sache que la recherche portait sur CE modèle.
@@ -328,13 +340,27 @@ def _format_stat_result(resultat: dict) -> str:
     )
 
 
-def _summarize_cases(problem_text: str, cases: list[dict], device_type: str | None = None) -> str:
+def _summarize_cases(
+    problem_text: str, cases: list[dict], device_type: str | None = None, symptoms: list[dict] | None = None
+) -> str:
     lignes = "\n".join(_format_case(case, index + 1) for index, case in enumerate(cases)) or "Aucun cas candidat."
+    # Consigne ajoutée seulement s'il y a plusieurs symptômes : avec un seul,
+    # le prompt reste identique à avant.
+    multi_symptom_instruction = (
+        f"{_format_query_symptoms(symptoms)}\n"
+        "Chaque symptôme a été cherché séparément : un cas peut en recouper un seul ou plusieurs. "
+        "Pour chaque cas présenté, indique quels symptômes il recoupe (par leur numéro) ; "
+        "un cas qui en recoupe plusieurs est en général plus proche du problème. "
+        "Si un symptôme n'est recoupé par aucun cas pertinent, dis-le.\n"
+        if symptoms and len(symptoms) > 1
+        else ""
+    )
 
     prompt = (
         "Tu es un assistant pour techniciens de maintenance ATM. "
         f"{llm_service.device_type_instruction(device_type)}"
         f"Un technicien décrit ce symptôme : « {problem_text} ».\n"
+        f"{multi_symptom_instruction}"
         "Voici des cas candidats issus d'une recherche vectorielle, classés par similarité. "
         "Leur présence dans cette liste ne garantit PAS leur pertinence technique :\n"
         f"{lignes}\n\n"
@@ -406,7 +432,32 @@ def _format_case(case: dict, index: int | None = None) -> str:
     )
     prefixe = f"Cas {index}" if index is not None else "Cas"
     return (
-        f"{prefixe} ({case['technician_name']}, {case['device_label']}{date_txt}) : symptôme « {case.get('matched_symptom_text') or 'non précisé'} », "
+        f"{prefixe} ({case['technician_name']}, {case['device_label']}{date_txt}) : {_format_matched_symptoms(case)}, "
         f"actions tentées : {actions_txt}, résultat : {case.get('final_outcome_status') or 'non renseigné'}{fiabilite}."
         f"{diagnostic_txt}{additions_txt}"
     )
+
+
+def _format_query_symptoms(symptoms: list[dict] | None) -> str | None:
+    """« Symptômes du technicien : 1. ... ; 2. ... », ou None sans symptôme."""
+    if not symptoms:
+        return None
+    listed = " ; ".join(f"{symptom['number']}. « {symptom['text']} »" for symptom in symptoms)
+    return f"Symptômes du technicien, cherchés séparément : {listed}."
+
+
+def _format_matched_symptoms(case: dict) -> str:
+    """
+    Les symptômes du cas qui ont répondu à la recherche, chacun relié au
+    symptôme du technicien qu'il recoupe. Anciennes recherches (sans
+    matched_symptoms) : le seul symptôme mémorisé.
+    """
+    matched_symptoms = case.get("matched_symptoms") or []
+    if not matched_symptoms:
+        return f"symptôme « {case.get('matched_symptom_text') or 'non précisé'} »"
+    listed = " ; ".join(
+        f"« {match['raw_text']} » (recoupe le symptôme {match['query_symptom_number']} du technicien)"
+        for match in matched_symptoms
+    )
+    label = "symptômes recoupés" if len(matched_symptoms) > 1 else "symptôme recoupé"
+    return f"{label} : {listed}"

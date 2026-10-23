@@ -4,6 +4,8 @@ Ce document suit **un seul problème réel**, de son enregistrement en base jusq
 
 Les données sont celles du script de démo (`db/seed/seed_demo_data.py`). Les schémas sont dans `docs/diagrammes/` (21 à 24), avec un PNG haute définition dans `docs/diagrammes/png/`.
 
+> **Mise à jour (recherche par symptôme).** Les schémas 22 à 24 montrent encore la version précédente, avec un seul embedding par message. Le texte ci-dessous décrit le fonctionnement actuel : Claude liste chaque symptôme du message, et chaque symptôme est cherché séparément.
+
 | Étape | Schéma | Question |
 |---|---|---|
 | 1 | `21-db-exemple-contenu-initial` | Comment une panne et sa solution sont-elles stockées ? |
@@ -69,7 +71,7 @@ Cette seule visite est répartie sur **6 tables** :
 
 ![Compréhension](diagrammes/png/22-db-exemple-comprehension.png)
 
-Le technicien 4 écrit : *« Bonjour, sur le GAB Opteva 720 la carte est restée bloquée dans le lecteur, il affiche E42 »*.
+Le technicien 4 écrit : *« Bonjour, sur le GAB Opteva 720 la carte est restée bloquée dans le lecteur et la transaction ne se termine pas, il affiche E42 »*.
 
 | # | Ce qui se passe | Tables | Lecture / écriture |
 |---|---|---|---|
@@ -87,9 +89,15 @@ Le technicien 4 écrit : *« Bonjour, sur le GAB Opteva 720 la carte est restée
   "device_type_text": "gab",
   "model_name_text": "Opteva 720",
   "error_code_text": "E42",
-  "reformulated_problem_text": "La carte reste bloquée dans le lecteur du GAB"
+  "reformulated_problem_text": "La carte reste bloquée dans le lecteur du GAB et la transaction ne se termine pas",
+  "symptoms": [
+    {"number": 1, "text": "La carte reste bloquée dans le lecteur du GAB"},
+    {"number": 2, "text": "La transaction ne se termine pas"}
+  ]
 }
 ```
+
+**`symptoms`** liste chaque symptôme distinct du message, numéroté à partir de 1. Chaque texte doit se comprendre seul, car il sera cherché séparément. Le backend nettoie la liste : il retire les doublons et les textes vides, renumérote, et garde au plus `MAX_SYMPTOMS_PER_MESSAGE` symptômes (5 par défaut). Si la liste est vide, `reformulated_problem_text` sert de symptôme unique.
 
 **Le champ `intent` décide de la suite :**
 - `diagnostic` → recherche en base (étape 3) ;
@@ -103,8 +111,8 @@ Le technicien 4 écrit : *« Bonjour, sur le GAB Opteva 720 la carte est restée
 
 ![Recherche](diagrammes/png/23-db-exemple-recherche.png)
 
-1. **La question devient un vecteur.** Le texte `reformulated_problem_text` est envoyé à Voyage AI, qui renvoie `query_vector = [0.023, -0.041, 0.121, …]`. Ce vecteur n'est jamais stocké.
-2. **pgvector compare ce vecteur à tous les symptômes** enregistrés (`retrieval_service.fetch_similar_symptoms`) :
+1. **Chaque symptôme devient un vecteur.** Les textes de `symptoms` sont envoyés à Voyage AI en **un seul appel groupé** (`retrieval_service.fetch_similar_symptoms_per_symptom`), qui renvoie un vecteur par symptôme : `query_vector_1`, `query_vector_2`. Ces vecteurs ne sont jamais stockés. Avec un seul symptôme, l'appel unitaire habituel est utilisé, avec son cache.
+2. **pgvector compare chaque vecteur à tous les symptômes** enregistrés : **une requête par symptôme du technicien** (`retrieval_service.fetch_similar_symptoms`) :
    ```sql
    SELECT isym.intervention_symptom_id, isym.intervention_id, isym.symptom_id, isym.raw_text,
           1 - (isym.embedding <=> :query_vector) AS similarity
@@ -118,9 +126,14 @@ Le technicien 4 écrit : *« Bonjour, sur le GAB Opteva 720 la carte est restée
    LIMIT 8
    ```
    Les jointures avec `intervention`, `device` et `device_model` servent **uniquement à filtrer** (GAB, Opteva 720). La comparaison des vecteurs se fait dans `intervention_symptom`.
-3. **Seuil de pertinence** : seuls les résultats avec `similarity ≥ 0.50` sont gardés. Ici, 9001 (0.91), 9004 (0.87), 9002 et 9005 sont gardés ; 9003 et 9006 sont retirés. Les scores sont un exemple.
-4. **Un résultat par intervention, 3 au maximum** : 3001 est retenue via 9001 et 3045 via 9004. On obtient donc **Cas 1 = 3001** et **Cas 2 = 3045**.
-5. **Lecture du dossier complet de chaque cas** (`build_case`) :
+3. **Seuil de pertinence**, appliqué à chaque requête : seuls les résultats avec `similarity ≥ SYMPTOM_SIMILARITY_THRESHOLD` sont gardés. Les scores ci-dessous sont un exemple :
+   - symptôme 1 (carte bloquée) : 9001 (0.91), 9004 (0.87) ;
+   - symptôme 2 (transaction) : 9002 (0.88), 9005 (0.62).
+4. **Regroupement par intervention** (`case_retrieval_service._group_matches_by_intervention`) : pour chaque intervention, on garde la meilleure correspondance **de chaque symptôme du technicien**. Une intervention peut donc être rattachée à **plusieurs** symptômes :
+   - 3001 : symptôme 1 → 9001, symptôme 2 → 9002 ;
+   - 3045 : symptôme 1 → 9004, symptôme 2 → 9005.
+5. **Classement, 3 cas au maximum** (`_case_rank_key`) : d'abord le **nombre de symptômes recoupés**, puis la **similarité moyenne**. Une intervention qui recoupe 2 symptômes passe devant une intervention plus proche sur un seul. Ici, les deux en recoupent 2, et 3001 a la meilleure moyenne : **Cas 1 = 3001**, **Cas 2 = 3045**.
+6. **Lecture du dossier complet de chaque cas** (`build_case`) :
    - `intervention` ;
    - `technician` (le nom) ;
    - `device` (le site) ;
@@ -130,7 +143,7 @@ Le technicien 4 écrit : *« Bonjour, sur le GAB Opteva 720 la carte est restée
 
 **Tables non lues pendant la recherche :** `symptom`, `action`, `component`, `error_code`, `fault`, `manufacturer`.
 
-**Repli :** si aucun cas ne passe le seuil, `find_ranked_solutions` lit `symptom_action_outcome_stats` et `action`, et renvoie des résultats de type « stat ».
+**Repli :** si aucun cas ne passe le seuil, `find_ranked_solutions` (avec `symptom_texts`, une recherche par symptôme dont les correspondances sont réunies) lit `symptom_action_outcome_stats` et `action`, et renvoie des résultats de type « stat ».
 
 ---
 
@@ -138,7 +151,7 @@ Le technicien 4 écrit : *« Bonjour, sur le GAB Opteva 720 la carte est restée
 
 ![Réponse](diagrammes/png/24-db-exemple-reponse.png)
 
-1. **Appel 2 à Claude (synthèse)** : les cas sont mis en texte (`_format_case`) et Claude rédige la réponse. **Claude ne lit ni n'écrit jamais la base.**
+1. **Appel 2 à Claude (synthèse)** : les cas sont mis en texte (`_format_case`) et Claude rédige la réponse. **Claude ne lit ni n'écrit jamais la base.** Chaque cas indique les symptômes qu'il recoupe, par exemple : `symptômes recoupés : « La carte est retenue par le GAB. » (recoupe le symptôme 1 du technicien) ; « La transaction ne s'achève pas. » (recoupe le symptôme 2 du technicien)`. Avec plusieurs symptômes, le prompt les liste numérotés et demande à Claude d'indiquer, pour chaque cas, les symptômes qu'il recoupe, et de signaler un symptôme recoupé par aucun cas.
 2. **Écritures, puis un seul `COMMIT`** :
 
 | Table | Opération | Contenu |
@@ -153,16 +166,30 @@ Contenu de `conversation_context.context` après ce message :
   "device_type": "gab", "model_id": 10, "model_name": "Opteva 720",
   "error_code_id": 1, "error_code": "E42", "intent": "diagnostic",
   "last_search": {
-    "query": "La carte reste bloquée dans le lecteur du GAB",
+    "query": "La carte reste bloquée dans le lecteur du GAB et la transaction ne se termine pas",
+    "symptoms": [
+      {"number": 1, "text": "La carte reste bloquée dans le lecteur du GAB"},
+      {"number": 2, "text": "La transaction ne se termine pas"}
+    ],
     "results": [
       {"position": 1, "kind": "case", "intervention_id": 3001,
-       "matched_symptom_text": "La carte est retenue par le GAB.", "matched_intervention_symptom_id": 9001},
+       "matched_symptom_text": "La carte est retenue par le GAB.", "matched_intervention_symptom_id": 9001,
+       "matched_symptoms": [
+         {"query_symptom_number": 1, "query_symptom_text": "La carte reste bloquée dans le lecteur du GAB",
+          "intervention_symptom_id": 9001, "raw_text": "La carte est retenue par le GAB.", "similarity": 0.91},
+         {"query_symptom_number": 2, "query_symptom_text": "La transaction ne se termine pas",
+          "intervention_symptom_id": 9002, "raw_text": "La transaction ne s'achève pas.", "similarity": 0.88}
+       ]},
       {"position": 2, "kind": "case", "intervention_id": 3045,
-       "matched_symptom_text": "La carte reste coincée dans le distributeur.", "matched_intervention_symptom_id": 9004}
+       "matched_symptom_text": "La carte reste coincée dans le distributeur.", "matched_intervention_symptom_id": 9004,
+       "matched_symptoms": ["… même structure : 9004 pour le symptôme 1, 9005 pour le symptôme 2"]}
     ]
   }
 }
 ```
+
+- `matched_symptoms` : **toutes** les correspondances du cas, une par symptôme du technicien recoupé.
+- `matched_symptom_text` / `matched_intervention_symptom_id` : la correspondance **la plus proche**, gardée comme référence unique du cas (affichage court, proposition de solution).
 
 3. **Message suivant, « détaille le deuxième »** :
    - avant l'appel, le backend lit `last_search.results` et relit chaque cas
@@ -188,7 +215,7 @@ Contenu de `conversation_context.context` après ce message :
 | `device` | ✔ | | JOIN (filtre gab) + dossier | |
 | `technician` | ✔ | | dossier (nom) | |
 | `intervention` | ✔ | | JOIN + dossier | |
-| `intervention_symptom` | ✔ + embedding | | **recherche vectorielle** | |
+| `intervention_symptom` | ✔ + embedding | | **recherche vectorielle** (une requête par symptôme du technicien) | |
 | `intervention_action` | ✔ | | dossier (solutions) | |
 | `diagnosis` | ✔ | | dossier (cause) | |
 | `symptom_action_outcome_stats` | calculée par le job | | fiabilité | |

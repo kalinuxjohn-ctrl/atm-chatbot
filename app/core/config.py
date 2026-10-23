@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     # le rattacher à tort à la mauvaise entrée du catalogue.
     symptom_catalog_match_max_distance: float = 0.15
     symptom_similarity_threshold: float = 0.5
+    # Symptômes d'un même message cherchés séparément (un embedding chacun) :
+    # plafond contre une facture Voyage qui exploserait sur un long message.
+    max_symptoms_per_message: int = 5
 
     embedding_provider: str = "voyage"  
     voyage_api_key: str = ""

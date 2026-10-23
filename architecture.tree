@@ -87,10 +87,10 @@ atm-chatbot/
 │   ├── services/
 │   │   ├── __init__.py
 │   │   ├── case_retrieval_service.py
-│   │   │   ├── function find_similar_cases(db, raw_text, device_type, symptom_limit, case_limit)
-│   │   │   ├── function build_case(db, intervention_id, device_type, matched_symptom_text)
-│   │   │   ├── function _keep_best_match_per_intervention(matched_symptoms)
-│   │   │   ├── function _rank_key(matched_row)
+│   │   │   ├── function find_similar_cases(db, search_text, device_type, symptom_limit, case_limit, model_name, symptoms)
+│   │   │   ├── function build_case(db, intervention_id, device_type, matched_symptom_text, matched_intervention_symptom_id, matched_symptoms)
+│   │   │   ├── function _group_matches_by_intervention(query_symptoms, rows_per_symptom)
+│   │   │   ├── function _case_rank_key(matched_symptoms)
 │   │   │   └── function _lookup_confidence(db, intervention, actions, device_type)
 │   │   ├── catalog_service.py
 │   │   │   ├── function find_similar_actions(db, raw_text, limit)
@@ -139,11 +139,11 @@ atm-chatbot/
 │   │   │   ├── function _clean_search_text(raw_text)
 │   │   │   ├── function _clamp_limit(limit, default)
 │   │   │   ├── function _apply_relevance_threshold(candidates, threshold, method)
-│   │   │   ├── function _fallback_cosine_search(db, query_vector, device_type, limit)
-│   │   │   ├── function fetch_similar_symptoms(db, raw_text, device_type, limit)
+│   │   │   ├── function fetch_similar_symptoms(db, search_text, device_type, limit, model_name, query_vector)
+│   │   │   ├── function fetch_similar_symptoms_per_symptom(db, symptom_texts, device_type, limit, model_name)
 │   │   │   ├── function find_best_catalog_match(db, raw_text, device_type)
 │   │   │   ├── function store_symptom_embedding(db, intervention_symptom_id, vector)
-│   │   │   └── function find_ranked_solutions(db, raw_text, device_type, symptom_limit, solution_limit)
+│   │   │   └── function find_ranked_solutions(db, search_text, device_type, symptom_limit, solution_limit, model_name, symptom_texts)
 │   │   └── stats_service.py
 │   │       └── function recompute_stats(db)
 │   ├── __init__.py

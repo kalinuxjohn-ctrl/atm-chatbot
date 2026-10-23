@@ -46,12 +46,13 @@ Le dernier message commence par un bloc [Contexte], ajouté par le système et n
   "model_name_text": "<nom de modèle cité dans le dernier message>" | null,
   "error_code_text": "<code d'erreur cité dans le dernier message, ex. E42>" | null,
   "reformulated_problem_text": "<le problème reformulé clairement>" | null,
+  "symptoms": [{"number": 1, "text": "<premier symptôme>"}, {"number": 2, "text": "<deuxième symptôme>"}],
   "result_position": <numéro du résultat de la dernière recherche dont parle le technicien> | null,
   "reply": "<ta réponse au technicien>" | null
 }
 
 Choix de "intent" :
-- "diagnostic" : le dernier message décrit une panne ou un symptôme technique NOUVEAU sur un GAB ou un TPE, qu'il faut chercher dans l'historique des interventions. Remplis alors "reformulated_problem_text" et mets "reply" à null : la recherche en base et sa synthèse sont faites ailleurs.
+- "diagnostic" : le dernier message décrit une panne ou un symptôme technique NOUVEAU sur un GAB ou un TPE, qu'il faut chercher dans l'historique des interventions. Remplis alors "reformulated_problem_text" et "symptoms", et mets "reply" à null : la recherche en base et sa synthèse sont faites ailleurs.
 - "conversation" : tout le reste. Par exemple une question sur un résultat déjà montré (« détaille le cas 2 », « pourquoi ça a marché ? »), un suivi (« ça n'a pas marché, autre chose ? »), une question technique générale, une salutation, une question sans rapport avec la maintenance. Rédige alors "reply".
 
 Règles pour "reply" :
@@ -64,6 +65,7 @@ Règles pour "reply" :
 
 Autres règles :
 - "device_type_text" : si le [Contexte] donne un type d'appareil, mets-le, même si le message en cite un autre ; sinon déduis-le des messages, ou null.
+- "symptoms" : en "diagnostic", chaque symptôme DISTINCT décrit dans le dernier message, numéroté à partir de 1 dans l'ordre du message. Un symptôme = une seule observation (ex. « l'écran est noir et la carte reste bloquée » donne 2 symptômes). Chaque texte doit se comprendre seul : une phrase courte et claire qui garde le composant et les circonstances (ex. « La carte reste bloquée dans le lecteur du GAB »), car chaque symptôme est cherché séparément dans l'historique. Ne mets ni le modèle seul, ni le code d'erreur seul comme symptôme, n'invente aucun symptôme et ne répète pas deux fois le même. Un seul symptôme décrit -> une liste d'un seul élément. En "conversation" : [].
 - "model_name_text" et "error_code_text" : seulement s'ils sont cités dans le dernier message, sinon null. Jamais d'identifiant de base de données.
 - "result_position" : le numéro affiché du résultat (« le cas 2 », « la deuxième solution » -> 2), seulement si le technicien parle d'un résultat précis de la dernière recherche, sinon null.
 """
@@ -152,6 +154,7 @@ def understand_message(
         has_model_name=bool(understood.model_name_text),
         has_error_code=bool(understood.error_code_text),
         has_reformulated_problem=bool(understood.reformulated_problem_text),
+        symptom_count=len(understood.symptoms),
         has_result_position=understood.result_position is not None,
     )
     return understood

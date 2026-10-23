@@ -33,7 +33,7 @@ from sqlalchemy.types import Integer
 from app.core.config import settings
 from app.core.errors import ExternalServiceUnavailableError
 from app.core.tracing import trace
-from app.services.embeddings_service import generate_embedding
+from app.services.embeddings_service import generate_embedding, generate_embeddings_batch
 
 
 # Garde-fou technique (pas un paramètre métier) : évite qu'un limit
@@ -114,7 +114,12 @@ def _model_filter_sql(model_name: str | None) -> tuple[str, dict]:
 
 
 def fetch_similar_symptoms(
-    db, search_text: str, device_type: str, limit: int = DEFAULT_SYMPTOM_LIMIT, model_name: str | None = None
+    db,
+    search_text: str,
+    device_type: str,
+    limit: int = DEFAULT_SYMPTOM_LIMIT,
+    model_name: str | None = None,
+    query_vector: Sequence[float] | None = None,
 ) -> list[dict]:
     """
     Les symptômes enregistrés les plus proches d'une recherche texte, DÉJÀ
@@ -128,6 +133,10 @@ def fetch_similar_symptoms(
     l'un n'est pas forcément pertinent pour l'autre. Si `model_name` est
     fourni (modèle cité dans le message), restreint en plus aux appareils
     de ce modèle.
+
+    `query_vector` : embedding de `search_text` déjà calculé par l'appelant
+    (voir fetch_similar_symptoms_per_symptom), pour éviter un appel de plus
+    au fournisseur d'embedding.
 
     Retourne [] si le texte est vide/inexploitable (aucune recherche
     vectorielle n'est lancée dans ce cas), ou si aucun candidat ne dépasse
@@ -152,7 +161,8 @@ def fetch_similar_symptoms(
         threshold=threshold,
     )
 
-    query_vector = generate_embedding(cleaned_text, is_query=True)
+    if query_vector is None:
+        query_vector = generate_embedding(cleaned_text, is_query=True)
     model_filter, model_params = _model_filter_sql(model_name)
 
     # SAVEPOINT plutôt que db.rollback() : en cas d'échec, seule cette
@@ -202,6 +212,40 @@ def fetch_similar_symptoms(
 
 
 retrieve_similar_symptoms = fetch_similar_symptoms
+
+
+def fetch_similar_symptoms_per_symptom(
+    db,
+    symptom_texts: list[str],
+    device_type: str,
+    limit: int = DEFAULT_SYMPTOM_LIMIT,
+    model_name: str | None = None,
+) -> list[list[dict]]:
+    """
+    Une recherche vectorielle PAR symptôme du technicien : le résultat i
+    contient les symptômes enregistrés proches de symptom_texts[i] (même
+    seuil, mêmes filtres que fetch_similar_symptoms).
+
+    Chercher chaque symptôme séparément évite qu'un message à plusieurs
+    symptômes ne donne un seul vecteur « moyen », trop loin de chacun d'eux.
+    Plusieurs symptômes : leurs embeddings sont calculés en UN appel groupé.
+    """
+    cleaned_texts = [_clean_search_text(symptom_text) for symptom_text in symptom_texts]
+    cleaned_texts = [cleaned for cleaned in cleaned_texts if cleaned]
+    if not cleaned_texts:
+        return []
+    if len(cleaned_texts) == 1:
+        # Un seul symptôme : chemin habituel, qui profite du cache des recherches.
+        return [fetch_similar_symptoms(db, cleaned_texts[0], device_type, limit=limit, model_name=model_name)]
+
+    trace("SEARCH", "Recherche par symptôme démarrée", symptom_count=len(cleaned_texts))
+    query_vectors = generate_embeddings_batch(cleaned_texts, is_query=True)
+    return [
+        fetch_similar_symptoms(
+            db, cleaned, device_type, limit=limit, model_name=model_name, query_vector=query_vector
+        )
+        for cleaned, query_vector in zip(cleaned_texts, query_vectors)
+    ]
 
 
 def find_best_catalog_match(
@@ -283,6 +327,7 @@ def find_ranked_solutions(
     symptom_limit: int = DEFAULT_SYMPTOM_LIMIT,
     solution_limit: int = 10,
     model_name: str | None = None,
+    symptom_texts: list[str] | None = None,
 ) -> dict:
     """Point d'entrée principal du flux de recherche (étapes 1-2 de la
     feuille de route) : à partir d'un symptôme décrit en langage libre par
@@ -299,6 +344,10 @@ def find_ranked_solutions(
     "symptom_similarity"), pour que l'appelant sache à quel point le
     symptôme d'origine correspondait à la recherche.
 
+    `symptom_texts` : symptômes du technicien cherchés séparément (voir
+    fetch_similar_symptoms_per_symptom) ; leurs correspondances sont
+    réunies. Absent : `search_text` est cherché d'un bloc.
+
     Renvoie {"matched_symptom_ids": [], "solutions": [], "no_relevant_match": True}
     si aucun symptôme suffisamment pertinent n'a été trouvé -- aucune
     solution n'est alors recherchée au hasard.
@@ -306,7 +355,16 @@ def find_ranked_solutions(
     solution_limit = _clamp_limit(solution_limit, default=10)
     # model_name ne filtre que les symptômes retenus : les stats elles-mêmes
     # restent calculées par device_type (pas de colonne modèle dans la table).
-    similar = fetch_similar_symptoms(db, search_text, device_type, limit=symptom_limit, model_name=model_name)
+    if symptom_texts:
+        similar = [
+            row
+            for rows in fetch_similar_symptoms_per_symptom(
+                db, symptom_texts, device_type, limit=symptom_limit, model_name=model_name
+            )
+            for row in rows
+        ]
+    else:
+        similar = fetch_similar_symptoms(db, search_text, device_type, limit=symptom_limit, model_name=model_name)
 
     if not similar:
         return {"matched_symptom_ids": [], "solutions": [], "no_relevant_match": True}
