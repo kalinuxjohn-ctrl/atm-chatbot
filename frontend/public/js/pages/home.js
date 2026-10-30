@@ -1,9 +1,8 @@
 /**
- * Page d'accueil : personnages animés + connexion au Copilote.
+ * Page d'accueil et connexion au Copilote.
  * La connexion est simulée (voir services/api/authApi.js).
  */
 
-import { renderAvatar } from "../components/avatar.js";
 import { getFriendlyErrorMessage } from "../core/httpClient.js";
 import { getSession, login } from "../services/sessionService.js";
 import { prefersReducedMotion } from "../utils/dom.js";
@@ -15,11 +14,6 @@ const loginForm = document.querySelector("#login-form");
 const loginError = document.querySelector("#login-error");
 const loginSubmit = document.querySelector("#login-submit");
 const accessButtons = document.querySelectorAll("[data-open-copilot]");
-
-/* ---------- Personnages de la scène ---------- */
-document.querySelectorAll("[data-character]").forEach((slot) => {
-  slot.replaceChildren(renderAvatar(slot.dataset.character));
-});
 
 /* ---------- Transition vers le Copilote ---------- */
 function goToCopilot() {
@@ -34,7 +28,9 @@ function goToCopilot() {
 /* ---------- Boutons d'accès : reprise directe si déjà connecté ---------- */
 const session = getSession();
 accessButtons.forEach((button) => {
-  if (session) button.querySelector("[data-label]").textContent = `Reprendre en tant que ${session.displayName}`;
+  if (session && button.closest(".site-header, .home-final-cta")) {
+    button.querySelector("[data-label]").textContent = `Reprendre en tant que ${session.displayName}`;
+  }
   button.addEventListener("click", () => (getSession() ? goToCopilot() : loginDialog.showModal()));
 });
 

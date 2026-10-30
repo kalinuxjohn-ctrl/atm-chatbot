@@ -15,9 +15,9 @@
     <link rel="stylesheet" href="/css/assets.css">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/components.css">
-    <link rel="stylesheet" href="/css/home.css">
     <link rel="stylesheet" href="/css/responsive.css">
     <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="/css/home.css">
     <script type="module" src="/js/components/themeToggle.js"></script>
     <script type="module" src="/js/pages/home.js"></script>
   </head>
@@ -30,83 +30,66 @@
       </a>
       <nav class="main-navigation" aria-label="Navigation principale">
         <a class="navigation-link navigation-link-active" href="/" aria-current="page">Accueil</a>
-        <a class="navigation-link" href="/copilot.html">Copilote</a>
         <a class="navigation-link" href="/diagnostic.html">Diagnostic</a>
-        <a class="navigation-link" href="/flow-presentation.html">Présentation</a>
+        <a class="navigation-link" href="#equipment">Maintenance</a>
+        <a class="navigation-link" href="/flow-presentation.html">À propos</a>
       </nav>
       <button class="header-action header-action-button" type="button" data-open-copilot>
-        <span data-label>Se connecter</span> <span aria-hidden="true">↗</span>
+        <span data-label>Se connecter / Rejoindre</span>
       </button>
     </header>
 
     <main>
-      <!-- ========== Accroche + scène animée ========== -->
+      <!-- ========== Présentation du Copilote ========== -->
       <section class="hero-section">
         <div class="hero-copy home-reveal">
-          <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span> Copilote de maintenance</p>
-          <h1>Votre copilote<br>sur le <span>terrain.</span></h1>
+          <h1>Votre Copilote de<br>Maintenance Terrain</h1>
           <p class="hero-description">
-            Décrivez une panne de GAB ou de TPE à l’écrit ou à la voix. Le Copilote s’appuie
-            sur les interventions déjà documentées pour vous proposer des pistes.
+            L’assistant qui vous accompagne dans le diagnostic et la
+            maintenance de vos équipements au quotidien.
           </p>
-          <button class="button button-primary hero-button" type="button" data-open-copilot>
-            <span data-label>Accéder au Copilote</span> <span class="button-icon" aria-hidden="true">→</span>
-          </button>
-          <div class="trust-note">
-            <span class="trust-icon" aria-hidden="true">✓</span>
-            Voix et avatar personnalisables dans les paramètres
+          <div class="hero-actions">
+            <a class="button button-primary hero-button" href="#equipment">En savoir plus</a>
+            <a class="hero-secondary" href="#help">Comment ça marche</a>
           </div>
         </div>
 
-        <div class="hero-visual home-scene" aria-label="Deux techniciens animés à côté d’un guichet automatique">
-          <div class="hologram-orbits" aria-hidden="true">
-            <div class="hologram-plane hologram-plane-equator">
-              <div class="hologram-track"><span class="hologram-node"></span></div>
-            </div>
-            <div class="hologram-plane hologram-plane-meridian">
-              <div class="hologram-track"><span class="hologram-node"></span></div>
-            </div>
-            <div class="hologram-plane hologram-plane-diagonal">
-              <div class="hologram-track"><span class="hologram-node"></span></div>
-            </div>
-          </div>
-          <div class="hologram-platform" aria-hidden="true"></div>
-          <div class="visual-glow"></div>
-
-          <div class="atm-machine">
-            <div class="atm-top">
-              <span class="atm-brand-mark">ATM</span>
-              <span class="atm-status"><i></i> SECURE</span>
-            </div>
-            <div class="atm-screen">
-              <span class="screen-topline"></span>
-              <span class="screen-title">Diagnostic<br>en cours…</span>
-              <span class="screen-button"></span>
-            </div>
-            <div class="atm-slot"><span></span></div>
-            <div class="atm-keypad">
-              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-            </div>
-            <div class="atm-base"></div>
-          </div>
-
-          <!-- Personnages : remplis par home.js avec les avatars SVG -->
-          <div class="home-character home-character-left">
-            <span class="character-bubble">Lecteur de carte vérifié ✓</span>
-            <span class="character-avatar" data-character="female"></span>
-          </div>
-          <div class="home-character home-character-right">
-            <span class="character-bubble">Je lance un test 🔧</span>
-            <span class="character-avatar" data-character="male"></span>
-          </div>
+        <div class="hero-visual home-scene">
+          <img class="hero-technician" src="/assets/images/conseillere-maintenance-telephone.png" alt="Conseillère souriante en veste bleu marine présentant le chatbot sur son téléphone" width="479" height="607" fetchpriority="high">
         </div>
+      </section>
+
+      <section class="equipment-section" id="equipment" aria-labelledby="equipment-title">
+        <h2 id="equipment-title">Choisissez votre équipement</h2>
+        <div class="equipment-grid">
+          <article class="equipment-card equipment-card-atm">
+            <div class="equipment-card-body">
+              <img class="equipment-picture" src="/assets/images/guichet-automatique-bleu.png" alt="" width="260" height="510">
+              <h3>Guichet<br>Automatique<br><span>(GAB / ATM)</span></h3>
+            </div>
+            <a class="equipment-action" href="/diagnostic.html?device_type=gab">Diagnostic GAB</a>
+          </article>
+          <article class="equipment-card equipment-card-tpe">
+            <div class="equipment-card-body">
+              <img class="equipment-picture" src="/assets/images/terminal-paiement-orange.png" alt="" width="285" height="326">
+              <h3>Terminal de<br>Paiement<br><span>(TPE)</span></h3>
+            </div>
+            <a class="equipment-action" href="/diagnostic.html?device_type=tpe">Diagnostic TPE</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="home-services" aria-label="Les services du Copilote">
+        <a href="/diagnostic.html"><svg class="service-symbol service-symbol-diagnostic" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="3" y="16" width="5" height="9" rx="1" fill="#68b49b"/><rect x="11" y="10" width="5" height="15" rx="1" fill="#e9b75c"/><rect x="19" y="4" width="5" height="21" rx="1" fill="#6598d0"/></svg><div><h2>01. Diagnostic guidé</h2><p>Retrouvez des interventions similaires et les résultats des actions réalisées.</p></div></a>
+        <a href="#help"><svg class="service-symbol service-symbol-maintenance" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 4 19 20M4 5l4-1 2 4-3 3-4-2 1-4"/><path d="m5 24 9-9m3-4a6 6 0 0 0 7-7l-4 4-3-3 1-3a6 6 0 0 0-6 8"/></svg><div><h2>02. Maintenance</h2><p>Appuyez-vous sur l’expérience du terrain pour préparer vos vérifications.</p></div></a>
+        <button type="button" data-open-copilot><svg class="service-symbol service-symbol-chat" viewBox="0 0 28 28" fill="none" aria-hidden="true"><path d="M4 4h20v16H12l-6 5v-5H4z" fill="currentColor"/><circle cx="9" cy="12" r="1.3" fill="white"/><circle cx="14" cy="12" r="1.3" fill="white"/><circle cx="19" cy="12" r="1.3" fill="white"/></svg><div><h2 data-label>03. Votre Copilote</h2><p>Décrivez votre problème à l’écrit ou à la voix et échangez avec l’assistant.</p></div></button>
       </section>
 
       <!-- ========== Étapes ========== -->
       <section class="steps-section" id="help" aria-labelledby="steps-title">
         <div class="section-heading">
-          <p class="eyebrow">Simple et guidé</p>
-          <h2 id="steps-title">Trois étapes, sans quitter la machine des yeux</h2>
+          <p class="eyebrow">Prêt pour votre prochaine intervention ?</p>
+          <h2 id="steps-title">Vous connaissez le terrain.<br>On vous aide pour la suite.</h2>
         </div>
         <div class="steps-grid">
           <article class="step-card">
@@ -125,6 +108,10 @@
             <p>Le Copilote répond à l’écrit et peut lire sa réponse à voix haute.</p>
           </article>
         </div>
+      </section>
+      <section class="home-final-cta" aria-labelledby="final-cta-title">
+        <div><p class="eyebrow">Votre prochain réflexe terrain</p><h2 id="final-cta-title">Une panne à comprendre ?<br>Commençons par en parler.</h2></div>
+        <button class="button button-primary hero-button" type="button" data-open-copilot><span data-label>Ouvrir le Copilote</span><span aria-hidden="true">↗</span></button>
       </section>
     </main>
 

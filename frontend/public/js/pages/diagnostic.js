@@ -19,6 +19,10 @@ const conversation = document.querySelector("#conversation");
 const messageForm = document.querySelector("#message-form");
 const messageInput = document.querySelector("#message-input");
 const deviceTypeInput = document.querySelector("#device-type");
+const initialDeviceType = new URLSearchParams(window.location.search).get("device_type");
+if (initialDeviceType === "gab" || initialDeviceType === "tpe") {
+  deviceTypeInput.value = initialDeviceType;
+}
 const sendButton = document.querySelector("#send-button");
 const characterCount = document.querySelector("#character-count");
 const newSearchButton = document.querySelector("#new-search-button");
