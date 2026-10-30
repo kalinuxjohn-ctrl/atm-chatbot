@@ -21,12 +21,15 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.tracing import trace
 from app.schemas.message_understanding_schema import UnderstoodMessage
+from app.schemas.photo_schema import PhotoAttachment
 from app.services import (
+    case_detail_service,
     case_retrieval_service,
     context_service,
     conversation_service,
     llm_service,
     message_understanding_service,
+    photo_ocr_service,
     retrieval_service,
     technical_reference_resolver_service,
 )
@@ -53,6 +56,7 @@ def handle_chat_message(
     technician_id: int,
     message: str,
     device_type: str | None = None,
+    photo: PhotoAttachment | None = None,
 ) -> dict:
     conversation = conversation_service.get_or_create_conversation(db, conversation_id, technician_id)
     context = context_service.get_context(db, conversation.conversation_id)
@@ -66,6 +70,9 @@ def handle_chat_message(
     if device_type is not None:
         context["device_type"] = device_type  # choix de l'interface : prime sur ce que dit le message
 
+    # None si aucune photo n'est jointe ou si la fonctionnalité est désactivée.
+    photo = photo_ocr_service.accept_photo(photo)
+
     validation = validate_and_clean_message(message)
     trace(
         "VALIDATION",
@@ -74,30 +81,40 @@ def handle_chat_message(
         valid=validation.valid,
         reason=validation.reason,
     )
+    # Avec une photo, un texte vide ou inexploitable part quand même au LLM :
+    # c'est la photo qui porte l'information.
+    can_understand = validation.valid or photo is not None
+    technician_text = validation.cleaned_text if validation.valid else photo_ocr_service.PHOTO_ONLY_MESSAGE
     # Lu AVANT d'enregistrer le message courant : il est envoyé à part au LLM.
-    history = _load_history(db, conversation.conversation_id) if validation.valid else []
-    conversation_service.save_message(db, conversation.conversation_id, "user", validation.cleaned_text)
+    history = _load_history(db, conversation.conversation_id) if can_understand else []
 
     # Comparé après le routage : record_last_search remplace l'objet, donc une
     # identité différente = une nouvelle recherche a eu lieu pendant CE message.
     search_before = context.get("last_search")
 
     # La compréhension appelle déjà le LLM : la validation doit la précéder.
-    if validation.valid:
+    if can_understand:
         understood = message_understanding_service.understand_message(
-            validation.cleaned_text,
+            technician_text,
             device_type=context.get("device_type"),
             history=history,
             search_results_text=_describe_last_search(db, context),
+            photo=photo,
         )
+        # Enregistré après la compréhension : avec une photo, le texte lu
+        # dessus est gardé avec le message (la photo, elle, ne l'est pas).
+        technician_text = photo_ocr_service.add_reading_to_message(technician_text, photo, understood)
+        conversation_service.save_message(db, conversation.conversation_id, "user", technician_text)
         trace(
             "ROUTING",
             "Orientation du message selon son intention",
             conversation_id=conversation.conversation_id,
             intent=understood.intent,
         )
-        reply = _route_message(db, context, validation.cleaned_text, understood)
+        reply = _route_message(db, context, technician_text, understood)
+        reply = photo_ocr_service.add_reading_to_reply(reply, photo, understood)
     else:
+        conversation_service.save_message(db, conversation.conversation_id, "user", validation.cleaned_text)
         reply = REFORMULATION_REPLY
 
     conversation_service.save_message(db, conversation.conversation_id, "assistant", reply)
@@ -144,8 +161,25 @@ def _route_message(db: Session, context: dict, message: str, understood: Underst
     if understood.result_position is not None:
         selected = context_service.select_result_by_position(context, understood.result_position)
         trace("CONTEXT", "Résultat de la dernière recherche désigné", found=selected is not None)
+        # « Détaille le cas 2 » : le détail est rédigé à partir du dossier
+        # complet du cas relu en base, plus seulement de son résumé.
+        if understood.case_detail_requested and selected is not None and _is_case(selected):
+            detailed_reply = case_detail_service.develop_case(
+                db,
+                selected,
+                technician_question=message,
+                device_type=context.get("device_type"),
+                problem_text=(context.get("last_search") or {}).get("query"),
+            )
+            if detailed_reply is not None:
+                return detailed_reply
     trace("ROUTING", "Réponse rédigée par le LLM, sans recherche vectorielle")
     return understood.reply
+
+
+def _is_case(resultat: dict) -> bool:
+    """Un cas réel (intervention) et non une statistique agrégée : seul un cas a un dossier en base."""
+    return (resultat.get("kind") or _infer_legacy_kind(resultat)) == "case"
 
 
 def _load_history(db: Session, conversation_id: int) -> list[dict]:

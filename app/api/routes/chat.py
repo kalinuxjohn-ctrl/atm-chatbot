@@ -4,7 +4,8 @@ technicien) :
 - POST /chat/search-symptom : le technicien décrit ce qu'il observe sur un
   GAB ou un TPE, l'API renvoie les solutions déjà connues, classées par
   accuracy décroissante.
-- POST /chat : message du technicien, routé par chat_orchestrator_service.
+- POST /chat : message du technicien (et photo éventuelle), routé par chat_orchestrator_service.
+- GET  /chat/photo-ocr : la fonctionnalité photo est-elle active ? (bouton photo du chat)
 - GET  /chat/conversations/{id}/solution-proposal-context : problème actif
   à afficher quand aucune solution proposée n'a marché.
 - POST /chat/conversations/{id}/solution-proposals : proposition du
@@ -17,7 +18,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.core.tracing import trace
 from app.schemas.conversation_schema import ChatRequest, ChatResponse
-from app.services import chat_orchestrator_service 
+from app.services import chat_orchestrator_service, photo_ocr_service
 
 from app.core.database import get_db
 from app.schemas.chat_schema import SymptomSearchRequest, SymptomSearchResponse
@@ -89,6 +90,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)) -> ChatResponse:
         endpoint="/chat",
         conversation_id=payload.conversation_id,
         message_length=len(payload.message),
+        has_photo=payload.photo is not None,
     )
     try:
         resultat = chat_orchestrator_service.handle_chat_message(
@@ -97,6 +99,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)) -> ChatResponse:
             technician_id=payload.technician_id,
             message=payload.message,
             device_type=payload.device_type,
+            photo=payload.photo,
         )
         response = ChatResponse(**resultat)
     except Exception as error:
@@ -116,6 +119,12 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)) -> ChatResponse:
         conversation_id=resultat["conversation_id"],
     )
     return response
+
+
+@router.get("/photo-ocr")
+def lire_disponibilite_photo() -> dict:
+    """Le frontend n'affiche le bouton photo que si la fonctionnalité est active (voir photo_ocr_service)."""
+    return {"enabled": photo_ocr_service.is_enabled()}
 
 
 @router.get(

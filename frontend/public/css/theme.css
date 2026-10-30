@@ -3415,3 +3415,57 @@ kbd {
   border-color: var(--border);
   background: var(--glass);
 }
+
+/* ---------- Photo jointe au message (composerPhoto.js) ---------- */
+/* .mic-button impose display: grid : sans cette règle, hidden ne cacherait pas le bouton. */
+.photo-button[hidden],
+.composer-photo-preview[hidden] {
+  display: none;
+}
+
+.composer-photo-preview {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 10px 4px 0;
+  color: var(--text-soft);
+  font-size: 14px;
+}
+
+.composer-photo-thumbnail {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.composer-photo-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.composer-photo-remove {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.composer-photo-remove .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.composer-photo-error {
+  color: var(--danger);
+  font-weight: 600;
+}

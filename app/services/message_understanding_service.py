@@ -28,7 +28,8 @@ import re
 
 from app.core.tracing import trace
 from app.schemas.message_understanding_schema import UnderstoodMessage
-from app.services import llm_service
+from app.schemas.photo_schema import PhotoAttachment
+from app.services import llm_service, photo_ocr_service
 
 # Texte FIXE : la moindre variation d'un appel à l'autre empêcherait Claude
 # de relire la conversation depuis son cache. Tout ce qui change (type
@@ -48,6 +49,7 @@ Le dernier message commence par un bloc [Contexte], ajouté par le système et n
   "reformulated_problem_text": "<le problème reformulé clairement>" | null,
   "symptoms": [{"number": 1, "text": "<premier symptôme>"}, {"number": 2, "text": "<deuxième symptôme>"}],
   "result_position": <numéro du résultat de la dernière recherche dont parle le technicien> | null,
+  "case_detail_requested": true | false,
   "reply": "<ta réponse au technicien>" | null
 }
 
@@ -68,6 +70,7 @@ Autres règles :
 - "symptoms" : en "diagnostic", chaque symptôme DISTINCT décrit dans le dernier message, numéroté à partir de 1 dans l'ordre du message. Un symptôme = une seule observation (ex. « l'écran est noir et la carte reste bloquée » donne 2 symptômes). Chaque texte doit se comprendre seul : une phrase courte et claire qui garde le composant et les circonstances (ex. « La carte reste bloquée dans le lecteur du GAB »), car chaque symptôme est cherché séparément dans l'historique. Ne mets ni le modèle seul, ni le code d'erreur seul comme symptôme, n'invente aucun symptôme et ne répète pas deux fois le même. Un seul symptôme décrit -> une liste d'un seul élément. En "conversation" : [].
 - "model_name_text" et "error_code_text" : seulement s'ils sont cités dans le dernier message, sinon null. Jamais d'identifiant de base de données.
 - "result_position" : le numéro affiché du résultat (« le cas 2 », « la deuxième solution » -> 2), seulement si le technicien parle d'un résultat précis de la dernière recherche, sinon null.
+- "case_detail_requested" : true seulement si le technicien demande plus de détails ou d'explications sur CE résultat précis (« détaille le cas 2 », « explique-moi le premier cas », « comment ils ont réparé dans le cas 1 ? ») ; "result_position" est alors obligatoire. Le système relit alors tout le dossier du cas en base et rédige le détail lui-même : dans "reply", une phrase courte suffit. Sinon false.
 """
 
 _NO_SEARCH_RESULTS = "Aucune recherche dans l'historique des interventions n'a encore été faite dans cette conversation."
@@ -112,11 +115,13 @@ def understand_message(
     device_type: str | None = None,
     history: list[dict] | None = None,
     search_results_text: str | None = None,
+    photo: PhotoAttachment | None = None,
 ) -> UnderstoodMessage:
     """
     `history` : anciens messages de la conversation, [{"role": "user" |
     "assistant", "content": str}], SANS le message courant.
     `search_results_text` : détail des résultats de la dernière recherche, ou None.
+    `photo` : photo jointe au message, déjà acceptée par photo_ocr_service, ou None.
 
     Pas de repli : sans réponse fiable, on ne devine PAS l'intention. Lève
     LLMUnavailableError si le LLM ne répond pas, ou si sa réponse n'est pas
@@ -124,12 +129,15 @@ def understand_message(
     « chatbot saturé » (voir app/main.py).
     """
     messages = _build_messages(history, _build_turn_message(technician_message, device_type, search_results_text))
+    # Photo jointe : Claude la reçoit avec le dernier message et y lit le texte affiché.
+    messages = photo_ocr_service.attach_to_messages(messages, photo)
     trace(
         "UNDERSTANDING",
         "Message envoyé au LLM avec la conversation (compréhension + réponse)",
         message_length=len(technician_message),
         conversation_message_count=len(messages),
         has_search_results=bool(search_results_text),
+        has_photo=photo is not None,
     )
     raw_response = llm_service.generate_chat_reply(
         _SYSTEM_PROMPT, messages, cache_history=True
@@ -156,6 +164,8 @@ def understand_message(
         has_reformulated_problem=bool(understood.reformulated_problem_text),
         symptom_count=len(understood.symptoms),
         has_result_position=understood.result_position is not None,
+        case_detail_requested=understood.case_detail_requested,
+        has_photo_text=bool(understood.photo_text),
     )
     return understood
 

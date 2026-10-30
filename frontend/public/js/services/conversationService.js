@@ -60,16 +60,20 @@ export function createConversationService({ technicianId }) {
     /**
      * Envoie le texte du technicien et renvoie la réponse.
      * @param {"text"|"voice"} channel origine du message (affichée dans le chat)
-     * @param {{ silent?: boolean }} options silent = le message utilisateur est déjà affiché (nouvel essai)
+     * @param {{ silent?: boolean, photo?: {media_type: string, data_base64: string}|null }} options
+     *        silent = le message utilisateur est déjà affiché (nouvel essai) ;
+     *        photo = photo jointe (chat écrit seulement), jamais conservée dans l'historique local
      */
-    async ask(text, { channel = "text", silent = false } = {}) {
-      if (!silent) addMessage("user", text, channel);
+    async ask(text, { channel = "text", silent = false, photo = null } = {}) {
+      // Seule une mention de la photo est affichée et gardée (sessionStorage trop petit pour l'image).
+      const shownText = photo ? [text, "📷 Photo jointe"].filter(Boolean).join("\n") : text;
+      if (!silent) addMessage("user", shownText, channel);
 
       const request = { technicianId, conversationId: state.conversationId, deviceType: state.deviceType };
       const result =
         channel === "voice"
           ? await processVoiceConversation({ ...request, transcript: text })
-          : await sendMessage({ ...request, message: text }).then(({ conversationId, reply, ...availability }) => ({
+          : await sendMessage({ ...request, message: text, photo }).then(({ conversationId, reply, ...availability }) => ({
               conversationId,
               text: reply,
               ...availability,

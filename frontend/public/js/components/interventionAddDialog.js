@@ -171,6 +171,10 @@ export function createInterventionAddDialog({ dialog, onSubmitted = () => {} }) 
     if (form.elements.diagnosisConfirmed.checked && !value("diagnosis")) {
       return ["Décrivez la cause avant de la marquer comme confirmée.", form.elements.diagnosis];
     }
+    // La pièce en cause est enregistrée avec le diagnostic : pas de pièce sans cause.
+    if (value("rootCauseComponent") && !value("diagnosis")) {
+      return ["Décrivez la cause avant d’indiquer la pièce en cause.", form.elements.diagnosis];
+    }
     return null;
   }
 
@@ -217,7 +221,11 @@ export function createInterventionAddDialog({ dialog, onSubmitted = () => {} }) 
       })),
       actions: actionValues,
       diagnosis: value("diagnosis")
-        ? { description: value("diagnosis"), confirmed: form.elements.diagnosisConfirmed.checked }
+        ? {
+          description: value("diagnosis"),
+          confirmed: form.elements.diagnosisConfirmed.checked,
+          root_cause_component_text: value("rootCauseComponent") || null,
+        }
         : null,
     };
   }

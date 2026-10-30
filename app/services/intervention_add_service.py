@@ -250,7 +250,7 @@ def build_insertion_plan(db: Session, intervention_add: InterventionAdd) -> Inse
     symptoms, symptom_vectors = _plan_symptoms(db, content, device.device_type)
     actions = _plan_actions(db, content)
     diagnosis = (
-        PlannedDiagnosis(**content.diagnosis.model_dump(include={"description", "confirmed", "root_cause_component_id"}))
+        PlannedDiagnosis(**content.diagnosis.model_dump(include={"description", "confirmed", "root_cause_component_text", "root_cause_component_id"}))
         if content.diagnosis
         else None
     )

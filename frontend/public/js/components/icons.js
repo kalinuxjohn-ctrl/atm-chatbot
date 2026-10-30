@@ -20,6 +20,7 @@ const ICON_PATHS = {
   expand: '<path d="M4 4h16v16H4z"/><path d="M9 4v16"/><path d="M13 9.5l2.5 2.5-2.5 2.5"/>',
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
   mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21M8.5 21h7"/>',
+  camera: '<path d="M4 8h3.5L9 5.5h6L16.5 8H20v11H4z"/><circle cx="12" cy="13.5" r="3.5"/>',
   "mic-off":
     '<path d="M15 10V6a3 3 0 0 0-5.7-1.3"/><path d="M9 9v2a3 3 0 0 0 4.6 2.5"/><path d="M5.5 11a6.5 6.5 0 0 0 10.6 5"/><path d="M18.5 11a6.4 6.4 0 0 1-.4 2.2"/><path d="M12 17.5V21M8.5 21h7"/><path d="M3 3l18 18"/>',
   // Avion en papier, pointe en haut à droite.

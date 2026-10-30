@@ -80,4 +80,7 @@ class Diagnosis(Base):
     intervention_id = Column(Integer, ForeignKey("intervention.intervention_id"), nullable=False)
     description = Column(String, nullable=False)
     root_cause_component_id = Column(Integer, ForeignKey("component.component_id"))
+    # Pièce en cause, en texte libre (migration 0013) : pas besoin de la créer
+    # dans la table component avant de la citer.
+    root_cause_component_text = Column(String)
     confirmed = Column(Boolean, nullable=False, default=False)

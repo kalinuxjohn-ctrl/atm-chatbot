@@ -25,11 +25,23 @@ prompts, réponses LLM brutes, secrets ou données personnelles à `trace()`.
    tarif. La trace `[LLM] Utilisation du cache Claude` donne les jetons lus en cache. Il renvoie une intention, des
    références textuelles et, hors diagnostic, sa réponse. Si sa sortie est
    invalide, une erreur explicite est remontée (HTTP 503), sans deviner.
+   **Photo jointe** (Claude uniquement, `photo_ocr_service.py`) : la photo part
+   avec ce même appel ; Claude lit le texte affiché, en donne la signification
+   et, s'il décrit une panne, l'ajoute aux `symptoms`. Une photo seule (sans
+   texte) est acceptée. La photo n'est jamais enregistrée, seul le texte lu
+   l'est. Désactivation : `PHOTO_OCR_ENABLED=false` dans `.env`.
 4. Selon l'intention :
-   - conversation (tout ce qui n'est pas une nouvelle panne : « détaille le
-     cas 2 », suivi, question générale…) : la réponse du LLM est renvoyée telle
-     quelle, sans second appel ni recherche vectorielle. Le résultat dont il
-     parle (`result_position`) est vérifié puis retenu comme `selected_result` ;
+   - conversation (tout ce qui n'est pas une nouvelle panne : suivi, question
+     générale…) : la réponse du LLM est renvoyée telle quelle, sans second appel
+     ni recherche vectorielle. Le résultat dont il parle (`result_position`) est
+     vérifié puis retenu comme `selected_result` ;
+   - demande de détail sur un cas (« détaille le cas 2 »,
+     `case_detail_requested`) : le cas est retrouvé en base par son
+     `intervention_id`, **toutes** ses tables sont relues (résumé, appareil et
+     modèle, tous les symptômes, résultat détaillé de chaque action, cause,
+     **pièce en cause**), et un second appel LLM développe ce dossier
+     (`case_detail_service.py`). La pièce en cause enregistrée doit être citée ;
+     absente, elle n'est jamais inventée ;
    - diagnostic : résolution SQL des références, puis **un embedding par
      symptôme** listé par le LLM (`symptoms`, numérotés ; un seul appel groupé
      à Voyage), une recherche vectorielle par symptôme filtrée par type
@@ -150,7 +162,9 @@ la validation d'un administrateur.
    `device_id`, ou `serial_number`, `device_type`, `model_name`, `site_name`,
    `address`), `final_outcome_status`, les `symptoms`, les `actions` dans
    l'ordre (`targets_symptom_number` = n° du symptôme visé, 1 = le premier ;
-   `performed_at` facultatif) et, s'il l'a trouvée, la cause (`diagnosis`).
+   `performed_at` facultatif) et, s'il l'a trouvée, la cause (`diagnosis`),
+   avec la pièce en cause en texte libre (`root_cause_component_text`, aucune
+   liste à respecter, migration 0013).
    L'appareil existant est cherché par `device_id`, sinon `serial_number`,
    sinon type + modèle + site (`model_name` est cherché dans `device_model`).
    S'il n'existe pas, il sera **créé à l'approbation**, avec son modèle s'il

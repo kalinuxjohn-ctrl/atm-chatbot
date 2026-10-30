@@ -56,6 +56,8 @@ class SubmittedDiagnosis(BaseModel):
 
     description: NonEmptyStr = Field(..., max_length=2000)
     confirmed: bool = False
+    # Pièce en cause, comme le technicien la nomme (texte libre, aucune liste à respecter).
+    root_cause_component_text: Optional[str] = Field(None, max_length=200)
 
 
 class SubmittedDevice(BaseModel):
@@ -258,6 +260,7 @@ class PlannedAction(BaseModel):
 class PlannedDiagnosis(BaseModel):
     description: str
     confirmed: bool
+    root_cause_component_text: Optional[str] = None
     root_cause_component_id: Optional[int] = None
 
 

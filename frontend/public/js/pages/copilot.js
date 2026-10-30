@@ -14,6 +14,7 @@ import { FORCE_MOCKS } from "../config.js";
 import { renderAvatar } from "../components/avatar.js";
 import { createChatView, playSendBurst } from "../components/chatView.js";
 import { createComposerDictation } from "../components/composerDictation.js";
+import { createComposerPhoto } from "../components/composerPhoto.js";
 import { createContextPanel } from "../components/contextPanel.js";
 import { DEVICE_OPTIONS, createDevicePicker } from "../components/devicePicker.js";
 import { hydrateIcons } from "../components/icons.js";
@@ -26,6 +27,7 @@ import { createVoiceMode } from "../components/voiceMode.js";
 import { getFriendlyErrorMessage } from "../core/httpClient.js";
 import { createConversationService } from "../services/conversationService.js";
 import { getErrorCodeReply, listKnownErrorCodes } from "../services/api/errorCodeApi.js";
+import { isPhotoOcrEnabled } from "../services/api/photoApi.js";
 import { getUsualProblemReply, listUsualProblems } from "../services/api/usualProblemApi.js";
 import { getPreferences, onPreferencesChange } from "../services/preferencesService.js";
 import { logout, requireSession } from "../services/sessionService.js";
@@ -78,6 +80,9 @@ async function initCopilot({ technicianId, displayName }) {
     input: $("#message-input"),
     sendButton: $("#send-button"),
     micButton: $("#mic-button"),
+    photoButton: $("#photo-button"),
+    photoInput: $("#photo-input"),
+    photoPreview: $("#photo-preview"),
     dictationStatus: $("#dictation-status"),
     characterCount: $("#character-count"),
     composerSuggestions: $("#composer-suggestions"),
@@ -177,6 +182,14 @@ async function initCopilot({ technicianId, displayName }) {
     beforeStart: () => stopReading(),
   });
 
+  // Photo jointe au prochain message : le Copilote en lit le texte affiché.
+  const photoAttachment = createComposerPhoto({
+    button: elements.photoButton,
+    fileInput: elements.photoInput,
+    preview: elements.photoPreview,
+    onChange: () => updateComposerState(),
+  });
+
   const voiceMode = createVoiceMode({
     dialog: $("#voice-dialog"),
     getPreferences,
@@ -273,7 +286,9 @@ async function initCopilot({ technicianId, displayName }) {
   }
 
   function updateComposerState() {
-    elements.sendButton.disabled = requestInProgress || !elements.input.value.trim();
+    // Une photo seule suffit : son texte décrit souvent la panne mieux qu'un message.
+    elements.sendButton.disabled = requestInProgress || (!elements.input.value.trim() && !photoAttachment.photo);
+    photoAttachment.setDisabled(requestInProgress);
     elements.characterCount.textContent = `${elements.input.value.length} / ${elements.input.maxLength}`;
   }
 
@@ -290,10 +305,10 @@ async function initCopilot({ technicianId, displayName }) {
   /**
    * Envoie un message par le flux existant (conversationService -> POST /api/chat).
    * Ne lève jamais : renvoie { reply } ou { error } pour que le mode vocal puisse réagir.
-   * @param {{ channel?: "text"|"voice", silent?: boolean, readReply?: boolean }} options
-   *        silent = message déjà affiché (bouton "Réessayer")
+   * @param {{ channel?: "text"|"voice", silent?: boolean, readReply?: boolean, photo?: object|null }} options
+   *        silent = message déjà affiché (bouton "Réessayer") ; photo = photo jointe (chat écrit)
    */
-  async function submitMessage(text, { channel = "text", silent = false, readReply = true } = {}) {
+  async function submitMessage(text, { channel = "text", silent = false, readReply = true, photo = null } = {}) {
     if (requestInProgress) return { error: new Error("Une réponse est déjà en cours de préparation.") };
     setBusy(true);
     let removeTyping = () => {};
@@ -302,12 +317,13 @@ async function initCopilot({ technicianId, displayName }) {
     try {
       // ask() affiche tout de suite le message du technicien : les points
       // "le Copilote réfléchit" sont ajoutés APRÈS, donc en dessous de lui.
-      const pendingAnswer = conversation.ask(text, { channel, silent });
+      const pendingAnswer = conversation.ask(text, { channel, silent, photo });
       removeTyping = chatView.showTyping();
       ({ text: reply } = await pendingAnswer);
     } catch (caught) {
       error = caught;
-      chatView.showError(getFriendlyErrorMessage(caught), () => void submitMessage(text, { channel, silent: true, readReply }));
+      // « Réessayer » renvoie la même photo.
+      chatView.showError(getFriendlyErrorMessage(caught), () => void submitMessage(text, { channel, silent: true, readReply, photo }));
     } finally {
       removeTyping();
       setBusy(false);
@@ -398,15 +414,17 @@ async function initCopilot({ technicianId, displayName }) {
   elements.form.addEventListener("submit", (event) => {
     event.preventDefault();
     const text = elements.input.value.trim();
-    if (!text || requestInProgress) return;
+    const photo = photoAttachment.photo;
+    if ((!text && !photo) || requestInProgress) return;
     dictation.cancel();
     playSendBurst(elements.form);
     // Le message s'envolera depuis la zone de saisie jusqu'à sa place dans le fil.
     chatView.launchNextUserMessage(elements.input.getBoundingClientRect());
     elements.input.value = "";
+    photoAttachment.clear();
     resizeInput();
     updateComposerState();
-    void submitMessage(text);
+    void submitMessage(text, { photo });
   });
 
   elements.input.addEventListener("input", () => {
@@ -481,6 +499,8 @@ async function initCopilot({ technicianId, displayName }) {
   // Sans bloquer le démarrage : les menus apparaissent dès que le backend a
   // répondu (en cas d'échec, seuls ces menus manquent).
   void loadSuggestions();
+  // Bouton photo affiché seulement si le backend accepte les photos (PHOTO_OCR_ENABLED).
+  void isPhotoOcrEnabled().then((enabled) => photoAttachment.setAvailable(enabled));
 }
 
 /** "Raoul Dupont" -> "RD" (pastille du technicien). */

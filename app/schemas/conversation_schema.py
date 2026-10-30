@@ -10,17 +10,28 @@ from __future__ import annotations
 
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
-from app.schemas.device_type import DeviceType, NonEmptyStr
+from app.schemas.device_type import DeviceType
+from app.schemas.photo_schema import PhotoAttachment
 
 
 class ChatRequest(BaseModel):
     conversation_id: Optional[int] = None  # absent -> nouvelle conversation
     technician_id: int  # TODO: remplacer par la dépendance d'auth existante si disponible
-    message: NonEmptyStr
+    # Peut être vide seulement si une photo est jointe (voir _message_or_photo).
+    message: str = ""
     device_type: Optional[DeviceType] = None  # "gab" ou "tpe" uniquement ; requis par retrieval_service pour chercher ;
     # facultatif ici car mémorisé dans le contexte dès qu'il est fourni une première fois.
+    # Photo de l'appareil, lue par Claude (photo_ocr_service.py). Jamais enregistrée.
+    photo: Optional[PhotoAttachment] = None
+
+    @model_validator(mode="after")
+    def _message_or_photo(self):
+        self.message = self.message.strip()
+        if not self.message and self.photo is None:
+            raise ValueError("Message vide : écris un message ou joins une photo.")
+        return self
 
 
 class ChatResponse(BaseModel):

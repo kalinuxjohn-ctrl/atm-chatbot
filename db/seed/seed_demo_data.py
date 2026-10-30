@@ -154,8 +154,9 @@ SEED_STATEMENTS = [
     ON CONFLICT (intervention_action_id) DO NOTHING;
     """,
     """
-    INSERT INTO diagnosis (diagnosis_id, intervention_id, description, root_cause_component_id, confirmed)
-    VALUES (501, 3001, 'Card reader firmware/state got stuck; reinitialization cleared it.', 1, TRUE)
+    INSERT INTO diagnosis
+        (diagnosis_id, intervention_id, description, root_cause_component_id, root_cause_component_text, confirmed)
+    VALUES (501, 3001, 'Card reader firmware/state got stuck; reinitialization cleared it.', 1, 'Card reader', TRUE)
     ON CONFLICT (diagnosis_id) DO NOTHING;
     """,
 
@@ -184,6 +185,13 @@ SEED_STATEMENTS = [
         (7004, 3045, 44, 'Replaced card-retention sensor.', 1,
          'Sensor replaced; card now ejects normally.', 'resolved', TRUE)
     ON CONFLICT (intervention_action_id) DO NOTHING;
+    """,
+    # Pièce en cause en texte libre seulement (migration 0013) : absente de la table component.
+    """
+    INSERT INTO diagnosis (diagnosis_id, intervention_id, description, root_cause_component_text, confirmed)
+    VALUES (502, 3045, 'Card-retention sensor failed: the reader never detected the card leaving.',
+            'Card-retention sensor', TRUE)
+    ON CONFLICT (diagnosis_id) DO NOTHING;
     """,
 ]
 

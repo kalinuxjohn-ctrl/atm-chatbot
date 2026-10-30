@@ -45,7 +45,7 @@ app/
 ├── services/          TOUTE la logique métier
 └── jobs/              tâches hors requête HTTP (recalcul des stats)
 db/
-├── migrations/        0001 → 0012, SQL appliqué une seule fois par init-db
+├── migrations/        0001 → 0013, SQL appliqué une seule fois par init-db
 └── seed/              données de démo (Alan, Bob, codes d'erreur)
 tests/                 tests unitaires (unittest), sans réseau ni base réelle
 ```
@@ -61,7 +61,7 @@ C'est le cœur du projet. Le chef d'orchestre est
 
 ```text
 Technicien
-   │  { conversation_id?, technician_id, message, device_type? (gab|tpe) }
+   │  { conversation_id?, technician_id, message, device_type? (gab|tpe), photo? }
    ▼
 1. routes/chat.py            reçoit et valide (schemas/conversation_schema.py)
    ▼
@@ -70,10 +70,11 @@ Technicien
 3. context_service           charge le contexte JSON de la conversation
    │                         (+ mémorise device_type s'il est fourni)
    ▼
-4. conversation_service      enregistre le message "user"
+4. conversation_service      enregistre le message "user" (après l'appel de
+   │                         compréhension : avec une photo, le texte lu y est ajouté)
    ▼
 5. _route_message()          décide QUOI faire du message (voir §5)
-   │   ├─ demande de détail ("le deuxième")  → détail d'un cas déjà trouvé
+   │   ├─ demande de détail ("le deuxième")  → dossier complet du cas relu en base + 2e appel LLM (§5.2)
    │   ├─ description de symptôme             → recherche sémantique + résumé LLM
    │   └─ autre (salut, question courte)      → réponse LLM simple
    ▼
@@ -103,7 +104,80 @@ une intention, et sa réponse si ce n'est pas un diagnostic. Puis, dans
 2. **`conversation`** (tout le reste : « détaille le cas 2 », « ça n'a pas
    marché », l'heure…) → la réponse du LLM est renvoyée telle quelle. Si le LLM
    indique un résultat (`result_position`), le backend vérifie qu'il existe
-   dans la dernière recherche et le retient comme `selected_result`.
+   dans la dernière recherche et le retient comme `selected_result`. Si c'est
+   une **demande de détail** sur ce cas (`case_detail_requested`), la réponse est
+   rédigée à partir du dossier complet du cas (§5.2).
+
+### 5.1 Photo jointe : lecture du texte affiché (OCR)
+
+Le technicien peut joindre une photo de l'appareil (écran du GAB, afficheur
+du TPE, ticket) avec son message, ou à la place de son message. Exemple :
+« je viens d'arriver, ça affiche seulement ça en boucle » + photo de l'écran.
+Le message seul n'apporte rien ; le texte de la photo décrit la panne.
+
+```text
+photo (réduite par le navigateur : 1568 px max, JPEG)
+   ▼
+photo_ocr_service.accept_photo()     interrupteur PHOTO_OCR_ENABLED + Claude uniquement
+   ▼
+1er appel à Claude (understand_message) : la photo est jointe au DERNIER message,
+avec une consigne de lecture (la consigne système ne change pas → cache intact)
+   ▼
+Claude renvoie le JSON habituel + "photo_text" (texte lu tel quel)
+et "photo_meaning" (sa signification). Si ce texte décrit une panne, il est
+ajouté aux "symptoms" numérotés → recherche en base INCHANGÉE (§6)
+   ▼
+réponse précédée de « 📷 Texte lu sur la photo : « … » » + signification
+```
+
+- **Tout est dans `app/services/photo_ocr_service.py`** : consigne envoyée à
+  Claude, interrupteur, ajout de la lecture au message et à la réponse. Ses
+  fonctions ne font rien sans photo ; les autres fichiers se contentent de les appeler.
+- **Désactiver** : `PHOTO_OCR_ENABLED=false` dans `.env`. Le bouton 📷 disparaît
+  (le frontend lit `GET /api/chat/photo-ocr`) et une photo reçue est ignorée.
+  Avec `LLM_PROVIDER=gemini`, la fonctionnalité est désactivée d'office.
+- **La photo n'est jamais enregistrée.** Seul le texte lu est gardé, dans le
+  message du technicien (`[Photo jointe, texte lu : « … »]`) et dans la
+  réponse : les tours suivants savent ce que montrait la photo.
+- Une photo **seule** est acceptée : un texte vide ou rejeté par
+  `text_validation_service` est remplacé par `(Photo envoyée sans message.)`.
+- Contrôles (`schemas/photo_schema.py`) : JPEG, PNG, WebP ou GIF, base64
+  valide, au plus `PHOTO_MAX_BYTES` (3,5 Mo décodés) → sinon 422.
+- Pas de texte lisible : Claude demande une photo plus nette, et la réponse
+  commence par « Aucun texte lisible sur la photo ».
+
+### 5.2 « Détaille le cas 2 » : le dossier complet du cas
+
+La recherche n'envoie au LLM qu'un **résumé court** de chaque cas (`build_case`).
+Quand le technicien demande plus de détails sur UN cas, le backend relit tout
+ce que la base sait de ce cas, et c'est ce dossier que le LLM développe.
+
+```text
+« détaille le cas 2 »
+   ▼
+1er appel (compréhension) : result_position = 2, case_detail_requested = true
+   ▼
+context.last_search.results[position 2] → intervention_id (vérifié, retenu en selected_result)
+   ▼
+case_detail_service.build_case_dossier()   relit TOUTES les tables du cas :
+   intervention (ticket, dates, bilan, summary_text) · technician
+   device → device_model → manufacturer · TOUS les intervention_symptom (+ gravité)
+   intervention_action (ordre, heure, result_description, effet, symptôme visé)
+   diagnosis (cause, confirmée ou non, PIÈCE EN CAUSE)
+   ▼
+2e appel LLM (develop_case) : « voici tout ce que la base contient sur ce cas, développe »
+   + « la base indique que la pièce en cause est X : cite-la » (ou : « non précisée, n'invente rien »)
+```
+
+- **Tout est dans `app/services/case_detail_service.py`.** La recherche par
+  symptôme n'est pas modifiée.
+- Le 2e appel n'a lieu **que** pour une demande de détail sur un cas réel. Les
+  autres questions (« ça n'a pas marché », un résultat statistique) gardent la
+  réponse du 1er appel, sans surcoût.
+- **Pièce en cause** : `diagnosis.root_cause_component_text`, en **texte libre**
+  (migration 0013), saisie dans le formulaire « Proposer une intervention ». Pas
+  de liste ni de table à remplir avant. Les anciens diagnostics qui n'avaient
+  que `root_cause_component_id` reçoivent le nom de la pièce du catalogue.
 
 ---
 
@@ -223,6 +297,8 @@ Comment ça marche :
   comprend « le **cas 2** », « le deuxième » ou « celui d'Alan » ;
 - le LLM renvoie le numéro du résultat visé ; `select_result_by_position()`
   vérifie qu'il existe et le retient (référence d'une proposition de solution) ;
+- pour une demande de détail, ce numéro mène à l'`intervention_id`, et le
+  dossier complet de l'intervention est relu en base (§5.2) ;
 - `device_type` est mémorisé une fois et réutilisé aux tours suivants.
 
 **Limites actuelles, à connaître :**
@@ -279,7 +355,7 @@ suivies dans `schema_migrations`) :
 précis · `0006` conversations + contexte · `0007` codes d'erreur · `0008`
 embeddings Voyage (1024) · `0009` propositions de solution · `0010` action
 issue d'une proposition · `0011` menus de suggestions · `0012` ajouts
-d'intervention.
+d'intervention · `0013` pièce en cause en texte libre (`diagnosis.root_cause_component_text`).
 
 **`device_type`** : contrôlé en base (ENUM) et dans l'API par
 `app/schemas/device_type.py`. `" GAB "` et `"Tpe"` sont normalisés en
@@ -301,6 +377,8 @@ Il est lancé par `init-db`, après l'ajout d'une action cataloguée, et par
   d'espèces → 3 actions, seule la **réinitialisation du lecteur** résout ;
 - **Intervention 3045 (Bob)** : symptômes en partie communs → résolue par le
   **remplacement du capteur** : même panne, autre solution, rien n'est fusionné ;
+- pièce en cause : « Card reader » (3001) et « Card-retention sensor » (3045,
+  texte libre absent de la table `component`) ;
 - codes d'erreur E42, E43, E67 ;
 - calcul des embeddings des 6 symptômes (`EMBEDDING_BACKFILL`, dont le texte
   doit être **identique mot pour mot** à celui des `INSERT`) ;
@@ -313,7 +391,8 @@ Il est lancé par `init-db`, après l'ajout d'une action cataloguée, et par
 
 | Méthode et route | Rôle | Service |
 | --- | --- | --- |
-| `POST /api/chat` | conversation complète (flux du §4) | `chat_orchestrator_service` |
+| `POST /api/chat` | conversation complète (flux du §4), photo facultative (§5.1) | `chat_orchestrator_service` |
+| `GET /api/chat/photo-ocr` | `{ "enabled": bool }` : affiche ou cache le bouton photo | `photo_ocr_service.is_enabled` |
 | `GET /api/chat/conversations/{id}/solution-proposal-context`, `POST /api/chat/conversations/{id}/solution-proposals` | proposer une solution (voir README) | `solution_proposal_service` |
 | `POST`/`GET /api/intervention_add` | proposer une nouvelle intervention (validée par un admin) | `intervention_add_service` |
 | `/api/admin/solution-proposals`, `/api/admin/intervention_add` | validation admin (clé `X-Admin-Key`) | `solution_proposal_service`, `intervention_add_service` |
@@ -352,6 +431,8 @@ Documentation interactive : <http://localhost:8000/docs>.
 | `ACTION_CATALOG_MATCH_MAX_DISTANCE` | 0.15 | réutilisation d'une action du catalogue à l'approbation |
 | `MAX_SYMPTOMS_PER_MESSAGE` | 5 | symptômes d'un message cherchés séparément |
 | `CHAT_HISTORY_MAX_MESSAGES` | 100 | anciens messages envoyés au LLM |
+| `PHOTO_OCR_ENABLED` | `true` | photos du chat lues par Claude (§5.1) ; `false` = fonctionnalité coupée |
+| `PHOTO_MAX_BYTES` | 3 500 000 | taille maximale d'une photo, une fois décodée |
 | `ADMIN_API_KEY` | vide (admin désactivé) | clé des routes `/api/admin` |
 
 `Settings` ignore les variables inconnues (`extra="ignore"`) : le fichier
@@ -368,7 +449,8 @@ docker compose logs -f web  # suivre les traces
 
 Chaque étape importante écrit une ligne `[TRACE][CATÉGORIE]` (`app/core/tracing.py`).
 Les catégories utilisées sont REQUEST, CONTEXT, PROCESSING, SEARCH, EMBEDDING,
-LLM, RESPONSE et ERROR. Suivre ces lignes permet de voir tout le trajet d'un
+LLM, PHOTO, RESPONSE et ERROR. Les traces PHOTO ne contiennent ni l'image
+ni le texte lu : seulement le format, la taille et « texte trouvé oui/non ». Suivre ces lignes permet de voir tout le trajet d'un
 message, de la requête à la réponse.
 
 Le backend doit accéder à l'API du fournisseur choisi et recevoir sa clé

@@ -51,7 +51,16 @@ class Settings(BaseSettings):
     # plafond contre une facture Voyage qui exploserait sur un long message.
     max_symptoms_per_message: int = 5
 
-    embedding_provider: str = "voyage"  
+    # --- Photos envoyées dans le chat (photo_ocr_service.py) ---
+    # Interrupteur UNIQUE de la fonctionnalité : False (PHOTO_OCR_ENABLED=false
+    # dans le .env) -> le bouton photo disparaît du chat et le backend ignore
+    # toute photo reçue. Ne fonctionne qu'avec llm_provider="claude".
+    photo_ocr_enabled: bool = True
+    # Taille maximale d'une photo, une fois décodée. Le frontend la réduit
+    # avant envoi (quelques centaines de Ko) ; Claude refuse au-delà de 5 Mo.
+    photo_max_bytes: int = 3_500_000
+
+    embedding_provider: str = "voyage"
     voyage_api_key: str = ""
     voyage_model: str = "voyage-3-large"
 

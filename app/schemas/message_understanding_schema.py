@@ -43,8 +43,29 @@ class UnderstoodMessage(BaseModel):
     # Numéro (« Cas 2 » -> 2) du résultat de la dernière recherche dont parle
     # le technicien. Vérifié par le backend contre la dernière recherche.
     result_position: Optional[int] = None
+    # True quand le technicien demande plus de détails sur CE résultat : le
+    # backend relit alors le dossier complet du cas en base (case_detail_service.py).
+    case_detail_requested: bool = False
     # Réponse au technicien, rédigée par le LLM (uniquement si intent == "conversation").
     reply: Optional[str] = None
+    # Seulement quand une photo est jointe (photo_ocr_service.py) : texte lu
+    # sur la photo, tel quel, et sa signification. Absents sinon.
+    photo_text: Optional[str] = None
+    photo_meaning: Optional[str] = None
+
+    @field_validator("photo_text", "photo_meaning", mode="before")
+    @classmethod
+    def _empty_text_to_none(cls, value):
+        """Une chaîne vide ou faite d'espaces vaut « rien lu »."""
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value.strip() if isinstance(value, str) else value
+
+    @field_validator("case_detail_requested", mode="before")
+    @classmethod
+    def _missing_flag_to_false(cls, value):
+        """null (clé oubliée par le LLM) vaut false : pas de détail demandé, pas de réponse rejetée."""
+        return False if value is None else value
 
     @field_validator("symptoms", mode="before")
     @classmethod

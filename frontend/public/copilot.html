@@ -151,7 +151,6 @@
                 maxlength="2000"
                 placeholder="Décrivez le problème observé…"
                 aria-describedby="character-count dictation-status"
-                required
               ></textarea>
 
               <div class="composer-toolbar">
@@ -160,6 +159,11 @@
                 <div class="composer-suggestions" id="composer-suggestions"></div>
 
                 <div class="composer-buttons">
+                  <!-- Photo de l'appareil, lue par le Copilote (composerPhoto.js). Cachée si le backend ne l'accepte pas. -->
+                  <button class="mic-button photo-button" id="photo-button" type="button" hidden aria-label="Joindre une photo de l’appareil" title="Prendre une photo (le texte affiché sera lu)">
+                    <span data-icon="camera"></span>
+                  </button>
+                  <input class="visually-hidden" id="photo-input" type="file" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true">
                   <button class="mic-button" id="mic-button" type="button" aria-pressed="false" aria-label="Dicter votre message au micro" title="Dicter au micro">
                     <span data-icon="mic"></span>
                   </button>
@@ -172,6 +176,9 @@
                 </div>
               </div>
             </form>
+
+            <!-- Aperçu de la photo jointe au prochain message (composerPhoto.js) -->
+            <div class="composer-photo-preview" id="photo-preview" hidden></div>
 
             <!-- États de la dictée : écoute, traitement, erreur micro (composerDictation.js) -->
             <p class="dictation-status" id="dictation-status" data-state="idle" hidden></p>
@@ -404,6 +411,9 @@
             <h3 id="intervention-diagnosis-title"><span>4</span> Cause et résumé <em>facultatif</em></h3>
             <label class="field">Cause identifiée
               <textarea name="diagnosis" rows="2" maxlength="2000" placeholder="Quelle était la cause de la panne ?"></textarea>
+            </label>
+            <label class="field">Pièce en cause
+              <input name="rootCauseComponent" maxlength="200" placeholder="Ex. capteur de rétention de carte">
             </label>
             <label class="intervention-check"><input type="checkbox" name="diagnosisConfirmed">Cette cause a été confirmée</label>
             <label class="field">Résumé de l’intervention

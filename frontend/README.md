@@ -81,6 +81,22 @@ Dans ce mode, il utilise par défaut `http://127.0.0.1:8000` comme adresse de l�
 
 ## Pages
 
+L'accueil présente un titre à gauche, une photo fondue dans le fond à droite,
+deux cartes d'équipement (bleue pour le GAB, orange pour le TPE) et les services.
+Les cartes ouvrent `/diagnostic.html?device_type=gab` ou
+`/diagnostic.html?device_type=tpe` : le type est présélectionné, sans lancer de
+recherche. Toute autre valeur conserve la sélection par défaut.
+Les visuels sont extraits de l'image fournie pour le design : conseillère
+avec téléphone, guichet bleu et terminal orange. La mise en page s'adapte aux petits écrans et aux thèmes
+clair/sombre. La connexion au Copilote reste accessible depuis l'accueil.
+
+Les images d'accueil sont stockées localement dans `public/assets/images/` :
+`conseillere-maintenance-telephone.png`, `guichet-automatique-bleu.png` et
+`terminal-paiement-orange.png`. Le fond blanc extérieur a été détouré pour
+intégrer les visuels à la page. Le fichier fourni reste intact ; aucun
+hébergement d'images externe n'est utilisé. Il s'agit de visuels d'illustration,
+pas de photos d'un membre de l'équipe ou d'un matériel installé.
+
 Dans le Copilote, les commandes du menu et du contexte ont un contour accentué
 et un état ouvert/fermé visible. Le bouton « Contexte » affiche son libellé sur
 grand écran ; son libellé accessible et son info-bulle suivent l'état du panneau.
@@ -127,7 +143,8 @@ n'est effectué par le formulaire. Les erreurs de validation du backend sont
 affichées sans effacer les champs. Le formulaire recueille aussi le ticket,
 les dates locales, plusieurs symptômes
 et leur gravité, les actions dans l'ordre avec leur résultat et le symptôme visé,
-la solution confirmée, le bilan, la cause et le résumé. Il appelle
+la solution confirmée, le bilan, la cause, la pièce en cause (texte libre,
+`diagnosis.root_cause_component_text` ; elle demande une cause) et le résumé. Il appelle
 `POST /api/intervention_add` : la confirmation affiche un numéro de proposition
 **en attente**, jamais une intervention déjà publiée. Les erreurs sont affichées
 sans effacer la saisie ; un double envoi est bloqué.
@@ -141,7 +158,7 @@ documentées dans le README racine ; ce formulaire est l'interface technicien.
 
 | Page | Rôle |
 | --- | --- |
-| `index.html` | Accueil animé (GAB, anneaux holographiques en perspective 3D et deux techniciens) et connexion. Les animations sont arrêtées si la préférence de réduction des mouvements est activée. |
+| `index.html` | Site vitrine bleu : photographie professionnelle, présentation des atouts, étapes et accès au Copilote. Les trois boutons d’accès conservent la connexion ou la reprise de session. Thèmes clair/sombre et mouvements réduits pris en charge. |
 | `copilot.html` | Copilote : engrenage animé avec clé de mécanicien et anneaux tournant en 3D autour du centre (bleus en mode clair, verts en mode sombre), à l'ouverture d'une conversation (sans animation en mode mouvements réduits), sidebar rétractable, chat écrit, dictée, Chat vocal immersif, panneau de contexte, paramètres. |
 | `diagnostic.html` | Recherche directe dans l’historique des symptômes. |
 | `flow-presentation.html` | Présentation animée du flux de connexion simulée et de traitement d’un message. |
@@ -156,7 +173,7 @@ public/
 │   ├── assets.css        chemins des images de fond : le SEUL endroit où les changer
 │   ├── style.css         base commune (en-tête, chat, boutons)
 │   ├── components.css    avatars, boîtes de dialogue, champs
-│   ├── home.css          animations de l’accueil
+│   ├── home.css          vitrine d’accueil, responsive et transition de connexion
 │   ├── copilot.css       page Copilote complète (palette bleue, sidebar, chat, Chat vocal, paramètres, responsive)
 │   └── responsive.css    petits écrans des pages Accueil / Diagnostic + prefers-reduced-motion
 └── js/
@@ -178,6 +195,7 @@ public/
     │   ├── devicePicker.js           sélecteur GAB / TPE
     │   ├── suggestions.js            menus « Pannes fréquentes » et « Codes d'erreur connus » (données et réponses lues par le backend, sans IA)
     │   ├── composerDictation.js      micro de la zone de saisie (dictée)
+    │   ├── composerPhoto.js          bouton 📷 : photo réduite, aperçu, jointe au prochain message
     │   ├── voiceMode.js              Chat vocal immersif
     │   ├── settingsPanel.js          paramètres (avatar, voix française, options)
     │   └── diagnosticView.js
@@ -191,7 +209,8 @@ Règle : les **pages** assemblent, les **components** affichent, les **services*
 
 | Fonction | Statut | Route |
 | --- | --- | --- |
-| Envoyer un message (chat + voix) | **Réelle** | `POST /api/chat` |
+| Envoyer un message (chat + voix), photo facultative | **Réelle** | `POST /api/chat` |
+| Bouton photo affiché ou non | **Réelle** | `GET /api/chat/photo-ocr` |
 | Recherche de symptômes (Diagnostic) | **Réelle** | `POST /api/chat/search-symptom` |
 | Connexion | Simulée | à venir : `POST /auth/login` |
 | Historique d’une conversation | Simulé (sessionStorage) | à venir : `GET /chat/{id}/messages` |
@@ -200,6 +219,13 @@ Règle : les **pages** assemblent, les **components** affichent, les **services*
 Les points de branchement futurs sont marqués `TODO` dans `public/js/services/api/`.
 
 `POST /api/chat` exige un `technician_id` existant en base (seed de démo : 7 ou 8).
+
+## Photo de l’appareil
+
+Le bouton 📷 de la zone de saisie ouvre l’appareil photo du téléphone (sur PC : choix d’un fichier). La photo est réduite dans le navigateur (1568 px max, JPEG), affichée en aperçu, puis envoyée avec le prochain message, éventuellement sans texte. Le Copilote en lit le texte affiché (code ou message d’erreur) et l’utilise pour le diagnostic.
+
+- Le bouton n’apparaît que si le backend répond `enabled: true` à `GET /api/chat/photo-ocr` : `PHOTO_OCR_ENABLED=true` et `LLM_PROVIDER=claude`. Il est toujours caché en mode démo.
+- Seule la mention « 📷 Photo jointe » est gardée dans l’historique de l’onglet, pas l’image. « Réessayer » renvoie la même photo.
 
 ## Mode démo
 

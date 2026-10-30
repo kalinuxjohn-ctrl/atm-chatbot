@@ -1,7 +1,9 @@
 /**
  * API de conversation texte.
  * ✅ API RÉELLE : POST /api/chat  (relayée telle quelle par le proxy frontend)
- *    Corps   : { technician_id, message, conversation_id?, device_type? }
+ *    Corps   : { technician_id, message, conversation_id?, device_type?, photo? }
+ *    photo   : { media_type, data_base64 } (composerPhoto.js) ; message peut
+ *              alors être vide. Le backend n'en lit que le texte affiché.
  *    Réponse : { conversation_id, reply, solution_proposal_available,
  *                intervention_add_available, intervention_add_problem }
  *    solution_proposal_available = ce message a produit des solutions : le
@@ -16,7 +18,7 @@ import { mockChatResponse } from "./mocks.js";
  * @returns {Promise<{conversationId: number, reply: string, solutionProposalAvailable: boolean,
  *   interventionAddAvailable: boolean, interventionAddProblem: string|null}>}
  */
-export async function sendMessage({ message, technicianId, conversationId = null, deviceType = null }) {
+export async function sendMessage({ message, technicianId, conversationId = null, deviceType = null, photo = null }) {
   const payload = FORCE_MOCKS
     ? await mockChatResponse({ conversationId, message })
     : await postJson("/chat", {
@@ -24,6 +26,7 @@ export async function sendMessage({ message, technicianId, conversationId = null
         message,
         conversation_id: conversationId,
         device_type: deviceType, // "gab" | "tpe" | null : seules valeurs acceptées par le backend
+        ...(photo ? { photo } : {}),
       });
 
   if (!Number.isInteger(payload?.conversation_id) || typeof payload?.reply !== "string") {
