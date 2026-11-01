@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Appels | Espace techniciens</title>
+    <link rel="stylesheet" href="/shared/css/base.css">
+    <link rel="stylesheet" href="/calls/css/calls.css">
+    <script type="module" src="/shared/js/connectedPageShell.js"></script>
+    <script type="module" src="/calls/js/callsPage.js"></script>
+  </head>
+  <!-- Cette page gère elle-même le WebSocket des appels : pas de second écouteur. -->
+  <body data-owns-call-socket="true">
+    <header data-page-shell></header>
+    <main class="page-content calls-layout">
+      <section class="card call-panel" data-call-panel hidden aria-live="assertive">
+        <h2 data-call-panel-title>Appel</h2>
+        <p class="call-panel-status" data-call-panel-status></p>
+        <div class="call-panel-actions">
+          <button class="button" type="button" data-accept-call hidden>Répondre</button>
+          <button class="button button-danger" type="button" data-decline-call hidden>Refuser</button>
+          <button class="button button-secondary" type="button" data-toggle-mute hidden aria-pressed="false">Couper le micro</button>
+          <button class="button button-danger" type="button" data-hang-up hidden>Raccrocher</button>
+        </div>
+        <!-- Voix de l'interlocuteur (flux WebRTC, jamais enregistré). -->
+        <audio data-remote-audio autoplay></audio>
+      </section>
+
+      <p class="form-error" data-calls-error role="alert" hidden></p>
+      <p class="page-shell-notice" data-signaling-status hidden></p>
+
+      <section class="card">
+        <h2>Collègues</h2>
+        <p class="muted">Seuls les collègues connectés (●) peuvent être appelés.</p>
+        <ul class="call-contact-list" data-call-contact-list></ul>
+      </section>
+
+      <section class="card">
+        <h2>Historique</h2>
+        <ol class="call-history-list" data-call-history-list></ol>
+      </section>
+    </main>
+  </body>
+</html>

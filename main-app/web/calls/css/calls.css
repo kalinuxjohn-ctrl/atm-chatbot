@@ -1,0 +1,65 @@
+/* Page Appels. */
+
+.calls-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.call-panel {
+  border: 2px solid var(--color-accent);
+}
+
+.call-panel-status {
+  font-size: 1.05rem;
+}
+
+.call-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.call-contact-list,
+.call-history-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.call-contact-item,
+.call-history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.call-contact-name {
+  flex: 1;
+}
+
+.presence-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-border);
+}
+
+.presence-indicator-online {
+  background: var(--color-success);
+}
+
+.call-history-direction {
+  width: 1.5em;
+  text-align: center;
+}
+
+.call-history-text {
+  flex: 1;
+}
+
+.call-history-status-missed,
+.call-history-status-failed {
+  color: var(--color-danger);
+}
