@@ -398,7 +398,12 @@ atm-chatbot/
 │   │   ├── 0010_intervention_action_source_proposal.sql
 │   │   ├── 0011_quick_replies.sql
 │   │   ├── 0012_intervention_add.sql
-│   │   └── 0013_diagnosis_root_cause_text.sql
+│   │   ├── 0013_diagnosis_root_cause_text.sql
+│   │   ├── 0014_main_app_schema.sql
+│   │   ├── 0015_main_app_auth.sql
+│   │   ├── 0016_main_app_map.sql
+│   │   ├── 0017_main_app_messaging.sql
+│   │   └── 0018_main_app_calls.sql
 │   └── seed/
 │       └── seed_demo_data.py
 │           ├── function _to_psycopg2_dsn(sqlalchemy_url)
@@ -460,6 +465,7 @@ atm-chatbot/
 │   ├── ATM-BOT_presentation.pptx
 │   ├── dossier-etude-atm-chatbot.html
 │   ├── flux-donnees-db-exemple.md
+│   ├── main-app.md
 │   ├── to-png.sh
 │   └── visuel_frontend.png
 ├── frontend/
@@ -489,6 +495,144 @@ atm-chatbot/
 │       │   ├── _proxy_api_request(self)
 │       │   ├── _send_api_response(self, status_code, headers, response_body)
 │       │   └── log_message(self, format_string, *args)
+├── main-app/
+│   ├── gateway/
+│   │   ├── html/
+│   │   │   ├── __unavailable/
+│   │   │   │   ├── api.json
+│   │   │   │   └── page.html
+│   │   │   ├── shared/
+│   │   │   │   ├── css/
+│   │   │   │   │   └── base.css
+│   │   │   │   └── js/
+│   │   │   │       ├── apiClient.js
+│   │   │   │       ├── connectedPageShell.js
+│   │   │   │       ├── domHelpers.js
+│   │   │   │       └── incomingCallListener.js
+│   │   │   └── home.html
+│   │   ├── snippets/
+│   │   │   ├── proxy-common.conf
+│   │   │   └── security-headers.conf
+│   │   ├── Dockerfile
+│   │   └── nginx.conf
+│   ├── src/
+│   │   ├── controllers/
+│   │   │   ├── auth/
+│   │   │   │   ├── accountAdministrationController.js
+│   │   │   │   └── authenticationController.js
+│   │   │   ├── calls/
+│   │   │   │   ├── callController.js
+│   │   │   │   └── callSignalingSocketController.js
+│   │   │   ├── map/
+│   │   │   │   ├── mapPointController.js
+│   │   │   │   └── mapTileController.js
+│   │   │   └── messaging/
+│   │   │       └── messagingController.js
+│   │   ├── core/
+│   │   │   ├── config.js
+│   │   │   ├── cookies.js
+│   │   │   ├── createFeatureApp.js
+│   │   │   ├── database.js
+│   │   │   ├── errors.js
+│   │   │   ├── sessionStore.js
+│   │   │   ├── startFeatureServer.js
+│   │   │   ├── tracing.js
+│   │   │   └── validation.js
+│   │   ├── entrypoints/
+│   │   │   ├── auth.js
+│   │   │   ├── calls.js
+│   │   │   ├── map.js
+│   │   │   └── messaging.js
+│   │   ├── jobs/
+│   │   │   ├── cleanupExpiredSessions.js
+│   │   │   ├── cleanupOrphanUploads.js
+│   │   │   ├── configureDatabaseRole.js
+│   │   │   └── createAdmin.js
+│   │   ├── middlewares/
+│   │   │   ├── asyncHandler.js
+│   │   │   ├── errorHandler.js
+│   │   │   ├── requireAuthenticatedUser.js
+│   │   │   └── requireRole.js
+│   │   ├── models/
+│   │   │   ├── auth/
+│   │   │   │   ├── accountModel.js
+│   │   │   │   └── loginThrottleModel.js
+│   │   │   ├── calls/
+│   │   │   │   └── callModel.js
+│   │   │   ├── map/
+│   │   │   │   └── mapPointModel.js
+│   │   │   └── messaging/
+│   │   │       ├── conversationModel.js
+│   │   │       └── messageModel.js
+│   │   ├── routes/
+│   │   │   ├── auth/
+│   │   │   │   └── authRoutes.js
+│   │   │   ├── calls/
+│   │   │   │   └── callRoutes.js
+│   │   │   ├── map/
+│   │   │   │   └── mapRoutes.js
+│   │   │   └── messaging/
+│   │   │       └── messagingRoutes.js
+│   │   ├── schemas/
+│   │   │   ├── auth/
+│   │   │   │   └── authSchemas.js
+│   │   │   ├── calls/
+│   │   │   │   └── callSchemas.js
+│   │   │   ├── map/
+│   │   │   │   └── mapSchemas.js
+│   │   │   └── messaging/
+│   │   │       └── messagingSchemas.js
+│   │   └── services/
+│   │       ├── auth/
+│   │       │   ├── accountAdministrationService.js
+│   │       │   ├── authenticationService.js
+│   │       │   └── passwordHashingService.js
+│   │       ├── calls/
+│   │       │   ├── callDirectoryService.js
+│   │       │   └── callSignalingCoordinator.js
+│   │       ├── map/
+│   │       │   ├── mapPointService.js
+│   │       │   └── tileProxyService.js
+│   │       └── messaging/
+│   │           ├── attachmentStorageService.js
+│   │           ├── attachmentValidationService.js
+│   │           └── messagingService.js
+│   ├── web/
+│   │   ├── auth/
+│   │   │   ├── css/
+│   │   │   │   └── auth.css
+│   │   │   ├── js/
+│   │   │   │   ├── accountsPage.js
+│   │   │   │   ├── loginPage.js
+│   │   │   │   └── registerPage.js
+│   │   │   ├── accounts.html
+│   │   │   ├── login.html
+│   │   │   └── register.html
+│   │   ├── calls/
+│   │   │   ├── css/
+│   │   │   │   └── calls.css
+│   │   │   ├── js/
+│   │   │   │   └── callsPage.js
+│   │   │   └── index.html
+│   │   ├── map/
+│   │   │   ├── css/
+│   │   │   │   └── map.css
+│   │   │   ├── js/
+│   │   │   │   └── mapPage.js
+│   │   │   └── index.html
+│   │   └── messaging/
+│   │       ├── css/
+│   │       │   └── messaging.css
+│   │       ├── js/
+│   │       │   └── messagingPage.js
+│   │       └── index.html
+│   ├── .dockerignore
+│   ├── .gitattributes
+│   ├── .gitignore
+│   ├── Dockerfile
+│   ├── eslint.config.js
+│   ├── package-lock.json
+│   └── package.json
 ├── share/
 │   ├── envoyer.ps1
 │   ├── preparer-paquet.sh
@@ -496,10 +640,12 @@ atm-chatbot/
 │   └── recevoir.sh
 ├── .dockerignore
 ├── .env
+├── .env.example
 ├── .gitattributes
 ├── .gitignore
 ├── architecture.tree
 ├── COMPREHENSION.md
+├── docker-compose.main-app.yml
 ├── docker-compose.yml
 ├── Dockerfile
 ├── Dockerfile.base
