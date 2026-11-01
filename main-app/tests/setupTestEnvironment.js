@@ -6,6 +6,9 @@
  * MAIN_APP_TEST_DATABASE_HOST, ils sont ignorés (les tests unitaires tournent seuls).
  */
 
+import os from "node:os";
+import path from "node:path";
+
 const testEnvironment = {
   MAIN_APP_ENVIRONMENT: "test",
   MAIN_APP_DATABASE_HOST: process.env.MAIN_APP_TEST_DATABASE_HOST ?? "database-not-configured",
@@ -21,6 +24,7 @@ const testEnvironment = {
   MAIN_APP_MAP_TILE_ATTRIBUTION: "© Test",
   MAIN_APP_MAP_TILE_USER_AGENT: "atm-main-app-tests",
   MAIN_APP_UPLOAD_MAX_BYTES: String(2 * 1024 * 1024),
+  MAIN_APP_UPLOADS_DIRECTORY: path.join(os.tmpdir(), "main-app-test-uploads"),
   MAIN_APP_PUBLIC_ORIGIN: "http://localhost:8080",
 };
 

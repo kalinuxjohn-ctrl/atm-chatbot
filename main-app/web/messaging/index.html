@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Messagerie | Espace techniciens</title>
+    <link rel="stylesheet" href="/shared/css/base.css">
+    <link rel="stylesheet" href="/messaging/css/messaging.css">
+    <script type="module" src="/shared/js/connectedPageShell.js"></script>
+    <script type="module" src="/messaging/js/messagingPage.js"></script>
+  </head>
+  <body class="messaging-page">
+    <header data-page-shell></header>
+    <div class="messaging-layout" data-messaging-layout data-view="list">
+      <aside class="conversation-sidebar">
+        <form class="contact-search" data-contact-search-form>
+          <label class="form-field">Nouvelle conversation
+            <input name="search" type="search" placeholder="Nom d'utilisateur…" maxlength="30" autocomplete="off" autocapitalize="none">
+          </label>
+        </form>
+        <ul class="contact-results" data-contact-results hidden></ul>
+        <h2 class="conversation-list-title">Conversations</h2>
+        <ul class="conversation-list" data-conversation-list></ul>
+        <p class="muted conversation-list-empty" data-conversation-list-empty hidden>Aucune conversation. Cherchez un collègue ci-dessus.</p>
+      </aside>
+
+      <section class="conversation-thread" data-conversation-thread aria-live="polite">
+        <div class="thread-header">
+          <button class="button button-secondary thread-back-button" type="button" data-back-to-list>← Conversations</button>
+          <h2 class="thread-title" data-thread-title>Choisissez une conversation</h2>
+        </div>
+        <ol class="message-list" data-message-list></ol>
+        <p class="form-error thread-error" data-thread-error role="alert" hidden></p>
+        <form class="message-composer" data-message-composer hidden>
+          <textarea name="text" rows="1" maxlength="2000" placeholder="Votre message…" aria-label="Message"></textarea>
+          <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-image-input hidden>
+          <button class="button button-secondary composer-icon-button" type="button" data-pick-image title="Envoyer une photo" aria-label="Envoyer une photo">📷</button>
+          <button class="button button-secondary composer-icon-button" type="button" data-record-voice title="Message vocal" aria-label="Enregistrer un message vocal">🎙️</button>
+          <button class="button" type="submit">Envoyer</button>
+        </form>
+        <p class="muted recording-indicator" data-recording-indicator hidden>● Enregistrement… appuyez à nouveau sur 🎙️ pour envoyer.</p>
+      </section>
+    </div>
+  </body>
+</html>
