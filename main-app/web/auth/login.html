@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Connexion | Espace techniciens</title>
+    <link rel="stylesheet" href="/shared/css/base.css">
+    <link rel="stylesheet" href="/auth/css/auth.css">
+    <script type="module" src="/auth/js/loginPage.js"></script>
+  </head>
+  <body>
+    <main class="authentication-layout">
+      <form class="card authentication-card" data-login-form novalidate>
+        <h1>Connexion</h1>
+        <p class="muted">Espace techniciens</p>
+        <label class="form-field">Nom d'utilisateur
+          <input name="username" autocomplete="username" required maxlength="30" autocapitalize="none" spellcheck="false">
+        </label>
+        <label class="form-field">Mot de passe
+          <input name="password" type="password" autocomplete="current-password" required maxlength="128">
+        </label>
+        <p class="form-error" data-form-error role="alert" hidden></p>
+        <button class="button authentication-submit" type="submit">Se connecter</button>
+        <p class="muted authentication-footnote">Mot de passe oublié ? Demandez une réinitialisation à un administrateur.</p>
+        <p class="authentication-footnote" data-registration-link hidden><a href="/auth/register.html">Créer un compte</a></p>
+      </form>
+    </main>
+  </body>
+</html>

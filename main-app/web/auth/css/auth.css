@@ -1,0 +1,68 @@
+/* Pages de connexion, d'inscription et d'administration des comptes. */
+
+.authentication-layout {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.authentication-card {
+  width: 100%;
+  max-width: 400px;
+}
+
+.authentication-submit {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.authentication-footnote {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* --- Administration des comptes --- */
+.accounts-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.accounts-table-wrapper {
+  overflow-x: auto;
+}
+
+.accounts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.accounts-table th,
+.accounts-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.accounts-table select {
+  width: auto;
+}
+
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.account-inactive {
+  color: var(--color-text-muted);
+}
+
+.account-creation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0 12px;
+}

@@ -10,6 +10,10 @@
 const SENSITIVE_DETAIL_KEY_PATTERN = /password|token|cookie|secret|authorization|content|sdp|candidate/i;
 
 export function trace(category, message, details = {}) {
+  // Tests : traces coupées pour garder un résultat lisible.
+  if (process.env.MAIN_APP_ENVIRONMENT === "test") {
+    return;
+  }
   const traceLine = {
     timestamp: new Date().toISOString(),
     service: process.env.MAIN_APP_SERVICE_NAME ?? "main-app",

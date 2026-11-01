@@ -72,6 +72,12 @@ export async function deleteSessionByToken(sessionToken) {
   await queryDatabase("DELETE FROM main_app.sessions WHERE token_hash = $1", [hashSessionToken(sessionToken)]);
 }
 
+/** Nettoyage périodique (jobs/cleanupExpiredSessions.js) : une session expirée ne sert plus. */
+export async function deleteExpiredSessions() {
+  const deletedRows = await queryDatabase("DELETE FROM main_app.sessions WHERE expires_at <= now() RETURNING 1");
+  return deletedRows.length;
+}
+
 /** Déconnecte partout (mot de passe changé, compte désactivé), sauf éventuellement la session courante. */
 export async function deleteSessionsOfTechnician(technicianId, { keepSessionToken = null } = {}, databaseClient = null) {
   await queryDatabase(
