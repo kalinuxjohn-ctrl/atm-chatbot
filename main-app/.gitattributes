@@ -1,0 +1,6 @@
+# Fichiers lus dans des conteneurs Linux : fins de ligne Unix, même sur une
+# copie de travail Windows (core.autocrlf=true). Un script shell en CRLF ne
+# s'exécute pas sous sh.
+*.sh   text eol=lf
+*.conf text eol=lf
+Dockerfile text eol=lf

@@ -54,4 +54,4 @@ docker run --rm --network "$network_name" \
   -e MAIN_APP_TEST_DATABASE_USER=main_app_user \
   -e MAIN_APP_TEST_DATABASE_PASSWORD="$test_password" \
   node:22-bookworm-slim \
-  sh -c "if ! cmp -s package-lock.json node_modules/.installed-package-lock.json; then npm ci --no-audit --no-fund --loglevel=error && cp package-lock.json node_modules/.installed-package-lock.json; fi && npm run lint && npm test"
+  sh -c "if ! cmp -s package-lock.json node_modules/.installed-package-lock.json; then npm ci --no-audit --no-fund --loglevel=error --fetch-retries=5 --fetch-timeout=120000 && cp package-lock.json node_modules/.installed-package-lock.json; fi && npm run lint && npm test"

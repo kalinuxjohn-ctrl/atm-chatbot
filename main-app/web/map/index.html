@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Carte | Espace techniciens</title>
+    <link rel="stylesheet" href="/shared/css/base.css">
+    <link rel="stylesheet" href="/map/vendor/leaflet/leaflet.css">
+    <link rel="stylesheet" href="/map/vendor/maplibre-gl/maplibre-gl.css">
+    <link rel="stylesheet" href="/map/css/map.css">
+    <!-- Librairies servies en local (pas de CDN) : Leaflet crée la variable globale L. -->
+    <script src="/map/vendor/leaflet/leaflet.js"></script>
+    <script type="module" src="/shared/js/connectedPageShell.js"></script>
+    <script type="module" src="/map/js/mapPage.js"></script>
+  </head>
+  <body class="map-page">
+    <header data-page-shell></header>
+    <div class="map-toolbar">
+      <button class="button button-secondary" type="button" data-locate-me>📍 Ma position</button>
+      <button class="button button-secondary" type="button" data-show-nearby>Points proches</button>
+      <label class="map-toolbar-filter">Catégorie
+        <select data-category-filter>
+          <option value="">Toutes</option>
+        </select>
+      </label>
+      <span class="muted map-toolbar-hint">Cliquez sur la carte pour ajouter un point.</span>
+    </div>
+    <p class="form-error map-status" data-map-status role="status" hidden></p>
+    <div class="map-layout">
+      <div class="map-canvas" data-map-canvas aria-label="Carte des points partagés"></div>
+
+      <aside class="card map-side-panel" data-point-form-panel hidden>
+        <form data-point-form novalidate>
+          <h2 data-point-form-title>Nouveau point</h2>
+          <label class="form-field">Titre
+            <input name="title" required maxlength="120">
+          </label>
+          <label class="form-field">Catégorie
+            <select name="category"></select>
+          </label>
+          <label class="form-field">Description
+            <textarea name="description" rows="4" maxlength="2000"></textarea>
+          </label>
+          <p class="muted" data-point-form-coordinates></p>
+          <p class="form-error" data-point-form-error role="alert" hidden></p>
+          <div class="map-form-actions">
+            <button class="button" type="submit">Enregistrer</button>
+            <button class="button button-secondary" type="button" data-cancel-point-form>Annuler</button>
+          </div>
+        </form>
+      </aside>
+
+      <aside class="card map-side-panel" data-nearby-panel hidden>
+        <h2>Points proches</h2>
+        <p class="muted" data-nearby-summary></p>
+        <ol class="nearby-point-list" data-nearby-list></ol>
+        <button class="button button-secondary" type="button" data-close-nearby>Fermer</button>
+      </aside>
+    </div>
+  </body>
+</html>

@@ -53,6 +53,7 @@ export function sendAs(featureApp, account) {
     get: (path) => withSession(agent.get(path)),
     post: (path) => withSession(agent.post(path)),
     put: (path) => withSession(agent.put(path)),
+    patch: (path) => withSession(agent.patch(path)),
     delete: (path) => withSession(agent.delete(path)),
   };
 }

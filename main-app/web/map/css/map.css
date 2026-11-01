@@ -1,0 +1,131 @@
+/* Page Carte : la carte occupe tout l'espace sous l'en-tête et la barre d'outils. */
+
+.map-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+}
+
+.map-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.map-toolbar-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.map-toolbar-filter select {
+  width: auto;
+}
+
+.map-toolbar-hint {
+  font-size: 0.85rem;
+}
+
+.map-status {
+  margin: 0;
+  padding: 6px 16px;
+}
+
+.map-layout {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.map-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.map-side-panel {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  width: min(360px, calc(100% - 24px));
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+}
+
+.map-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.nearby-point-list {
+  padding-left: 20px;
+}
+
+.nearby-point-list button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent);
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+}
+
+/* --- Marqueurs : un cercle coloré par catégorie (SVG Leaflet, sans image) --- */
+.map-point-marker {
+  stroke: #ffffff;
+  stroke-width: 2;
+  fill-opacity: 0.95;
+}
+
+.map-point-category-atm_site { fill: #1f5fbf; }
+.map-point-category-tpe_client { fill: #e08a00; }
+.map-point-category-parts_depot { fill: #127a46; }
+.map-point-category-difficult_access { fill: #b42318; }
+.map-point-category-other { fill: #6b5bd2; }
+
+.current-position-marker {
+  fill: #00a3ff;
+  stroke: #ffffff;
+  stroke-width: 3;
+  fill-opacity: 1;
+}
+
+/* --- Bulle d'un point (contenu créé avec textContent) --- */
+.map-point-popup-title {
+  display: block;
+  font-size: 1rem;
+}
+
+.map-point-popup-category {
+  color: #5b6b7f;
+  font-size: 0.85rem;
+}
+
+.map-point-popup-description {
+  margin: 6px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.map-point-popup-author {
+  color: #5b6b7f;
+  font-size: 0.8rem;
+}
+
+.map-point-popup-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.map-point-popup-actions .button {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
