@@ -46,7 +46,10 @@ export function createFeatureApp({ featureName, configuration, apiRouter, additi
   // Route d'API inconnue : JSON 404 (et non la page HTML par défaut d'Express).
   featureApp.use(`/api/${featureName}`, (request, response, next) => next(new ReferenceNotFoundError("Route inconnue.")));
 
-  const staticFileOptions = { dotfiles: "deny", index: "index.html", fallthrough: true, maxAge: "1h" };
+  // maxAge 0 : le navigateur revalide chaque fichier (ETag -> 304, sans retransfert).
+  // Avec un cache d'une heure, une mise à jour du JavaScript n'arrivait chez
+  // l'utilisateur qu'une heure plus tard, mélangée à d'anciens fichiers.
+  const staticFileOptions = { dotfiles: "deny", index: "index.html", fallthrough: true, maxAge: 0 };
   featureApp.use(`/${featureName}`, express.static(path.join(mainAppRootDirectory, "web", featureName), staticFileOptions));
   for (const { urlPath, directory } of additionalStaticDirectories) {
     featureApp.use(urlPath, express.static(path.join(mainAppRootDirectory, directory), staticFileOptions));

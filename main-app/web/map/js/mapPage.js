@@ -63,8 +63,11 @@ async function createMap() {
   const leafletMap = L.map(document.querySelector("[data-map-canvas]"), { maxZoom: maximumZoom, worldCopyJump: true });
   leafletMap.setView(INITIAL_MAP_CENTER, INITIAL_MAP_ZOOM);
   // Style MapLibre minimal : une seule couche, les tuiles raster relayées par le serveur.
+  // Attribution OBLIGATOIRE du fournisseur de tuiles (licence OpenStreetMap). Ajoutée
+  // directement au contrôle Leaflet : le pont MapLibre ne transmet pas l'option attribution.
+  // addAttribution insère du HTML : le texte (configuration serveur) est échappé par précaution.
+  leafletMap.attributionControl.addAttribution(escapeHtmlText(attribution));
   L.maplibreGL({
-    attribution,
     style: {
       version: 8,
       sources: {
@@ -79,6 +82,11 @@ async function createMap() {
     },
   }).addTo(leafletMap);
   return leafletMap;
+}
+
+function escapeHtmlText(text) {
+  const htmlEscapes = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+  return text.replace(/[&<>"']/g, (character) => htmlEscapes[character]);
 }
 
 // --- Chargement des points de la zone visible --------------------------------

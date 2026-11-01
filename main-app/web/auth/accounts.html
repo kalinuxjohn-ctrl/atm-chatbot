@@ -15,7 +15,7 @@
       <h1>Comptes des techniciens</h1>
       <p class="form-error" data-page-error role="alert" hidden></p>
 
-      <form class="card" data-account-creation-form novalidate>
+      <form class="card" data-account-creation-form data-administrator-only novalidate hidden>
         <h2>Créer un compte</h2>
         <div class="account-creation-grid">
           <label class="form-field">Nom d'utilisateur
@@ -44,7 +44,7 @@
         <button class="button" type="submit">Créer le compte</button>
       </form>
 
-      <section class="card">
+      <section class="card" data-administrator-only hidden>
         <h2>Comptes existants</h2>
         <div class="accounts-table-wrapper">
           <table class="accounts-table">

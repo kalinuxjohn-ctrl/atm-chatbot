@@ -21,6 +21,13 @@ function showMessage(element, message) {
   element.hidden = !message;
 }
 
+/** Formulaire et tableau visibles seulement si le serveur a accepté de lister les comptes (rôle admin). */
+function showAdministratorSections(isVisible) {
+  for (const administratorSection of document.querySelectorAll("[data-administrator-only]")) {
+    administratorSection.hidden = !isVisible;
+  }
+}
+
 async function runAndReportError(action) {
   showMessage(pageError, "");
   try {
@@ -84,8 +91,10 @@ async function reloadAccounts() {
   } catch (error) {
     showMessage(pageError, error.httpStatus === 403 ? "Page réservée aux administrateurs." : error.message);
     accountsTableBody.replaceChildren();
+    showAdministratorSections(false);
     return;
   }
+  showAdministratorSections(true);
   accountsTableBody.replaceChildren(
     ...accounts.map((account) => {
       const isOwnAccount = currentUser?.technicianId === account.technicianId;

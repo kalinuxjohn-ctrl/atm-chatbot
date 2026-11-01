@@ -35,10 +35,28 @@ const recordingIndicator = document.querySelector("[data-recording-indicator]");
 const openConversation = { conversationId: null, lastDisplayedMessageId: 0, isPolling: false };
 let voiceRecording = null;
 let lastLoadedConversations = [];
+let pollingErrorIsShown = false;
 
 function showThreadError(message) {
   threadError.textContent = message;
   threadError.hidden = !message;
+}
+
+/**
+ * Échec d'un cycle de polling (service redémarré, réseau coupé) : affiché pour
+ * que l'utilisateur sache pourquoi rien n'arrive, puis retiré au premier cycle
+ * réussi. Une erreur d'envoi, elle, reste affichée.
+ */
+function showPollingError(error) {
+  showThreadError(error.message);
+  pollingErrorIsShown = true;
+}
+
+function clearPollingError() {
+  if (pollingErrorIsShown) {
+    showThreadError("");
+    pollingErrorIsShown = false;
+  }
 }
 
 // --- Liste des conversations -------------------------------------------------
@@ -47,9 +65,11 @@ async function reloadConversationList() {
   let conversations;
   try {
     ({ conversations } = await requestJson("/api/messaging/conversations"));
-  } catch {
-    return; // nouvelle tentative au prochain cycle
+  } catch (error) {
+    showPollingError(error);
+    return;
   }
+  clearPollingError();
   lastLoadedConversations = conversations;
   conversationListEmpty.hidden = conversations.length > 0;
   conversationList.replaceChildren(...conversations.map(createConversationListItem));
@@ -171,12 +191,13 @@ async function fetchNewMessages() {
   try {
     const cursor = lastDisplayedMessageId > 0 ? `?after=${lastDisplayedMessageId}` : "";
     const { messages } = await requestJson(`/api/messaging/conversations/${conversationId}/messages${cursor}`);
+    clearPollingError();
     // La conversation a pu changer pendant la requête : on ignore une réponse périmée.
     if (conversationId === openConversation.conversationId) {
       appendMessages(messages);
     }
   } catch (error) {
-    showThreadError(error.message);
+    showPollingError(error);
   } finally {
     openConversation.isPolling = false;
   }
@@ -241,6 +262,7 @@ async function sendTextMessage() {
     });
     textArea.value = "";
     appendMessages([message]);
+    reloadConversationList(); // aperçu du dernier message à jour sans attendre le prochain cycle
   } catch (error) {
     showThreadError(error.message);
   }
@@ -255,6 +277,7 @@ async function sendAttachment(fileOrBlob, fileName) {
       body: formData,
     });
     appendMessages([message]);
+    reloadConversationList();
   } catch (error) {
     showThreadError(error.message);
   }
