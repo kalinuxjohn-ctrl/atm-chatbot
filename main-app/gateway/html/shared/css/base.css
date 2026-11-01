@@ -1,0 +1,268 @@
+/*
+ * Styles communs à toutes les pages de la main app (servis par le gateway).
+ * Couleurs définies une fois en variables, redéfinies pour le mode sombre.
+ * Aucun style en ligne dans le HTML : la CSP interdit 'unsafe-inline'.
+ */
+
+:root {
+  --color-page-background: #f4f6f9;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eef1f5;
+  --color-text: #17202b;
+  --color-text-muted: #5b6b7f;
+  --color-border: #d8dee6;
+  --color-accent: #1f5fbf;
+  --color-accent-text: #ffffff;
+  --color-danger: #b42318;
+  --color-success: #127a46;
+  --color-warning-background: #fff4d6;
+  --color-own-message: #dbe8fb;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgb(16 36 58 / 12%);
+  --font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-page-background: #0f151d;
+    --color-surface: #18212c;
+    --color-surface-muted: #212c39;
+    --color-text: #e7edf4;
+    --color-text-muted: #9aa8b8;
+    --color-border: #2e3b4b;
+    --color-accent: #5b9bf0;
+    --color-accent-text: #08111c;
+    --color-danger: #f0776c;
+    --color-success: #4fc78a;
+    --color-warning-background: #3a3016;
+    --color-own-message: #20395c;
+    color-scheme: dark;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--color-page-background);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--color-accent);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* --- En-tête commun (connectedPageShell.js) --- */
+.page-shell-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 10px 16px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.page-shell-brand {
+  font-weight: 700;
+  color: var(--color-text);
+  text-decoration: none;
+  margin-right: auto;
+}
+
+.page-shell-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.page-shell-navigation a {
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.page-shell-navigation a[aria-current="page"],
+.page-shell-navigation a:hover {
+  background: var(--color-surface-muted);
+}
+
+.page-shell-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.page-shell-notice {
+  padding: 8px 16px;
+  background: var(--color-warning-background);
+  font-size: 0.9rem;
+}
+
+/* --- Contenu --- */
+.page-content {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin: 0 0 12px;
+}
+
+h2 {
+  font-size: 1.15rem;
+  margin: 0 0 10px;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+/* --- Formulaires --- */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+textarea {
+  resize: vertical;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.button-secondary {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.button-danger {
+  background: var(--color-danger);
+  color: #ffffff;
+}
+
+.form-error {
+  color: var(--color-danger);
+  margin: 8px 0;
+}
+
+.form-success {
+  color: var(--color-success);
+  margin: 8px 0;
+}
+
+/* --- Bandeau d'appel entrant (incomingCallListener.js) --- */
+.incoming-call-banner {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 2000;
+  max-width: 420px;
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 24px rgb(16 36 58 / 30%);
+}
+
+.incoming-call-banner-text {
+  flex: 1 1 180px;
+  font-weight: 600;
+}
+
+/* --- Accueil --- */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.feature-link {
+  display: block;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.feature-link:hover {
+  border-color: var(--color-accent);
+}
+
+.feature-link p {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+}

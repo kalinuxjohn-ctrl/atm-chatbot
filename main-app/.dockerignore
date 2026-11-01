@@ -1,0 +1,11 @@
+# Rien de local ne doit entrer dans l'image : les dépendances sont
+# réinstallées par npm ci, et les secrets restent dans .env (à la racine).
+node_modules
+tests
+gateway
+coverage
+.env
+.env.*
+*.log
+.git
+eslint.config.js
