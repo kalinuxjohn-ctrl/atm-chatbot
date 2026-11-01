@@ -3,18 +3,53 @@ atm-chatbot/
 │   ├── api/
 │   │   ├── routes/
 │   │   │   ├── __init__.py
+│   │   │   ├── admin.py
+│   │   │   │   ├── function require_admin(x_admin_key)
+│   │   │   │   ├── function lister_propositions(status, db)
+│   │   │   │   ├── function lire_proposition(proposal_id, db)
+│   │   │   │   ├── function approuver_proposition(proposal_id, payload, db)
+│   │   │   │   └── function rejeter_proposition(proposal_id, payload, db)
+│   │   │   ├── admin_catalog.py
+│   │   │   │   ├── function lister_codes_erreur(db)
+│   │   │   │   ├── function ajouter_code_erreur(payload, db)
+│   │   │   │   ├── function modifier_code_erreur(error_code_id, payload, db)
+│   │   │   │   ├── function supprimer_code_erreur(error_code_id, db)
+│   │   │   │   ├── function lister_pannes_frequentes(db)
+│   │   │   │   ├── function ajouter_panne_frequente(payload, db)
+│   │   │   │   ├── function modifier_panne_frequente(usual_problem_id, payload, db)
+│   │   │   │   └── function supprimer_panne_frequente(usual_problem_id, db)
+│   │   │   ├── admin_intervention_add.py
+│   │   │   │   ├── function _out(db, intervention_add)
+│   │   │   │   ├── function lister_ajouts(status, db)
+│   │   │   │   ├── function lire_ajout(intervention_add_id, db)
+│   │   │   │   ├── function apercu_ecriture(intervention_add_id, db)
+│   │   │   │   ├── function corriger_ajout(intervention_add_id, payload, db)
+│   │   │   │   ├── function approuver_ajout(intervention_add_id, payload, db)
+│   │   │   │   └── function rejeter_ajout(intervention_add_id, payload, db)
 │   │   │   ├── catalog.py
 │   │   │   │   ├── function chercher_actions_similaires(text, limit, db)
 │   │   │   │   └── function resoudre_action(payload, db)
 │   │   │   ├── chat.py
 │   │   │   │   ├── function rechercher_symptome(payload, db)
-│   │   │   │   └── function chat(payload, db)
+│   │   │   │   ├── function chat(payload, db)
+│   │   │   │   ├── function lire_disponibilite_photo()
+│   │   │   │   ├── function lire_contexte_proposition(conversation_id, technician_id, db)
+│   │   │   │   └── function proposer_solution(conversation_id, payload, db)
 │   │   │   ├── error_code.py
-│   │   │   │   └── function rechercher_code_erreur(q, db)
-│   │   │   └── interventions.py
-│   │   │       ├── function enregistrer_intervention(payload, db)
-│   │   │       ├── function lire_intervention(intervention_id, db)
-│   │   │       └── function enregistrer_action(intervention_id, payload, db)
+│   │   │   │   ├── function rechercher_code_erreur(q, db)
+│   │   │   │   ├── function lister_codes_erreur_connus(device_type, db)
+│   │   │   │   └── function lire_reponse_code_erreur(error_code_id, db)
+│   │   │   ├── intervention_add.py
+│   │   │   │   ├── function demander_ajout_intervention(payload, db)
+│   │   │   │   ├── function lister_mes_ajouts(technician_id, status, db)
+│   │   │   │   └── function lire_mon_ajout(intervention_add_id, technician_id, db)
+│   │   │   ├── interventions.py
+│   │   │   │   ├── function enregistrer_intervention(payload, db)
+│   │   │   │   ├── function lire_intervention(intervention_id, db)
+│   │   │   │   └── function enregistrer_action(intervention_id, payload, db)
+│   │   │   └── usual_problem.py
+│   │   │       ├── function lister_pannes_frequentes(device_type, db)
+│   │   │       └── function lire_reponse_panne_frequente(usual_problem_id, db)
 │   │   └── __init__.py
 │   ├── core/
 │   │   ├── __init__.py
@@ -22,6 +57,12 @@ atm-chatbot/
 │   │   │   ├── class Settings(BaseSettings)
 │   │   ├── database.py
 │   │   │   └── function get_db()
+│   │   ├── errors.py
+│   │   │   ├── class ReferenceNotFoundError(LookupError)
+│   │   │   ├── class InvalidReferenceError(ValueError)
+│   │   │   ├── class AccessDeniedError(PermissionError)
+│   │   │   ├── class StateConflictError(RuntimeError)
+│   │   │   ├── class ExternalServiceUnavailableError(RuntimeError)
 │   │   └── tracing.py
 │   │       ├── function _configure_logger()
 │   │       ├── function _safe_value(value)
@@ -54,10 +95,15 @@ atm-chatbot/
 │   │   │   ├── class InterventionSymptom(Base)
 │   │   │   ├── class InterventionAction(Base)
 │   │   │   ├── class Diagnosis(Base)
-│   │   └── technician.py
-│   │       ├── class Technician(Base)
+│   │   ├── intervention_add.py
+│   │   │   ├── class InterventionAdd(Base)
+│   │   ├── solution_proposal.py
+│   │   │   ├── class SolutionProposal(Base)
+│   │   ├── technician.py
+│   │   │   ├── class Technician(Base)
+│   │   └── usual_problem.py
+│   │       ├── class UsualProblem(Base)
 │   ├── schemas/
-│   │   ├── app/
 │   │   ├── __init__.py
 │   │   ├── catalog_schema.py
 │   │   │   ├── class SimilarActionCandidate(BaseModel)
@@ -72,25 +118,80 @@ atm-chatbot/
 │   │   │   ├── class ChatRequest(BaseModel)
 │   │   │   │   └── _message_or_photo(self)
 │   │   │   ├── class ChatResponse(BaseModel)
-│   │   ├── photo_schema.py
-│   │   │   └── class PhotoAttachment(BaseModel)
-│   │   │       └── _check_image_content(cls, value)
 │   │   ├── device_type.py
 │   │   │   └── function normalize_device_type(value)
 │   │   ├── error_code_schema.py
 │   │   │   ├── class FaultOut(BaseModel)
 │   │   │   ├── class ErrorCodeOut(BaseModel)
 │   │   │   ├── class ErrorCodeSearchResponse(BaseModel)
-│   │   └── intervention_schema.py
-│   │       ├── class SymptomInput(BaseModel)
-│   │       ├── class InterventionCreate(BaseModel)
-│   │       ├── class SymptomOut(BaseModel)
-│   │       ├── class InterventionOut(BaseModel)
-│   │       ├── class ActionInput(BaseModel)
-│   │       ├── class ActionOut(BaseModel)
+│   │   │   ├── class ErrorCodeSuggestionOut(BaseModel)
+│   │   │   ├── class ErrorCodeReplyOut(ErrorCodeSuggestionOut)
+│   │   │   ├── class ErrorCodeAdminIn(BaseModel)
+│   │   │   │   ├── _vide_devient_none(cls, value)
+│   │   │   │   └── _reponse_avec_equipement(self)
+│   │   │   ├── class ErrorCodeAdminOut(BaseModel)
+│   │   ├── intervention_add_schema.py
+│   │   │   ├── class SubmittedSymptom(BaseModel)
+│   │   │   ├── class SubmittedAction(BaseModel)
+│   │   │   ├── class SubmittedDiagnosis(BaseModel)
+│   │   │   ├── class SubmittedDevice(BaseModel)
+│   │   │   ├── class SubmittedInterventionContent(BaseModel)
+│   │   │   │   └── check_consistency(self)
+│   │   │   ├── class InterventionAddRequest(SubmittedInterventionContent)
+│   │   │   ├── class ReviewedSymptom(SubmittedSymptom)
+│   │   │   ├── class ReviewedAction(SubmittedAction)
+│   │   │   ├── class ReviewedDiagnosis(SubmittedDiagnosis)
+│   │   │   ├── class ReviewedDevice(SubmittedDevice)
+│   │   │   │   └── check_new_device_has_a_type(self)
+│   │   │   ├── class ReviewedInterventionContent(SubmittedInterventionContent)
+│   │   │   ├── function _check_intervention_consistency(content)
+│   │   │   ├── class InterventionAddEdit(BaseModel)
+│   │   │   ├── class InterventionAddApproval(BaseModel)
+│   │   │   ├── class InterventionAddRejection(BaseModel)
+│   │   │   ├── class InterventionAddOut(BaseModel)
+│   │   │   ├── class PlannedDevice(BaseModel)
+│   │   │   ├── class PlannedIntervention(BaseModel)
+│   │   │   ├── class PlannedSymptom(BaseModel)
+│   │   │   ├── class PlannedAction(BaseModel)
+│   │   │   ├── class PlannedDiagnosis(BaseModel)
+│   │   │   ├── class InsertionPreview(BaseModel)
+│   │   │   ├── class InterventionAddApprovalResult(BaseModel)
+│   │   ├── intervention_schema.py
+│   │   │   ├── class SymptomInput(BaseModel)
+│   │   │   ├── class InterventionCreate(BaseModel)
+│   │   │   ├── class SymptomOut(BaseModel)
+│   │   │   ├── class InterventionOut(BaseModel)
+│   │   │   ├── class ActionInput(BaseModel)
+│   │   │   ├── class ActionOut(BaseModel)
+│   │   ├── message_understanding_schema.py
+│   │   │   ├── class IdentifiedSymptom(BaseModel)
+│   │   │   ├── class UnderstoodMessage(BaseModel)
+│   │   │   │   ├── _empty_text_to_none(cls, value)
+│   │   │   │   ├── _missing_flag_to_false(cls, value)
+│   │   │   │   ├── _normalize_symptoms(cls, value)
+│   │   │   │   └── _reply_required_outside_diagnostic(self)
+│   │   ├── photo_schema.py
+│   │   │   ├── class PhotoAttachment(BaseModel)
+│   │   │   │   └── _check_image_content(cls, value)
+│   │   ├── solution_proposal_schema.py
+│   │   │   ├── class ProposalContextIds(BaseModel)
+│   │   │   ├── class ProposalProblem(BaseModel)
+│   │   │   ├── class PreviousResult(BaseModel)
+│   │   │   ├── class ProposalContextResponse(BaseModel)
+│   │   │   ├── class SolutionProposalCreate(BaseModel)
+│   │   │   ├── class SolutionProposalCreated(BaseModel)
+│   │   │   ├── class SolutionProposalOut(BaseModel)
+│   │   │   ├── class ProposalApproval(BaseModel)
+│   │   │   ├── class ProposalRejection(BaseModel)
+│   │   │   ├── class ProposalReviewResult(BaseModel)
+│   │   └── usual_problem_schema.py
+│   │       ├── class UsualProblemOut(BaseModel)
+│   │       ├── class UsualProblemReplyOut(UsualProblemOut)
+│   │       ├── class UsualProblemAdminIn(BaseModel)
+│   │       ├── class UsualProblemAdminOut(UsualProblemReplyOut)
 │   ├── services/
 │   │   ├── __init__.py
-│   │   ├── case_detail_service.py        (« détaille le cas N » : dossier complet du cas relu en base + 2e appel LLM)
+│   │   ├── case_detail_service.py
 │   │   │   ├── function develop_case(db, stored_result, technician_question, device_type, problem_text)
 │   │   │   ├── function build_case_dossier(db, stored_result, device_type)
 │   │   │   ├── function _root_cause_component(db, diagnosis)
@@ -100,52 +201,123 @@ atm-chatbot/
 │   │   ├── case_retrieval_service.py
 │   │   │   ├── function find_similar_cases(db, search_text, device_type, symptom_limit, case_limit, model_name, symptoms)
 │   │   │   ├── function build_case(db, intervention_id, device_type, matched_symptom_text, matched_intervention_symptom_id, matched_symptoms)
+│   │   │   ├── function _proposer_name(db, proposal_id)
 │   │   │   ├── function _group_matches_by_intervention(query_symptoms, rows_per_symptom)
 │   │   │   ├── function _case_rank_key(matched_symptoms)
-│   │   │   └── function _lookup_confidence(db, intervention, actions, device_type)
+│   │   │   ├── function _lookup_confidence(db, intervention, actions, device_type)
+│   │   │   └── function _catalog_symptom_id_solved_by(confirmed_action, intervention_symptoms)
 │   │   ├── catalog_service.py
-│   │   │   ├── function find_similar_actions(db, raw_text, limit)
+│   │   │   ├── function find_similar_actions(db, action_text, limit)
+│   │   │   ├── function rank_catalog_actions(db, action_texts, limit)
 │   │   │   ├── function create_action_in_catalog(db, canonical_text, component_id)
 │   │   │   └── function resolve_action_catalog_link(db, payload)
 │   │   ├── chat_orchestrator_service.py
 │   │   │   ├── function handle_chat_message(db, conversation_id, technician_id, message, device_type, photo)
-│   │   │   ├── function _route_message(db, context, message)
-│   │   │   ├── function _looks_like_symptom_description(message)
-│   │   │   ├── function _handle_symptom_search(db, context, message)
-│   │   │   ├── function _handle_result_detail_request(db, context, position, message)
+│   │   │   ├── function _route_message(db, context, message, understood)
+│   │   │   ├── function _is_case(resultat)
+│   │   │   ├── function _load_history(db, conversation_id)
+│   │   │   ├── function _describe_last_search(db, context)
+│   │   │   ├── function _handle_symptom_search(db, context, understood, message)
+│   │   │   ├── function _stat_result(position, solution)
 │   │   │   ├── function _infer_legacy_kind(resultat)
-│   │   │   ├── function _summarize_cases(raw_text, cases)
-│   │   │   └── function _format_case(case, index)
+│   │   │   ├── function _format_stat_result(resultat)
+│   │   │   ├── function _summarize_cases(problem_text, cases, device_type, symptoms)
+│   │   │   ├── function _format_case(case, index)
+│   │   │   ├── function _format_query_symptoms(symptoms)
+│   │   │   └── function _format_matched_symptoms(case)
 │   │   ├── context_service.py
 │   │   │   ├── function get_context(db, conversation_id)
 │   │   │   ├── function save_context(db, conversation_id, context)
-│   │   │   ├── function resolve_position_reference(message)
 │   │   │   ├── function select_result_by_position(context, position)
-│   │   │   └── function record_last_search(context, query, results)
+│   │   │   └── function record_last_search(context, query, results, symptoms)
 │   │   ├── conversation_service.py
 │   │   │   ├── function get_or_create_conversation(db, conversation_id, technician_id)
+│   │   │   ├── function mark_conversation_active(conversation)
 │   │   │   ├── function save_message(db, conversation_id, role, content)
 │   │   │   └── function get_recent_messages(db, conversation_id, limit)
 │   │   ├── embeddings_service.py
-│   │   │   ├── function _clean_text(raw_text)
-│   │   │   ├── function _get_encoder(model_name)
-│   │   │   ├── function _get_model_name(model_name)
+│   │   │   ├── class EmbeddingUnavailableError(ExternalServiceUnavailableError)
+│   │   │   ├── function _clean_text(input_text)
+│   │   │   ├── class EmbeddingProvider(ABC)
+│   │   │   │   ├── embed(self, cleaned_text, is_query)
+│   │   │   │   └── embed_batch(self, cleaned_texts, is_query)
+│   │   │   ├── class VoyageProvider(EmbeddingProvider)
+│   │   │   │   ├── __init__(self, api_key, model_name, output_dimension, timeout)
+│   │   │   │   ├── embed(self, cleaned_text, is_query)
+│   │   │   │   ├── embed_batch(self, cleaned_texts, is_query)
+│   │   │   │   └── _request_embeddings(self, texts, is_query)
+│   │   │   ├── function _resolve_provider(model_name_override)
 │   │   │   ├── function _validate_dimensions(vector, expected_dimensions)
-│   │   │   └── function generate_embedding(raw_text, model_name, dimensions, is_query)
+│   │   │   ├── function generate_embedding(input_text, model_name, dimensions, is_query)
+│   │   │   ├── function generate_embeddings_batch(input_texts, model_name, dimensions, is_query)
+│   │   │   └── function _cached_query_embedding(cleaned_text, model_name)
 │   │   ├── error_code_service.py
-│   │   │   └── function search_error_codes(db, query)
+│   │   │   ├── function search_error_codes(db, query)
+│   │   │   ├── function list_error_codes_with_reply(db, device_type)
+│   │   │   ├── function get_error_code_reply(db, error_code_id)
+│   │   │   ├── function list_all_error_codes(db)
+│   │   │   ├── function create_error_code(db, payload)
+│   │   │   ├── function update_error_code(db, error_code_id, payload)
+│   │   │   ├── function delete_error_code(db, error_code_id)
+│   │   │   ├── function _get_or_404(db, error_code_id)
+│   │   │   ├── function _ensure_code_available(db, code, ignored_id)
+│   │   │   └── function _apply(error_code, payload)
+│   │   ├── intervention_add_service.py
+│   │   │   ├── class InsertionPlan
+│   │   │   ├── class WrittenRows
+│   │   │   ├── function submit_intervention_add(db, submission)
+│   │   │   ├── function get_intervention_add_for_technician(db, intervention_add_id, technician_id)
+│   │   │   ├── function list_intervention_adds(db, status, technician_id, limit)
+│   │   │   ├── function get_intervention_add(db, intervention_add_id, lock)
+│   │   │   ├── function describe_intervention_add(db, intervention_add)
+│   │   │   ├── function update_intervention_add(db, intervention_add_id, edit)
+│   │   │   ├── function preview_intervention_add(db, intervention_add_id)
+│   │   │   ├── function approve_intervention_add(db, intervention_add_id, review)
+│   │   │   ├── function reject_intervention_add(db, intervention_add_id, review)
+│   │   │   ├── function _ensure_pending(intervention_add)
+│   │   │   ├── function _mark_reviewed(intervention_add, status, reviewed_by, admin_comment)
+│   │   │   ├── function build_insertion_plan(db, intervention_add)
+│   │   │   ├── function _plan_symptoms(db, content, device_type)
+│   │   │   ├── function _plan_actions(db, content)
+│   │   │   ├── function _write_plan(db, plan)
+│   │   │   ├── function _check_references(db, content)
+│   │   │   ├── function _resolve_submitted_device(db, submitted)
+│   │   │   ├── function _plan_device(db, content)
+│   │   │   ├── function _find_model_id(db, model_id, model_name)
+│   │   │   ├── function _find_existing_device(db, device, model_id)
+│   │   │   ├── function _existing_device_values(db, existing)
+│   │   │   ├── function _device_label(device)
+│   │   │   └── function _unique_texts(texts)
 │   │   ├── intervention_service.py
 │   │   │   ├── function create_intervention_with_symptoms(db, payload)
+│   │   │   ├── function embed_symptoms_and_match_catalog(db, symptom_texts, device_type)
 │   │   │   ├── function get_intervention_by_id(db, intervention_id)
 │   │   │   └── function add_action_to_intervention(db, intervention_id, payload)
 │   │   ├── llm_service.py
-│   │   │   ├── class LLMUnavailableError(Exception)
+│   │   │   ├── class LLMUnavailableError(ExternalServiceUnavailableError)
 │   │   │   ├── class LLMProvider(ABC)
+│   │   │   │   ├── generate_chat(self, system, messages, cache_history)
 │   │   │   │   └── generate(self, prompt)
+│   │   │   ├── class GeminiProvider(LLMProvider)
+│   │   │   │   ├── __init__(self, api_key, model, timeout)
+│   │   │   │   └── generate_chat(self, system, messages, cache_history)
+│   │   │   ├── class ClaudeProvider(LLMProvider)
+│   │   │   │   ├── __init__(self, api_key, model, max_tokens, timeout)
+│   │   │   │   ├── generate_chat(self, system, messages, cache_history)
+│   │   │   │   ├── _with_cache_markers(cls, system, messages)
+│   │   │   │   └── _trace_cache_usage(response)
 │   │   │   ├── function get_llm_provider()
 │   │   │   ├── function generate_reply(prompt)
-│   │   │   └── function summarize_solutions(raw_text, solutions)
-│   │   ├── photo_ocr_service.py          (photos du chat : TOUT est ici, interrupteur PHOTO_OCR_ENABLED)
+│   │   │   ├── function generate_chat_reply(system, messages, cache_history)
+│   │   │   ├── function _checked_reply(call)
+│   │   │   ├── function device_type_instruction(device_type)
+│   │   │   └── function summarize_solutions(problem_text, solutions, device_type)
+│   │   ├── message_understanding_service.py
+│   │   │   ├── function _build_turn_message(technician_message, device_type, search_results_text)
+│   │   │   ├── function _build_messages(history, turn_message)
+│   │   │   ├── function understand_message(technician_message, device_type, history, search_results_text, photo)
+│   │   │   └── function _parse_json_response(raw_response)
+│   │   ├── photo_ocr_service.py
 │   │   │   ├── function is_enabled()
 │   │   │   ├── function accept_photo(photo)
 │   │   │   ├── function attach_to_messages(messages, photo)
@@ -153,18 +325,64 @@ atm-chatbot/
 │   │   │   └── function add_reading_to_reply(reply, photo, understood)
 │   │   ├── retrieval_service.py
 │   │   │   ├── function cosine_similarity(left, right)
-│   │   │   ├── function _clean_search_text(raw_text)
+│   │   │   ├── function _clean_search_text(search_text)
 │   │   │   ├── function _clamp_limit(limit, default)
 │   │   │   ├── function _apply_relevance_threshold(candidates, threshold, method)
+│   │   │   ├── function _model_filter_sql(model_name)
 │   │   │   ├── function fetch_similar_symptoms(db, search_text, device_type, limit, model_name, query_vector)
 │   │   │   ├── function fetch_similar_symptoms_per_symptom(db, symptom_texts, device_type, limit, model_name)
-│   │   │   ├── function find_best_catalog_match(db, raw_text, device_type)
+│   │   │   ├── function find_best_catalog_match(db, symptom_text, device_type, query_vector)
 │   │   │   ├── function store_symptom_embedding(db, intervention_symptom_id, vector)
 │   │   │   └── function find_ranked_solutions(db, search_text, device_type, symptom_limit, solution_limit, model_name, symptom_texts)
-│   │   └── stats_service.py
-│   │       └── function recompute_stats(db)
+│   │   ├── solution_proposal_service.py
+│   │   │   ├── class ActiveProblem
+│   │   │   ├── function get_proposal_context(db, conversation_id, technician_id)
+│   │   │   ├── function create_proposal(db, conversation_id, payload)
+│   │   │   ├── function load_conversation_for_technician(db, conversation_id, technician_id)
+│   │   │   ├── function list_proposals(db, status, limit)
+│   │   │   ├── function get_proposal(db, proposal_id)
+│   │   │   ├── function describe_proposal(db, proposal)
+│   │   │   ├── function approve_proposal(db, proposal_id, review)
+│   │   │   ├── function _attach_to_problem(db, proposal, action_id)
+│   │   │   ├── function reject_proposal(db, proposal_id, review)
+│   │   │   ├── function _ensure_pending(proposal)
+│   │   │   ├── function _mark_reviewed(proposal, status, reviewed_by, admin_comment)
+│   │   │   ├── function _resolve_active_problem(db, context)
+│   │   │   ├── function _pick_reference_result(context, results)
+│   │   │   ├── function _result_kind(result)
+│   │   │   ├── function _find_matched_symptom(intervention, result)
+│   │   │   ├── function _describe_result(db, result)
+│   │   │   └── function _build_snapshot(context, active, recent_message_ids)
+│   │   ├── stats_service.py
+│   │   │   ├── function recompute_stats(db)
+│   │   │   └── function recompute_stats_safely(db)
+│   │   ├── technical_reference_resolver_service.py
+│   │   │   ├── function resolve_technical_references(db, device_type_text, model_name_text, error_code_text)
+│   │   │   ├── function _resolve_model_id(db, model_name_text)
+│   │   │   └── function _resolve_error_code_id(db, error_code_text)
+│   │   ├── text_validation_service.py
+│   │   │   ├── class TextValidationResult
+│   │   │   ├── function clean_message(text)
+│   │   │   ├── function validate_and_clean_message(text)
+│   │   │   ├── function _find_rejection_reason(text)
+│   │   │   ├── function _is_repeated_pattern(text)
+│   │   │   └── function _is_keyboard_smash(text)
+│   │   └── usual_problem_service.py
+│   │       ├── function list_usual_problems(db, device_type)
+│   │       ├── function get_usual_problem(db, usual_problem_id)
+│   │       ├── function list_all_usual_problems(db)
+│   │       ├── function create_usual_problem(db, payload)
+│   │       ├── function update_usual_problem(db, usual_problem_id, payload)
+│   │       ├── function delete_usual_problem(db, usual_problem_id)
+│   │       └── function _apply(db, usual_problem, payload)
 │   ├── __init__.py
 │   └── main.py
+│       ├── function _reference_introuvable(request, error)
+│       ├── function _reference_invalide(request, error)
+│       ├── function _acces_refuse(request, error)
+│       ├── function _etat_incompatible(request, error)
+│       ├── function _service_externe_indisponible(request, error)
+│       ├── function _erreur_base_de_donnees(request, error)
 │       └── function verifier_sante()
 ├── db/
 │   ├── migrations/
@@ -175,22 +393,95 @@ atm-chatbot/
 │   │   ├── 0005_action_targets_symptom.sql
 │   │   ├── 0006_conversation_context.sql
 │   │   ├── 0007_error_codes.sql
-│   │   ├── …
+│   │   ├── 0008_embedding_dimension_change.sql
+│   │   ├── 0009_solution_proposal.sql
+│   │   ├── 0010_intervention_action_source_proposal.sql
+│   │   ├── 0011_quick_replies.sql
+│   │   ├── 0012_intervention_add.sql
 │   │   └── 0013_diagnosis_root_cause_text.sql
 │   └── seed/
 │       └── seed_demo_data.py
 │           ├── function _to_psycopg2_dsn(sqlalchemy_url)
 │           └── function run_seed()
+├── docs/
+│   ├── diagrammes/
+│   │   ├── png/
+│   │   │   ├── 01-avant-apres.png
+│   │   │   ├── 02-cas-utilisation.png
+│   │   │   ├── 03-architecture.png
+│   │   │   ├── 04-parcours-message.png
+│   │   │   ├── 05-similarite.png
+│   │   │   ├── 06-fiabilite.png
+│   │   │   ├── 07-classes-interventions.png
+│   │   │   ├── 08-classes-referentiels.png
+│   │   │   ├── 09-sequence-diagnostic.png
+│   │   │   ├── 10-boucle-apprentissage.png
+│   │   │   ├── 11-codes-erreur.png
+│   │   │   ├── 12-flux-donnees-vue-ensemble.png
+│   │   │   ├── 13-sequence-message-detaillee.png
+│   │   │   ├── 14-contenu-appels-claude.png
+│   │   │   ├── 15-memoire-et-vecteurs.png
+│   │   │   ├── 16-tables-uml-diagnostic.png
+│   │   │   ├── 17-tables-par-etape-diagnostic.png
+│   │   │   ├── 18-db-conversation.png
+│   │   │   ├── 19-db-recherche-solution.png
+│   │   │   ├── 20-db-tables-non-utilisees.png
+│   │   │   ├── 21-db-exemple-contenu-initial.png
+│   │   │   ├── 22-db-exemple-comprehension.png
+│   │   │   ├── 23-db-exemple-recherche.png
+│   │   │   └── 24-db-exemple-reponse.png
+│   │   ├── 01-avant-apres.svg
+│   │   ├── 02-cas-utilisation.svg
+│   │   ├── 03-architecture.svg
+│   │   ├── 04-parcours-message.svg
+│   │   ├── 05-similarite.svg
+│   │   ├── 06-fiabilite.svg
+│   │   ├── 07-classes-interventions.svg
+│   │   ├── 08-classes-referentiels.svg
+│   │   ├── 09-sequence-diagnostic.svg
+│   │   ├── 10-boucle-apprentissage.svg
+│   │   ├── 11-codes-erreur.svg
+│   │   ├── 12-flux-donnees-vue-ensemble.svg
+│   │   ├── 13-sequence-message-detaillee.svg
+│   │   ├── 14-contenu-appels-claude.svg
+│   │   ├── 15-memoire-et-vecteurs.svg
+│   │   ├── 16-tables-uml-diagnostic.svg
+│   │   ├── 17-tables-par-etape-diagnostic.svg
+│   │   ├── 18-db-conversation.svg
+│   │   ├── 19-db-recherche-solution.svg
+│   │   ├── 20-db-tables-non-utilisees.svg
+│   │   ├── 21-db-exemple-contenu-initial.svg
+│   │   ├── 22-db-exemple-comprehension.svg
+│   │   ├── 23-db-exemple-recherche.svg
+│   │   └── 24-db-exemple-reponse.svg
+│   ├── ATM-BOT_Dossier_technique.docx
+│   ├── ATM-BOT_Dossier_technique.pdf
+│   ├── ATM-BOT_presentation (4).pptx
+│   ├── ATM-BOT_presentation.pptx
+│   ├── dossier-etude-atm-chatbot.html
+│   ├── flux-donnees-db-exemple.md
+│   ├── to-png.sh
+│   └── visuel_frontend.png
 ├── frontend/
+│   ├── servers/
 │   ├── .dockerignore
 │   ├── docker-compose.yml
 │   ├── Dockerfile
+│   ├── requirements.txt
 │   └── server.py
+│       ├── function _voice_display_name(short_name)
+│       ├── function list_tts_voices()
+│       ├── async function _synthesize(text, voice_id)
+│       ├── function synthesize_speech(text, voice_id)
+│       ├── function build_backend_path(request_path)
 │       ├── class FrontendRequestHandler(SimpleHTTPRequestHandler)
 │       │   ├── __init__(self, *args, **kwargs)
+│       │   ├── end_headers(self)
 │       │   ├── do_GET(self)
 │       │   ├── do_HEAD(self)
 │       │   ├── do_POST(self)
+│       │   ├── _handle_tts_voices(self)
+│       │   ├── _handle_tts(self)
 │       │   ├── do_PUT(self)
 │       │   ├── do_PATCH(self)
 │       │   ├── do_DELETE(self)
@@ -198,11 +489,16 @@ atm-chatbot/
 │       │   ├── _proxy_api_request(self)
 │       │   ├── _send_api_response(self, status_code, headers, response_body)
 │       │   └── log_message(self, format_string, *args)
+├── share/
+│   ├── envoyer.ps1
+│   ├── preparer-paquet.sh
+│   ├── recevoir.ps1
+│   └── recevoir.sh
 ├── .dockerignore
 ├── .env
+├── .gitattributes
 ├── .gitignore
 ├── architecture.tree
-├── archive.zip
 ├── COMPREHENSION.md
 ├── docker-compose.yml
 ├── Dockerfile
