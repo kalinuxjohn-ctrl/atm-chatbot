@@ -504,10 +504,16 @@ atm-chatbot/
 │   │   │   ├── shared/
 │   │   │   │   ├── css/
 │   │   │   │   │   └── base.css
+│   │   │   │   ├── fonts/
+│   │   │   │   │   ├── OFL.txt
+│   │   │   │   │   └── plus-jakarta-sans-latin-variable.woff2
 │   │   │   │   └── js/
 │   │   │   │       ├── apiClient.js
+│   │   │   │       ├── applySavedTheme.js
 │   │   │   │       ├── connectedPageShell.js
 │   │   │   │       ├── domHelpers.js
+│   │   │   │       ├── homePage.js
+│   │   │   │       ├── icons.js
 │   │   │   │       └── incomingCallListener.js
 │   │   │   └── home.html
 │   │   ├── snippets/
@@ -515,6 +521,7 @@ atm-chatbot/
 │   │   │   └── security-headers.conf
 │   │   ├── Dockerfile
 │   │   └── nginx.conf
+│   ├── node_modules/
 │   ├── src/
 │   │   ├── controllers/
 │   │   │   ├── auth/
@@ -603,6 +610,7 @@ atm-chatbot/
 │   │   │   │   └── auth.css
 │   │   │   ├── js/
 │   │   │   │   ├── accountsPage.js
+│   │   │   │   ├── authenticationPageIcons.js
 │   │   │   │   ├── loginPage.js
 │   │   │   │   └── registerPage.js
 │   │   │   ├── accounts.html

@@ -138,6 +138,7 @@ navigateur ──► main-app-gateway (nginx, seul port publié)
 main-app/
 ├── Dockerfile  .dockerignore  .gitignore  .gitattributes  eslint.config.js  package.json  package-lock.json
 ├── gateway/        nginx.conf, snippets/ (security-headers.conf, proxy-common.conf), html/ (accueil, shared/, page indisponible)
+│                   html/shared/ : base.css, fonts/, js/ (connectedPageShell, icons, domHelpers, apiClient, applySavedTheme…)
 ├── web/            pages de chaque fonctionnalité : auth/, map/, messaging/, calls/ (HTML/CSS/JS natif)
 ├── src/
 │   ├── entrypoints/   auth.js, map.js, messaging.js, calls.js : un par conteneur
@@ -178,6 +179,22 @@ Règles :
   Les réponses ont toujours la forme `{ error: { code, message } }`, sans pile d'appels.
 - **Traces** : une ligne JSON par événement sur la sortie standard (`core/tracing.js`). Jamais de mot de passe, de token, de cookie ni de contenu de message.
 
+### Interface
+
+- **Même identité visuelle que le chatbot** : accent vert, cartes vitrées, police Plus Jakarta Sans (servie en local, licence OFL dans `gateway/html/shared/fonts/`).
+- **Thème clair / sombre** :
+  - bouton soleil | lune dans le rail ; le choix est mémorisé dans le navigateur, sinon le réglage du système s'applique ;
+  - `applySavedTheme.js` pose `<html data-theme>` avant l'affichage, pour éviter un flash clair ;
+  - toutes les couleurs sont des jetons en tête de `base.css` ;
+  - en sombre, le fond de carte est assombri par un filtre CSS, car les tuiles n'existent qu'en clair.
+- **Navigation** (`connectedPageShell.js`) :
+  - rail à gauche sur ordinateur ;
+  - icônes seules sur tablette ;
+  - onglets en bas sur mobile, à portée de pouce.
+- **Icônes** (`icons.js`) : du SVG construit avec `createElementNS`. Il n'y a ni fichier image ni `innerHTML`, donc rien qui gêne la CSP. Dans le HTML, `<span data-icon="map">` est remplacé au chargement.
+- **Avatars** (`domHelpers.createAvatar`) : les initiales sur une couleur tirée du nom. La même personne garde la même couleur partout.
+- **Les textes saisis par les utilisateurs restent insérés avec `textContent`.** Les épingles de la carte sont des éléments DOM passés à `L.divIcon`, jamais du HTML en texte.
+
 ---
 
 ## 5. Authentification
@@ -212,6 +229,11 @@ Règles :
   - pas de récupération par email : un admin réinitialise le mot de passe, ce qui ferme toutes les sessions du compte ;
   - désactiver un compte coupe ses sessions immédiatement.
 - **Premier admin** : `node src/jobs/createAdmin.js`, en saisie interactive. Aucun mot de passe par défaut n'existe dans le code.
+- **Connexion désactivée, pour le développement seulement** : `MAIN_APP_DEVELOPMENT_AUTO_LOGIN_USERNAME=<nom d'un compte existant>`.
+  - Une requête sans session valide agit alors en tant que ce compte, dans tous les conteneurs (API et WebSocket des appels). Une vraie session reste prioritaire : on peut encore tester à deux comptes.
+  - Le compte doit exister et être actif ; sinon, rien ne change (401).
+  - **Refusé au démarrage si `MAIN_APP_ENVIRONMENT=production`** : le conteneur s'arrête avec un message explicite.
+  - Exemple `.env` de poste de développement : `MAIN_APP_ENVIRONMENT=development`, `MAIN_APP_COOKIE_SECURE=false`, `MAIN_APP_DEVELOPMENT_AUTO_LOGIN_USERNAME=alan_admin`.
 
 ---
 
