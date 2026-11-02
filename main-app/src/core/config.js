@@ -41,6 +41,9 @@ const sharedConfigurationSchema = z.object({
   MAIN_APP_DATABASE_PASSWORD: z.string().min(1),
   MAIN_APP_COOKIE_SECURE: booleanFromText.default(true),
   MAIN_APP_SESSION_DURATION_HOURS: positiveIntegerFromText.max(24 * 30).default(12),
+  // DÉVELOPPEMENT SEULEMENT : sans session valide, chaque requête est traitée
+  // comme venant de ce compte (connexion désactivée). Refusé en production.
+  MAIN_APP_DEVELOPMENT_AUTO_LOGIN_USERNAME: z.string().min(1).optional(),
 });
 
 /** Variables propres à chaque fonctionnalité, en plus des variables communes. */
@@ -123,6 +126,10 @@ export function loadConfiguration(featureName) {
   // Un cookie non Secure circule en clair sur HTTP : toléré seulement hors production.
   if (environment.MAIN_APP_ENVIRONMENT === "production" && !environment.MAIN_APP_COOKIE_SECURE) {
     throw new Error("Configuration invalide : MAIN_APP_COOKIE_SECURE=false est interdit en production.");
+  }
+  // Connexion automatique = n'importe qui devient ce compte : jamais en production.
+  if (environment.MAIN_APP_ENVIRONMENT === "production" && environment.MAIN_APP_DEVELOPMENT_AUTO_LOGIN_USERNAME) {
+    throw new Error("Configuration invalide : MAIN_APP_DEVELOPMENT_AUTO_LOGIN_USERNAME est interdit en production.");
   }
 
   const configuration = Object.freeze({ featureName, ...environment });

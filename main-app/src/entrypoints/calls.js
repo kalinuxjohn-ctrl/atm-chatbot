@@ -6,7 +6,7 @@
 
 import { loadConfiguration } from "../core/config.js";
 import { createFeatureApp } from "../core/createFeatureApp.js";
-import { findAuthenticatedUserBySessionToken } from "../core/sessionStore.js";
+import { findActiveAccountForDevelopmentAutoLogin, findAuthenticatedUserBySessionToken } from "../core/sessionStore.js";
 import { startFeatureServer } from "../core/startFeatureServer.js";
 import { attachCallSignalingWebSocket } from "../controllers/calls/callSignalingSocketController.js";
 import { findCallableAccount, insertCallLog } from "../models/calls/callModel.js";
@@ -18,12 +18,27 @@ const coordinator = createCallSignalingCoordinator({ findCallableAccount, record
 const featureApp = createFeatureApp({ featureName: "calls", configuration, apiRouter: createCallRouter() });
 featureApp.locals.callSignalingCoordinator = coordinator;
 
+// Même règle que requireAuthenticatedUser : la session d'abord, puis, en
+// développement seulement, le compte de connexion automatique.
+async function findWebSocketUser(sessionToken) {
+  const sessionUser = await findAuthenticatedUserBySessionToken(sessionToken);
+  if (sessionUser || !configuration.MAIN_APP_DEVELOPMENT_AUTO_LOGIN_USERNAME) {
+    return sessionUser;
+  }
+  return findActiveAccountForDevelopmentAutoLogin(configuration.MAIN_APP_DEVELOPMENT_AUTO_LOGIN_USERNAME);
+}
+
 let signalingWebSocketServer = null;
 startFeatureServer({
   featureApp,
   configuration,
   onServerCreated: (httpServer) => {
-    signalingWebSocketServer = attachCallSignalingWebSocket({ httpServer, configuration, coordinator, findAuthenticatedUserBySessionToken });
+    signalingWebSocketServer = attachCallSignalingWebSocket({
+      httpServer,
+      configuration,
+      coordinator,
+      findAuthenticatedUserBySessionToken: findWebSocketUser,
+    });
   },
   // Arrêt : appels terminés et journalisés, puis WebSockets fermés (sinon le serveur HTTP attendrait leur fin).
   onShutdown: () => {

@@ -65,6 +65,20 @@ export async function findAuthenticatedUserBySessionToken(sessionToken) {
   return { technicianId: sessionUser.technician_id, username: sessionUser.username, role: sessionUser.role };
 }
 
+/**
+ * DÉVELOPPEMENT SEULEMENT (MAIN_APP_DEVELOPMENT_AUTO_LOGIN_USERNAME) : le compte
+ * actif à utiliser quand la connexion est désactivée, ou null s'il n'existe pas.
+ */
+export async function findActiveAccountForDevelopmentAutoLogin(username) {
+  const [account] = await queryDatabase(
+    `SELECT technician_id, username, role
+       FROM main_app.accounts
+      WHERE username = $1 AND is_active`,
+    [username],
+  );
+  return account ? { technicianId: account.technician_id, username: account.username, role: account.role } : null;
+}
+
 export async function deleteSessionByToken(sessionToken) {
   if (typeof sessionToken !== "string") {
     return;

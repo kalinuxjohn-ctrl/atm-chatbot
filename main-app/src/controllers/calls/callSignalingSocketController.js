@@ -57,7 +57,8 @@ function createMessageRateLimiter() {
 /**
  * Branche le WebSocket sur le serveur HTTP du conteneur.
  * `findAuthenticatedUserBySessionToken` est injecté (la vraie fonction lit
- * la base ; les tests en passent une fausse).
+ * la base ; les tests en passent une fausse). Il reçoit le jeton du cookie,
+ * éventuellement absent, et renvoie l'utilisateur ou null.
  */
 export function attachCallSignalingWebSocket({ httpServer, configuration, coordinator, findAuthenticatedUserBySessionToken }) {
   const webSocketServer = new WebSocketServer({ noServer: true, maxPayload: MAXIMUM_MESSAGE_BYTES });
@@ -78,7 +79,7 @@ export function attachCallSignalingWebSocket({ httpServer, configuration, coordi
     const sessionToken = readCookieValue(request.headers.cookie, sessionCookieName);
     let authenticatedUser = null;
     try {
-      authenticatedUser = sessionToken ? await findAuthenticatedUserBySessionToken(sessionToken) : null;
+      authenticatedUser = await findAuthenticatedUserBySessionToken(sessionToken);
     } catch {
       rejectUpgrade(socket, 503, "Service Unavailable");
       return;
