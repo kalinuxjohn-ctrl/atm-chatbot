@@ -12,7 +12,8 @@
 
 import { requestJson } from "/shared/js/apiClient.js";
 import "/shared/js/connectedPageShell.js";
-import { createButton, createElementWithText, formatDateTime } from "/shared/js/domHelpers.js";
+import { createAvatar, createButton, createElementWithText, formatDateTime } from "/shared/js/domHelpers.js";
+import { createIcon } from "/shared/js/icons.js";
 
 const END_REASON_LABELS = {
   declined: "Appel refusé.",
@@ -25,8 +26,10 @@ const END_REASON_LABELS = {
   server_shutdown: "Service d'appel redémarré.",
 };
 const CALL_STATUS_LABELS = { missed: "manqué", answered: "décroché", declined: "refusé", failed: "échoué" };
+const HISTORY_RELOAD_DELAY_AFTER_CALL_MILLISECONDS = 1_000;
 
 const callPanel = document.querySelector("[data-call-panel]");
+const callPanelAvatar = document.querySelector("[data-call-panel-avatar]");
 const callPanelTitle = document.querySelector("[data-call-panel-title]");
 const callPanelStatus = document.querySelector("[data-call-panel-status]");
 const acceptButton = document.querySelector("[data-accept-call]");
@@ -38,6 +41,7 @@ const callsError = document.querySelector("[data-calls-error]");
 const signalingStatus = document.querySelector("[data-signaling-status]");
 const contactList = document.querySelector("[data-call-contact-list]");
 const historyList = document.querySelector("[data-call-history-list]");
+const onlineCountBadge = document.querySelector("[data-online-count]");
 
 let iceServers = [];
 let signalingSocket = null;
@@ -60,6 +64,9 @@ function sendSignalingMessage(message) {
 
 function showCallPanel({ title, status, buttons }) {
   callPanel.hidden = false;
+  if (currentCall) {
+    callPanelAvatar.replaceChildren(createAvatar(currentCall.otherUsername, { sizeClassName: "avatar-large" }));
+  }
   callPanelTitle.textContent = title;
   callPanelStatus.textContent = status;
   acceptButton.hidden = !buttons.includes("accept");
@@ -220,7 +227,7 @@ const signalingMessageHandlers = {
       return;
     }
     currentCall = { callId, role: "callee", otherUsername: caller.username, microphoneStream: null, peerConnection: null, pendingIceCandidates: [] };
-    showCallPanel({ title: `Appel de ${caller.username}`, status: "📞 Appel entrant…", buttons: ["accept", "decline"] });
+    showCallPanel({ title: `Appel de ${caller.username}`, status: "Appel entrant…", buttons: ["accept", "decline"] });
   },
 
   "call.accepted": async ({ callId }) => {
@@ -273,7 +280,9 @@ const signalingMessageHandlers = {
       releaseCallResources();
       hideCallPanelSoon(END_REASON_LABELS[reason] ?? "Appel terminé.");
     }
-    reloadHistory();
+    // Le serveur prévient d'abord les deux côtés (pour couper le son sans attendre),
+    // puis écrit le journal : relu tout de suite, l'historique n'aurait pas encore l'appel.
+    setTimeout(reloadHistory, HISTORY_RELOAD_DELAY_AFTER_CALL_MILLISECONDS);
   },
 
   error: ({ message }) => {
@@ -317,23 +326,41 @@ function connectToSignalingServer() {
 async function reloadContacts() {
   try {
     const { contacts } = await requestJson("/api/calls/contacts");
+    // Collègues connectés en premier : ce sont les seuls qu'on peut appeler.
+    const sortedContacts = [...contacts].sort((first, second) => Number(second.isOnline) - Number(first.isOnline));
     contactList.replaceChildren(
-      ...contacts.map((contact) => {
-        const listItem = createElementWithText("li", "call-contact-item");
-        const presenceIndicator = createElementWithText("span", contact.isOnline ? "presence-indicator presence-indicator-online" : "presence-indicator");
-        presenceIndicator.title = contact.isOnline ? "Connecté" : "Hors ligne";
-        const callButton = createButton("Appeler", { onClick: () => callColleague(contact) });
+      ...sortedContacts.map((contact) => {
+        const listItem = createElementWithText("li", contact.isOnline ? "call-contact-item call-contact-item-online" : "call-contact-item");
+        const contactText = createElementWithText("span", "call-contact-text");
+        contactText.append(
+          createElementWithText("span", "call-contact-name", contact.username),
+          createElementWithText("span", "call-contact-presence", contact.isOnline ? "En ligne" : "Hors ligne"),
+        );
+        const callButton = createButton("Appeler", {
+          className: contact.isOnline ? "button button-small" : "button button-secondary button-small",
+          onClick: () => callColleague(contact),
+        });
+        callButton.prepend(createIcon("phone"));
         callButton.disabled = !contact.isOnline;
-        listItem.append(presenceIndicator, createElementWithText("span", "call-contact-name", contact.username), callButton);
+        listItem.append(createAvatar(contact.username, { isOnline: contact.isOnline }), contactText, callButton);
         return listItem;
       }),
     );
+    const onlineContactCount = contacts.filter((contact) => contact.isOnline).length;
+    onlineCountBadge.textContent = `${onlineContactCount} en ligne`;
+    onlineCountBadge.hidden = contacts.length === 0;
     if (contacts.length === 0) {
-      contactList.replaceChildren(createElementWithText("li", "muted", "Aucun autre compte pour le moment."));
+      contactList.replaceChildren(createEmptyState("users", "Aucun autre compte pour le moment."));
     }
   } catch (error) {
     showError(error.message);
   }
+}
+
+function createEmptyState(iconName, text) {
+  const emptyState = createElementWithText("li", "empty-state");
+  emptyState.append(createIcon(iconName), createElementWithText("span", "", text));
+  return emptyState;
 }
 
 function formatCallDuration(call) {
@@ -349,21 +376,26 @@ async function reloadHistory() {
     const { calls } = await requestJson("/api/calls/history");
     historyList.replaceChildren(
       ...calls.map((call) => {
-        const listItem = createElementWithText("li", "call-history-item");
+        const listItem = createElementWithText("li", `call-history-item call-history-status-${call.status}`);
         const otherUsername = call.otherParticipant?.username ?? "ancien utilisateur";
-        listItem.append(
-          createElementWithText("span", "call-history-direction", call.isOutgoing ? "↗" : "↙"),
+        const directionIcon = createElementWithText("span", "call-history-direction");
+        directionIcon.title = call.isOutgoing ? "Appel émis" : "Appel reçu";
+        directionIcon.append(createIcon(call.isOutgoing ? "phoneOutgoing" : "phoneIncoming"));
+        const historyText = createElementWithText("span", "call-history-text");
+        historyText.append(
+          createElementWithText("span", "call-history-name", otherUsername),
           createElementWithText(
             "span",
-            `call-history-text call-history-status-${call.status}`,
-            `${otherUsername} · ${CALL_STATUS_LABELS[call.status] ?? call.status} · ${formatDateTime(call.startedAt)}${formatCallDuration(call)}`,
+            "call-history-details",
+            `${call.isOutgoing ? "Émis" : "Reçu"} · ${CALL_STATUS_LABELS[call.status] ?? call.status} · ${formatDateTime(call.startedAt)}${formatCallDuration(call)}`,
           ),
         );
+        listItem.append(directionIcon, historyText);
         return listItem;
       }),
     );
     if (calls.length === 0) {
-      historyList.replaceChildren(createElementWithText("li", "muted", "Aucun appel pour le moment."));
+      historyList.replaceChildren(createEmptyState("phone", "Aucun appel pour le moment."));
     }
   } catch (error) {
     showError(error.message);

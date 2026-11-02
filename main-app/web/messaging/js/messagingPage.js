@@ -11,7 +11,7 @@
 
 import { requestJson } from "/shared/js/apiClient.js";
 import "/shared/js/connectedPageShell.js";
-import { createElementWithText, formatDateTime } from "/shared/js/domHelpers.js";
+import { createAvatar, createElementWithText, formatDayLabel, formatTime } from "/shared/js/domHelpers.js";
 
 const OPEN_CONVERSATION_POLL_MILLISECONDS = 3_000;
 const CONVERSATION_LIST_POLL_MILLISECONDS = 10_000;
@@ -24,7 +24,10 @@ const conversationList = document.querySelector("[data-conversation-list]");
 const conversationListEmpty = document.querySelector("[data-conversation-list-empty]");
 const contactSearchForm = document.querySelector("[data-contact-search-form]");
 const contactResults = document.querySelector("[data-contact-results]");
+const threadHeader = document.querySelector("[data-thread-header]");
+const threadAvatar = document.querySelector("[data-thread-avatar]");
 const threadTitle = document.querySelector("[data-thread-title]");
+const threadEmptyState = document.querySelector("[data-thread-empty-state]");
 const messageList = document.querySelector("[data-message-list]");
 const threadError = document.querySelector("[data-thread-error]");
 const messageComposer = document.querySelector("[data-message-composer]");
@@ -32,7 +35,8 @@ const imageInput = document.querySelector("[data-image-input]");
 const recordVoiceButton = document.querySelector("[data-record-voice]");
 const recordingIndicator = document.querySelector("[data-recording-indicator]");
 
-const openConversation = { conversationId: null, lastDisplayedMessageId: 0, isPolling: false };
+/** Conversation affichée. lastDisplayedDay : jour du dernier message, pour placer les séparateurs « Aujourd'hui », « Hier »… */
+const openConversation = { conversationId: null, lastDisplayedMessageId: 0, lastDisplayedDay: null, isPolling: false };
 let voiceRecording = null;
 let lastLoadedConversations = [];
 let pollingErrorIsShown = false;
@@ -81,31 +85,50 @@ function describeLastMessage(lastMessage) {
   }
   const prefix = lastMessage.isOwnMessage ? "Vous : " : "";
   if (lastMessage.kind === "image") {
-    return `${prefix}📷 Photo`;
+    return `${prefix}Photo`;
   }
   if (lastMessage.kind === "audio") {
-    return `${prefix}🎙️ Message vocal`;
+    return `${prefix}Message vocal`;
   }
   return `${prefix}${lastMessage.textPreview}`;
 }
 
+/** Heure du dernier message si c'est aujourd'hui, sinon « Hier » ou la date courte. */
+function formatConversationTime(isoDateText) {
+  if (!isoDateText) {
+    return "";
+  }
+  const dayLabel = formatDayLabel(isoDateText);
+  if (dayLabel === "Aujourd'hui") {
+    return formatTime(isoDateText);
+  }
+  return dayLabel === "Hier" ? dayLabel : new Date(isoDateText).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
+
 function createConversationListItem(conversation) {
   const listItem = document.createElement("li");
-  const openButton = createElementWithText("button", "conversation-list-item");
+  const hasUnreadMessages = conversation.unreadMessageCount > 0 && conversation.id !== openConversation.conversationId;
+  const openButton = createElementWithText("button", hasUnreadMessages ? "conversation-list-item conversation-list-item-unread" : "conversation-list-item");
   openButton.type = "button";
   if (conversation.id === openConversation.conversationId) {
     openButton.setAttribute("aria-current", "true");
   }
   const otherUsername = conversation.otherParticipant?.username ?? "Ancien utilisateur";
-  const textBlock = createElementWithText("span", "conversation-list-item-text");
-  textBlock.append(
+  const topLine = createElementWithText("span", "conversation-list-item-top");
+  topLine.append(
     createElementWithText("span", "conversation-list-item-name", otherUsername),
-    createElementWithText("span", "conversation-list-item-preview", describeLastMessage(conversation.lastMessage)),
+    createElementWithText("span", "conversation-list-item-time", formatConversationTime(conversation.lastMessageAt)),
   );
-  openButton.append(textBlock);
-  if (conversation.unreadMessageCount > 0 && conversation.id !== openConversation.conversationId) {
-    openButton.append(createElementWithText("span", "unread-badge", String(conversation.unreadMessageCount)));
+  const bottomLine = createElementWithText("span", "conversation-list-item-bottom");
+  bottomLine.append(createElementWithText("span", "conversation-list-item-preview", describeLastMessage(conversation.lastMessage)));
+  if (hasUnreadMessages) {
+    const unreadBadge = createElementWithText("span", "counter-badge", String(conversation.unreadMessageCount));
+    unreadBadge.setAttribute("aria-label", `${conversation.unreadMessageCount} non lu(s)`);
+    bottomLine.append(unreadBadge);
   }
+  const textBlock = createElementWithText("span", "conversation-list-item-text");
+  textBlock.append(topLine, bottomLine);
+  openButton.append(createAvatar(otherUsername), textBlock);
   openButton.addEventListener("click", () => openConversationThread(conversation.id, otherUsername));
   listItem.append(openButton);
   return listItem;
@@ -134,8 +157,9 @@ async function searchContacts() {
     contactResults.replaceChildren(
       ...contacts.map((contact) => {
         const listItem = document.createElement("li");
-        const startButton = createElementWithText("button", "contact-result-item", contact.username);
+        const startButton = createElementWithText("button", "contact-result-item");
         startButton.type = "button";
+        startButton.append(createAvatar(contact.username, { sizeClassName: "avatar-small" }), createElementWithText("span", "", contact.username));
         startButton.addEventListener("click", () => startConversationWith(contact));
         listItem.append(startButton);
         return listItem;
@@ -170,7 +194,11 @@ async function startConversationWith(contact) {
 async function openConversationThread(conversationId, otherUsername) {
   openConversation.conversationId = conversationId;
   openConversation.lastDisplayedMessageId = 0;
+  openConversation.lastDisplayedDay = null;
   threadTitle.textContent = otherUsername;
+  threadAvatar.replaceChildren(createAvatar(otherUsername));
+  threadHeader.hidden = false;
+  threadEmptyState.hidden = true;
   messageList.replaceChildren();
   showThreadError("");
   messageComposer.hidden = false;
@@ -209,7 +237,14 @@ function appendMessages(messages) {
     return;
   }
   const wasScrolledToBottom = messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight < 60;
-  messageList.append(...newMessages.map(createMessageBubble));
+  for (const message of newMessages) {
+    const messageDay = new Date(message.createdAt).toDateString();
+    if (messageDay !== openConversation.lastDisplayedDay) {
+      messageList.append(createElementWithText("li", "message-day-separator", formatDayLabel(message.createdAt)));
+      openConversation.lastDisplayedDay = messageDay;
+    }
+    messageList.append(createMessageBubble(message));
+  }
   openConversation.lastDisplayedMessageId = newMessages.at(-1).id;
   if (wasScrolledToBottom || newMessages.some((message) => message.isOwnMessage)) {
     messageList.scrollTop = messageList.scrollHeight;
@@ -242,8 +277,10 @@ function createMessageBubble(message) {
   if (message.text) {
     bubble.append(createElementWithText("p", "message-text", message.text));
   }
-  const authorLabel = message.isOwnMessage ? "Vous" : message.sender.username;
-  bubble.append(createElementWithText("span", "message-meta", `${authorLabel} · ${formatDateTime(message.createdAt)}`));
+  // Conversation à deux : le côté de la bulle dit déjà qui écrit, l'heure suffit.
+  const messageTime = createElementWithText("time", "message-meta", formatTime(message.createdAt));
+  messageTime.dateTime = message.createdAt;
+  bubble.append(messageTime);
   return bubble;
 }
 
@@ -261,6 +298,7 @@ async function sendTextMessage() {
       body: { text },
     });
     textArea.value = "";
+    fitComposerToText();
     appendMessages([message]);
     reloadConversationList(); // aperçu du dernier message à jour sans attendre le prochain cycle
   } catch (error) {
@@ -282,6 +320,14 @@ async function sendAttachment(fileOrBlob, fileName) {
     showThreadError(error.message);
   }
 }
+
+/** La zone de saisie grandit avec le texte (jusqu'au max-height du CSS), puis défile. */
+function fitComposerToText() {
+  const textArea = messageComposer.elements.text;
+  textArea.style.height = "auto";
+  textArea.style.height = `${textArea.scrollHeight}px`;
+}
+messageComposer.elements.text.addEventListener("input", fitComposerToText);
 
 messageComposer.addEventListener("submit", (submitEvent) => {
   submitEvent.preventDefault();

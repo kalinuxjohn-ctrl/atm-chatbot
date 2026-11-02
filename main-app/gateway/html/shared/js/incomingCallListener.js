@@ -10,7 +10,8 @@
  * est retentée de plus en plus espacée : les autres pages fonctionnent.
  */
 
-import { createButton, createElementWithText } from "./domHelpers.js";
+import { createAvatar, createButton, createElementWithText } from "./domHelpers.js";
+import { createIcon } from "./icons.js";
 
 const MAXIMUM_RECONNECT_DELAY_MILLISECONDS = 60_000;
 
@@ -57,8 +58,10 @@ export function startIncomingCallListener() {
     banner.setAttribute("role", "alertdialog");
     banner.setAttribute("aria-label", "Appel entrant");
     // Nom saisi par un utilisateur : textContent (createElementWithText), jamais innerHTML.
+    const bannerText = createElementWithText("span", "incoming-call-banner-text");
+    bannerText.append(createAvatar(caller.username), createElementWithText("span", "", `Appel de ${caller.username}`), createIcon("phone"));
     banner.append(
-      createElementWithText("span", "incoming-call-banner-text", `📞 Appel de ${caller.username}`),
+      bannerText,
       createButton("Répondre", {
         onClick: () => window.location.assign(`/calls/?incomingCallId=${encodeURIComponent(callId)}`),
       }),

@@ -6,7 +6,7 @@
 
 import { requestJson } from "/shared/js/apiClient.js";
 import { currentUserPromise } from "/shared/js/connectedPageShell.js";
-import { createButton, createElementWithText } from "/shared/js/domHelpers.js";
+import { createAvatar, createButton, createElementWithText } from "/shared/js/domHelpers.js";
 
 const ROLE_LABELS = { technician: "Technicien", moderator: "Modérateur", admin: "Administrateur" };
 
@@ -15,6 +15,7 @@ const accountsTableBody = document.querySelector("[data-accounts-table-body]");
 const creationForm = document.querySelector("[data-account-creation-form]");
 const creationError = document.querySelector("[data-creation-error]");
 const creationSuccess = document.querySelector("[data-creation-success]");
+const accountCount = document.querySelector("[data-account-count]");
 
 function showMessage(element, message) {
   element.textContent = message;
@@ -56,19 +57,19 @@ function createRoleSelector(account, isOwnAccount) {
 function createAccountActions(account, isOwnAccount) {
   const actions = createElementWithText("div", "account-actions");
   if (isOwnAccount) {
-    actions.append(createElementWithText("span", "muted", "Votre compte"));
+    actions.append(createElementWithText("span", "badge badge-accent", "Votre compte"));
     return actions;
   }
   actions.append(
     createButton(account.isActive ? "Désactiver" : "Réactiver", {
-      className: "button button-secondary",
+      className: "button button-secondary button-small",
       onClick: () =>
         runAndReportError(() =>
           requestJson(`/api/auth/accounts/${account.technicianId}/active`, { method: "PUT", body: { isActive: !account.isActive } }),
         ),
     }),
     createButton("Nouveau mot de passe", {
-      className: "button button-secondary",
+      className: "button button-secondary button-small",
       onClick: () => {
         // prompt() natif : champ texte simple, la valeur ne s'affiche nulle part dans la page.
         const newPassword = window.prompt(`Nouveau mot de passe pour ${account.username} (10 caractères minimum) :`);
@@ -95,6 +96,7 @@ async function reloadAccounts() {
     return;
   }
   showAdministratorSections(true);
+  accountCount.textContent = `${accounts.length} compte(s)`;
   accountsTableBody.replaceChildren(
     ...accounts.map((account) => {
       const isOwnAccount = currentUser?.technicianId === account.technicianId;
@@ -103,12 +105,16 @@ async function reloadAccounts() {
       roleCell.append(createRoleSelector(account, isOwnAccount));
       const actionsCell = document.createElement("td");
       actionsCell.append(createAccountActions(account, isOwnAccount));
+      const usernameCell = createElementWithText("td", "account-username-cell");
+      usernameCell.append(createAvatar(account.username, { sizeClassName: "avatar-small" }), createElementWithText("span", "", account.username));
+      const stateCell = document.createElement("td");
+      stateCell.append(createElementWithText("span", account.isActive ? "badge badge-accent" : "badge badge-danger", account.isActive ? "Actif" : "Désactivé"));
       tableRow.append(
-        createElementWithText("td", "", account.username),
+        usernameCell,
         createElementWithText("td", "", account.fullName ?? ""),
         createElementWithText("td", "", String(account.technicianId)),
         roleCell,
-        createElementWithText("td", "", account.isActive ? "Actif" : "Désactivé"),
+        stateCell,
         actionsCell,
       );
       return tableRow;

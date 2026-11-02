@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Comptes | Espace techniciens</title>
+    <script src="/shared/js/applySavedTheme.js"></script>
     <link rel="stylesheet" href="/shared/css/base.css">
     <link rel="stylesheet" href="/auth/css/auth.css">
     <script type="module" src="/shared/js/connectedPageShell.js"></script>
@@ -12,11 +13,17 @@
   <body>
     <header data-page-shell></header>
     <main class="page-content accounts-layout">
-      <h1>Comptes des techniciens</h1>
+      <div class="page-heading">
+        <h1>Comptes des techniciens</h1>
+        <p>Créez les accès, changez les rôles, désactivez un compte : ses sessions sont coupées aussitôt.</p>
+      </div>
       <p class="form-error" data-page-error role="alert" hidden></p>
 
       <form class="card" data-account-creation-form data-administrator-only novalidate hidden>
-        <h2>Créer un compte</h2>
+        <div class="card-header">
+          <h2>Créer un compte</h2>
+          <span data-icon="users"></span>
+        </div>
         <div class="account-creation-grid">
           <label class="form-field">Nom d'utilisateur
             <input name="username" required maxlength="30" autocapitalize="none" spellcheck="false" autocomplete="off">
@@ -45,7 +52,10 @@
       </form>
 
       <section class="card" data-administrator-only hidden>
-        <h2>Comptes existants</h2>
+        <div class="card-header">
+          <h2>Comptes existants</h2>
+          <span class="badge" data-account-count></span>
+        </div>
         <div class="accounts-table-wrapper">
           <table class="accounts-table">
             <thead>

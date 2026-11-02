@@ -1,139 +1,227 @@
-/* Page Messagerie : liste des conversations à gauche, fil à droite (une seule vue sur mobile). */
+/*
+ * Page Messagerie : deux panneaux vitrés, liste des conversations à gauche,
+ * fil à droite. Sur mobile, une seule vue à la fois (liste OU fil).
+ */
 
 .messaging-page {
-  display: flex;
-  flex-direction: column;
   height: 100vh;
   height: 100dvh;
+  overflow: hidden;
 }
 
 .messaging-layout {
   display: grid;
-  grid-template-columns: minmax(240px, 320px) 1fr;
-  flex: 1;
-  min-height: 0;
+  grid-template-columns: minmax(260px, 340px) 1fr;
+  gap: 12px;
+  height: 100%;
+  padding: 12px 12px 12px 0;
 }
 
+.messaging-layout > .card {
+  padding: 0;
+}
+
+/* --- Liste des conversations --- */
 .conversation-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   overflow-y: auto;
-  padding: 12px;
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-border);
+  padding: 16px 12px !important;
 }
 
-.conversation-list-title {
-  margin-top: 8px;
-  font-size: 1rem;
+.conversation-sidebar-title {
+  margin: 0 6px 12px;
+  font-size: 1.35rem;
+}
+
+.contact-search-field {
+  position: relative;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.contact-search-field .icon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  width: 17px;
+  height: 17px;
+  color: var(--color-text-muted);
+  transform: translateY(-50%);
+}
+
+.contact-search-field input {
+  padding-left: 38px;
+  border-radius: 999px;
 }
 
 .conversation-list,
 .contact-results {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.contact-results {
+  margin-bottom: 10px;
+  padding: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
 }
 
 .conversation-list-item,
 .contact-result-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: 8px;
+  padding: 10px;
   background: none;
+  border: 1px solid transparent;
+  border-radius: 14px;
   color: var(--color-text);
   text-align: left;
   cursor: pointer;
 }
 
 .conversation-list-item:hover,
-.contact-result-item:hover,
+.contact-result-item:hover {
+  background: var(--color-surface-hover);
+}
+
 .conversation-list-item[aria-current="true"] {
-  background: var(--color-surface-muted);
+  background: var(--color-accent-fill);
+  border-color: var(--color-accent-border);
 }
 
 .conversation-list-item-text {
+  display: flex;
   flex: 1;
+  flex-direction: column;
   min-width: 0;
 }
 
-.conversation-list-item-name {
-  display: block;
-  font-weight: 600;
+.conversation-list-item-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
 }
 
-.conversation-list-item-preview {
-  display: block;
+.conversation-list-item-name {
   overflow: hidden;
-  color: var(--color-text-muted);
-  font-size: 0.85rem;
+  font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.unread-badge {
-  min-width: 22px;
-  padding: 1px 7px;
-  border-radius: 11px;
-  background: var(--color-accent);
-  color: var(--color-accent-text);
-  font-size: 0.8rem;
-  text-align: center;
+.conversation-list-item-time {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
 }
 
-.contact-results {
-  margin-bottom: 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+.conversation-list-item-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
+.conversation-list-item-preview {
+  flex: 1;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 0.86rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-list-item-unread .conversation-list-item-preview {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* --- Fil de la conversation --- */
 .conversation-thread {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
 }
 
 .thread-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
+  gap: 12px;
+  padding: 12px 18px;
   border-bottom: 1px solid var(--color-border);
 }
 
 .thread-title {
   margin: 0;
+  font-size: 1.05rem;
 }
 
 .thread-back-button {
   display: none;
 }
 
+.thread-empty-state {
+  flex: 1;
+  justify-content: center;
+  max-width: 340px;
+  margin: 0 auto;
+}
+
 .message-list {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   margin: 0;
-  padding: 16px;
+  padding: 18px;
   overflow-y: auto;
   list-style: none;
 }
 
+/* Séparateur de jour : « Aujourd'hui », « Hier »… */
+.message-day-separator {
+  align-self: center;
+  margin: 12px 0 6px;
+  padding: 3px 12px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 .message-bubble {
-  max-width: min(75%, 560px);
-  padding: 8px 12px;
-  border-radius: 12px;
+  align-self: flex-start;
+  max-width: min(72%, 560px);
+  padding: 8px 12px 6px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  align-self: flex-start;
+  border-radius: 18px 18px 18px 6px;
+  box-shadow: 0 2px 6px -4px rgb(0 0 0 / 25%);
 }
 
 .message-bubble-own {
   align-self: flex-end;
   background: var(--color-own-message);
+  border-color: var(--color-own-message-border);
+  border-radius: 18px 18px 6px 18px;
+}
+
+/* Deux messages de suite du même auteur : rapprochés. */
+.message-bubble + .message-bubble {
+  margin-top: -1px;
 }
 
 /* Texte brut : retours à la ligne conservés, longs mots coupés. */
@@ -147,58 +235,131 @@
   display: block;
   margin-top: 2px;
   color: var(--color-text-muted);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+  text-align: right;
 }
 
 .message-image {
   display: block;
   max-width: 100%;
   max-height: 320px;
-  border-radius: 8px;
+  margin: 2px 0 4px;
+  border-radius: 12px;
 }
 
 .message-audio {
-  width: 260px;
+  display: block;
+  width: 280px;
   max-width: 100%;
+  height: 40px;
+  margin: 2px 0;
 }
 
 .thread-error {
-  margin: 0 16px;
+  margin: 0 18px 8px;
 }
 
+/* --- Saisie --- */
 .message-composer {
   display: flex;
   align-items: flex-end;
-  gap: 6px;
-  padding: 10px 16px;
-  border-top: 1px solid var(--color-border);
+  gap: 8px;
+  margin: 0 14px 14px;
+  padding: 6px;
   background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 26px;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.message-composer:focus-within {
+  border-color: var(--color-accent-border);
+  box-shadow: 0 0 0 4px var(--color-accent-fill);
 }
 
 .message-composer textarea {
   flex: 1;
+  min-height: 40px;
   max-height: 160px;
+  padding: 9px 4px;
+  background: transparent;
+  border: 0;
+  resize: none;
+}
+
+.message-composer textarea:focus {
+  box-shadow: none;
 }
 
 .composer-icon-button {
-  padding: 8px 10px;
+  border-color: transparent;
 }
 
 .composer-icon-button[aria-pressed="true"] {
-  border-color: var(--color-danger);
+  background: var(--color-danger-fill);
+  border-color: var(--color-danger-border);
   color: var(--color-danger);
+}
+
+.composer-send-button {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: var(--gradient-accent);
+  border: 0;
+  border-radius: 50%;
+  box-shadow: var(--glow-accent);
+  color: var(--color-accent-text);
+  cursor: pointer;
+}
+
+.composer-send-button .icon {
+  width: 18px;
+  height: 18px;
 }
 
 .recording-indicator {
-  margin: 0;
-  padding: 0 16px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 18px 8px;
   color: var(--color-danger);
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
-/* Mobile : une seule vue à la fois, liste OU fil. */
+.recording-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--color-danger);
+  border-radius: 50%;
+  animation: recording-blink 1s ease-in-out infinite;
+}
+
+@keyframes recording-blink {
+  50% { opacity: 0.25; }
+}
+
+/* --- Mobile : une seule vue à la fois, liste OU fil --- */
 @media (max-width: 720px) {
+  .messaging-page {
+    display: flex;
+    flex-direction: column;
+  }
+
   .messaging-layout {
+    flex: 1;
+    min-height: 0;
     grid-template-columns: 1fr;
+    padding: 0;
+  }
+
+  .messaging-layout > .card {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .messaging-layout[data-view="list"] .conversation-thread,
@@ -207,6 +368,10 @@
   }
 
   .thread-back-button {
-    display: inline-flex;
+    display: inline-grid;
+  }
+
+  .message-bubble {
+    max-width: 85%;
   }
 }

@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Carte | Espace techniciens</title>
+    <script src="/shared/js/applySavedTheme.js"></script>
     <link rel="stylesheet" href="/shared/css/base.css">
     <link rel="stylesheet" href="/map/vendor/leaflet/leaflet.css">
     <link rel="stylesheet" href="/map/vendor/maplibre-gl/maplibre-gl.css">
@@ -15,33 +16,41 @@
   </head>
   <body class="map-page">
     <header data-page-shell></header>
-    <div class="map-toolbar">
-      <button class="button button-secondary" type="button" data-locate-me>📍 Ma position</button>
-      <button class="button button-secondary" type="button" data-show-nearby>Points proches</button>
-      <label class="map-toolbar-filter">Catégorie
-        <select data-category-filter>
-          <option value="">Toutes</option>
-        </select>
-      </label>
-      <span class="muted map-toolbar-hint">Cliquez sur la carte pour ajouter un point.</span>
-    </div>
-    <p class="form-error map-status" data-map-status role="status" hidden></p>
-    <div class="map-layout">
+    <main class="map-frame">
       <div class="map-canvas" data-map-canvas aria-label="Carte des points partagés"></div>
+
+      <!-- Barre flottante : actions, puis filtres par catégorie (qui servent aussi de légende). -->
+      <div class="map-toolbar">
+        <div class="map-toolbar-actions">
+          <button class="button button-secondary button-small" type="button" data-locate-me>
+            <span data-icon="locate"></span><span>Ma position</span>
+          </button>
+          <button class="button button-secondary button-small" type="button" data-show-nearby>
+            <span data-icon="radar"></span><span>Points proches</span>
+          </button>
+        </div>
+        <div class="map-category-filters" role="radiogroup" aria-label="Filtrer par catégorie" data-category-filters></div>
+      </div>
+
+      <p class="map-hint" data-map-hint><span data-icon="plus"></span>Cliquez sur la carte pour ajouter un lieu</p>
+      <p class="form-error map-status" data-map-status role="status" hidden></p>
 
       <aside class="card map-side-panel" data-point-form-panel hidden>
         <form data-point-form novalidate>
-          <h2 data-point-form-title>Nouveau point</h2>
+          <div class="card-header">
+            <h2 data-point-form-title>Nouveau lieu</h2>
+            <button class="icon-button" type="button" data-cancel-point-form aria-label="Fermer"><span data-icon="close"></span></button>
+          </div>
           <label class="form-field">Titre
-            <input name="title" required maxlength="120">
+            <input name="title" required maxlength="120" placeholder="Ex. GAB agence centre-ville">
           </label>
           <label class="form-field">Catégorie
             <select name="category"></select>
           </label>
           <label class="form-field">Description
-            <textarea name="description" rows="4" maxlength="2000"></textarea>
+            <textarea name="description" rows="4" maxlength="2000" placeholder="Accès, horaires, code, contact…"></textarea>
           </label>
-          <p class="muted" data-point-form-coordinates></p>
+          <p class="map-form-coordinates" data-point-form-coordinates></p>
           <p class="form-error" data-point-form-error role="alert" hidden></p>
           <div class="map-form-actions">
             <button class="button" type="submit">Enregistrer</button>
@@ -51,11 +60,13 @@
       </aside>
 
       <aside class="card map-side-panel" data-nearby-panel hidden>
-        <h2>Points proches</h2>
+        <div class="card-header">
+          <h2>Points proches</h2>
+          <button class="icon-button" type="button" data-close-nearby aria-label="Fermer"><span data-icon="close"></span></button>
+        </div>
         <p class="muted" data-nearby-summary></p>
         <ol class="nearby-point-list" data-nearby-list></ol>
-        <button class="button button-secondary" type="button" data-close-nearby>Fermer</button>
       </aside>
-    </div>
+    </main>
   </body>
 </html>

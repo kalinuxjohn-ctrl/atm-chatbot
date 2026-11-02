@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Messagerie | Espace techniciens</title>
+    <script src="/shared/js/applySavedTheme.js"></script>
     <link rel="stylesheet" href="/shared/css/base.css">
     <link rel="stylesheet" href="/messaging/css/messaging.css">
     <script type="module" src="/shared/js/connectedPageShell.js"></script>
@@ -11,35 +12,47 @@
   </head>
   <body class="messaging-page">
     <header data-page-shell></header>
-    <div class="messaging-layout" data-messaging-layout data-view="list">
-      <aside class="conversation-sidebar">
+    <main class="messaging-layout" data-messaging-layout data-view="list">
+      <aside class="card conversation-sidebar">
+        <h1 class="conversation-sidebar-title">Messages</h1>
         <form class="contact-search" data-contact-search-form>
-          <label class="form-field">Nouvelle conversation
-            <input name="search" type="search" placeholder="Nom d'utilisateur…" maxlength="30" autocomplete="off" autocapitalize="none">
+          <label class="contact-search-field">
+            <span data-icon="search"></span>
+            <span class="visually-hidden">Nouvelle conversation : chercher un collègue</span>
+            <input name="search" type="search" placeholder="Chercher un collègue…" maxlength="30" autocomplete="off" autocapitalize="none">
           </label>
         </form>
         <ul class="contact-results" data-contact-results hidden></ul>
-        <h2 class="conversation-list-title">Conversations</h2>
         <ul class="conversation-list" data-conversation-list></ul>
-        <p class="muted conversation-list-empty" data-conversation-list-empty hidden>Aucune conversation. Cherchez un collègue ci-dessus.</p>
+        <div class="empty-state" data-conversation-list-empty hidden>
+          <span data-icon="message"></span>
+          <strong>Aucune conversation</strong>
+          <span>Cherchez un collègue ci-dessus pour lui écrire.</span>
+        </div>
       </aside>
 
-      <section class="conversation-thread" data-conversation-thread aria-live="polite">
-        <div class="thread-header">
-          <button class="button button-secondary thread-back-button" type="button" data-back-to-list>← Conversations</button>
-          <h2 class="thread-title" data-thread-title>Choisissez une conversation</h2>
+      <section class="card conversation-thread" data-conversation-thread aria-live="polite">
+        <div class="thread-header" data-thread-header hidden>
+          <button class="icon-button thread-back-button" type="button" data-back-to-list aria-label="Retour aux conversations"><span data-icon="arrowLeft"></span></button>
+          <span data-thread-avatar></span>
+          <h2 class="thread-title" data-thread-title></h2>
+        </div>
+        <div class="empty-state thread-empty-state" data-thread-empty-state>
+          <span data-icon="message"></span>
+          <strong>Choisissez une conversation</strong>
+          <span>Vos échanges avec les collègues apparaissent ici : texte, photos et messages vocaux.</span>
         </div>
         <ol class="message-list" data-message-list></ol>
         <p class="form-error thread-error" data-thread-error role="alert" hidden></p>
+        <p class="recording-indicator" data-recording-indicator hidden><span class="recording-dot"></span>Enregistrement… appuyez à nouveau sur le micro pour envoyer.</p>
         <form class="message-composer" data-message-composer hidden>
-          <textarea name="text" rows="1" maxlength="2000" placeholder="Votre message…" aria-label="Message"></textarea>
           <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-image-input hidden>
-          <button class="button button-secondary composer-icon-button" type="button" data-pick-image title="Envoyer une photo" aria-label="Envoyer une photo">📷</button>
-          <button class="button button-secondary composer-icon-button" type="button" data-record-voice title="Message vocal" aria-label="Enregistrer un message vocal">🎙️</button>
-          <button class="button" type="submit">Envoyer</button>
+          <button class="icon-button composer-icon-button" type="button" data-pick-image title="Envoyer une photo" aria-label="Envoyer une photo"><span data-icon="image"></span></button>
+          <button class="icon-button composer-icon-button" type="button" data-record-voice title="Message vocal" aria-label="Enregistrer un message vocal" aria-pressed="false"><span data-icon="microphone"></span></button>
+          <textarea name="text" rows="1" maxlength="2000" placeholder="Votre message…" aria-label="Message"></textarea>
+          <button class="composer-send-button" type="submit" aria-label="Envoyer" title="Envoyer (Entrée)"><span data-icon="send"></span></button>
         </form>
-        <p class="muted recording-indicator" data-recording-indicator hidden>● Enregistrement… appuyez à nouveau sur 🎙️ pour envoyer.</p>
       </section>
-    </div>
+    </main>
   </body>
 </html>

@@ -12,6 +12,7 @@ import * as maplibreModule from "/map/vendor/maplibre-gl/maplibre-gl.mjs";
 import { requestJson } from "/shared/js/apiClient.js";
 import "/shared/js/connectedPageShell.js";
 import { createButton, createElementWithText, formatDateTime } from "/shared/js/domHelpers.js";
+import { createIcon } from "/shared/js/icons.js";
 
 // Le pont Leaflet <-> MapLibre (script UMD) attend MapLibre en variable globale.
 globalThis.maplibregl = maplibreModule.default ?? maplibreModule;
@@ -24,13 +25,25 @@ const CATEGORY_LABELS = {
   difficult_access: "Accès difficile",
   other: "Autre",
 };
-// Vue de départ : France métropolitaine.
+// Icône dessinée dans l'épingle de chaque catégorie (voir /shared/js/icons.js).
+const CATEGORY_ICON_NAMES = {
+  atm_site: "creditCard",
+  tpe_client: "store",
+  parts_depot: "package",
+  difficult_access: "alert",
+  other: "dot",
+};
+// Vue de départ sans aucun point : France métropolitaine.
 const INITIAL_MAP_CENTER = [46.6, 2.4];
 const INITIAL_MAP_ZOOM = 6;
+// Au premier affichage, la carte se cadre sur les points existants, sans zoomer plus près que ça.
+const MAXIMUM_ZOOM_WHEN_FITTING_POINTS = 14;
+const WHOLE_WORLD_BOUNDING_BOX = { south: -90, west: -180, north: 90, east: 180 };
 const NEARBY_RADIUS_METERS = 5_000;
 
 const mapStatus = document.querySelector("[data-map-status]");
-const categoryFilter = document.querySelector("[data-category-filter]");
+const mapHint = document.querySelector("[data-map-hint]");
+const categoryFiltersGroup = document.querySelector("[data-category-filters]");
 const pointFormPanel = document.querySelector("[data-point-form-panel]");
 const pointForm = document.querySelector("[data-point-form]");
 const pointFormTitle = document.querySelector("[data-point-form-title]");
@@ -45,6 +58,9 @@ let pointBeingEdited = null;
 let coordinatesOfNewPoint = null;
 let currentPositionMarker = null;
 const markersByPointId = new Map();
+/** Catégorie affichée ("" = toutes) et derniers points chargés (pour refiltrer sans requête). */
+let selectedCategory = "";
+let lastLoadedPoints = [];
 
 function showStatus(message) {
   mapStatus.textContent = message;
@@ -53,15 +69,51 @@ function showStatus(message) {
 
 function fillCategoryOptions() {
   for (const [categoryValue, categoryLabel] of Object.entries(CATEGORY_LABELS)) {
-    categoryFilter.add(new Option(categoryLabel, categoryValue));
     pointForm.elements.category.add(new Option(categoryLabel, categoryValue));
   }
 }
 
+/**
+ * Filtres en pastilles : « Tous » puis une pastille colorée par catégorie,
+ * avec le nombre de points de la zone visible. Elles servent aussi de légende.
+ */
+function renderCategoryFilters(leafletMap) {
+  const pointCountByCategory = new Map();
+  for (const point of lastLoadedPoints) {
+    pointCountByCategory.set(point.category, (pointCountByCategory.get(point.category) ?? 0) + 1);
+  }
+  const filterChoices = [
+    ["", "Tous", lastLoadedPoints.length],
+    ...Object.entries(CATEGORY_LABELS).map(([categoryValue, categoryLabel]) => [categoryValue, categoryLabel, pointCountByCategory.get(categoryValue) ?? 0]),
+  ];
+  categoryFiltersGroup.replaceChildren(
+    ...filterChoices.map(([categoryValue, categoryLabel, pointCount]) => {
+      const filterButton = createElementWithText("button", "map-category-filter");
+      filterButton.type = "button";
+      filterButton.setAttribute("role", "radio");
+      filterButton.setAttribute("aria-checked", String(categoryValue === selectedCategory));
+      if (categoryValue) {
+        filterButton.append(createElementWithText("span", `map-category-dot map-category-${categoryValue}`));
+      }
+      filterButton.append(createElementWithText("span", "", categoryLabel), createElementWithText("span", "map-category-count", String(pointCount)));
+      filterButton.addEventListener("click", () => {
+        selectedCategory = categoryValue;
+        renderCategoryFilters(leafletMap);
+        displayPoints(leafletMap);
+      });
+      return filterButton;
+    }),
+  );
+}
+
 async function createMap() {
   const { attribution, maximumZoom } = await requestJson("/api/map/settings");
-  const leafletMap = L.map(document.querySelector("[data-map-canvas]"), { maxZoom: maximumZoom, worldCopyJump: true });
+  const mapCanvas = document.querySelector("[data-map-canvas]");
+  const leafletMap = L.map(mapCanvas, { maxZoom: maximumZoom, worldCopyJump: true });
   leafletMap.setView(INITIAL_MAP_CENTER, INITIAL_MAP_ZOOM);
+  // La zone de la carte change de taille après coup (rail de navigation posé, fenêtre
+  // redimensionnée, rotation du téléphone) : sans ça, le fond MapLibre garde l'ancienne taille.
+  new ResizeObserver(() => leafletMap.invalidateSize()).observe(mapCanvas);
   // Style MapLibre minimal : une seule couche, les tuiles raster relayées par le serveur.
   // Attribution OBLIGATOIRE du fournisseur de tuiles (licence OpenStreetMap). Ajoutée
   // directement au contrôle Leaflet : le pont MapLibre ne transmet pas l'option attribution.
@@ -104,20 +156,45 @@ function readVisibleBoundingBox(leafletMap) {
   };
 }
 
+function requestPointsInBoundingBox(boundingBox) {
+  const searchParameters = new URLSearchParams(Object.entries(boundingBox).map(([key, value]) => [key, value.toFixed(6)]));
+  return requestJson(`/api/map/points?${searchParameters}`);
+}
+
 async function reloadVisiblePoints(leafletMap) {
-  const searchParameters = new URLSearchParams(Object.entries(readVisibleBoundingBox(leafletMap)).map(([key, value]) => [key, value.toFixed(6)]));
   try {
-    const { points } = await requestJson(`/api/map/points?${searchParameters}`);
+    const { points } = await requestPointsInBoundingBox(readVisibleBoundingBox(leafletMap));
     showStatus("");
-    displayPoints(leafletMap, points);
+    lastLoadedPoints = points;
+    renderCategoryFilters(leafletMap);
+    displayPoints(leafletMap);
   } catch (error) {
     showStatus(`Points non chargés : ${error.message}`);
   }
 }
 
-function displayPoints(leafletMap, points) {
-  const selectedCategory = categoryFilter.value;
-  const visiblePoints = selectedCategory ? points.filter((point) => point.category === selectedCategory) : points;
+/** Premier affichage : cadre la carte sur tous les points (sinon, vue sur la France). */
+async function fitMapToAllPoints(leafletMap) {
+  try {
+    const { points } = await requestPointsInBoundingBox(WHOLE_WORLD_BOUNDING_BOX);
+    if (points.length > 0) {
+      const pointsBounds = L.latLngBounds(points.map((point) => [point.latitude, point.longitude]));
+      leafletMap.fitBounds(pointsBounds, { padding: [80, 80], maxZoom: MAXIMUM_ZOOM_WHEN_FITTING_POINTS });
+    }
+  } catch {
+    // Pas grave : la vue par défaut reste, et reloadVisiblePoints signalera l'erreur.
+  }
+}
+
+/** Épingle en goutte, couleur et icône de la catégorie (élément DOM, pas de HTML en texte). */
+function createPinIcon(category) {
+  const pinBody = createElementWithText("span", `map-pin-body map-category-${category}`);
+  pinBody.append(createIcon(CATEGORY_ICON_NAMES[category] ?? "dot"));
+  return L.divIcon({ html: pinBody, className: "map-pin", iconSize: [34, 34], iconAnchor: [17, 40], popupAnchor: [0, -38] });
+}
+
+function displayPoints(leafletMap) {
+  const visiblePoints = selectedCategory ? lastLoadedPoints.filter((point) => point.category === selectedCategory) : lastLoadedPoints;
   const visiblePointIds = new Set(visiblePoints.map((point) => point.id));
   for (const [pointId, marker] of markersByPointId) {
     if (!visiblePointIds.has(pointId)) {
@@ -127,11 +204,8 @@ function displayPoints(leafletMap, points) {
   }
   for (const point of visiblePoints) {
     markersByPointId.get(point.id)?.remove();
-    const marker = L.circleMarker([point.latitude, point.longitude], {
-      radius: 9,
-      className: `map-point-marker map-point-category-${point.category}`,
-    });
-    marker.bindPopup(() => createPointPopupContent(leafletMap, point), { maxWidth: 280 });
+    const marker = L.marker([point.latitude, point.longitude], { icon: createPinIcon(point.category), title: point.title, riseOnHover: true });
+    marker.bindPopup(() => createPointPopupContent(leafletMap, point), { maxWidth: 300, minWidth: 220 });
     marker.addTo(leafletMap);
     markersByPointId.set(point.id, marker);
   }
@@ -140,10 +214,12 @@ function displayPoints(leafletMap, points) {
 /** Contenu de la bulle, construit élément par élément (textContent). */
 function createPointPopupContent(leafletMap, point) {
   const popupContent = createElementWithText("div");
-  popupContent.append(
-    createElementWithText("strong", "map-point-popup-title", point.title),
-    createElementWithText("span", "map-point-popup-category", CATEGORY_LABELS[point.category] ?? point.category),
+  const categoryBadge = createElementWithText("span", "badge map-point-popup-category");
+  categoryBadge.append(
+    createElementWithText("span", `map-category-dot map-category-${point.category}`),
+    createElementWithText("span", "", CATEGORY_LABELS[point.category] ?? point.category),
   );
+  popupContent.append(categoryBadge, createElementWithText("strong", "map-point-popup-title", point.title));
   if (point.description) {
     popupContent.append(createElementWithText("p", "map-point-popup-description", point.description));
   }
@@ -156,24 +232,28 @@ function createPointPopupContent(leafletMap, point) {
   );
   if (point.canModify) {
     const actions = createElementWithText("div", "map-point-popup-actions");
-    actions.append(
-      createButton("Modifier", { onClick: () => openPointForm({ pointToEdit: point }) }),
-      createButton("Supprimer", {
-        className: "button button-danger",
-        onClick: async () => {
-          if (!window.confirm(`Supprimer le point « ${point.title} » ?`)) {
-            return;
-          }
-          try {
-            await requestJson(`/api/map/points/${point.id}`, { method: "DELETE" });
-            leafletMap.closePopup();
-            await reloadVisiblePoints(leafletMap);
-          } catch (error) {
-            showStatus(error.message);
-          }
-        },
-      }),
-    );
+    const editButton = createButton("Modifier", {
+      className: "button button-secondary button-small",
+      onClick: () => openPointForm({ pointToEdit: point }),
+    });
+    editButton.prepend(createIcon("edit"));
+    const deleteButton = createButton("Supprimer", {
+      className: "button button-danger button-small",
+      onClick: async () => {
+        if (!window.confirm(`Supprimer le point « ${point.title} » ?`)) {
+          return;
+        }
+        try {
+          await requestJson(`/api/map/points/${point.id}`, { method: "DELETE" });
+          leafletMap.closePopup();
+          await reloadVisiblePoints(leafletMap);
+        } catch (error) {
+          showStatus(error.message);
+        }
+      },
+    });
+    deleteButton.prepend(createIcon("trash"));
+    actions.append(editButton, deleteButton);
     popupContent.append(actions);
   }
   return popupContent;
@@ -187,7 +267,8 @@ function openPointForm({ pointToEdit = null, coordinates = null }) {
   pointForm.reset();
   pointFormError.hidden = true;
   nearbyPanel.hidden = true;
-  pointFormTitle.textContent = pointToEdit ? "Modifier le point" : "Nouveau point";
+  mapHint.hidden = true;
+  pointFormTitle.textContent = pointToEdit ? "Modifier le lieu" : "Nouveau lieu";
   if (pointToEdit) {
     pointForm.elements.title.value = pointToEdit.title;
     pointForm.elements.category.value = pointToEdit.category;
@@ -195,12 +276,16 @@ function openPointForm({ pointToEdit = null, coordinates = null }) {
   }
   const { latitude, longitude } = pointToEdit ?? coordinates;
   pointFormCoordinates.textContent = `Position : ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+  if (!pointToEdit && selectedCategory) {
+    pointForm.elements.category.value = selectedCategory; // filtre actif = catégorie proposée
+  }
   pointFormPanel.hidden = false;
   pointForm.elements.title.focus();
 }
 
 function closePointForm() {
   pointFormPanel.hidden = true;
+  mapHint.hidden = false;
   pointBeingEdited = null;
   coordinatesOfNewPoint = null;
 }
@@ -270,14 +355,24 @@ async function showNearbyPoints(leafletMap) {
     nearbyList.replaceChildren(
       ...points.map((point) => {
         const listItem = document.createElement("li");
-        listItem.append(
-          createButton(`${point.title} (${formatDistance(point.distanceMeters)})`, {
-            className: "",
-            onClick: () => {
-              leafletMap.setView([point.latitude, point.longitude], Math.max(leafletMap.getZoom(), 16));
-            },
-          }),
+        const focusButton = createButton("", {
+          className: "nearby-point-button",
+          onClick: () => {
+            leafletMap.setView([point.latitude, point.longitude], Math.max(leafletMap.getZoom(), 16));
+            markersByPointId.get(point.id)?.openPopup();
+          },
+        });
+        const pointText = createElementWithText("span", "nearby-point-text");
+        pointText.append(
+          createElementWithText("span", "nearby-point-title", point.title),
+          createElementWithText("span", "nearby-point-category", CATEGORY_LABELS[point.category] ?? point.category),
         );
+        focusButton.append(
+          createElementWithText("span", `map-category-dot map-category-${point.category}`),
+          pointText,
+          createElementWithText("span", "badge", formatDistance(point.distanceMeters)),
+        );
+        listItem.append(focusButton);
         return listItem;
       }),
     );
@@ -304,17 +399,20 @@ try {
   leafletMap.on("click", ({ latlng }) => {
     openPointForm({ coordinates: { latitude: latlng.lat, longitude: L.Util.wrapNum(latlng.lng, [-180, 180], true) } });
   });
-  categoryFilter.addEventListener("change", () => reloadVisiblePoints(leafletMap));
   pointForm.addEventListener("submit", (submitEvent) => {
     submitEvent.preventDefault();
     savePointForm(leafletMap);
   });
-  document.querySelector("[data-cancel-point-form]").addEventListener("click", closePointForm);
+  for (const cancelButton of document.querySelectorAll("[data-cancel-point-form]")) {
+    cancelButton.addEventListener("click", closePointForm);
+  }
   document.querySelector("[data-close-nearby]").addEventListener("click", () => {
     nearbyPanel.hidden = true;
   });
   document.querySelector("[data-locate-me]").addEventListener("click", () => locateCurrentUser(leafletMap));
   document.querySelector("[data-show-nearby]").addEventListener("click", () => showNearbyPoints(leafletMap));
+  renderCategoryFilters(leafletMap);
+  await fitMapToAllPoints(leafletMap);
   await reloadVisiblePoints(leafletMap);
 } catch (error) {
   showStatus(`Carte indisponible : ${error.message}`);

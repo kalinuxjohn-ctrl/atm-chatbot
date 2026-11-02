@@ -4,26 +4,56 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Espace techniciens</title>
+    <script src="/shared/js/applySavedTheme.js"></script>
     <link rel="stylesheet" href="/shared/css/base.css">
     <script type="module" src="/shared/js/connectedPageShell.js"></script>
+    <script type="module" src="/shared/js/homePage.js"></script>
   </head>
   <body>
     <header data-page-shell></header>
     <main class="page-content">
-      <h1>Espace techniciens</h1>
-      <p class="muted">Partagez les lieux utiles, échangez avec vos collègues et appelez-les depuis le terrain.</p>
+      <section class="home-hero">
+        <div>
+          <p class="home-hero-eyebrow" data-home-date></p>
+          <h1 data-home-greeting>Bonjour</h1>
+          <p>Partagez les lieux utiles, échangez avec vos collègues et appelez-les depuis le terrain.</p>
+        </div>
+      </section>
+
+      <!-- Chiffres du moment : chaque case reste à « – » si son service ne répond pas. -->
+      <section class="home-summary" aria-label="En bref">
+        <a class="card home-summary-item" href="/messaging/">
+          <span class="home-summary-icon"><span data-icon="message"></span></span>
+          <span><span class="home-summary-value" data-unread-message-count>–</span><span class="home-summary-label">messages non lus</span></span>
+        </a>
+        <a class="card home-summary-item" href="/calls/">
+          <span class="home-summary-icon"><span data-icon="users"></span></span>
+          <span><span class="home-summary-value" data-online-colleague-count>–</span><span class="home-summary-label">collègues connectés</span></span>
+        </a>
+        <a class="card home-summary-item" href="/map/">
+          <span class="home-summary-icon"><span data-icon="pin"></span></span>
+          <span><span class="home-summary-value" data-map-point-count>–</span><span class="home-summary-label">lieux sur la carte</span></span>
+        </a>
+      </section>
+
       <div class="feature-grid">
         <a class="card feature-link" href="/map/">
-          <h2>🗺️ Carte</h2>
-          <p>Sites de GAB, clients TPE, dépôts de pièces : marquez et retrouvez les lieux.</p>
+          <span class="feature-link-icon"><span data-icon="map"></span></span>
+          <h2>Carte partagée</h2>
+          <p>Sites de GAB, clients TPE, dépôts de pièces, accès difficiles : marquez et retrouvez les lieux utiles.</p>
+          <span class="feature-link-cta">Ouvrir la carte <span data-icon="chevronRight"></span></span>
         </a>
         <a class="card feature-link" href="/messaging/">
-          <h2>💬 Messagerie</h2>
+          <span class="feature-link-icon"><span data-icon="message"></span></span>
+          <h2>Messagerie</h2>
           <p>Messages, photos et messages vocaux entre techniciens.</p>
+          <span class="feature-link-cta">Voir les conversations <span data-icon="chevronRight"></span></span>
         </a>
         <a class="card feature-link" href="/calls/">
-          <h2>📞 Appels</h2>
-          <p>Appels vocaux avec les techniciens connectés.</p>
+          <span class="feature-link-icon"><span data-icon="phone"></span></span>
+          <h2>Appels</h2>
+          <p>Appels vocaux directs avec les techniciens connectés.</p>
+          <span class="feature-link-cta">Appeler un collègue <span data-icon="chevronRight"></span></span>
         </a>
       </div>
     </main>
