@@ -1,65 +1,42 @@
 /**
- * Onglet Copilote : affiche le frontend du chatbot dans une iframe, sous la
- * navigation de l'Espace techniciens.
+ * Onglet Copilote : affiche le chatbot dans une iframe, sous la navigation de
+ * l'Espace techniciens.
  *
- *   1. lit l'adresse du chatbot dans /copilot/settings.json (fournie par le gateway) ;
- *   2. charge <adresse>/copilot.html?embedded=1&theme=…&technician_id=… : en mode
- *      « embedded », le chatbot masque sa propre barre du haut et reprend le
- *      technicien connecté ici, sans autre connexion (voir frontend/public/js/embeddedMode.js) ;
- *   3. quand l'utilisateur change de thème ici, prévient l'iframe (postMessage)
- *      pour que le Copilote suive sans recharger.
+ * Le chatbot est servi par le gateway sous /copilot/app/ (même site, même
+ * cookie de session) : le gateway vérifie la session et transmet le technicien
+ * connecté à l'API du chatbot, qui ne croit que cette information.
+ *
+ * L'adresse chargée est /copilot/app/copilot.html?embedded=1&theme=…&technician_id=…&display_name=… :
+ * en mode « embedded » (frontend/public/js/embeddedMode.js), le chatbot masque
+ * sa barre du haut et affiche le nom du technicien sans lui redemander qui il est.
+ * Quand l'utilisateur change de thème ici, l'iframe est prévenue (postMessage).
  */
 
-import { requestJson } from "/shared/js/apiClient.js";
 import { currentUserPromise } from "/shared/js/connectedPageShell.js";
 
-const COPILOT_PAGE_PATH = "/copilot.html";
+const COPILOT_PAGE_PATH = "/copilot/app/copilot.html";
 // Même valeur que THEME_MESSAGE_TYPE dans frontend/public/js/embeddedMode.js (chatbot).
 const THEME_MESSAGE_TYPE = "espace-techniciens:theme";
 
 const copilotFrame = document.querySelector("[data-copilot-frame]");
 const loadingPanel = document.querySelector("[data-copilot-loading]");
-const unavailablePanel = document.querySelector("[data-copilot-unavailable]");
-const openInNewTabLink = document.querySelector("[data-copilot-open-link]");
 
 const readCurrentTheme = () => (document.documentElement.dataset.theme === "dark" ? "dark" : "light");
 
-function showCopilotNotConfigured() {
+const embeddedPageParameters = new URLSearchParams({ embedded: "1", theme: readCurrentTheme() });
+const currentUser = await currentUserPromise;
+if (currentUser) {
+  embeddedPageParameters.set("technician_id", String(currentUser.technicianId));
+  embeddedPageParameters.set("display_name", currentUser.fullName || currentUser.username);
+}
+
+copilotFrame.addEventListener("load", () => {
   loadingPanel.hidden = true;
-  unavailablePanel.hidden = false;
-  openInNewTabLink.parentElement.hidden = true;
-}
+  copilotFrame.hidden = false;
+});
+copilotFrame.src = `${COPILOT_PAGE_PATH}?${embeddedPageParameters}`;
 
-let chatbotOrigin;
-try {
-  const { chatbotUrl } = await requestJson("/copilot/settings.json");
-  chatbotOrigin = chatbotUrl ? new URL(chatbotUrl).origin : null;
-} catch {
-  chatbotOrigin = null;
-}
-
-if (!chatbotOrigin) {
-  showCopilotNotConfigured();
-} else {
-  const embeddedPageUrl = new URL(COPILOT_PAGE_PATH, chatbotOrigin);
-  embeddedPageUrl.searchParams.set("embedded", "1");
-  embeddedPageUrl.searchParams.set("theme", readCurrentTheme());
-  // Même n° de technicien dans les deux applications (table technician partagée).
-  const currentUser = await currentUserPromise;
-  if (currentUser) {
-    embeddedPageUrl.searchParams.set("technician_id", String(currentUser.technicianId));
-    embeddedPageUrl.searchParams.set("display_name", currentUser.fullName || currentUser.username);
-  }
-  openInNewTabLink.href = new URL(COPILOT_PAGE_PATH, chatbotOrigin).href;
-
-  copilotFrame.addEventListener("load", () => {
-    loadingPanel.hidden = true;
-    copilotFrame.hidden = false;
-  });
-  copilotFrame.src = embeddedPageUrl.href;
-
-  // Le bouton clair / sombre de la navigation change data-theme sur <html> : on relaie au Copilote.
-  new MutationObserver(() => {
-    copilotFrame.contentWindow?.postMessage({ type: THEME_MESSAGE_TYPE, theme: readCurrentTheme() }, chatbotOrigin);
-  }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-}
+// Le bouton clair / sombre de la navigation change data-theme sur <html> : on relaie au Copilote.
+new MutationObserver(() => {
+  copilotFrame.contentWindow?.postMessage({ type: THEME_MESSAGE_TYPE, theme: readCurrentTheme() }, window.location.origin);
+}).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });

@@ -31,6 +31,6 @@ export async function logout() {
 /** Page protégée : renvoie vers l'accueil (dialogue de connexion ouvert) sans session. */
 export function requireSession() {
   const session = getSession();
-  if (!session) window.location.replace("/?login=1");
+  if (!session) window.location.replace("./?login=1");
   return session;
 }

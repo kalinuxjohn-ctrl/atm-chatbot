@@ -10,10 +10,10 @@
 
 :root {
   /* Fond plein écran de la page d'accueil (avant connexion). */
-  --image-home-background: url("/assets/images/home-background.svg");
+  --image-home-background: url("../assets/images/home-background.svg");
 
   /* Fond de la zone de conversation du Copilote (doit rester clair et discret). */
-  --image-app-background: url("/assets/images/app-background.svg");
+  --image-app-background: url("../assets/images/app-background.svg");
 }
 
 /* Le logo n'est pas ici : il est utilisé dans le HTML (<img src="/assets/images/logo.svg">)

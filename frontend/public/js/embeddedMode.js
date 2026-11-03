@@ -1,11 +1,15 @@
 /**
  * Mode « intégré » du Copilote : quand la page est affichée dans l'onglet
- * Copilote de l'Espace techniciens (main app, iframe), l'adresse contient :
+ * Copilote de l'Espace techniciens (main app, iframe sur /copilot/app/), l'adresse contient :
  *
  *   ?embedded=1                 masque la barre du haut (l'Espace techniciens a déjà sa navigation)
  *   &theme=dark|light           thème de l'Espace techniciens
  *   &technician_id=7            technicien connecté à l'Espace techniciens
  *   &display_name=Alan%20Test   son nom
+ *
+ * Le technicien sert à l'AFFICHAGE et à passer l'écran de connexion simulée :
+ * derrière l'Espace techniciens, l'API du chatbot ignore le n° envoyé par la page
+ * et utilise celui de la session, transmis par le gateway (app/core/gateway_identity.py).
  *
  * Script CLASSIQUE (pas un module), chargé dans le <head> AVANT les modules :
  * la session doit exister quand copilot.js vérifie la connexion (requireSession),
@@ -54,7 +58,10 @@
   }
 
   window.addEventListener("message", function onParentMessage(messageEvent) {
-    // Seul le thème est accepté, quelle que soit l'origine : il ne peut rien faire d'autre.
+    // Seule la page de l'Espace techniciens qui contient l'iframe (même site) est écoutée.
+    if (messageEvent.origin !== window.location.origin) {
+      return;
+    }
     if (messageEvent.data && messageEvent.data.type === THEME_MESSAGE_TYPE) {
       applyTheme(messageEvent.data.theme);
     }

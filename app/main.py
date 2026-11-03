@@ -38,6 +38,7 @@ from app.core.errors import (
     ReferenceNotFoundError,
     StateConflictError,
 )
+from app.core.gateway_identity import require_gateway_identity
 from app.core.tracing import trace
 
 # Seul texte renvoyé au client quand une IA externe fait défaut (voir le
@@ -49,6 +50,9 @@ app = FastAPI(
     description="Enregistrement et recherche des interventions de maintenance ATM/GAB.",
     version="0.1.0",
 )
+
+# Identité vérifiée par le gateway de l'Espace techniciens, si COPILOT_GATEWAY_SHARED_SECRET est défini.
+app.middleware("http")(require_gateway_identity)
 
 app.include_router(interventions_router)
 app.include_router(chat_router)

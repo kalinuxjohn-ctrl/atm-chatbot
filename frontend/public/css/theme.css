@@ -3488,7 +3488,9 @@ kbd {
 
 :root[data-embedded] .copilot-page .app-frame::before,
 :root[data-embedded] .copilot-page .app-frame::after,
-:root[data-embedded] .copilot-page .theme-switch {
+:root[data-embedded] .copilot-page .theme-switch,
+:root[data-embedded] .copilot-page .sidebar-logout {
+  /* La session (et donc la déconnexion) appartient à l'Espace techniciens. */
   display: none;
 }
 

@@ -5,7 +5,9 @@
  */
 
 // Le serveur frontend (server.py) relaie /api/* vers le backend FastAPI.
-export const API_BASE_URL = "/api";
+// Chemin RELATIF : le Copilote fonctionne seul (http://localhost:5173/) comme
+// derrière l'Espace techniciens (/copilot/app/).
+export const API_BASE_URL = "api";
 
 // Le backend appelle un LLM (le premier appel charge le modèle : parfois > 1 min).
 // Doit rester un peu supérieur au délai du proxy (PROXY_TIMEOUT_SECONDS de server.py).

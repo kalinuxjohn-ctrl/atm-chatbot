@@ -30,8 +30,7 @@
   border: 0;
 }
 
-.copilot-loading,
-.copilot-unavailable {
+.copilot-loading {
   position: absolute;
   inset: 0;
   display: flex;
@@ -59,13 +58,6 @@
 .copilot-loading-logo .icon {
   width: 30px;
   height: 30px;
-}
-
-.copilot-loading-logo.is-warning {
-  background: var(--color-warning-fill);
-  box-shadow: none;
-  color: var(--color-warning);
-  animation: none;
 }
 
 @keyframes copilot-loading-pulse {

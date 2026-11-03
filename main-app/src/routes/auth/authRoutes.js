@@ -17,6 +17,7 @@ import {
 import {
   changeCurrentUserPassword,
   confirmAdministratorSession,
+  confirmSessionWithTechnicianIdentity,
   logIn,
   logOutCurrentSession,
   readCurrentUser,
@@ -46,6 +47,9 @@ export function createAuthRouter() {
   // vers l'administration du Copilote : 204 = administrateur connecté, 401/403 sinon.
   // Jamais joignable depuis le navigateur : le gateway renvoie 404 pour toute URL /internal/.
   authRouter.get("/internal/administrator-check", ...administratorOnly, confirmAdministratorSession);
+  // Idem avant chaque requête vers le Copilote (/copilot/app/) : tout utilisateur connecté,
+  // son n° de technicien est renvoyé dans X-Authenticated-Technician-Id pour le chatbot.
+  authRouter.get("/internal/session-check", requireAuthenticatedUser, confirmSessionWithTechnicianIdentity);
 
   return authRouter;
 }

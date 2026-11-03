@@ -90,6 +90,15 @@ export function confirmAdministratorSession(request, response) {
   response.status(204).end();
 }
 
+/**
+ * Réponse au contrôle auth_request du gateway avant le Copilote : session valide (vérifiée
+ * par requireAuthenticatedUser). Le gateway recopie cet en-tête dans la requête vers le chatbot.
+ */
+export function confirmSessionWithTechnicianIdentity(request, response) {
+  response.set("X-Authenticated-Technician-Id", String(request.user.technicianId));
+  response.status(204).end();
+}
+
 export async function changeCurrentUserPassword(request, response) {
   const passwordChange = parseWithSchema(passwordChangeRequestSchema, request.body);
   await changeOwnPassword(request.user, passwordChange, request.sessionToken);

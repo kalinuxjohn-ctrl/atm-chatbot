@@ -144,7 +144,7 @@ La recherche par distance utilise les extensions PostgreSQL `cube` et `earthdist
 | Accueil | `/` |
 | Connexion | `/auth/login.html` |
 | Inscription | `/auth/register.html` |
-| Copilote (chatbot intégré) | `/copilot/` |
+| Copilote (chatbot intégré) | `/copilot/` (le chatbot lui-même : `/copilot/app/`) |
 | Administration (admin) | `/admin/` : `#comptes`, `#propositions`, `#interventions`, `#codes-erreur`, `#pannes-frequentes` |
 | Carte | `/map/` |
 | Messagerie | `/messaging/` |
@@ -203,6 +203,7 @@ Toutes les routes renvoient du JSON. Sauf indication contraire, elles demandent 
 | PUT | `/accounts/:technicianId/active` | admin | Activer / désactiver |
 | PUT | `/accounts/:technicianId/password` | admin | Réinitialiser le mot de passe |
 | GET | `/internal/administrator-check` | gateway seulement | Contrôle `auth_request` avant l'administration du Copilote (204 = admin). Bloquée depuis le navigateur (404) |
+| GET | `/internal/session-check` | gateway seulement | Contrôle `auth_request` avant le Copilote (`/copilot/app/`) : 204 + en-tête `X-Authenticated-Technician-Id`. Bloquée depuis le navigateur (404) |
 
 ### Administration du Copilote : `/api/copilot-admin` (gateway → API du chatbot)
 

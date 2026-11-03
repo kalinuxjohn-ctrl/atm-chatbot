@@ -14,13 +14,14 @@ technicien) :
 Aucune logique métier ici : tout est délégué à retrieval_service.py.
 """
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 from app.core.tracing import trace
 from app.schemas.conversation_schema import ChatRequest, ChatResponse
 from app.services import chat_orchestrator_service, photo_ocr_service
 
 from app.core.database import get_db
+from app.core.gateway_identity import effective_technician_id
 from app.schemas.chat_schema import SymptomSearchRequest, SymptomSearchResponse
 from app.services.retrieval_service import find_ranked_solutions
 from app.services.llm_service import summarize_solutions
@@ -83,7 +84,8 @@ def rechercher_symptome(payload: SymptomSearchRequest, db: Session = Depends(get
 
 
 @router.post("", response_model=ChatResponse)
-def chat(payload: ChatRequest, db: Session = Depends(get_db)) -> ChatResponse:
+def chat(payload: ChatRequest, request: Request, db: Session = Depends(get_db)) -> ChatResponse:
+    payload.technician_id = effective_technician_id(request, payload.technician_id)
     trace(
         "REQUEST",
         "Message utilisateur reçu",
@@ -133,9 +135,11 @@ def lire_disponibilite_photo() -> dict:
 )
 def lire_contexte_proposition(
     conversation_id: int,
-    technician_id: int = Query(..., description="TODO: remplacer par la dépendance d'auth existante si disponible"),
+    request: Request,
+    technician_id: int = Query(..., description="Remplacé par le technicien connecté derrière l'Espace techniciens"),
     db: Session = Depends(get_db),
 ) -> ProposalContextResponse:
+    technician_id = effective_technician_id(request, technician_id)
     """Problème actif de la conversation, relu côté serveur (409 si aucun problème n'est identifié)."""
     trace("REQUEST", "Contexte de proposition demandé", endpoint="/chat/.../solution-proposal-context", conversation_id=conversation_id)
     return ProposalContextResponse(
@@ -149,8 +153,9 @@ def lire_contexte_proposition(
     status_code=201,
 )
 def proposer_solution(
-    conversation_id: int, payload: SolutionProposalCreate, db: Session = Depends(get_db)
+    conversation_id: int, payload: SolutionProposalCreate, request: Request, db: Session = Depends(get_db)
 ) -> SolutionProposalCreated:
+    payload.technician_id = effective_technician_id(request, payload.technician_id)
     """Enregistre la proposition (pending) ; le problème associé est déterminé par le backend."""
     trace("REQUEST", "Proposition de solution reçue", endpoint="/chat/.../solution-proposals", conversation_id=conversation_id)
     proposal = solution_proposal_service.create_proposal(db, conversation_id, payload)

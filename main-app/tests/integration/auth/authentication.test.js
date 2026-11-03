@@ -168,6 +168,16 @@ describeWithDatabase("administration des comptes et rôles", () => {
     expect((await request(authApp).get(checkPath)).status).toBe(401);
   });
 
+  test("contrôle de session du gateway (Copilote) : 204 + n° de technicien pour tout connecté, 401 sinon", async () => {
+    const checkPath = "/api/auth/internal/session-check";
+    const technician = await createAccountWithSession({ role: "technician" });
+    const checkResponse = await sendAs(authApp, technician).get(checkPath);
+    expect(checkResponse.status).toBe(204);
+    expect(checkResponse.headers["x-authenticated-technician-id"]).toBe(String(technician.technicianId));
+    expect((await request(authApp).get(checkPath)).status).toBe(401);
+    expect((await request(authApp).get(checkPath).set("Cookie", "main_app_session=inventé")).status).toBe(401);
+  });
+
   test("un admin crée un compte avec un nouveau technicien, puis change son rôle", async () => {
     const administrator = await createAccountWithSession({ role: "admin" });
     const username = createUniqueUsername("created");

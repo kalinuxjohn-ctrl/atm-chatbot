@@ -73,6 +73,13 @@ class Settings(BaseSettings):
     # est réutilisée au lieu de créer un doublon.
     action_catalog_match_max_distance: float = 0.15
 
+    # --- Déploiement avec l'Espace techniciens (app/core/gateway_identity.py) ---
+    # Secret partagé avec le gateway de l'Espace techniciens. Vide = chatbot seul :
+    # le technician_id envoyé par le frontend est cru. Défini = seules les requêtes
+    # relayées par le gateway (session vérifiée) sont acceptées, et le technicien
+    # est celui de la session.
+    copilot_gateway_shared_secret: str = ""
+
     # extra="ignore" : le .env est partagé avec docker-compose --
     # une variable que l'app ne connaît pas ne doit pas
     # empêcher le démarrage.

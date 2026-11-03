@@ -7,7 +7,7 @@ import { getFriendlyErrorMessage } from "../core/httpClient.js";
 import { getSession, login } from "../services/sessionService.js";
 import { prefersReducedMotion } from "../utils/dom.js";
 
-const COPILOT_URL = "/copilot.html";
+const COPILOT_URL = "copilot.html";
 
 const loginDialog = document.querySelector("#login-dialog");
 const loginForm = document.querySelector("#login-form");

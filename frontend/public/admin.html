@@ -5,34 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f4f7fb">
     <!-- Thème sombre appliqué avant l'affichage (clé STORAGE_KEYS.theme de js/config.js) -->
-    <script>try{if(localStorage.getItem("copilot.theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
+    <script src="js/applySavedTheme.js"></script>
     <meta name="description" content="Administration du Copilote : propositions des techniciens, codes d’erreur et pannes fréquentes.">
     <title>Administration | ATM-Chatbot</title>
-    <link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml">
+    <link rel="icon" href="assets/images/logo.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-    <link rel="stylesheet" href="/css/assets.css">
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/components.css">
-    <link rel="stylesheet" href="/css/responsive.css">
-    <link rel="stylesheet" href="/css/admin.css">
-    <link rel="stylesheet" href="/css/theme.css">
-    <script type="module" src="/js/components/themeToggle.js"></script>
-    <script type="module" src="/js/pages/admin.js"></script>
+    <link rel="stylesheet" href="css/assets.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/theme.css">
+    <script type="module" src="js/components/themeToggle.js"></script>
+    <script type="module" src="js/pages/admin.js"></script>
   </head>
   <body class="admin-page">
     <header class="site-header">
-      <a class="brand" href="/" aria-label="ATM-Chatbot, accueil">
-        <img class="brand-symbol brand-logo" src="/assets/images/logo.svg" alt="" aria-hidden="true">
+      <a class="brand" href="./" aria-label="ATM-Chatbot, accueil">
+        <img class="brand-symbol brand-logo" src="assets/images/logo.svg" alt="" aria-hidden="true">
         <span>ATM-<strong>Chatbot</strong></span>
       </a>
       <nav class="main-navigation" aria-label="Navigation principale">
-        <a class="navigation-link" href="/">Accueil</a>
-        <a class="navigation-link" href="/copilot.html">Copilote</a>
-        <a class="navigation-link navigation-link-active" href="/admin.html" aria-current="page">Administration</a>
+        <a class="navigation-link" href="./">Accueil</a>
+        <a class="navigation-link" href="copilot.html">Copilote</a>
+        <a class="navigation-link navigation-link-active" href="admin.html" aria-current="page">Administration</a>
       </nav>
-      <a class="header-action" href="/">Retour à l’accueil <span aria-hidden="true">↗</span></a>
+      <a class="header-action" href="./">Retour à l’accueil <span aria-hidden="true">↗</span></a>
     </header>
 
     <main class="admin-main">

@@ -465,7 +465,7 @@ async function initCopilot({ technicianId, displayName }) {
     dictation.cancel();
     stopReading();
     await logout();
-    window.location.href = "/";
+    window.location.href = "./";
   });
 
   /* ---------- Synchronisation vue <-> conversation ---------- */

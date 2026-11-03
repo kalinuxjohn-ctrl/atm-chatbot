@@ -13,9 +13,9 @@
   <body class="copilot-body">
     <header data-page-shell></header>
     <!--
-      Le Copilote est l'application du chatbot (autre conteneur, autre adresse),
-      affichée ici dans une iframe pour garder la navigation de l'Espace techniciens.
-      Son adresse vient de /copilot/settings.json (MAIN_APP_CHATBOT_PUBLIC_URL).
+      Le Copilote est l'application du chatbot (autre conteneur), servie par le
+      gateway sous /copilot/app/ et affichée ici dans une iframe pour garder la
+      navigation de l'Espace techniciens.
     -->
     <main class="copilot-layout">
       <div class="copilot-frame-card">
@@ -24,16 +24,11 @@
           <strong>Ouverture du Copilote…</strong>
           <span class="muted" data-copilot-loading-detail>Assistant de diagnostic GAB et TPE.</span>
         </div>
-        <section class="copilot-unavailable" data-copilot-unavailable hidden>
-          <span class="copilot-loading-logo is-warning"><span data-icon="alert"></span></span>
-          <strong>Copilote non configuré</strong>
-          <span class="muted">Définissez MAIN_APP_CHATBOT_PUBLIC_URL (adresse du frontend du chatbot) puis redémarrez le gateway.</span>
-        </section>
         <iframe class="copilot-frame" title="Copilote de diagnostic" data-copilot-frame allow="microphone; autoplay; clipboard-write" hidden></iframe>
       </div>
       <p class="copilot-footnote">
         <span>Le Copilote ne s'affiche pas ? Vérifiez que le chatbot est démarré.</span>
-        <a href="#" target="_blank" rel="noopener" data-copilot-open-link>Ouvrir dans un nouvel onglet <span data-icon="externalLink"></span></a>
+        <a href="/copilot/app/copilot.html" target="_blank" rel="noopener" data-copilot-open-link>Ouvrir dans un nouvel onglet <span data-icon="externalLink"></span></a>
       </p>
     </main>
   </body>

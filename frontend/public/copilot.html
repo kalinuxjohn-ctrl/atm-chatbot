@@ -5,23 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f4f7fb">
     <!-- Thème sombre appliqué avant l'affichage (clé STORAGE_KEYS.theme de js/config.js) -->
-    <script>try{if(localStorage.getItem("copilot.theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
+    <script src="js/applySavedTheme.js"></script>
     <!-- Affiché dans l'onglet Copilote de l'Espace techniciens (?embedded=1) : thème, technicien, barre du haut masquée -->
-    <script src="/js/embeddedMode.js"></script>
+    <script src="js/embeddedMode.js"></script>
     <meta name="description" content="ATM-Chatbot : conversation écrite et vocale pour la maintenance GAB et TPE.">
     <title>Copilote | ATM-Chatbot</title>
-    <link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml">
+    <link rel="icon" href="assets/images/logo.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-    <link rel="stylesheet" href="/css/assets.css">
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/components.css">
-    <link rel="stylesheet" href="/css/copilot.css">
-    <link rel="stylesheet" href="/css/theme.css">
-    <link rel="stylesheet" href="/css/intervention-add.css">
-    <script type="module" src="/js/components/themeToggle.js"></script>
-    <script type="module" src="/js/pages/copilot.js"></script>
+    <link rel="stylesheet" href="css/assets.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/copilot.css">
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/intervention-add.css">
+    <script type="module" src="js/components/themeToggle.js"></script>
+    <script type="module" src="js/pages/copilot.js"></script>
   </head>
   <body class="copilot-page">
     <!--
@@ -40,14 +40,14 @@
         <span data-icon="menu"></span>
       </button>
       <!-- Avatar du Copilote (choisi dans les paramètres), rempli par copilot.js -->
-      <a class="topbar-logo topbar-avatar" href="/" aria-label="ATM-Chatbot, accueil" title="ATM-Chatbot">
+      <a class="topbar-logo topbar-avatar" href="./" aria-label="ATM-Chatbot, accueil" title="ATM-Chatbot">
         <span class="toolbar-avatar" id="toolbar-avatar" aria-hidden="true"></span>
       </a>
       <nav class="topbar-tabs" aria-label="Pages">
-        <a class="topbar-tab" href="/">Accueil</a>
-        <a class="topbar-tab is-active" href="/copilot.html" aria-current="page">Copilote</a>
-        <a class="topbar-tab" href="/diagnostic.html">Diagnostic</a>
-        <a class="topbar-tab" href="/flow-presentation.html">Présentation</a>
+        <a class="topbar-tab" href="./">Accueil</a>
+        <a class="topbar-tab is-active" href="copilot.html" aria-current="page">Copilote</a>
+        <a class="topbar-tab" href="diagnostic.html">Diagnostic</a>
+        <a class="topbar-tab" href="flow-presentation.html">Présentation</a>
       </nav>
       <!-- Le bouton clair / sombre est ajouté ici par themeToggle.js. -->
       <div class="topbar-tools">
@@ -62,7 +62,7 @@
       <!-- ========== Sidebar ========== -->
       <aside class="app-sidebar" id="app-sidebar" aria-label="Menu du Copilote">
         <div class="sidebar-header">
-          <a class="sidebar-brand" href="/" aria-label="ATM-Chatbot, accueil">
+          <a class="sidebar-brand" href="./" aria-label="ATM-Chatbot, accueil">
             <!-- Avatar du Copilote (le même que dans les messages), rempli par copilot.js -->
             <span class="sidebar-brand-avatar" id="sidebar-brand-avatar" aria-hidden="true"></span>
             <span class="sidebar-brand-text">ATM-<strong>Chatbot</strong></span>
@@ -79,13 +79,13 @@
 
         <nav class="sidebar-navigation" aria-label="Navigation principale">
           <p class="sidebar-section-title">Navigation</p>
-          <a class="sidebar-link" href="/" data-sidebar-label="Accueil">
+          <a class="sidebar-link" href="./" data-sidebar-label="Accueil">
             <span data-icon="home"></span><span class="sidebar-link-label">Accueil</span>
           </a>
-          <a class="sidebar-link is-active" href="/copilot.html" aria-current="page" data-sidebar-label="Copilote">
+          <a class="sidebar-link is-active" href="copilot.html" aria-current="page" data-sidebar-label="Copilote">
             <span data-icon="chat"></span><span class="sidebar-link-label">Copilote</span>
           </a>
-          <a class="sidebar-link" href="/diagnostic.html" data-sidebar-label="Diagnostic">
+          <a class="sidebar-link" href="diagnostic.html" data-sidebar-label="Diagnostic">
             <span data-icon="diagnostic"></span><span class="sidebar-link-label">Diagnostic</span>
           </a>
 

@@ -32,6 +32,19 @@ PUBLIC_DIRECTORY = os.path.join(FRONTEND_DIRECTORY, "public")
 # /interventions) n'ont pas ce préfixe : on retire alors le /api du proxy.
 BACKEND_PATHS_WITH_API_PREFIX = ("/api/chat", "/api/error_code", "/api/admin", "/api/usual_problem", "/api/intervention_add")
 
+# En-têtes recopiés vers le backend :
+# - X-Admin-Key : clé de la page d'administration (admin.html) ;
+# - X-Copilot-Gateway-Secret et X-Authenticated-Technician-Id : identité du technicien,
+#   posées par le gateway de l'Espace techniciens après vérification de la session
+#   (le backend ne les croit qu'avec le bon secret, voir app/core/gateway_identity.py).
+FORWARDED_REQUEST_HEADERS = (
+    "Accept",
+    "Content-Type",
+    "X-Admin-Key",
+    "X-Copilot-Gateway-Secret",
+    "X-Authenticated-Technician-Id",
+)
+
 # ---------- Synthèse vocale (edge-tts) ----------
 try:
     import edge_tts
@@ -237,8 +250,7 @@ class FrontendRequestHandler(SimpleHTTPRequestHandler):
         request_body = self.rfile.read(body_length) if body_length else None
         request_headers = {
             header: self.headers[header]
-            # X-Admin-Key : clé de la page d'administration des propositions.
-            for header in ("Accept", "Content-Type", "X-Admin-Key")
+            for header in FORWARDED_REQUEST_HEADERS
             if self.headers.get(header)
         }
         api_request = Request(
