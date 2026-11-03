@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Copilote | Espace techniciens</title>
+    <script src="/shared/js/applySavedTheme.js"></script>
+    <link rel="stylesheet" href="/shared/css/base.css">
+    <link rel="stylesheet" href="/copilot/css/copilot.css">
+    <script type="module" src="/shared/js/connectedPageShell.js"></script>
+    <script type="module" src="/copilot/js/copilotPage.js"></script>
+  </head>
+  <body class="copilot-body">
+    <header data-page-shell></header>
+    <!--
+      Le Copilote est l'application du chatbot (autre conteneur, autre adresse),
+      affichée ici dans une iframe pour garder la navigation de l'Espace techniciens.
+      Son adresse vient de /copilot/settings.json (MAIN_APP_CHATBOT_PUBLIC_URL).
+    -->
+    <main class="copilot-layout">
+      <div class="copilot-frame-card">
+        <div class="copilot-loading" data-copilot-loading>
+          <span class="copilot-loading-logo"><span data-icon="bot"></span></span>
+          <strong>Ouverture du Copilote…</strong>
+          <span class="muted" data-copilot-loading-detail>Assistant de diagnostic GAB et TPE.</span>
+        </div>
+        <section class="copilot-unavailable" data-copilot-unavailable hidden>
+          <span class="copilot-loading-logo is-warning"><span data-icon="alert"></span></span>
+          <strong>Copilote non configuré</strong>
+          <span class="muted">Définissez MAIN_APP_CHATBOT_PUBLIC_URL (adresse du frontend du chatbot) puis redémarrez le gateway.</span>
+        </section>
+        <iframe class="copilot-frame" title="Copilote de diagnostic" data-copilot-frame allow="microphone; autoplay; clipboard-write" hidden></iframe>
+      </div>
+      <p class="copilot-footnote">
+        <span>Le Copilote ne s'affiche pas ? Vérifiez que le chatbot est démarré.</span>
+        <a href="#" target="_blank" rel="noopener" data-copilot-open-link>Ouvrir dans un nouvel onglet <span data-icon="externalLink"></span></a>
+      </p>
+    </main>
+  </body>
+</html>

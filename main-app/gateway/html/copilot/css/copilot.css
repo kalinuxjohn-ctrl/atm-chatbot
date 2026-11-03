@@ -1,0 +1,117 @@
+/*
+ * Onglet Copilote (/copilot/) : l'iframe du chatbot occupe toute la hauteur
+ * disponible à droite du rail de navigation.
+ */
+
+.copilot-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100vh;
+  height: 100dvh;
+  padding: 12px 12px 10px 0;
+}
+
+.copilot-frame-card {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-surface-glass);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+}
+
+.copilot-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.copilot-loading,
+.copilot-unavailable {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+}
+
+.copilot-loading-logo {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 8px;
+  background: var(--gradient-accent);
+  border-radius: 20px;
+  box-shadow: var(--glow-accent);
+  color: var(--color-accent-text);
+  animation: copilot-loading-pulse 1.4s ease-in-out infinite;
+}
+
+.copilot-loading-logo .icon {
+  width: 30px;
+  height: 30px;
+}
+
+.copilot-loading-logo.is-warning {
+  background: var(--color-warning-fill);
+  box-shadow: none;
+  color: var(--color-warning);
+  animation: none;
+}
+
+@keyframes copilot-loading-pulse {
+  50% {
+    transform: scale(0.94);
+    opacity: 0.8;
+  }
+}
+
+.copilot-footnote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0 6px;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.copilot-footnote a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.copilot-footnote .icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Mobile : barre du haut et onglets du bas autour de l'iframe. */
+@media (max-width: 720px) {
+  .copilot-layout {
+    height: calc(100dvh - 52px - var(--mobile-tab-bar-height) - env(safe-area-inset-bottom));
+    padding: 8px;
+  }
+
+  .copilot-frame-card {
+    border-radius: var(--radius);
+  }
+
+  .copilot-footnote span:first-child {
+    display: none;
+  }
+}

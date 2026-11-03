@@ -1,0 +1,735 @@
+/*
+ * Page Administration (/admin/). S'appuie sur les jetons et composants de
+ * /shared/css/base.css : aucune couleur en dur ici, seulement des var(--…).
+ *
+ * Plan :
+ *   1. Mise en page : sommaire à gauche, rubrique à droite
+ *   2. En-tête de rubrique, filtres, recherche
+ *   3. Cartes de demande à valider (propositions, ajouts d'intervention)
+ *   4. Formulaire de décision et bandeau de résultat
+ *   5. Comptes (tableau)
+ *   6. Réponses enregistrées (codes d'erreur, pannes fréquentes)
+ *   7. Mobile
+ */
+
+/* ---------- 1. Mise en page ---------- */
+
+.administration-layout {
+  max-width: 1240px;
+}
+
+.page-eyebrow {
+  margin: 0 0 4px;
+  color: var(--color-accent-strong);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.administration-heading h1 {
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+}
+
+.administration-forbidden {
+  max-width: 520px;
+  margin: 40px auto;
+}
+
+.administration-workspace {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.administration-menu {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px;
+}
+
+.administration-menu-title {
+  margin: 14px 0 6px;
+  padding: 0 10px;
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.administration-menu-title:first-child {
+  margin-top: 4px;
+}
+
+.administration-menu-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--color-text-soft);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.administration-menu-link:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.administration-menu-link[aria-current="page"] {
+  background: var(--color-accent-fill);
+  border-color: var(--color-accent-border);
+  color: var(--color-accent-strong);
+}
+
+.administration-menu-link .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.administration-menu-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.administration-menu-counter {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 11px;
+  color: var(--color-text-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+/* Demandes en attente : compteur mis en avant, c'est ce qui appelle une action. */
+.administration-menu-counter.is-pending {
+  background: var(--color-warning-fill);
+  border-color: var(--color-warning-border);
+  color: var(--color-warning);
+}
+
+.administration-sections {
+  min-width: 0;
+}
+
+.administration-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: administration-section-appear 160ms ease-out;
+}
+
+@keyframes administration-section-appear {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* ---------- 2. En-tête de rubrique, filtres, recherche ---------- */
+
+.administration-section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 20px;
+}
+
+.administration-section-header h2 {
+  margin: 0 0 4px;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.administration-section-header p {
+  max-width: 68ch;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+}
+
+.segmented-control {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 2px;
+  padding: 4px;
+  background: var(--color-surface-glass);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+}
+
+.segmented-control button {
+  padding: 6px 14px;
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.segmented-control button:hover {
+  color: var(--color-text);
+}
+
+.segmented-control button[aria-selected="true"] {
+  background: var(--color-surface);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
+  color: var(--color-accent-strong);
+}
+
+.section-status {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+}
+
+.section-status:empty {
+  display: none;
+}
+
+.section-status.is-error {
+  padding: 10px 12px;
+  background: var(--color-danger-fill);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-small);
+  color: var(--color-danger);
+}
+
+.record-toolbar {
+  display: flex;
+}
+
+.search-field {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  max-width: 420px;
+}
+
+.search-field .icon {
+  position: absolute;
+  left: 12px;
+  width: 17px;
+  height: 17px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.search-field input {
+  padding-left: 38px;
+  border-radius: 999px;
+}
+
+.review-list,
+.record-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---------- 3. Cartes de demande à valider ---------- */
+
+.review-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+}
+
+.review-card-header,
+.record-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.review-card-title h3,
+.record-card-title h3 {
+  margin: 0 0 2px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.review-card-title p {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.review-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 8px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-pill .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.status-pill-pending {
+  background: var(--color-warning-fill);
+  border-color: var(--color-warning-border);
+  color: var(--color-warning);
+}
+
+.status-pill-approved {
+  background: var(--color-accent-fill);
+  border-color: var(--color-accent-border);
+  color: var(--color-accent-strong);
+}
+
+.status-pill-rejected {
+  background: var(--color-danger-fill);
+  border-color: var(--color-danger-border);
+  color: var(--color-danger);
+}
+
+.fact-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px 18px;
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+}
+
+.fact-list-item {
+  min-width: 0;
+}
+
+.fact-list dt {
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.fact-list dd {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.text-block-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.text-block h4,
+.decision-form h4,
+.disclosure-body h4 {
+  margin: 0 0 6px;
+  color: var(--color-text-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.text-block > p {
+  margin: 0;
+  white-space: pre-line;
+}
+
+.text-block-footnote {
+  margin-top: 6px !important;
+  color: var(--color-accent-strong);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.numbered-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.numbered-list li {
+  padding-left: 4px;
+}
+
+.numbered-list li::marker {
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+.numbered-list li > * {
+  display: block;
+}
+
+.numbered-list-title {
+  font-weight: 700;
+}
+
+.numbered-list-title .badge {
+  display: inline-flex;
+  margin-left: 4px;
+  vertical-align: 1px;
+}
+
+.numbered-list .badge .icon {
+  width: 13px;
+  height: 13px;
+}
+
+.plain-list {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  font-size: 0.9rem;
+}
+
+.disclosure {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+}
+
+.disclosure summary {
+  padding: 10px 14px;
+  color: var(--color-text-soft);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.disclosure summary:hover {
+  color: var(--color-accent-strong);
+}
+
+.disclosure[open] summary {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.disclosure > :not(summary) {
+  margin: 12px 14px;
+}
+
+.disclosure-body .fact-list {
+  margin-bottom: 12px;
+}
+
+.code-block {
+  max-height: 260px;
+  overflow: auto;
+  padding: 12px;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-small);
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+}
+
+/* ---------- 4. Formulaire de décision et bandeau de résultat ---------- */
+
+.decision-form {
+  padding: 16px;
+  background: var(--color-surface);
+  border: 1px dashed var(--color-accent-border);
+  border-radius: var(--radius);
+}
+
+.decision-form-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 10px;
+}
+
+.decision-form-heading span {
+  font-size: 0.82rem;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.decision-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--color-accent-fill);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-small);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.decision-notice .icon {
+  margin-top: 1px;
+  color: var(--color-accent-strong);
+}
+
+.decision-notice.is-rejection {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border-strong);
+}
+
+.decision-notice.is-rejection .icon {
+  color: var(--color-text-muted);
+}
+
+/* ---------- 5. Comptes ---------- */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0 14px;
+}
+
+.form-field-wide {
+  grid-column: 1 / -1;
+}
+
+.form-field-hint {
+  font-size: 0.8rem;
+}
+
+.form-hint {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+}
+
+.card-header h3,
+.record-form h3 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.card-header h3 {
+  margin: 0;
+}
+
+.table-card {
+  padding: 6px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.data-table th {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-table tbody tr:hover {
+  background: var(--color-surface-hover);
+}
+
+.data-table .data-table-actions {
+  text-align: right;
+}
+
+.data-table tr.is-inactive .user-identity {
+  opacity: 0.55;
+}
+
+.user-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-identity-names {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.user-identity-names span {
+  font-size: 0.82rem;
+}
+
+.compact-select {
+  width: auto;
+  padding: 6px 10px;
+  font-size: 0.88rem;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.row-actions .button .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.inline-password-form {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.inline-password-form input {
+  width: 220px;
+  padding: 6px 10px;
+  font-size: 0.88rem;
+}
+
+/* ---------- 6. Réponses enregistrées ---------- */
+
+.record-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.record-card-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.record-card-body {
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-small);
+  color: var(--color-text-soft);
+  font-size: 0.9rem;
+  white-space: pre-line;
+}
+
+.record-form {
+  border-color: var(--color-accent-border);
+}
+
+.button-danger-text:hover:not(:disabled),
+.button-danger-text.is-confirming {
+  background: var(--color-danger-fill);
+  border-color: var(--color-danger-border);
+  color: var(--color-danger);
+}
+
+/* ---------- 7. Mobile ---------- */
+
+@media (max-width: 980px) {
+  .administration-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  /* Le sommaire devient une rangée de puces qui défile horizontalement. */
+  .administration-menu {
+    position: static;
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 6px;
+    scrollbar-width: none;
+  }
+
+  .administration-menu-title {
+    display: none;
+  }
+
+  .administration-menu-link {
+    flex: none;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 720px) {
+  .data-table thead {
+    display: none;
+  }
+
+  /* Tableau des comptes : une carte par ligne. */
+  .data-table tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    padding: 12px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .data-table td {
+    padding: 0;
+    border: 0;
+  }
+
+  .data-table td:first-child,
+  .data-table .data-table-actions {
+    grid-column: 1 / -1;
+  }
+
+  .row-actions {
+    justify-content: flex-start;
+  }
+}

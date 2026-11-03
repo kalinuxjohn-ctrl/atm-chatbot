@@ -52,7 +52,17 @@ Services : `main-app-gateway`, `main-app-auth`, `main-app-map`, `main-app-messag
 
 ## 2. Séparation avec le chatbot
 
-Les deux applications ne sont reliées **que par la base PostgreSQL**. Il n'y a pas d'appel HTTP entre elles, pas de lien dans l'interface, pas de code commun et pas de compte unique.
+Les deux applications n'ont **aucun code commun**. Elles sont reliées par trois points seulement :
+
+1. **La base PostgreSQL** (détails ci-dessous).
+2. **L'onglet Copilote** (`/copilot/`, page du gateway) : le frontend du chatbot est affiché dans une iframe, à l'adresse `MAIN_APP_CHATBOT_PUBLIC_URL` (origine vue par le navigateur, par défaut `http://localhost:5173`). La page charge `copilot.html?embedded=1&theme=…&technician_id=…&display_name=…` : en mode intégré (`frontend/public/js/embeddedMode.js`), le chatbot masque sa barre du haut, reprend le thème de l'Espace techniciens (et ses changements, par `postMessage`) et utilise le technicien connecté — même n° de `technician` dans les deux applications. La CSP de `/copilot/` autorise cette seule origine en `frame-src`, et lui délègue le micro (dictée, chat vocal).
+3. **L'administration du Copilote** (rubriques de `/admin/`) : le gateway relaie `/api/copilot-admin/<chemin>` vers `/api/admin/<chemin>` de l'API du chatbot :
+   - `auth_request` interroge d'abord `GET /api/auth/internal/administrator-check` (conteneur auth) : 204 pour un admin connecté, sinon 401/403 renvoyés tels quels au navigateur ;
+   - le gateway ajoute lui-même l'en-tête `X-Admin-Key` (valeur de `ADMIN_API_KEY`, passée au gateway sous le nom `MAIN_APP_CHATBOT_ADMIN_API_KEY`) : la clé n'arrive jamais dans le navigateur, et celle qu'un client enverrait est écrasée ;
+   - pour cela, le service `web` du chatbot rejoint `main-app-network` sous l'alias `chatbot-api` (dans `docker-compose.main-app.yml`). Le gateway ne voit toujours pas la base ;
+   - les deux variables sont écrites au démarrage dans `/tmp/copilot-settings.conf` à partir de `gateway/templates/copilot-settings.conf.template` (mécanisme `envsubst` de l'image nginx).
+
+Si le chatbot est arrêté, l'onglet Copilote reste vide (lien « Ouvrir dans un nouvel onglet ») et les rubriques Copilote de l'administration affichent « Copilote momentanément indisponible » ; le reste de l'Espace techniciens fonctionne normalement.
 
 | Élément | Chatbot | Main app |
 |---|---|---|
@@ -219,7 +229,7 @@ Règles :
   |---|---|
   | `technician` | gère ses propres points |
   | `moderator` | gère tous les points |
-  | `admin` | gère aussi les comptes et les rôles (`/auth/accounts.html`) |
+  | `admin` | gère aussi les comptes et les rôles, et administre le Copilote (`/admin/`) |
 
   - Un admin ne peut pas modifier son propre compte depuis l'administration.
   - Il reste toujours au moins un admin actif.

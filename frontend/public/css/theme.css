@@ -3469,3 +3469,32 @@ kbd {
   color: var(--danger);
   font-weight: 600;
 }
+
+/* ----- Mode intégré : onglet Copilote de l'Espace techniciens (js/embeddedMode.js) -----
+   L'Espace techniciens fournit déjà le cadre, la navigation et le thème :
+   on retire le cadre « écran », la barre du haut et l'interrupteur de thème. */
+:root[data-embedded] .copilot-page {
+  background: var(--frame-background);
+}
+
+:root[data-embedded] .copilot-page .app-frame {
+  height: 100dvh;
+  margin: 0;
+  padding: 12px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:root[data-embedded] .copilot-page .app-frame::before,
+:root[data-embedded] .copilot-page .app-frame::after,
+:root[data-embedded] .copilot-page .theme-switch {
+  display: none;
+}
+
+/* Écran large : plus de barre du haut du tout. Petit écran : elle reste pour le bouton du menu. */
+@media (min-width: 720px) {
+  :root[data-embedded] .copilot-page .app-topbar {
+    display: none;
+  }
+}

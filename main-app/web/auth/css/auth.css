@@ -1,4 +1,4 @@
-/* Pages de connexion, d'inscription et d'administration des comptes. */
+/* Pages de connexion et d'inscription (les comptes se gèrent dans /admin/). */
 
 /* --- Connexion et inscription : panneau de marque à gauche, formulaire à droite --- */
 .authentication-layout {
@@ -139,74 +139,4 @@
   .authentication-card {
     padding: 20px;
   }
-}
-
-/* --- Administration des comptes --- */
-.accounts-layout {
-  display: grid;
-  gap: 16px;
-}
-
-.accounts-layout .card-header > .icon {
-  color: var(--color-accent-strong);
-}
-
-.accounts-table-wrapper {
-  overflow-x: auto;
-}
-
-.accounts-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.92rem;
-}
-
-.accounts-table th {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-align: left;
-  text-transform: uppercase;
-}
-
-.accounts-table td {
-  padding: 10px;
-  border-bottom: 1px solid var(--color-border);
-  text-align: left;
-  vertical-align: middle;
-}
-
-.accounts-table tbody tr:hover {
-  background: var(--color-surface-hover);
-}
-
-.accounts-table select {
-  width: auto;
-  padding: 6px 10px;
-}
-
-.account-username-cell {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 700;
-}
-
-.account-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.account-inactive {
-  color: var(--color-text-muted);
-}
-
-.account-creation-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 0 14px;
 }

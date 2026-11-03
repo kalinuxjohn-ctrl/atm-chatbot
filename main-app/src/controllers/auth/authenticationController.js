@@ -85,6 +85,11 @@ export async function readCurrentUser(request, response) {
   response.json({ user: { ...request.user, fullName: profile?.fullName ?? null } });
 }
 
+/** Réponse au contrôle auth_request du gateway : la session (et le rôle admin) ont déjà été vérifiés par les middlewares. */
+export function confirmAdministratorSession(request, response) {
+  response.status(204).end();
+}
+
 export async function changeCurrentUserPassword(request, response) {
   const passwordChange = parseWithSchema(passwordChangeRequestSchema, request.body);
   await changeOwnPassword(request.user, passwordChange, request.sessionToken);

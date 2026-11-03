@@ -159,6 +159,15 @@ describeWithDatabase("administration des comptes et rôles", () => {
     }
   });
 
+  test("contrôle admin du gateway (administration du Copilote) : 204 admin, 403 autres rôles, 401 sans session", async () => {
+    const checkPath = "/api/auth/internal/administrator-check";
+    expect((await sendAs(authApp, await createAccountWithSession({ role: "admin" })).get(checkPath)).status).toBe(204);
+    for (const role of ["technician", "moderator"]) {
+      expect((await sendAs(authApp, await createAccountWithSession({ role })).get(checkPath)).status).toBe(403);
+    }
+    expect((await request(authApp).get(checkPath)).status).toBe(401);
+  });
+
   test("un admin crée un compte avec un nouveau technicien, puis change son rôle", async () => {
     const administrator = await createAccountWithSession({ role: "admin" });
     const username = createUniqueUsername("created");

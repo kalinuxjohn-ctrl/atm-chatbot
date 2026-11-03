@@ -1,6 +1,7 @@
 /**
  * Conteneur main-app-auth : connexion, sessions, comptes et rôles.
- * Pages : web/auth/ (login.html, register.html, accounts.html).
+ * Pages : web/auth/ (login.html, register.html). La gestion des comptes est une
+ * rubrique de la page Administration (gateway/html/admin/), qui appelle cette API.
  */
 
 import { loadConfiguration } from "../core/config.js";

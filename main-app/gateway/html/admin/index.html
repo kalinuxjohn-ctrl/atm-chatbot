@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Administration | Espace techniciens</title>
+    <script src="/shared/js/applySavedTheme.js"></script>
+    <link rel="stylesheet" href="/shared/css/base.css">
+    <link rel="stylesheet" href="/admin/css/administration.css">
+    <script type="module" src="/shared/js/connectedPageShell.js"></script>
+    <script type="module" src="/admin/js/administrationPage.js"></script>
+  </head>
+  <body>
+    <header data-page-shell></header>
+    <main class="page-content administration-layout">
+      <div class="page-heading administration-heading">
+        <p class="page-eyebrow">Administration</p>
+        <h1>Pilotage de l'Espace techniciens et du Copilote</h1>
+        <p>Comptes des techniciens, propositions à valider et réponses enregistrées du Copilote, au même endroit.</p>
+      </div>
+
+      <!-- Affiché à la place des rubriques si l'utilisateur n'est pas administrateur. -->
+      <section class="card empty-state administration-forbidden" data-administration-forbidden hidden>
+        <span data-icon="shield"></span>
+        <strong>Page réservée aux administrateurs</strong>
+        <span>Demandez à un administrateur de vous donner ce rôle si vous en avez besoin.</span>
+      </section>
+
+      <div class="administration-workspace" data-administration-workspace hidden>
+        <!--
+          Sommaire des rubriques. Chaque lien pointe vers #<rubrique> : la rubrique
+          ouverte suit l'adresse (on peut la partager, et « Précédent » fonctionne).
+          Les compteurs [data-section-counter] sont remplis par administrationPage.js.
+        -->
+        <nav class="card administration-menu" aria-label="Rubriques d'administration">
+          <p class="administration-menu-title">Espace techniciens</p>
+          <a class="administration-menu-link" href="#comptes" data-section-link="comptes">
+            <span data-icon="users"></span><span class="administration-menu-label">Comptes</span>
+            <span class="administration-menu-counter" data-section-counter="comptes" hidden></span>
+          </a>
+
+          <p class="administration-menu-title">Copilote · à valider</p>
+          <a class="administration-menu-link" href="#propositions" data-section-link="propositions">
+            <span data-icon="lightbulb"></span><span class="administration-menu-label">Propositions</span>
+            <span class="administration-menu-counter is-pending" data-section-counter="propositions" hidden></span>
+          </a>
+          <a class="administration-menu-link" href="#interventions" data-section-link="interventions">
+            <span data-icon="clipboardList"></span><span class="administration-menu-label">Ajouts d'intervention</span>
+            <span class="administration-menu-counter is-pending" data-section-counter="interventions" hidden></span>
+          </a>
+
+          <p class="administration-menu-title">Copilote · réponses</p>
+          <a class="administration-menu-link" href="#codes-erreur" data-section-link="codes-erreur">
+            <span data-icon="errorCode"></span><span class="administration-menu-label">Codes d'erreur</span>
+            <span class="administration-menu-counter" data-section-counter="codes-erreur" hidden></span>
+          </a>
+          <a class="administration-menu-link" href="#pannes-frequentes" data-section-link="pannes-frequentes">
+            <span data-icon="listOrdered"></span><span class="administration-menu-label">Pannes fréquentes</span>
+            <span class="administration-menu-counter" data-section-counter="pannes-frequentes" hidden></span>
+          </a>
+        </nav>
+
+        <!-- Une seule rubrique visible à la fois ; chaque module JS remplit la sienne. -->
+        <div class="administration-sections">
+          <section class="administration-section" id="comptes" data-section="comptes" aria-labelledby="comptes-title" hidden>
+            <header class="administration-section-header">
+              <div>
+                <h2 id="comptes-title">Comptes</h2>
+                <p>Créez les accès, changez les rôles, désactivez un compte : ses sessions sont coupées aussitôt.</p>
+              </div>
+              <button class="button" type="button" data-account-creation-toggle><span data-icon="userPlus"></span>Nouveau compte</button>
+            </header>
+            <p class="form-error" data-accounts-error role="alert" hidden></p>
+
+            <form class="card account-creation-form" data-account-creation-form novalidate hidden>
+              <div class="card-header">
+                <h3>Créer un compte</h3>
+              </div>
+              <div class="form-grid">
+                <label class="form-field">Nom d'utilisateur
+                  <input name="username" required maxlength="30" autocapitalize="none" spellcheck="false" autocomplete="off">
+                </label>
+                <label class="form-field">Mot de passe initial
+                  <input name="password" type="password" required minlength="10" maxlength="128" autocomplete="new-password">
+                </label>
+                <label class="form-field">Rôle
+                  <select name="role">
+                    <option value="technician">Technicien</option>
+                    <option value="moderator">Modérateur (gère tous les points)</option>
+                    <option value="admin">Administrateur</option>
+                  </select>
+                </label>
+                <label class="form-field">Nom complet (nouveau technicien)
+                  <input name="fullName" maxlength="200" autocomplete="off">
+                </label>
+                <label class="form-field">Ou technicien existant du chatbot (n°)
+                  <input name="existingTechnicianId" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+                </label>
+              </div>
+              <p class="muted form-hint">Sans n° de technicien existant, un nouveau technicien est ajouté avec ce nom complet.</p>
+              <p class="form-error" data-creation-error role="alert" hidden></p>
+              <div class="form-actions">
+                <button class="button button-secondary" type="button" data-account-creation-cancel>Annuler</button>
+                <button class="button" type="submit">Créer le compte</button>
+              </div>
+            </form>
+            <p class="form-success" data-accounts-success role="status" hidden></p>
+
+            <div class="card table-card">
+              <div class="table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr><th>Utilisateur</th><th>N°</th><th>Rôle</th><th>État</th><th class="data-table-actions">Actions</th></tr>
+                  </thead>
+                  <tbody data-accounts-table-body></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section class="administration-section" id="propositions" data-section="propositions" aria-labelledby="propositions-title" hidden>
+            <header class="administration-section-header">
+              <div>
+                <h2 id="propositions-title">Propositions de solution</h2>
+                <p>Solutions trouvées sur le terrain et proposées depuis le Copilote. Approuvée, une proposition rejoint le catalogue d'actions ; rejetée, elle reste dans l'historique.</p>
+              </div>
+            </header>
+            <div class="segmented-control" role="tablist" aria-label="Statut des propositions" data-status-filter="propositions">
+              <button type="button" role="tab" data-status="pending" aria-selected="true">En attente</button>
+              <button type="button" role="tab" data-status="approved" aria-selected="false">Approuvées</button>
+              <button type="button" role="tab" data-status="rejected" aria-selected="false">Rejetées</button>
+            </div>
+            <p class="section-status" data-section-status="propositions" role="status"></p>
+            <div class="review-list" data-review-list="propositions" aria-live="polite"></div>
+          </section>
+
+          <section class="administration-section" id="interventions" data-section="interventions" aria-labelledby="interventions-title" hidden>
+            <header class="administration-section-header">
+              <div>
+                <h2 id="interventions-title">Ajouts d'intervention</h2>
+                <p>Interventions racontées par les techniciens depuis le Copilote. Approuvée, une demande est écrite dans l'historique et nourrit les statistiques des solutions.</p>
+              </div>
+            </header>
+            <div class="segmented-control" role="tablist" aria-label="Statut des demandes" data-status-filter="interventions">
+              <button type="button" role="tab" data-status="pending" aria-selected="true">En attente</button>
+              <button type="button" role="tab" data-status="approved" aria-selected="false">Approuvées</button>
+              <button type="button" role="tab" data-status="rejected" aria-selected="false">Rejetées</button>
+            </div>
+            <p class="section-status" data-section-status="interventions" role="status"></p>
+            <div class="review-list" data-review-list="interventions" aria-live="polite"></div>
+          </section>
+
+          <section class="administration-section" id="codes-erreur" data-section="codes-erreur" aria-labelledby="codes-erreur-title" hidden>
+            <header class="administration-section-header">
+              <div>
+                <h2 id="codes-erreur-title">Codes d'erreur</h2>
+                <p>Un code apparaît dans le menu « Codes d'erreur connus » du Copilote s'il a un équipement et une réponse. Sans réponse, il reste trouvable par la recherche.</p>
+              </div>
+              <button class="button" type="button" data-record-add="codes-erreur"><span data-icon="plus"></span>Ajouter un code</button>
+            </header>
+            <div class="record-toolbar">
+              <label class="search-field">
+                <span data-icon="search"></span>
+                <input type="search" placeholder="Rechercher un code, un libellé…" data-record-search="codes-erreur" aria-label="Rechercher un code d'erreur">
+              </label>
+            </div>
+            <p class="section-status" data-section-status="codes-erreur" role="status"></p>
+            <div class="record-list" data-record-list="codes-erreur" aria-live="polite"></div>
+          </section>
+
+          <section class="administration-section" id="pannes-frequentes" data-section="pannes-frequentes" aria-labelledby="pannes-frequentes-title" hidden>
+            <header class="administration-section-header">
+              <div>
+                <h2 id="pannes-frequentes-title">Pannes fréquentes</h2>
+                <p>Chaque panne apparaît dans le menu « Pannes fréquentes » de son équipement, dans l'ordre indiqué. Le Copilote répond avec le texte enregistré, sans IA.</p>
+              </div>
+              <button class="button" type="button" data-record-add="pannes-frequentes"><span data-icon="plus"></span>Ajouter une panne</button>
+            </header>
+            <div class="record-toolbar">
+              <label class="search-field">
+                <span data-icon="search"></span>
+                <input type="search" placeholder="Rechercher une panne…" data-record-search="pannes-frequentes" aria-label="Rechercher une panne fréquente">
+              </label>
+            </div>
+            <p class="section-status" data-section-status="pannes-frequentes" role="status"></p>
+            <div class="record-list" data-record-list="pannes-frequentes" aria-live="polite"></div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

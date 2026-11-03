@@ -54,7 +54,7 @@ Après 5 échecs pour un même couple (nom saisi, adresse IP), les tentatives so
 |---|---|
 | `technician` | Utiliser la carte, la messagerie et les appels ; modifier ses propres points |
 | `moderator` | Comme un technicien, et modifier ou supprimer **tous** les points |
-| `admin` | Comme un modérateur, et gérer les comptes (page `/auth/accounts.html`) |
+| `admin` | Comme un modérateur, et gérer les comptes et le Copilote (page `/admin/`) |
 
 ### Gestion des comptes (administrateur)
 
@@ -144,12 +144,31 @@ La recherche par distance utilise les extensions PostgreSQL `cube` et `earthdist
 | Accueil | `/` |
 | Connexion | `/auth/login.html` |
 | Inscription | `/auth/register.html` |
-| Gestion des comptes | `/auth/accounts.html` |
+| Copilote (chatbot intégré) | `/copilot/` |
+| Administration (admin) | `/admin/` : `#comptes`, `#propositions`, `#interventions`, `#codes-erreur`, `#pannes-frequentes` |
 | Carte | `/map/` |
 | Messagerie | `/messaging/` |
 | Appels | `/calls/` |
 
 ---
+
+### Administration (`/admin/`)
+
+Page unique du gateway (`gateway/html/admin/`), une rubrique par sujet ; la rubrique ouverte suit l'adresse (`/admin/#propositions`…). L'ancienne adresse `/auth/accounts.html` redirige vers `/admin/#comptes`.
+
+| Rubrique | Source | Rôle |
+|---|---|---|
+| Comptes | `/api/auth/accounts` | Créer un compte, changer un rôle, désactiver, nouveau mot de passe |
+| Propositions | `/api/copilot-admin/solution-proposals` | Approuver (rejoint le catalogue d'actions) ou rejeter une solution proposée depuis le Copilote |
+| Ajouts d'intervention | `/api/copilot-admin/intervention_add` | Voir l'intervention racontée, l'aperçu de l'écriture, approuver ou rejeter |
+| Codes d'erreur | `/api/copilot-admin/error_code` | Réponses enregistrées du menu « Codes d'erreur connus » |
+| Pannes fréquentes | `/api/copilot-admin/usual_problem` | Réponses enregistrées du menu « Pannes fréquentes » |
+
+Les décisions sont signées avec le nom de l'administrateur connecté. Le sommaire affiche le nombre de demandes en attente.
+
+### Icônes
+
+Jeu [Lucide](https://lucide.dev) (licence ISC, `gateway/html/shared/js/LICENSE-lucide.txt`). `shared/js/icons.js` est **généré** par `gateway/scripts/generate_lucide_icons.py` : pour ajouter une icône, l'ajouter dans la table du script puis le relancer (`python main-app/gateway/scripts/generate_lucide_icons.py`).
 
 ## 7. Tâches ponctuelles
 
@@ -183,6 +202,23 @@ Toutes les routes renvoient du JSON. Sauf indication contraire, elles demandent 
 | PUT | `/accounts/:technicianId/role` | admin | Changer le rôle |
 | PUT | `/accounts/:technicianId/active` | admin | Activer / désactiver |
 | PUT | `/accounts/:technicianId/password` | admin | Réinitialiser le mot de passe |
+| GET | `/internal/administrator-check` | gateway seulement | Contrôle `auth_request` avant l'administration du Copilote (204 = admin). Bloquée depuis le navigateur (404) |
+
+### Administration du Copilote : `/api/copilot-admin` (gateway → API du chatbot)
+
+Réservée aux administrateurs. Chaque requête est relayée vers `/api/admin/…` du chatbot avec la clé `ADMIN_API_KEY`. Les erreurs du chatbot gardent leur forme FastAPI (`{ "detail": … }`).
+
+| Méthode | Route | Rôle |
+|---|---|---|
+| GET | `/solution-proposals?status=` | Propositions par statut (`pending`, `approved`, `rejected`) |
+| POST | `/solution-proposals/:id/approve` · `/reject` | Décider (`reviewed_by`, `admin_comment`, `canonical_text`) |
+| GET | `/intervention_add?status=` | Ajouts d'intervention par statut |
+| GET | `/intervention_add/:id/preview` | Ce que l'approbation écrira (rien n'est écrit) |
+| POST | `/intervention_add/:id/approve` · `/reject` | Décider |
+| GET · POST | `/error_code` | Lister / ajouter un code d'erreur |
+| PUT · DELETE | `/error_code/:id` | Modifier / supprimer |
+| GET · POST | `/usual_problem` | Lister / ajouter une panne fréquente |
+| PUT · DELETE | `/usual_problem/:id` | Modifier / supprimer |
 
 ### Carte : `/api/map`
 

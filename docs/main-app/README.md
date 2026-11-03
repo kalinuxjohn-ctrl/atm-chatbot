@@ -9,6 +9,7 @@ La référence technique détaillée (sécurité, conteneurs, variables) reste d
 | [base-de-donnees.md](base-de-donnees.md) | Schéma SQL, diagramme entité-association, description des tables |
 | [diagrammes-uml.md](diagrammes-uml.md) | Cas d'utilisation, classes, séquences, états |
 | [fonctionnement.md](fonctionnement.md) | Fonctionnement de chaque module, liste des routes de l'API |
+| [../demarrage-et-connexions.md](../demarrage-et-connexions.md) | **Lancer tout le projet**, interfaces, connexion et vérification des API (avec le chatbot) |
 
 Les diagrammes sont écrits en [Mermaid](https://mermaid.js.org/) : GitHub, GitLab et VS Code (extension *Markdown Preview Mermaid Support*) les affichent directement.
 

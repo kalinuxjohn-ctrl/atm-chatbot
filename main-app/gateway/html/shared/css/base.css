@@ -272,6 +272,11 @@ body.has-app-sidebar {
   text-transform: uppercase;
 }
 
+/* Deuxième groupe de liens (« Gestion », réservé aux administrateurs). */
+.app-sidebar-section-title-spaced {
+  margin-top: 14px;
+}
+
 .app-navigation {
   display: flex;
   flex: 1;

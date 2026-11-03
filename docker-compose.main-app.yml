@@ -5,8 +5,13 @@
 #
 #   docker compose -f docker-compose.yml -f docker-compose.main-app.yml up -d --build
 #
-# Les deux applications ne partagent que la base PostgreSQL (service `db` du
-# chatbot) : aucun appel HTTP entre elles, aucun code commun.
+# Liens avec le chatbot (aucun code commun) :
+#   - la base PostgreSQL (service `db`), dans un schéma séparé ;
+#   - l'administration du Copilote : le gateway relaie /api/copilot-admin/ vers
+#     l'API admin du chatbot (service `web`, ajouté au réseau du gateway
+#     ci-dessous), pour les seuls administrateurs connectés ;
+#   - l'onglet Copilote : le frontend du chatbot affiché dans une iframe
+#     (MAIN_APP_CHATBOT_PUBLIC_URL).
 #
 # Chaque fonctionnalité a son conteneur, arrêtable et redémarrable seul :
 #   main-app-gateway    nginx, SEUL port publié de la main app
@@ -155,7 +160,15 @@ services:
     # derrière un reverse proxy HTTPS pour un accès depuis le terrain.
     ports:
       - "${MAIN_APP_GATEWAY_PUBLISHED_ADDRESS:-127.0.0.1}:${MAIN_APP_GATEWAY_PORT:-8080}:8080"
-    # Pas sur le réseau du chatbot : le gateway ne voit ni la base ni le chatbot.
+    environment:
+      # Clé de l'API admin du chatbot : ajoutée par le gateway aux requêtes
+      # /api/copilot-admin/ des administrateurs, jamais envoyée au navigateur.
+      MAIN_APP_CHATBOT_ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      # Adresse du frontend du chatbot vue par le NAVIGATEUR (origine seule,
+      # sans chemin) : affichée dans l'onglet Copilote.
+      MAIN_APP_CHATBOT_PUBLIC_URL: ${MAIN_APP_CHATBOT_PUBLIC_URL:-http://localhost:5173}
+    # Pas sur le réseau du chatbot : le gateway ne voit pas la base. Il joint
+    # l'API du chatbot uniquement parce que `web` rejoint main-app-network (plus bas).
     networks:
       - main-app-network
     healthcheck:
@@ -163,6 +176,15 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+
+  # Service du chatbot (docker-compose.yml), complété ici : il rejoint aussi le
+  # réseau du gateway sous le nom `chatbot-api`, pour l'administration du Copilote.
+  web:
+    networks:
+      default: {}
+      main-app-network:
+        aliases:
+          - chatbot-api
 
 networks:
   main-app-network:
