@@ -71,5 +71,6 @@ async def require_gateway_identity(request: Request, call_next):
 
 def effective_technician_id(request: Request, claimed_technician_id: int) -> int:
     """Technicien connecté (vérifié par le gateway) s'il y en a un, sinon celui annoncé par le frontend."""
-    authenticated_technician_id = getattr(request.state, "authenticated_technician_id", None)
+    # request peut être None quand une route est appelée directement (tests).
+    authenticated_technician_id = getattr(getattr(request, "state", None), "authenticated_technician_id", None)
     return authenticated_technician_id if authenticated_technician_id is not None else claimed_technician_id

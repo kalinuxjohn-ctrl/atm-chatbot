@@ -84,7 +84,9 @@ def rechercher_symptome(payload: SymptomSearchRequest, db: Session = Depends(get
 
 
 @router.post("", response_model=ChatResponse)
-def chat(payload: ChatRequest, request: Request, db: Session = Depends(get_db)) -> ChatResponse:
+# `request` en DERNIER (avec défaut) : FastAPI l'injecte quand même, et un appel direct
+# chat(payload, db), comme dans tests/test_tracing.py, reste valable.
+def chat(payload: ChatRequest, db: Session = Depends(get_db), request: Request = None) -> ChatResponse:
     payload.technician_id = effective_technician_id(request, payload.technician_id)
     trace(
         "REQUEST",

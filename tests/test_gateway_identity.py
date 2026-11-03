@@ -60,3 +60,25 @@ def test_le_technicien_de_la_session_remplace_celui_annonce():
     request_without_gateway = SimpleNamespace(state=SimpleNamespace(authenticated_technician_id=None))
     assert effective_technician_id(request_from_gateway, claimed_technician_id=99) == 7
     assert effective_technician_id(request_without_gateway, claimed_technician_id=99) == 99
+    assert effective_technician_id(None, claimed_technician_id=99) == 99
+
+
+
+def test_fastapi_injecte_la_requete_dans_les_routes_du_technicien():
+    """Sans injection de `request`, l'identité de la session ne remplacerait plus technician_id."""
+    from fastapi.dependencies.utils import get_dependant
+
+    from app.api.routes import chat as chat_routes
+    from app.api.routes import intervention_add as intervention_add_routes
+
+    routes_du_technicien = [
+        chat_routes.chat,
+        chat_routes.lire_contexte_proposition,
+        chat_routes.proposer_solution,
+        intervention_add_routes.demander_ajout_intervention,
+        intervention_add_routes.lister_mes_ajouts,
+        intervention_add_routes.lire_mon_ajout,
+    ]
+    for route_function in routes_du_technicien:
+        dependant = get_dependant(path="/{conversation_id}/{intervention_add_id}", call=route_function)
+        assert dependant.request_param_name == "request", route_function.__name__
