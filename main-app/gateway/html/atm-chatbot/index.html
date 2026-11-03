@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ATM-Chatbot | Espace techniciens</title>
+    <script src="/shared/js/applySavedTheme.js"></script>
+    <link rel="stylesheet" href="/shared/css/base.css">
+    <link rel="stylesheet" href="/atm-chatbot/css/atm-chatbot.css">
+    <script type="module" src="/shared/js/connectedPageShell.js"></script>
+    <script type="module" src="/atm-chatbot/js/atmChatbotPage.js"></script>
+  </head>
+  <body class="atm-chatbot-body">
+    <header data-page-shell></header>
+    <!--
+      L’ATM-Chatbot est l'application du chatbot (autre conteneur), servie par le
+      gateway sous /atm-chatbot/app/ et affichée ici dans une iframe pour garder la
+      navigation de l'Espace techniciens.
+    -->
+    <main class="atm-chatbot-layout">
+      <div class="atm-chatbot-frame-card">
+        <div class="atm-chatbot-loading" data-atm-chatbot-loading>
+          <span class="atm-chatbot-loading-logo"><span data-icon="bot"></span></span>
+          <strong>Ouverture de l’ATM-Chatbot…</strong>
+          <span class="muted" data-atm-chatbot-loading-detail>Assistant de diagnostic GAB et TPE.</span>
+        </div>
+        <iframe class="atm-chatbot-frame" title="ATM-Chatbot de diagnostic" data-atm-chatbot-frame allow="microphone; autoplay; clipboard-write" hidden></iframe>
+      </div>
+      <p class="atm-chatbot-footnote">
+        <span>L’ATM-Chatbot ne s'affiche pas ? Vérifiez que le chatbot est démarré.</span>
+        <a href="/atm-chatbot/app/atm-chatbot.html" target="_blank" rel="noopener" data-atm-chatbot-open-link>Ouvrir dans un nouvel onglet <span data-icon="externalLink"></span></a>
+      </p>
+    </main>
+  </body>
+</html>

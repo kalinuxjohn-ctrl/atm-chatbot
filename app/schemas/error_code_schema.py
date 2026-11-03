@@ -66,7 +66,7 @@ class ErrorCodeAdminIn(BaseModel):
     def _reponse_avec_equipement(self):
         # Sans device_type, la réponse ne s'afficherait dans aucun menu.
         if self.reply and not self.device_type:
-            raise ValueError("Choisissez l'équipement (GAB ou TPE) pour que la réponse apparaisse dans le Copilote.")
+            raise ValueError("Choisissez l'équipement (GAB ou TPE) pour que la réponse apparaisse dans l’ATM-Chatbot.")
         return self
 
 

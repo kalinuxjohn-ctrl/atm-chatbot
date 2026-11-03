@@ -1,5 +1,5 @@
 /**
- * Page Copilote : assemble les briques de l'interface.
+ * Page ATM-Chatbot : assemble les briques de l'interface.
  *
  *   sessionService ──────> technicien connecté (sinon retour à l'accueil)
  *   conversationService ─> UNIQUE fil de conversation (POST /api/chat ou mock)
@@ -50,9 +50,9 @@ const RECOGNITION_LABELS = {
 };
 
 const session = requireSession();
-if (session) void initCopilot(session);
+if (session) void initAtmChatbot(session);
 
-async function initCopilot({ technicianId, displayName }) {
+async function initAtmChatbot({ technicianId, displayName }) {
   /* ---------- Éléments de la page ---------- */
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -69,7 +69,7 @@ async function initCopilot({ technicianId, displayName }) {
     // Deux boutons : dans la barre latérale et en tête du panneau de contexte.
     newConversationButtons: $$("[data-new-conversation]"),
     toolbarAvatar: $("#toolbar-avatar"),
-    status: $("#copilot-status"),
+    status: $("#atm-chatbot-status"),
     demoBadge: $("#demo-badge"),
     stopReadingButton: $("#stop-reading-button"),
     voiceModeButtons: $$("[data-open-voice-mode]"),
@@ -182,7 +182,7 @@ async function initCopilot({ technicianId, displayName }) {
     beforeStart: () => stopReading(),
   });
 
-  // Photo jointe au prochain message : le Copilote en lit le texte affiché.
+  // Photo jointe au prochain message : l’ATM-Chatbot en lit le texte affiché.
   const photoAttachment = createComposerPhoto({
     button: elements.photoButton,
     fileInput: elements.photoInput,
@@ -194,7 +194,7 @@ async function initCopilot({ technicianId, displayName }) {
     dialog: $("#voice-dialog"),
     getPreferences,
     // Le mode vocal utilise le MÊME flux que le chat écrit : même conversation, même historique.
-    askCopilot: async (text) => {
+    askAtmChatbot: async (text) => {
       const { reply, error } = await submitMessage(text, { channel: "voice", readReply: false });
       if (error) throw new Error(getFriendlyErrorMessage(error));
       return reply;
@@ -214,8 +214,8 @@ async function initCopilot({ technicianId, displayName }) {
   elements.technicianAvatar.textContent = getInitials(displayName);
   elements.demoBadge.hidden = !FORCE_MOCKS;
 
-  /* ---------- Statut du Copilote ---------- */
-  /** Texte sous le nom du Copilote + animation de son avatar. */
+  /* ---------- Statut de l’ATM-Chatbot ---------- */
+  /** Texte sous le nom de l’ATM-Chatbot + animation de son avatar. */
   function setStatus(text, avatarState = "idle") {
     elements.status.textContent = text;
     elements.toolbarAvatar.firstElementChild?.setAttribute("data-state", avatarState);
@@ -223,7 +223,7 @@ async function initCopilot({ technicianId, displayName }) {
 
   /* ---------- Préférences (avatar, voix, fonctions vocales) ---------- */
   function applyPreferences(preferences) {
-    // Avatar du Copilote : en-tête de la sidebar, barre du haut et messages.
+    // Avatar de l’ATM-Chatbot : en-tête de la sidebar, barre du haut et messages.
     elements.brandAvatar.replaceChildren(renderAvatar(preferences.avatar));
     elements.toolbarAvatar.replaceChildren(renderAvatar(preferences.avatar));
     chatView.refreshAvatars();
@@ -298,7 +298,7 @@ async function initCopilot({ technicianId, displayName }) {
     elements.newConversationButtons.forEach((button) => (button.disabled = isBusy));
     updateSuggestionMenusState();
     devicePicker.setDisabled(isBusy);
-    setStatus(isBusy ? "Le Copilote réfléchit…" : READY_STATUS, isBusy ? "processing" : "idle");
+    setStatus(isBusy ? "L’ATM-Chatbot réfléchit…" : READY_STATUS, isBusy ? "processing" : "idle");
     updateComposerState();
   }
 
@@ -316,7 +316,7 @@ async function initCopilot({ technicianId, displayName }) {
     let error = null;
     try {
       // ask() affiche tout de suite le message du technicien : les points
-      // "le Copilote réfléchit" sont ajoutés APRÈS, donc en dessous de lui.
+      // "l’ATM-Chatbot réfléchit" sont ajoutés APRÈS, donc en dessous de lui.
       const pendingAnswer = conversation.ask(text, { channel, silent, photo });
       removeTyping = chatView.showTyping();
       ({ text: reply } = await pendingAnswer);

@@ -1,5 +1,5 @@
 /**
- * API d'administration des réponses enregistrées du Copilote.
+ * API d'administration des réponses enregistrées de l’ATM-Chatbot.
  * ✅ API RÉELLE, protégée par la clé ADMIN_API_KEY (en-tête X-Admin-Key) :
  *   GET|POST       /api/admin/error_code          { code, label?, device_type?, reply? }
  *   PUT|DELETE     /api/admin/error_code/{id}

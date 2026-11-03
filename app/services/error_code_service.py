@@ -1,6 +1,6 @@
 """
 Recherche classique (SQL, sans IA) de codes d'erreur, et réponses
-enregistrées du menu « Codes d'erreur connus » du Copilote.
+enregistrées du menu « Codes d'erreur connus » de l’ATM-Chatbot.
 
 Volontairement indépendant de retrieval_service.py / embeddings_service.py
 -- voir la feuille de route, "Recherche de code d'erreur" ne passe jamais
@@ -104,7 +104,7 @@ def delete_error_code(db: Session, error_code_id: int) -> None:
         db.rollback()
         raise StateConflictError(
             f"Le code {code} est cité par des propositions de solution : il ne peut pas être supprimé. "
-            "Videz plutôt sa réponse pour le retirer du Copilote."
+            "Videz plutôt sa réponse pour le retirer de l’ATM-Chatbot."
         ) from error
     trace("ADMIN", "Code d'erreur supprimé", error_code_id=error_code_id)
 

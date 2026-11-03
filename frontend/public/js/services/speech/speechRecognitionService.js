@@ -1,6 +1,6 @@
 /**
  * Speech-to-Text dans le navigateur (Web Speech API). Aucun appel backend :
- * seul le TEXTE reconnu est ensuite envoyé au Copilote.
+ * seul le TEXTE reconnu est ensuite envoyé à l’ATM-Chatbot.
  *
  * Déroulé d'une écoute (listen) :
  *   1. accès au micro (getUserMedia)  -> erreurs "micro refusé / absent / occupé" précises

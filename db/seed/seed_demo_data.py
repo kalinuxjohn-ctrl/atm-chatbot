@@ -195,7 +195,7 @@ SEED_STATEMENTS = [
     """,
 ]
 
-# Réponses enregistrées des menus de suggestions du Copilote (migration 0011),
+# Réponses enregistrées des menus de suggestions de l’ATM-Chatbot (migration 0011),
 # lues telles quelles par /api/error_code et /api/usual_problem -- ni LLM, ni
 # embedding. Une ligne = un paragraphe affiché dans le chat. Ce sont des
 # EXEMPLES de démo : à relire et adapter avec les procédures réelles.

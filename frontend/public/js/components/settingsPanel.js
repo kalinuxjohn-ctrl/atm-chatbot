@@ -1,5 +1,5 @@
 /**
- * Panneau de paramètres du Copilote : avatar, voix française, conversation.
+ * Panneau de paramètres de l’ATM-Chatbot : avatar, voix française, conversation.
  * Chaque modification est enregistrée IMMÉDIATEMENT (localStorage via
  * preferencesService) : pas de bouton "Enregistrer" à oublier.
  *
@@ -139,7 +139,7 @@ export function createSettingsPanel({ dialog }) {
   });
 
   testVoiceButton.addEventListener("click", () => {
-    void speak("Bonjour, je suis votre Copilote de maintenance. Voici la voix que j’utiliserai pour vous répondre.", getPreferences());
+    void speak("Bonjour, je suis votre ATM-Chatbot de maintenance. Voici la voix que j’utiliserai pour vous répondre.", getPreferences());
   });
 
   /* --- Fonctions non supportées par le navigateur --- */

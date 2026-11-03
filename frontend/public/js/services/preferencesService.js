@@ -1,5 +1,5 @@
 /**
- * Préférences du Copilote, choisies par le technicien et sauvegardées dans
+ * Préférences de l’ATM-Chatbot, choisies par le technicien et sauvegardées dans
  * le localStorage (conservées d'une session à l'autre). Aucune API backend.
  *
  * L'avatar et la voix sont des CHOIX explicites : rien n'est déduit du

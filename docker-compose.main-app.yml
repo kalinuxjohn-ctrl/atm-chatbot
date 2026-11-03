@@ -7,11 +7,11 @@
 #
 # Liens avec le chatbot (aucun code commun) :
 #   - la base PostgreSQL (service `db`), dans un schéma séparé ;
-#   - le Copilote : le gateway sert le frontend du chatbot (service
-#     `chatbot-frontend`, ci-dessous) sous /copilot/app/, aux seuls utilisateurs
+#   - l’ATM-Chatbot : le gateway sert le frontend du chatbot (service
+#     `chatbot-frontend`, ci-dessous) sous /atm-chatbot/app/, aux seuls utilisateurs
 #     connectés, et transmet le technicien connecté à l'API du chatbot avec le
-#     secret COPILOT_GATEWAY_SHARED_SECRET (l'API refuse alors tout autre appel) ;
-#   - l'administration du Copilote : le gateway relaie /api/copilot-admin/ vers
+#     secret ATM_CHATBOT_GATEWAY_SHARED_SECRET (l'API refuse alors tout autre appel) ;
+#   - l'administration de l’ATM-Chatbot : le gateway relaie /api/atm-chatbot-admin/ vers
 #     l'API admin du chatbot, pour les seuls administrateurs connectés.
 #   L'API du chatbot (service `web`) rejoint le réseau du gateway (plus bas).
 #
@@ -164,11 +164,11 @@ services:
       - "${MAIN_APP_GATEWAY_PUBLISHED_ADDRESS:-127.0.0.1}:${MAIN_APP_GATEWAY_PORT:-8080}:8080"
     environment:
       # Clé de l'API admin du chatbot : ajoutée par le gateway aux requêtes
-      # /api/copilot-admin/ des administrateurs, jamais envoyée au navigateur.
+      # /api/atm-chatbot-admin/ des administrateurs, jamais envoyée au navigateur.
       MAIN_APP_CHATBOT_ADMIN_API_KEY: ${ADMIN_API_KEY:-}
       # Secret partagé avec l'API du chatbot : prouve que l'identité du technicien
-      # transmise avec les requêtes /copilot/app/ vient du gateway.
-      MAIN_APP_COPILOT_GATEWAY_SHARED_SECRET: ${COPILOT_GATEWAY_SHARED_SECRET:?COPILOT_GATEWAY_SHARED_SECRET manquant dans .env}
+      # transmise avec les requêtes /atm-chatbot/app/ vient du gateway.
+      MAIN_APP_ATM_CHATBOT_GATEWAY_SHARED_SECRET: ${ATM_CHATBOT_GATEWAY_SHARED_SECRET:?ATM_CHATBOT_GATEWAY_SHARED_SECRET manquant dans .env}
     # Pas sur le réseau du chatbot : le gateway ne voit pas la base. Il joint
     # le chatbot uniquement parce que `web` et `chatbot-frontend` sont sur main-app-network.
     networks:
@@ -180,7 +180,7 @@ services:
       retries: 3
 
   # Frontend du chatbot (dossier frontend/), servi UNIQUEMENT par le gateway sous
-  # /copilot/app/ : aucun port publié. Il relaie /api/ à l'API du chatbot en gardant
+  # /atm-chatbot/app/ : aucun port publié. Il relaie /api/ à l'API du chatbot en gardant
   # les en-têtes d'identité posés par le gateway (frontend/server.py).
   chatbot-frontend:
     build:
@@ -207,7 +207,7 @@ services:
   #   avec le technicien de la session (app/core/gateway_identity.py).
   web:
     environment:
-      COPILOT_GATEWAY_SHARED_SECRET: ${COPILOT_GATEWAY_SHARED_SECRET:?COPILOT_GATEWAY_SHARED_SECRET manquant dans .env}
+      ATM_CHATBOT_GATEWAY_SHARED_SECRET: ${ATM_CHATBOT_GATEWAY_SHARED_SECRET:?ATM_CHATBOT_GATEWAY_SHARED_SECRET manquant dans .env}
     networks:
       default: {}
       main-app-network:

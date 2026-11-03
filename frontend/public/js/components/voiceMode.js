@@ -1,16 +1,16 @@
 /**
  * Mode "Chat vocal" : conversation 100 % à la voix, en plein écran (comme un
  * appel). La messagerie est masquée, mais chaque phrase passe par le MÊME flux
- * que le chat écrit (askCopilot -> submitMessage de la page) : les échanges
+ * que le chat écrit (askAtmChatbot -> submitMessage de la page) : les échanges
  * sont enregistrés dans la conversation, visible à la fermeture.
  *
  * Boucle automatique, sans aucun bouton à toucher :
- *   LISTENING "Je vous écoute…" ─(silence après la phrase)─> THINKING "Le Copilote réfléchit…"
+ *   LISTENING "Je vous écoute…" ─(silence après la phrase)─> THINKING "L’ATM-Chatbot réfléchit…"
  *        ▲                                                          │
  *        └──────────── SPEAKING (réponse lue à voix haute) <────────┘
  *
  * La bulle centrale permet d'agir à tout moment : pendant l'écoute elle
- * envoie tout de suite, pendant la lecture elle interrompt le Copilote pour
+ * envoie tout de suite, pendant la lecture elle interrompt l’ATM-Chatbot pour
  * reprendre la parole. Micro coupé ─> MUTED ; erreur ─> ERROR (+ actions).
  *
  * L'état courant est posé sur <dialog data-state="..."> : le CSS adapte les
@@ -46,8 +46,8 @@ const STATUS_TEXT = {
   listening: "Je vous écoute…",
   hearing: "Je vous écoute…",
   processing: "Envoi…",
-  thinking: "Le Copilote réfléchit…",
-  speaking: "Le Copilote vous répond",
+  thinking: "L’ATM-Chatbot réfléchit…",
+  speaking: "L’ATM-Chatbot vous répond",
   muted: "Micro coupé",
   error: "Le micro ne répond pas",
 };
@@ -60,7 +60,7 @@ const ORB_LABEL = {
   hearing: "Envoyer maintenant",
   processing: "Envoi en cours",
   thinking: "Réponse en cours",
-  speaking: "Interrompre le Copilote et parler",
+  speaking: "Interrompre l’ATM-Chatbot et parler",
   muted: "Réactiver le micro et parler",
   error: "Réessayer",
 };
@@ -76,12 +76,12 @@ const MAX_SILENT_ROUNDS = 6;
 /**
  * @param {{
  *   dialog: HTMLDialogElement,
- *   askCopilot: (text: string) => Promise<string>,  envoie via le flux du chat ; rejette avec un message lisible
+ *   askAtmChatbot: (text: string) => Promise<string>,  envoie via le flux du chat ; rejette avec un message lisible
  *   getPreferences: () => object,
  *   getContextLabel?: () => string,                 ex. "GAB" : rappel de l'équipement en haut de l'écran
  * }} options
  */
-export function createVoiceMode({ dialog, askCopilot, getPreferences, getContextLabel = () => "" }) {
+export function createVoiceMode({ dialog, askAtmChatbot, getPreferences, getContextLabel = () => "" }) {
   const query = (name) => dialog.querySelector(`[data-voice-${name}]`);
   const avatarSlot = query("avatar");
   const deviceLabel = query("device");
@@ -218,7 +218,7 @@ export function createVoiceMode({ dialog, askCopilot, getPreferences, getContext
     replyElement.textContent = "";
     let reply;
     try {
-      reply = await askCopilot(text);
+      reply = await askAtmChatbot(text);
     } catch (error) {
       if (token === turnToken) setState(VOICE_STATES.ERROR, { detail: error.message });
       return;

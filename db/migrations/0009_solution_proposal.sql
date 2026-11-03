@@ -2,7 +2,7 @@
 -- Migration 0009 — solution_proposal
 -- ============================================================================
 -- Solutions PROPOSÉES par un technicien quand aucune des solutions trouvées
--- par le Copilote n'a résolu son problème. Une proposition n'est PAS une
+-- par l’ATM-Chatbot n'a résolu son problème. Une proposition n'est PAS une
 -- solution officielle : elle attend la décision d'un administrateur
 -- (pending -> approved | rejected) et reste conservée dans tous les cas.
 --

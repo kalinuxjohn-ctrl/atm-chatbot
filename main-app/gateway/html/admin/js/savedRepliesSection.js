@@ -1,13 +1,13 @@
 /**
  * Rubriques « Codes d'erreur » et « Pannes fréquentes » : réponses que le
- * Copilote donne SANS IA, depuis ses menus de suggestions. Les deux ont les
+ * ATM-Chatbot donne SANS IA, depuis ses menus de suggestions. Les deux ont les
  * mêmes opérations (lister, ajouter, modifier, supprimer) : un seul éditeur
  * générique, configuré par createSavedRepliesSection(...) en bas du fichier.
- * API : /api/copilot-admin/error_code et /api/copilot-admin/usual_problem.
+ * API : /api/atm-chatbot-admin/error_code et /api/atm-chatbot-admin/usual_problem.
  */
 
 import { createButton, createElementWithText } from "/shared/js/domHelpers.js";
-import { errorCodeResource, usualProblemResource } from "./copilotAdminApi.js";
+import { errorCodeResource, usualProblemResource } from "./atmChatbotAdminApi.js";
 import {
   DEVICE_TYPE_LABELS,
   createEmptyListMessage,
@@ -211,14 +211,14 @@ export function createErrorCodesSection({ showRecordCount }) {
         name: "device_type",
         label: "Équipement",
         type: "select",
-        options: [["", "Aucun (absent du menu du Copilote)"], ["gab", "GAB"], ["tpe", "TPE"]],
+        options: [["", "Aucun (absent du menu de l’ATM-Chatbot)"], ["gab", "GAB"], ["tpe", "TPE"]],
       },
-      { name: "reply", label: "Réponse du Copilote", type: "textarea", maxLength: 5000, hint: REPLY_HINT },
+      { name: "reply", label: "Réponse de l’ATM-Chatbot", type: "textarea", maxLength: 5000, hint: REPLY_HINT },
     ],
     describeRecord: (record) => ({
       title: record.label ? `${record.code} — ${record.label}` : record.code,
       pills: [
-        record.device_type && record.reply ? `Dans le Copilote · ${DEVICE_TYPE_LABELS[record.device_type]}` : "Absent du menu",
+        record.device_type && record.reply ? `Dans l’ATM-Chatbot · ${DEVICE_TYPE_LABELS[record.device_type]}` : "Absent du menu",
         ...(record.fault ? [`Panne ${record.fault.code || record.fault.name}`] : []),
       ],
       body: record.reply || "Aucune réponse enregistrée.",
@@ -236,7 +236,7 @@ export function createUsualProblemsSection({ showRecordCount }) {
       { name: "device_type", label: "Équipement", type: "select", required: true, options: [["gab", "GAB"], ["tpe", "TPE"]] },
       { name: "label", label: "Libellé du menu", type: "text", required: true, maxLength: 300, hint: "Ex. « Le GAB a avalé la carte du client »." },
       { name: "display_order", label: "Ordre dans le menu", type: "number", hint: "Vide : en fin de menu." },
-      { name: "reply", label: "Réponse du Copilote", type: "textarea", required: true, maxLength: 5000, hint: REPLY_HINT },
+      { name: "reply", label: "Réponse de l’ATM-Chatbot", type: "textarea", required: true, maxLength: 5000, hint: REPLY_HINT },
     ],
     describeRecord: (record) => ({
       title: record.label,

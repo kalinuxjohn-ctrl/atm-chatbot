@@ -5,8 +5,8 @@
  */
 
 // Le serveur frontend (server.py) relaie /api/* vers le backend FastAPI.
-// Chemin RELATIF : le Copilote fonctionne seul (http://localhost:5173/) comme
-// derrière l'Espace techniciens (/copilot/app/).
+// Chemin RELATIF : l’ATM-Chatbot fonctionne seul (http://localhost:5173/) comme
+// derrière l'Espace techniciens (/atm-chatbot/app/).
 export const API_BASE_URL = "api";
 
 // Le backend appelle un LLM (le premier appel charge le modèle : parfois > 1 min).
@@ -17,11 +17,11 @@ export const REQUEST_TIMEOUT_MS = 185000;
 export const SPEECH_LANG = "fr-FR";
 
 export const STORAGE_KEYS = Object.freeze({
-  preferences: "copilot.preferences", // localStorage : conservé entre les sessions
-  theme: "copilot.theme", // localStorage : "dark" ou "light" (aussi lu dans le <head> de chaque page)
-  session: "copilot.session", // localStorage : technicien connecté
-  conversation: "copilot.conversation", // sessionStorage : conversation de l'onglet
-  forceMocks: "copilot.forceMocks", // sessionStorage : mode démo
+  preferences: "atm-chatbot.preferences", // localStorage : conservé entre les sessions
+  theme: "atm-chatbot.theme", // localStorage : "dark" ou "light" (aussi lu dans le <head> de chaque page)
+  session: "atm-chatbot.session", // localStorage : technicien connecté
+  conversation: "atm-chatbot.conversation", // sessionStorage : conversation de l'onglet
+  forceMocks: "atm-chatbot.forceMocks", // sessionStorage : mode démo
   adminKey: "admin.key", // sessionStorage : clé de la page Propositions (onglet seulement)
   adminReviewer: "admin.reviewer", // sessionStorage : nom qui signe les décisions
 });

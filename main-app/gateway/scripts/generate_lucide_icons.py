@@ -80,7 +80,7 @@ ICONS_USED_BY_THE_APP = {
     "history": "rotate-ccw-clock",
     "inbox": "inbox",
     "sparkles": "sparkles",
-    # Administration du Copilote
+    # Administration de l’ATM-Chatbot
     "lightbulb": "lightbulb",
     "clipboardList": "clipboard-list",
     "errorCode": "circle-alert",

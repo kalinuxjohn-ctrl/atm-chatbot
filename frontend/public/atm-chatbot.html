@@ -6,10 +6,10 @@
     <meta name="theme-color" content="#f4f7fb">
     <!-- Thème sombre appliqué avant l'affichage (clé STORAGE_KEYS.theme de js/config.js) -->
     <script src="js/applySavedTheme.js"></script>
-    <!-- Affiché dans l'onglet Copilote de l'Espace techniciens (?embedded=1) : thème, technicien, barre du haut masquée -->
+    <!-- Affiché dans l'onglet ATM-Chatbot de l'Espace techniciens (?embedded=1) : thème, technicien, barre du haut masquée -->
     <script src="js/embeddedMode.js"></script>
     <meta name="description" content="ATM-Chatbot : conversation écrite et vocale pour la maintenance GAB et TPE.">
-    <title>Copilote | ATM-Chatbot</title>
+    <title>Conversation | ATM-Chatbot</title>
     <link rel="icon" href="assets/images/logo.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,20 +17,20 @@
     <link rel="stylesheet" href="css/assets.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/copilot.css">
+    <link rel="stylesheet" href="css/atm-chatbot.css">
     <link rel="stylesheet" href="css/theme.css">
     <link rel="stylesheet" href="css/intervention-add.css">
     <script type="module" src="js/components/themeToggle.js"></script>
-    <script type="module" src="js/pages/copilot.js"></script>
+    <script type="module" src="js/pages/atm-chatbot.js"></script>
   </head>
-  <body class="copilot-page">
+  <body class="atm-chatbot-page">
     <!--
       Structure :
         .app-frame                    cadre arrondi de l'application
           ├─ header.app-topbar        logo, onglets des pages, thème, paramètres
           └─ .app-shell
                ├─ aside.app-sidebar   rail d'icônes rétractable (sidebar.js)
-               ├─ main.workspace      carte : barre du Copilote + conversation + saisie
+               ├─ main.workspace      carte : barre de l’ATM-Chatbot + conversation + saisie
                └─ aside.context-panel contexte de la session (contextPanel.js)
       Les états d'affichage (sidebar, panneau) sont des attributs data-* de .app-shell.
     -->
@@ -39,19 +39,19 @@
       <button class="icon-button mobile-menu-button" type="button" data-open-sidebar aria-controls="app-sidebar" aria-label="Ouvrir le menu">
         <span data-icon="menu"></span>
       </button>
-      <!-- Avatar du Copilote (choisi dans les paramètres), rempli par copilot.js -->
+      <!-- Avatar de l’ATM-Chatbot (choisi dans les paramètres), rempli par atm-chatbot.js -->
       <a class="topbar-logo topbar-avatar" href="./" aria-label="ATM-Chatbot, accueil" title="ATM-Chatbot">
         <span class="toolbar-avatar" id="toolbar-avatar" aria-hidden="true"></span>
       </a>
       <nav class="topbar-tabs" aria-label="Pages">
         <a class="topbar-tab" href="./">Accueil</a>
-        <a class="topbar-tab is-active" href="copilot.html" aria-current="page">Copilote</a>
+        <a class="topbar-tab is-active" href="atm-chatbot.html" aria-current="page">Conversation</a>
         <a class="topbar-tab" href="diagnostic.html">Diagnostic</a>
         <a class="topbar-tab" href="flow-presentation.html">Présentation</a>
       </nav>
       <!-- Le bouton clair / sombre est ajouté ici par themeToggle.js. -->
       <div class="topbar-tools">
-        <button class="icon-button" type="button" data-open-settings aria-label="Paramètres du Copilote" title="Paramètres">
+        <button class="icon-button" type="button" data-open-settings aria-label="Paramètres de l’ATM-Chatbot" title="Paramètres">
           <span data-icon="settings"></span>
         </button>
       </div>
@@ -60,10 +60,10 @@
     <div class="app-shell" id="app-shell" data-sidebar="expanded" data-sidebar-drawer="closed" data-context-panel="closed">
 
       <!-- ========== Sidebar ========== -->
-      <aside class="app-sidebar" id="app-sidebar" aria-label="Menu du Copilote">
+      <aside class="app-sidebar" id="app-sidebar" aria-label="Menu de l’ATM-Chatbot">
         <div class="sidebar-header">
           <a class="sidebar-brand" href="./" aria-label="ATM-Chatbot, accueil">
-            <!-- Avatar du Copilote (le même que dans les messages), rempli par copilot.js -->
+            <!-- Avatar de l’ATM-Chatbot (le même que dans les messages), rempli par atm-chatbot.js -->
             <span class="sidebar-brand-avatar" id="sidebar-brand-avatar" aria-hidden="true"></span>
             <span class="sidebar-brand-text">ATM-<strong>Chatbot</strong></span>
           </a>
@@ -74,7 +74,7 @@
 
         <div class="sidebar-greeting">
           <p class="sidebar-greeting-title">Bonjour <span id="greeting-name"></span> !</p>
-          <p class="sidebar-greeting-text">Écrivez votre question ou parlez au Copilote.</p>
+          <p class="sidebar-greeting-text">Écrivez votre question ou parlez à l’ATM-Chatbot.</p>
         </div>
 
         <nav class="sidebar-navigation" aria-label="Navigation principale">
@@ -82,8 +82,8 @@
           <a class="sidebar-link" href="./" data-sidebar-label="Accueil">
             <span data-icon="home"></span><span class="sidebar-link-label">Accueil</span>
           </a>
-          <a class="sidebar-link is-active" href="copilot.html" aria-current="page" data-sidebar-label="Copilote">
-            <span data-icon="chat"></span><span class="sidebar-link-label">Copilote</span>
+          <a class="sidebar-link is-active" href="atm-chatbot.html" aria-current="page" data-sidebar-label="Conversation">
+            <span data-icon="chat"></span><span class="sidebar-link-label">Conversation</span>
           </a>
           <a class="sidebar-link" href="diagnostic.html" data-sidebar-label="Diagnostic">
             <span data-icon="diagnostic"></span><span class="sidebar-link-label">Diagnostic</span>
@@ -122,8 +122,8 @@
       <!-- ========== Espace de conversation ========== -->
       <main class="workspace">
         <header class="workspace-header">
-          <!-- Statut du Copilote, annoncé aux lecteurs d'écran (l'avatar est dans la barre du haut). -->
-          <p class="visually-hidden" aria-live="polite">ATM-Chatbot : <span id="copilot-status">Prêt à vous aider</span></p>
+          <!-- Statut de l’ATM-Chatbot, annoncé aux lecteurs d'écran (l'avatar est dans la barre du haut). -->
+          <p class="visually-hidden" aria-live="polite">ATM-Chatbot : <span id="atm-chatbot-status">Prêt à vous aider</span></p>
 
           <div class="workspace-actions">
             <span class="demo-badge" id="demo-badge" hidden title="Ajoutez ?mock=0 à l’adresse pour revenir au backend réel">Mode démo</span>
@@ -139,14 +139,14 @@
           </div>
         </header>
 
-        <section class="chat-panel" aria-label="Conversation avec le Copilote">
+        <section class="chat-panel" aria-label="Conversation avec l’ATM-Chatbot">
           <!-- Fil de conversation (rempli par chatView.js) -->
           <div class="conversation" id="conversation" aria-live="polite" aria-relevant="additions text"></div>
 
           <!-- Zone de saisie : le texte en haut, les outils en dessous -->
           <div class="composer-area">
             <form class="message-composer" id="message-form">
-              <label class="visually-hidden" for="message-input">Votre message au Copilote</label>
+              <label class="visually-hidden" for="message-input">Votre message à l’ATM-Chatbot</label>
               <textarea
                 id="message-input"
                 rows="2"
@@ -161,7 +161,7 @@
                 <div class="composer-suggestions" id="composer-suggestions"></div>
 
                 <div class="composer-buttons">
-                  <!-- Photo de l'appareil, lue par le Copilote (composerPhoto.js). Cachée si le backend ne l'accepte pas. -->
+                  <!-- Photo de l'appareil, lue par l’ATM-Chatbot (composerPhoto.js). Cachée si le backend ne l'accepte pas. -->
                   <button class="mic-button photo-button" id="photo-button" type="button" hidden aria-label="Joindre une photo de l’appareil" title="Prendre une photo (le texte affiché sera lu)">
                     <span data-icon="camera"></span>
                   </button>
@@ -169,7 +169,7 @@
                   <button class="mic-button" id="mic-button" type="button" aria-pressed="false" aria-label="Dicter votre message au micro" title="Dicter au micro">
                     <span data-icon="mic"></span>
                   </button>
-                  <button class="composer-voice-button" type="button" data-open-voice-mode aria-label="Démarrer le Chat vocal" title="Parler au Copilote">
+                  <button class="composer-voice-button" type="button" data-open-voice-mode aria-label="Démarrer le Chat vocal" title="Parler à l’ATM-Chatbot">
                     <span data-icon="voice"></span><span class="composer-voice-button-label">Vocal</span>
                   </button>
                   <button class="send-button" id="send-button" type="submit" disabled aria-label="Envoyer le message" title="Envoyer">
@@ -217,7 +217,7 @@
         </section>
 
         <section class="context-card">
-          <h3>Voix du Copilote</h3>
+          <h3>Voix de l’ATM-Chatbot</h3>
           <dl class="context-list">
             <div><dt>Lecture</dt><dd data-context="voice">—</dd></div>
             <div><dt>Langue</dt><dd data-context="voice-language">—</dd></div>
@@ -253,7 +253,7 @@
         </header>
 
         <div class="voice-center">
-          <!-- La bulle : touchez pour parler, finir votre phrase ou interrompre le Copilote. -->
+          <!-- La bulle : touchez pour parler, finir votre phrase ou interrompre l’ATM-Chatbot. -->
           <button class="voice-orb" type="button" data-voice-main aria-label="Parler">
             <span class="voice-orb-halo" aria-hidden="true"></span>
             <span class="voice-orb-halo" aria-hidden="true"></span>
@@ -269,7 +269,7 @@
 
           <div class="voice-captions" aria-live="polite">
             <p class="voice-caption voice-caption-user" data-voice-transcript></p>
-            <p class="voice-caption voice-caption-copilot" data-voice-reply></p>
+            <p class="voice-caption voice-caption-atm-chatbot" data-voice-reply></p>
           </div>
 
           <div class="voice-error-actions" data-voice-error-actions hidden>
@@ -311,7 +311,7 @@
       <form class="dialog-form" data-proposal-form novalidate>
         <header class="dialog-header">
           <h2 id="proposal-title">Proposer une solution</h2>
-          <p>Décrivez ce qui a marché sur le terrain. Un administrateur la vérifiera avant qu’elle rejoigne les solutions du Copilote.</p>
+          <p>Décrivez ce qui a marché sur le terrain. Un administrateur la vérifiera avant qu’elle rejoigne les solutions de l’ATM-Chatbot.</p>
         </header>
 
         <p class="proposal-loading" data-proposal-loading role="status">Récupération du problème en cours…</p>
@@ -436,12 +436,12 @@
     <dialog class="app-dialog settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
       <form class="dialog-form" method="dialog">
         <header class="dialog-header">
-          <h2 id="settings-title">Paramètres du Copilote</h2>
+          <h2 id="settings-title">Paramètres de l’ATM-Chatbot</h2>
           <p>Vos choix sont enregistrés sur cet appareil et appliqués immédiatement.</p>
         </header>
 
         <fieldset class="settings-group">
-          <legend>Avatar du Copilote</legend>
+          <legend>Avatar de l’ATM-Chatbot</legend>
           <div class="avatar-choices" data-avatar-choices></div>
         </fieldset>
 
@@ -473,7 +473,7 @@
           <label class="switch">
             <input type="checkbox" name="autoRead">
             <span class="switch-track" aria-hidden="true"></span>
-            <span>Lecture automatique <small>Le Copilote lit à voix haute ses réponses du chat écrit</small></span>
+            <span>Lecture automatique <small>L’ATM-Chatbot lit à voix haute ses réponses du chat écrit</small></span>
           </label>
           <p class="settings-note" data-recognition-note hidden>
             La reconnaissance vocale n’est pas disponible dans ce navigateur (utilisez Chrome ou Edge).

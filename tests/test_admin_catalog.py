@@ -42,7 +42,7 @@ def test_cycle_complet_code_erreur():
     assert created.status_code == 201
     error_code_id = created.json()["id"]
 
-    # Visible dans le menu du Copilote, avec sa solution.
+    # Visible dans le menu de l’ATM-Chatbot, avec sa solution.
     assert "ZADM1" in [item["code"] for item in client.get("/api/error_code", params={"device_type": "gab"}).json()]
     assert client.get(f"/api/error_code/{error_code_id}/solution").json()["reply"] == "Étape 1\nÉtape 2"
 

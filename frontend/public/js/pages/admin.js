@@ -4,7 +4,7 @@
  *                      (/api/admin/solution-proposals, services/api/adminProposalApi.js) ;
  * - Codes d'erreur   : ajout / modification / suppression (/api/admin/error_code) ;
  * - Pannes fréquentes : idem (/api/admin/usual_problem).
- * Les deux dernières alimentent les menus de suggestions du Copilote
+ * Les deux dernières alimentent les menus de suggestions de l’ATM-Chatbot
  * (services/api/adminCatalogApi.js, components/adminRecordEditor.js).
  *
  * La page ne décide de rien : elle affiche ce que le backend renvoie et
@@ -143,7 +143,7 @@ function renderProposal(proposal) {
 
   if (proposal.previous_results?.length) {
     const previous = createElement("details", "proposal-section");
-    previous.append(createElement("summary", "", `Solutions déjà proposées par le Copilote (${proposal.previous_results.length})`));
+    previous.append(createElement("summary", "", `Solutions déjà proposées par l’ATM-Chatbot (${proposal.previous_results.length})`));
     const ol = createElement("ol");
     proposal.previous_results.forEach((result) => {
       const item = createElement("li");
@@ -242,7 +242,7 @@ function renderReviewForm(proposal, card) {
       });
       const updated = renderProposal(reviewed);
       const attachment = attachedInterventionId
-        ? ` Elle est rattachée au problème de l’intervention n° ${attachedInterventionId} : le Copilote la proposera dès qu’il retrouvera ce problème.`
+        ? ` Elle est rattachée au problème de l’intervention n° ${attachedInterventionId} : l’ATM-Chatbot la proposera dès qu’il retrouvera ce problème.`
         : " Aucun cas de référence : elle reste au catalogue, sans être proposée dans le chat.";
       const notice = createElement(
         "p",
@@ -291,14 +291,14 @@ const errorCodeEditor = createRecordEditor({
       name: "device_type",
       label: "Équipement",
       type: "select",
-      options: [["", "Aucun (absent du menu du Copilote)"], ["gab", "GAB"], ["tpe", "TPE"]],
+      options: [["", "Aucun (absent du menu de l’ATM-Chatbot)"], ["gab", "GAB"], ["tpe", "TPE"]],
     },
-    { name: "reply", label: "Réponse du Copilote", type: "textarea", maxLength: 5000, hint: REPLY_HINT },
+    { name: "reply", label: "Réponse de l’ATM-Chatbot", type: "textarea", maxLength: 5000, hint: REPLY_HINT },
   ],
   renderSummary: (record) => ({
     title: record.label ? `${record.code} — ${record.label}` : record.code,
     pills: [
-      record.device_type && record.reply ? `Copilote · ${DEVICE_LABELS[record.device_type]}` : "Absent du Copilote",
+      record.device_type && record.reply ? `ATM-Chatbot · ${DEVICE_LABELS[record.device_type]}` : "Absent de l’ATM-Chatbot",
       ...(record.fault ? [`Panne ${record.fault.code || record.fault.name}`] : []),
     ],
     body: record.reply || "Aucune réponse enregistrée.",
@@ -317,7 +317,7 @@ const usualProblemEditor = createRecordEditor({
     { name: "device_type", label: "Équipement", type: "select", required: true, options: [["gab", "GAB"], ["tpe", "TPE"]] },
     { name: "label", label: "Libellé du menu", type: "text", required: true, maxLength: 300, hint: "Ex. « Le GAB a avalé la carte du client »." },
     { name: "display_order", label: "Ordre dans le menu", type: "number", hint: "Vide : en fin de menu." },
-    { name: "reply", label: "Réponse du Copilote", type: "textarea", required: true, maxLength: 5000, hint: REPLY_HINT },
+    { name: "reply", label: "Réponse de l’ATM-Chatbot", type: "textarea", required: true, maxLength: 5000, hint: REPLY_HINT },
   ],
   renderSummary: (record) => ({
     title: record.label,

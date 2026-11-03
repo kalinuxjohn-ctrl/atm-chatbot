@@ -1,12 +1,12 @@
 /**
  * Rubrique « Propositions de solution » : solutions proposées par les
- * techniciens depuis le Copilote, à approuver (elles rejoignent le catalogue
+ * techniciens depuis l’ATM-Chatbot, à approuver (elles rejoignent le catalogue
  * d'actions) ou à rejeter (elles restent dans l'historique).
- * API : /api/copilot-admin/solution-proposals (voir copilotAdminApi.js).
+ * API : /api/atm-chatbot-admin/solution-proposals (voir atmChatbotAdminApi.js).
  */
 
 import { createElementWithText } from "/shared/js/domHelpers.js";
-import { solutionProposalApi } from "./copilotAdminApi.js";
+import { solutionProposalApi } from "./atmChatbotAdminApi.js";
 import {
   DEVICE_TYPE_LABELS,
   STATUS_LABELS,
@@ -77,7 +77,7 @@ export function createSolutionProposalsSection({ reviewerName, showPendingCount 
 
     if (proposal.previous_results?.length) {
       const previousResults = createElementWithText("details", "disclosure");
-      previousResults.append(createElementWithText("summary", "", `Solutions déjà proposées par le Copilote (${proposal.previous_results.length})`));
+      previousResults.append(createElementWithText("summary", "", `Solutions déjà proposées par l’ATM-Chatbot (${proposal.previous_results.length})`));
       const resultList = createElementWithText("ol", "numbered-list");
       for (const previousResult of proposal.previous_results) {
         const listItem = createElementWithText("li");
@@ -132,7 +132,7 @@ export function createSolutionProposalsSection({ reviewerName, showPendingCount 
         const reviewResult = await solutionProposalApi.review(proposal.proposal_id, decision, decisionBody);
         const updatedCard = createProposalCard(reviewResult.proposal);
         const attachmentText = reviewResult.attached_intervention_id
-          ? ` Rattachée au problème de l'intervention n° ${reviewResult.attached_intervention_id} : le Copilote la proposera dès qu'il retrouvera ce problème.`
+          ? ` Rattachée au problème de l'intervention n° ${reviewResult.attached_intervention_id} : l’ATM-Chatbot la proposera dès qu'il retrouvera ce problème.`
           : " Aucun cas de référence : elle reste au catalogue sans être proposée dans le chat.";
         updatedCard.prepend(
           decision === "approve"

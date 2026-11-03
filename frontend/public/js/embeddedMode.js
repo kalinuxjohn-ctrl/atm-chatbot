@@ -1,6 +1,6 @@
 /**
- * Mode « intégré » du Copilote : quand la page est affichée dans l'onglet
- * Copilote de l'Espace techniciens (main app, iframe sur /copilot/app/), l'adresse contient :
+ * Mode « intégré » de l’ATM-Chatbot : quand la page est affichée dans l'onglet
+ * ATM-Chatbot de l'Espace techniciens (main app, iframe sur /atm-chatbot/app/), l'adresse contient :
  *
  *   ?embedded=1                 masque la barre du haut (l'Espace techniciens a déjà sa navigation)
  *   &theme=dark|light           thème de l'Espace techniciens
@@ -12,7 +12,7 @@
  * et utilise celui de la session, transmis par le gateway (app/core/gateway_identity.py).
  *
  * Script CLASSIQUE (pas un module), chargé dans le <head> AVANT les modules :
- * la session doit exister quand copilot.js vérifie la connexion (requireSession),
+ * la session doit exister quand atm-chatbot.js vérifie la connexion (requireSession),
  * et le thème doit être posé avant l'affichage.
  *
  * Ensuite, l'Espace techniciens prévient la page quand l'utilisateur change de
@@ -20,8 +20,8 @@
  */
 (function applyEmbeddedMode() {
   var THEME_MESSAGE_TYPE = "espace-techniciens:theme";
-  var SESSION_STORAGE_KEY = "copilot.session"; // STORAGE_KEYS.session de config.js
-  var CONVERSATION_STORAGE_KEY = "copilot.conversation"; // STORAGE_KEYS.conversation de config.js
+  var SESSION_STORAGE_KEY = "atm-chatbot.session"; // STORAGE_KEYS.session de config.js
+  var CONVERSATION_STORAGE_KEY = "atm-chatbot.conversation"; // STORAGE_KEYS.conversation de config.js
 
   var parameters = new URLSearchParams(window.location.search);
   if (parameters.get("embedded") !== "1") {
@@ -39,7 +39,7 @@
   }
   applyTheme(parameters.get("theme"));
 
-  // Le technicien de l'Espace techniciens devient celui du Copilote (même n° de technicien en base).
+  // Le technicien de l'Espace techniciens devient celui de l’ATM-Chatbot (même n° de technicien en base).
   var technicianId = Number(parameters.get("technician_id"));
   if (Number.isInteger(technicianId) && technicianId > 0) {
     try {
@@ -53,7 +53,7 @@
         JSON.stringify({ technicianId: technicianId, displayName: parameters.get("display_name") || "Technicien " + technicianId }),
       );
     } catch (storageError) {
-      // Stockage refusé : le Copilote demandera la connexion comme d'habitude.
+      // Stockage refusé : l’ATM-Chatbot demandera la connexion comme d'habitude.
     }
   }
 

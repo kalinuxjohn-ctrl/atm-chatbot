@@ -1,18 +1,18 @@
 /**
  * Rubrique « Ajouts d'intervention » : interventions racontées par les
- * techniciens depuis le Copilote. Approuvée, une demande est écrite dans
+ * techniciens depuis l’ATM-Chatbot. Approuvée, une demande est écrite dans
  * l'historique (appareil, intervention, symptômes, actions, diagnostic) et
  * les statistiques des solutions sont recalculées.
  *
  * Avant de décider, l'admin peut ouvrir « Ce que l'approbation écrira » :
  * le chatbot calcule l'aperçu (rattachements au catalogue, nouvel appareil…)
  * sans rien écrire.
- * API : /api/copilot-admin/intervention_add (voir copilotAdminApi.js).
+ * API : /api/atm-chatbot-admin/intervention_add (voir atmChatbotAdminApi.js).
  */
 
 import { createElementWithText } from "/shared/js/domHelpers.js";
 import { createIcon } from "/shared/js/icons.js";
-import { interventionAddApi } from "./copilotAdminApi.js";
+import { interventionAddApi } from "./atmChatbotAdminApi.js";
 import {
   STATUS_LABELS,
   connectStatusFilter,

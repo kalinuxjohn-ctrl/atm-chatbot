@@ -1,5 +1,5 @@
 /**
- * Fil de conversation du Copilote, PARTAGÉ par le chat écrit et le mode vocal.
+ * Fil de conversation de l’ATM-Chatbot, PARTAGÉ par le chat écrit et le mode vocal.
  *
  *   chat écrit ──┐
  *                ├─> conversationService.ask() ──> chatApi / voiceApi
@@ -99,7 +99,7 @@ export function createConversationService({ technicianId }) {
     },
 
     /**
-     * Réponse du Copilote produite HORS de ask() (ex. confirmation d'une
+     * Réponse de l’ATM-Chatbot produite HORS de ask() (ex. confirmation d'une
      * proposition de solution ou d'intervention). Cette confirmation est
      * conservée dans l'historique local de l'onglet.
      */

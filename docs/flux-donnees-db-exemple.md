@@ -1,6 +1,6 @@
 # La base de données par l'exemple
 
-Ce document suit **un seul problème réel**, de son enregistrement en base jusqu'à la réponse du Copilote. Le but est de savoir, à chaque étape, **quelle table intervient, quelle ligne est lue ou écrite, et pourquoi**.
+Ce document suit **un seul problème réel**, de son enregistrement en base jusqu'à la réponse de l’ATM-Chatbot. Le but est de savoir, à chaque étape, **quelle table intervient, quelle ligne est lue ou écrite, et pourquoi**.
 
 Les données sont celles du script de démo (`db/seed/seed_demo_data.py`). Les schémas sont dans `docs/diagrammes/` (21 à 24), avec un PNG haute définition dans `docs/diagrammes/png/`.
 

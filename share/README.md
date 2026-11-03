@@ -18,7 +18,7 @@ Voyage ; option `-IncludeModelCache`), les `__pycache__`, et ta distribution
 WSL elle-même (historique, clés SSH, identifiants git restent sur ton PC).
 
 Rien n'est reconstruit ni téléchargé sur Internet à l'installation : les images
-sont chargées telles quelles. En revanche, **le Copilote a besoin d'Internet
+sont chargées telles quelles. En revanche, **l’ATM-Chatbot a besoin d'Internet
 pour fonctionner** (Claude et Voyage AI).
 
 ## Prérequis du PC qui reçoit
@@ -51,7 +51,7 @@ un autre PC sans le refaire).
 Ouvrir PowerShell (pas besoin d'être administrateur) et coller la ligne
 affichée. À la fin :
 
-- Copilote : http://localhost:5173
+- ATM-Chatbot : http://localhost:5173
 - API : http://localhost:8000/docs
 - Projet : `~/atm-chatbot` dans WSL (`cd ~/atm-chatbot && docker compose ps`)
 

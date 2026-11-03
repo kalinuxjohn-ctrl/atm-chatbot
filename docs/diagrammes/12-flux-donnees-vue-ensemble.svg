@@ -8,7 +8,7 @@
 <rect x="30" y="140" width="210" height="170" rx="10" fill="#f6f9fc" stroke="#10243a" stroke-width="1.5"/>
 <text x="135" y="168" font-size="15" font-weight="700" fill="#10243a" text-anchor="middle" xml:space="preserve">Navigateur</text>
 <text x="135" y="186" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="middle" xml:space="preserve">frontend du technicien</text>
-<text x="48" y="214.0" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">copilot.html + JavaScript</text>
+<text x="48" y="214.0" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">atm-chatbot.html + JavaScript</text>
 <text x="48" y="229.5" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">chatApi.js envoie le message</text>
 <text x="48" y="245.0" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">affiche la réponse</text>
 <text x="48" y="260.5" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">historique gardé dans</text>

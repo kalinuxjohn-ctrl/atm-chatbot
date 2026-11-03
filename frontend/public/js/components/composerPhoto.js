@@ -33,7 +33,7 @@ export function createComposerPhoto({ button, fileInput, preview, onChange }) {
     const image = createElement("img", "composer-photo-thumbnail");
     image.src = photo.previewUrl;
     image.alt = "Photo jointe";
-    const label = createElement("span", "composer-photo-label", "Photo jointe : le Copilote lira le texte affiché");
+    const label = createElement("span", "composer-photo-label", "Photo jointe : l’ATM-Chatbot lira le texte affiché");
     const removeButton = createElement("button", "composer-photo-remove");
     removeButton.type = "button";
     removeButton.setAttribute("aria-label", "Retirer la photo");

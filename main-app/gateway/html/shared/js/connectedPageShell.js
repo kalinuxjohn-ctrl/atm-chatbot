@@ -23,12 +23,12 @@ import { startIncomingCallListener } from "./incomingCallListener.js";
 
 const NAVIGATION_LINKS = [
   { label: "Accueil", path: "/", iconName: "home" },
-  { label: "Copilote", path: "/copilot/", iconName: "bot" },
+  { label: "ATM-Chatbot", path: "/atm-chatbot/", iconName: "bot" },
   { label: "Carte", path: "/map/", iconName: "map" },
   { label: "Messagerie", path: "/messaging/", iconName: "message" },
   { label: "Appels", path: "/calls/", iconName: "phone" },
 ];
-// Visible seulement pour le rôle admin : comptes + validation et réponses du Copilote.
+// Visible seulement pour le rôle admin : comptes + validation et réponses de l’ATM-Chatbot.
 const ADMINISTRATION_LINK = { label: "Administration", path: "/admin/", iconName: "shield" };
 const THEME_STORAGE_KEY = "main-app-theme"; // même clé que applySavedTheme.js
 

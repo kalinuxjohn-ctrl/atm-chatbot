@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f4f7fb">
     <!-- Thème sombre appliqué avant l'affichage (clé STORAGE_KEYS.theme de js/config.js) -->
     <script src="js/applySavedTheme.js"></script>
-    <meta name="description" content="Administration du Copilote : propositions des techniciens, codes d’erreur et pannes fréquentes.">
+    <meta name="description" content="Administration de l’ATM-Chatbot : propositions des techniciens, codes d’erreur et pannes fréquentes.">
     <title>Administration | ATM-Chatbot</title>
     <link rel="icon" href="assets/images/logo.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,7 +29,7 @@
       </a>
       <nav class="main-navigation" aria-label="Navigation principale">
         <a class="navigation-link" href="./">Accueil</a>
-        <a class="navigation-link" href="copilot.html">Copilote</a>
+        <a class="navigation-link" href="atm-chatbot.html">Conversation</a>
         <a class="navigation-link navigation-link-active" href="admin.html" aria-current="page">Administration</a>
       </nav>
       <a class="header-action" href="./">Retour à l’accueil <span aria-hidden="true">↗</span></a>
@@ -38,8 +38,8 @@
     <main class="admin-main">
       <div class="admin-heading">
         <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span> Administration</p>
-        <h1>Administration du Copilote</h1>
-        <p class="admin-intro">Examinez les solutions proposées par les techniciens et gérez les réponses enregistrées que le Copilote donne sans IA : codes d’erreur connus et pannes fréquentes.</p>
+        <h1>Administration de l’ATM-Chatbot</h1>
+        <p class="admin-intro">Examinez les solutions proposées par les techniciens et gérez les réponses enregistrées que l’ATM-Chatbot donne sans IA : codes d’erreur connus et pannes fréquentes.</p>
       </div>
 
       <!-- Clé admin : ADMIN_API_KEY du serveur, gardée seulement pour cet onglet -->
@@ -63,7 +63,7 @@
 
       <!-- Propositions de solution des techniciens -->
       <section class="admin-section" id="section-proposals" role="tabpanel" aria-labelledby="tab-proposals">
-        <p class="admin-section-intro">Une proposition approuvée rejoint le catalogue d’actions du Copilote. Une proposition rejetée reste dans l’historique.</p>
+        <p class="admin-section-intro">Une proposition approuvée rejoint le catalogue d’actions de l’ATM-Chatbot. Une proposition rejetée reste dans l’historique.</p>
         <div class="admin-tabs" role="tablist" aria-label="Statut des propositions">
           <button class="admin-tab" type="button" role="tab" data-status="pending" aria-selected="true">En attente</button>
           <button class="admin-tab" type="button" role="tab" data-status="approved" aria-selected="false">Approuvées</button>
@@ -73,20 +73,20 @@
         <div class="proposal-list" id="proposal-list" aria-live="polite"></div>
       </section>
 
-      <!-- Codes d'erreur : menu « Codes d'erreur connus » du Copilote -->
+      <!-- Codes d'erreur : menu « Codes d'erreur connus » de l’ATM-Chatbot -->
       <section class="admin-section" id="section-error-codes" role="tabpanel" aria-labelledby="tab-error-codes" hidden>
         <div class="admin-section-header">
-          <p class="admin-section-intro">Un code apparaît dans le menu « Codes d’erreur connus » du Copilote s’il a un équipement et une réponse. Sans réponse, il reste trouvable par la recherche de codes.</p>
+          <p class="admin-section-intro">Un code apparaît dans le menu « Codes d’erreur connus » de l’ATM-Chatbot s’il a un équipement et une réponse. Sans réponse, il reste trouvable par la recherche de codes.</p>
           <button class="button button-primary" type="button" id="error-code-add">Ajouter un code</button>
         </div>
         <p class="admin-status" id="error-code-status" role="status">Saisissez la clé administrateur pour afficher les codes d’erreur.</p>
         <div class="proposal-list" id="error-code-list" aria-live="polite"></div>
       </section>
 
-      <!-- Pannes fréquentes : menu « Pannes fréquentes » du Copilote -->
+      <!-- Pannes fréquentes : menu « Pannes fréquentes » de l’ATM-Chatbot -->
       <section class="admin-section" id="section-usual-problems" role="tabpanel" aria-labelledby="tab-usual-problems" hidden>
         <div class="admin-section-header">
-          <p class="admin-section-intro">Chaque panne apparaît dans le menu « Pannes fréquentes » de son équipement, dans l’ordre indiqué. Le Copilote répond avec le texte enregistré, sans IA.</p>
+          <p class="admin-section-intro">Chaque panne apparaît dans le menu « Pannes fréquentes » de son équipement, dans l’ordre indiqué. L’ATM-Chatbot répond avec le texte enregistré, sans IA.</p>
           <button class="button button-primary" type="button" id="usual-problem-add">Ajouter une panne</button>
         </div>
         <p class="admin-status" id="usual-problem-status" role="status">Saisissez la clé administrateur pour afficher les pannes fréquentes.</p>

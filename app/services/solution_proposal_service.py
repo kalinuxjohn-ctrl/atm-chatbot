@@ -1,5 +1,5 @@
 """
-Propositions de solution : quand aucune solution trouvée par le Copilote n'a
+Propositions de solution : quand aucune solution trouvée par l’ATM-Chatbot n'a
 marché, le technicien propose la sienne, et un administrateur la valide.
 
     technicien ── GET  contexte ──> get_proposal_context()   (lecture seule)
@@ -46,7 +46,7 @@ PROPOSAL_RECORDED_REPLY = (
 )
 NO_ACTIVE_PROBLEM_MESSAGE = (
     "Aucun problème n'est encore identifié dans cette conversation : "
-    "décrivez d'abord la panne au Copilote, puis proposez votre solution."
+    "décrivez d'abord la panne à l’ATM-Chatbot, puis proposez votre solution."
 )
 # Messages référencés dans le snapshot (par leur ID, sans recopier leur texte).
 RECENT_MESSAGE_COUNT = 10
@@ -423,7 +423,7 @@ def _find_matched_symptom(intervention: Intervention, result: dict):
 
 
 def _describe_result(db: Session, result: dict) -> dict:
-    """Un résultat de la recherche, avec la solution que le Copilote en a tirée."""
+    """Un résultat de la recherche, avec la solution que l’ATM-Chatbot en a tirée."""
     kind = _result_kind(result)
     described = {
         "position": result.get("position"),

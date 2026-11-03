@@ -91,7 +91,7 @@ export function confirmAdministratorSession(request, response) {
 }
 
 /**
- * Réponse au contrôle auth_request du gateway avant le Copilote : session valide (vérifiée
+ * Réponse au contrôle auth_request du gateway avant l’ATM-Chatbot : session valide (vérifiée
  * par requireAuthenticatedUser). Le gateway recopie cet en-tête dans la requête vers le chatbot.
  */
 export function confirmSessionWithTechnicianIdentity(request, response) {

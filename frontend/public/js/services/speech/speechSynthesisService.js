@@ -1,5 +1,5 @@
 /**
- * Text-to-Speech du Copilote : TOUJOURS une voix française.
+ * Text-to-Speech de l’ATM-Chatbot : TOUJOURS une voix française.
  *
  * Deux moteurs :
  *   1. "server"  : voix neuronales françaises générées par server.py (/tts,

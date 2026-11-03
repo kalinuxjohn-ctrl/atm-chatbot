@@ -1,5 +1,5 @@
 """
-Pannes fréquentes du menu « Pannes fréquentes » du Copilote : lecture SQL
+Pannes fréquentes du menu « Pannes fréquentes » de l’ATM-Chatbot : lecture SQL
 simple de la table usual_problem -- ni LLM, ni embedding.
 """
 

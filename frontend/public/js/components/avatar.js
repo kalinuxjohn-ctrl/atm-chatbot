@@ -1,5 +1,5 @@
 /**
- * Avatars du Copilote (messages, barre du haut, page d'accueil, paramètres).
+ * Avatars de l’ATM-Chatbot (messages, barre du haut, page d'accueil, paramètres).
  *
  * Deux façons de définir un avatar dans AVATARS :
  *   1. DESSIN SVG en code (par défaut) : couleurs + tracés des cheveux.

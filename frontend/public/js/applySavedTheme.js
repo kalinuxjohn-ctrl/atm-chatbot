@@ -5,7 +5,7 @@
  * politique de sécurité (CSP) refuse les scripts écrits dans le HTML.
  */
 try {
-  if (localStorage.getItem("copilot.theme") === "dark") {
+  if (localStorage.getItem("atm-chatbot.theme") === "dark") {
     document.documentElement.dataset.theme = "dark";
   }
 } catch (storageError) {

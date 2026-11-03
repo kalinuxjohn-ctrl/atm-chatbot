@@ -25,7 +25,7 @@ Ouvrez <http://localhost:5173>. Le backend reste accessible sur <http://localhos
 > nécessaire. Le serveur envoie `Cache-Control: no-cache` : le navigateur
 > revérifie les fichiers à chaque chargement. Cela ne recharge pas
 > automatiquement une page déjà ouverte.
-> Le Copilote se trouve sur <http://localhost:5173/copilot.html>, après connexion depuis l’accueil.
+> L’ATM-Chatbot se trouve sur <http://localhost:5173/atm-chatbot.html>, après connexion depuis l’accueil.
 
 Le conteneur frontend relaie `/api/*` vers `http://host.docker.internal:8000`, c’est-à-dire le port hôte publié par le service `web` du Compose backend. Le navigateur appelle le frontend seulement ; l’adresse du backend reste côté serveur.
 
@@ -73,7 +73,7 @@ docker compose down
 Vous pouvez aussi lancer le frontend directement avec Python :
 
 ```powershell
-pip install -r requirements.txt   # voix françaises du Copilote (edge-tts), facultatif
+pip install -r requirements.txt   # voix françaises de l’ATM-Chatbot (edge-tts), facultatif
 python server.py
 ```
 
@@ -88,7 +88,7 @@ Les cartes ouvrent `/diagnostic.html?device_type=gab` ou
 recherche. Toute autre valeur conserve la sélection par défaut.
 Les visuels sont extraits de l'image fournie pour le design : conseillère
 avec téléphone, guichet bleu et terminal orange. La mise en page s'adapte aux petits écrans et aux thèmes
-clair/sombre. La connexion au Copilote reste accessible depuis l'accueil.
+clair/sombre. La connexion à l’ATM-Chatbot reste accessible depuis l'accueil.
 
 Les images d'accueil sont stockées localement dans `public/assets/images/` :
 `conseillere-maintenance-telephone.png`, `guichet-automatique-bleu.png` et
@@ -97,7 +97,7 @@ intégrer les visuels à la page. Le fichier fourni reste intact ; aucun
 hébergement d'images externe n'est utilisé. Il s'agit de visuels d'illustration,
 pas de photos d'un membre de l'équipe ou d'un matériel installé.
 
-Dans le Copilote, les commandes du menu et du contexte ont un contour accentué
+Dans l’ATM-Chatbot, les commandes du menu et du contexte ont un contour accentué
 et un état ouvert/fermé visible. Le bouton « Contexte » affiche son libellé sur
 grand écran ; son libellé accessible et son info-bulle suivent l'état du panneau.
 Le thème clair associe une sidebar bleu nuit, une navigation active bleu vif,
@@ -136,7 +136,7 @@ sans résultat pertinent : le premier symptôme est alors prérempli avec le pro
 recherché et la proposition conserve le lien à la conversation.
 
 Le formulaire envoie un objet `device` avec le type GAB/TPE prérempli depuis
-la sélection du Copilote et modifiable, le modèle, le numéro de série,
+la sélection de l’ATM-Chatbot et modifiable, le modèle, le numéro de série,
 l'identifiant facultatif, le site et l'adresse. Le backend seul résout
 l'appareil et son rattachement ; aucun appel de recherche ni contrôle métier
 n'est effectué par le formulaire. Les erreurs de validation du backend sont
@@ -158,11 +158,11 @@ documentées dans le README racine ; ce formulaire est l'interface technicien.
 
 | Page | Rôle |
 | --- | --- |
-| `index.html` | Site vitrine bleu : photographie professionnelle, présentation des atouts, étapes et accès au Copilote. Les trois boutons d’accès conservent la connexion ou la reprise de session. Thèmes clair/sombre et mouvements réduits pris en charge. |
-| `copilot.html` | Copilote : engrenage animé avec clé de mécanicien et anneaux tournant en 3D autour du centre (bleus en mode clair, verts en mode sombre), à l'ouverture d'une conversation (sans animation en mode mouvements réduits), sidebar rétractable, chat écrit, dictée, Chat vocal immersif, panneau de contexte, paramètres. |
+| `index.html` | Site vitrine bleu : photographie professionnelle, présentation des atouts, étapes et accès à l’ATM-Chatbot. Les trois boutons d’accès conservent la connexion ou la reprise de session. Thèmes clair/sombre et mouvements réduits pris en charge. |
+| `atm-chatbot.html` | ATM-Chatbot : engrenage animé avec clé de mécanicien et anneaux tournant en 3D autour du centre (bleus en mode clair, verts en mode sombre), à l'ouverture d'une conversation (sans animation en mode mouvements réduits), sidebar rétractable, chat écrit, dictée, Chat vocal immersif, panneau de contexte, paramètres. |
 | `diagnostic.html` | Recherche directe dans l’historique des symptômes. |
 | `flow-presentation.html` | Présentation animée du flux de connexion simulée et de traitement d’un message. |
-| `admin.html` | Administration (clé `ADMIN_API_KEY`) : propositions des techniciens, codes d’erreur et pannes fréquentes du Copilote. |
+| `admin.html` | Administration (clé `ADMIN_API_KEY`) : propositions des techniciens, codes d’erreur et pannes fréquentes de l’ATM-Chatbot. |
 
 ## Structure
 
@@ -174,7 +174,7 @@ public/
 │   ├── style.css         base commune (en-tête, chat, boutons)
 │   ├── components.css    avatars, boîtes de dialogue, champs
 │   ├── home.css          vitrine d’accueil, responsive et transition de connexion
-│   ├── copilot.css       page Copilote complète (palette bleue, sidebar, chat, Chat vocal, paramètres, responsive)
+│   ├── atm-chatbot.css       page ATM-Chatbot complète (palette bleue, sidebar, chat, Chat vocal, paramètres, responsive)
 │   └── responsive.css    petits écrans des pages Accueil / Diagnostic + prefers-reduced-motion
 └── js/
     ├── config.js                     constantes (URL API, langue, mode démo)
@@ -187,7 +187,7 @@ public/
     │   ├── preferencesService.js     paramètres (localStorage)
     │   └── sessionService.js         technicien connecté
     ├── components/
-    │   ├── avatar.js                 avatars humains du Copilote (SVG)
+    │   ├── avatar.js                 avatars humains de l’ATM-Chatbot (SVG)
     │   ├── icons.js                  icônes SVG (data-icon="…")
     │   ├── sidebar.js                menu rétractable (large / icônes / tiroir mobile)
     │   ├── contextPanel.js           panneau "Contexte" (colonne ou tiroir)
@@ -222,7 +222,7 @@ Les points de branchement futurs sont marqués `TODO` dans `public/js/services/a
 
 ## Photo de l’appareil
 
-Le bouton 📷 de la zone de saisie ouvre l’appareil photo du téléphone (sur PC : choix d’un fichier). La photo est réduite dans le navigateur (1568 px max, JPEG), affichée en aperçu, puis envoyée avec le prochain message, éventuellement sans texte. Le Copilote en lit le texte affiché (code ou message d’erreur) et l’utilise pour le diagnostic.
+Le bouton 📷 de la zone de saisie ouvre l’appareil photo du téléphone (sur PC : choix d’un fichier). La photo est réduite dans le navigateur (1568 px max, JPEG), affichée en aperçu, puis envoyée avec le prochain message, éventuellement sans texte. L’ATM-Chatbot en lit le texte affiché (code ou message d’erreur) et l’utilise pour le diagnostic.
 
 - Le bouton n’apparaît que si le backend répond `enabled: true` à `GET /api/chat/photo-ocr` : `PHOTO_OCR_ENABLED=true` et `LLM_PROVIDER=claude`. Il est toujours caché en mode démo.
 - Seule la mention « 📷 Photo jointe » est gardée dans l’historique de l’onglet, pas l’image. « Réessayer » renvoie la même photo.
@@ -233,12 +233,12 @@ Ajoutez `?mock=1` à l’adresse pour utiliser des réponses simulées sans back
 
 ## Fonctions vocales
 
-Le backend ne reçoit que du texte (`POST /api/chat`, comme le chat écrit). La reconnaissance vocale se fait dans le navigateur (Chrome ou Edge recommandés) ; la **voix du Copilote** est générée par le serveur frontend (`server.py`, routes `GET /tts/voices` et `POST /tts`, paquet `edge-tts`, connexion Internet requise).
+Le backend ne reçoit que du texte (`POST /api/chat`, comme le chat écrit). La reconnaissance vocale se fait dans le navigateur (Chrome ou Edge recommandés) ; la **voix de l’ATM-Chatbot** est générée par le serveur frontend (`server.py`, routes `GET /tts/voices` et `POST /tts`, paquet `edge-tts`, connexion Internet requise).
 
 - **Micro de la zone de saisie** : dicte le texte dans le champ, sans l’envoyer. États affichés : « Autorisation du micro… », « Écoute en cours… », « Traitement… », « Erreur microphone : … ».
-- **Chat vocal** : écran plein, comme un appel ; la messagerie est masquée. Conversation entièrement à la voix : on parle naturellement, le message part tout seul après ~1,3 s de silence, la réponse est lue, puis le micro se rouvre automatiquement. Toucher la bulle envoie tout de suite (pendant l’écoute) ou interrompt le Copilote (pendant la lecture). C’est la **même** conversation : les échanges apparaissent dans le chat à la fermeture.
-- **Voix** : uniquement des voix **françaises**. Par défaut, voix naturelles du serveur (Denise / Henri, et d’autres voix fr-FR, fr-BE, fr-CA, fr-CH), identiques dans tous les navigateurs. Si le serveur de synthèse est injoignable, le Copilote se rabat automatiquement sur les voix françaises du navigateur (jamais une voix anglaise).
-- **Erreur « réseau » de la reconnaissance vocale** : Chrome et Edge envoient l’audio à leur propre service de transcription. Si ce service est injoignable, par exemple dans le navigateur intégré de VS Code, Brave, Opera, un réseau filtré ou un VPN, le navigateur renvoie l’erreur `network` même si Internet fonctionne. Le Copilote l’explique, propose la reconnaissance hors ligne lorsque Chrome la prend en charge, ainsi qu’une saisie au clavier ou la dictée Windows (⊞ + H).
+- **Chat vocal** : écran plein, comme un appel ; la messagerie est masquée. Conversation entièrement à la voix : on parle naturellement, le message part tout seul après ~1,3 s de silence, la réponse est lue, puis le micro se rouvre automatiquement. Toucher la bulle envoie tout de suite (pendant l’écoute) ou interrompt l’ATM-Chatbot (pendant la lecture). C’est la **même** conversation : les échanges apparaissent dans le chat à la fermeture.
+- **Voix** : uniquement des voix **françaises**. Par défaut, voix naturelles du serveur (Denise / Henri, et d’autres voix fr-FR, fr-BE, fr-CA, fr-CH), identiques dans tous les navigateurs. Si le serveur de synthèse est injoignable, l’ATM-Chatbot se rabat automatiquement sur les voix françaises du navigateur (jamais une voix anglaise).
+- **Erreur « réseau » de la reconnaissance vocale** : Chrome et Edge envoient l’audio à leur propre service de transcription. Si ce service est injoignable, par exemple dans le navigateur intégré de VS Code, Brave, Opera, un réseau filtré ou un VPN, le navigateur renvoie l’erreur `network` même si Internet fonctionne. L’ATM-Chatbot l’explique, propose la reconnaissance hors ligne lorsque Chrome la prend en charge, ainsi qu’une saisie au clavier ou la dictée Windows (⊞ + H).
 
 ## Diagnostic
 

@@ -1,5 +1,5 @@
 /**
- * Affichage de la conversation du Copilote (chat écrit + échanges vocaux).
+ * Affichage de la conversation de l’ATM-Chatbot (chat écrit + échanges vocaux).
  * Ne fait AUCUN appel réseau : il reçoit des messages et les dessine.
  */
 
@@ -76,7 +76,7 @@ export function createChatView({
   };
 
   function createAvatarSlot() {
-    const slot = createElement("span", "message-avatar copilot-avatar-slot");
+    const slot = createElement("span", "message-avatar atm-chatbot-avatar-slot");
     slot.setAttribute("aria-hidden", "true");
     slot.append(renderAvatar(getAvatarKind()));
     return slot;
@@ -224,14 +224,14 @@ export function createChatView({
       else appendAssistant(message, options);
     },
 
-    /** Indicateur "le Copilote réfléchit" ; renvoie la fonction qui le retire. */
+    /** Indicateur "l’ATM-Chatbot réfléchit" ; renvoie la fonction qui le retire. */
     showTyping() {
       const { message, body } = createAssistantShell(formatTime());
       message.classList.add("thinking-message");
       message.querySelector(".avatar").dataset.state = "thinking";
       const indicator = createElement("div", "typing-indicator");
       indicator.setAttribute("role", "status");
-      indicator.setAttribute("aria-label", "Le Copilote prépare sa réponse");
+      indicator.setAttribute("aria-label", "L’ATM-Chatbot prépare sa réponse");
       for (let index = 0; index < 3; index += 1) indicator.append(createElement("span"));
       body.append(indicator);
       conversationElement.append(message);
@@ -283,7 +283,7 @@ export function createChatView({
 
     /** Change l'avatar de tous les messages déjà affichés (après un changement de paramètres). */
     refreshAvatars() {
-      conversationElement.querySelectorAll(".copilot-avatar-slot").forEach((slot) => {
+      conversationElement.querySelectorAll(".atm-chatbot-avatar-slot").forEach((slot) => {
         const avatar = renderAvatar(getAvatarKind());
         if (slot.closest(".thinking-message")) avatar.dataset.state = "thinking";
         else if (slot.closest(".error-message")) avatar.dataset.state = "error";

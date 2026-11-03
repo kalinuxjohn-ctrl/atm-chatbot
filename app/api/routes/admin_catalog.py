@@ -1,5 +1,5 @@
 """
-Routes d'administration des réponses enregistrées du Copilote, protégées par
+Routes d'administration des réponses enregistrées de l’ATM-Chatbot, protégées par
 la même clé que les propositions (ADMIN_API_KEY, en-tête X-Admin-Key) :
 
     GET    /api/admin/error_code            tous les codes (avec ou sans réponse)

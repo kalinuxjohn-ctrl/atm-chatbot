@@ -1,7 +1,7 @@
 -- ============================================================================
 -- Migration 0012 — intervention_add
 -- ============================================================================
--- Demande d'ajout d'intervention ENVOYÉE par un technicien (souvent quand le Copilote
+-- Demande d'ajout d'intervention ENVOYÉE par un technicien (souvent quand l’ATM-Chatbot
 -- ne connaît pas le problème), en attente de validation par un administrateur.
 --
 -- Tant qu'elle n'est pas approuvée, la demande n'écrit RIEN dans intervention,

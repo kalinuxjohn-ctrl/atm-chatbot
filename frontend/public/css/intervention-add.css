@@ -1,4 +1,4 @@
-.copilot-page .sidebar-link.sidebar-intervention-add {
+.atm-chatbot-page .sidebar-link.sidebar-intervention-add {
   margin-top: 8px;
   border: 1px solid var(--amber-border);
   background: var(--amber-fill);
@@ -6,13 +6,13 @@
   --rim: var(--amber-border);
 }
 
-.copilot-page .sidebar-link.sidebar-intervention-add:hover {
+.atm-chatbot-page .sidebar-link.sidebar-intervention-add:hover {
   border-color: var(--amber);
   background: var(--amber-fill);
   box-shadow: inset 3px 0 var(--amber);
 }
 
-.copilot-page .intervention-add-dialog {
+.atm-chatbot-page .intervention-add-dialog {
   width: min(760px, calc(100% - 24px));
   max-height: calc(100dvh - 32px);
   background: var(--surface);
@@ -233,5 +233,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .copilot-page .intervention-add-dialog[open] { animation: none; }
+  .atm-chatbot-page .intervention-add-dialog[open] { animation: none; }
 }

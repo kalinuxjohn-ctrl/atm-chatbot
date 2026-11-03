@@ -77,6 +77,6 @@ curl -fsS "$BASE_URL/termine?t=$TOKEN" >/dev/null 2>&1 || true
 
 echo
 echo "Installation terminée."
-echo "  Copilote : http://localhost:5173"
+echo "  ATM-Chatbot : http://localhost:5173"
 echo "  API      : http://localhost:8000/docs"
 echo "  Projet   : $DEST  (dans WSL)"

@@ -12,7 +12,7 @@
   /* Fond plein écran de la page d'accueil (avant connexion). */
   --image-home-background: url("../assets/images/home-background.svg");
 
-  /* Fond de la zone de conversation du Copilote (doit rester clair et discret). */
+  /* Fond de la zone de conversation de l’ATM-Chatbot (doit rester clair et discret). */
   --image-app-background: url("../assets/images/app-background.svg");
 }
 

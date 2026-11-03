@@ -1,5 +1,5 @@
 /**
- * Fenêtre « Proposer une solution » (quand aucune solution du Copilote n'a marché).
+ * Fenêtre « Proposer une solution » (quand aucune solution de l’ATM-Chatbot n'a marché).
  *
  *   ouverture ─> chargement du problème (backend) ─> formulaire ─> envoi ─> confirmation
  *                         └─ erreur claire si aucun problème n'est identifié
@@ -95,7 +95,7 @@ export function createSolutionProposalDialog({ dialog, onSubmitted }) {
     if (!dialog.open) dialog.showModal();
 
     if (!Number.isInteger(conversationId)) {
-      showError("Aucune conversation en cours : décrivez d’abord la panne au Copilote.");
+      showError("Aucune conversation en cours : décrivez d’abord la panne à l’ATM-Chatbot.");
       setState("load-error");
       return;
     }

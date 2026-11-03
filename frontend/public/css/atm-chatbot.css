@@ -1,14 +1,14 @@
 /* ==========================================================================
    Page ATM-Chatbot
    --------------------------------------------------------------------------
-   Toutes les règles sont limitées à .copilot-page : les pages Accueil et
+   Toutes les règles sont limitées à .atm-chatbot-page : les pages Accueil et
    Diagnostic (style.css) ne sont pas affectées.
 
    Plan du fichier :
      1. Palette et typographie
      2. Mise en page (sidebar | conversation | contexte)
      3. Sidebar rétractable
-     4. Barre du Copilote
+     4. Barre de l’ATM-Chatbot
      5. Conversation (messages, avatars, animations)
      6. Zone de saisie (équipement, micro, envoi, dictée)
      7. Bulles de suggestions
@@ -20,7 +20,7 @@
    ========================================================================== */
 
 /* ---------- 1. Palette bleu / bleu nuit et typographie ---------- */
-.copilot-page {
+.atm-chatbot-page {
   --navy: #0f2742;
   --navy-soft: #183a5e;
   --accent: #1f6fd1;
@@ -49,18 +49,18 @@
   font-size: 15px;
 }
 
-.copilot-page .icon {
+.atm-chatbot-page .icon {
   width: 20px;
   height: 20px;
   flex: 0 0 auto;
 }
 
-.copilot-page [data-icon] {
+.atm-chatbot-page [data-icon] {
   display: inline-grid;
   place-items: center;
 }
 
-.copilot-page :focus-visible {
+.atm-chatbot-page :focus-visible {
   outline: 3px solid rgba(31, 111, 209, 0.35);
   outline-offset: 2px;
 }
@@ -118,7 +118,7 @@
   text-decoration: none;
 }
 
-/* Avatar humain du Copilote (même personnage que dans les messages). */
+/* Avatar humain de l’ATM-Chatbot (même personnage que dans les messages). */
 .sidebar-brand-avatar {
   width: 44px;
   height: 44px;
@@ -304,7 +304,7 @@
   padding-top: 8px;
 }
 
-/* ---------- 4. Barre du Copilote ---------- */
+/* ---------- 4. Barre de l’ATM-Chatbot ---------- */
 .workspace-header {
   display: flex;
   min-height: 70px;
@@ -320,7 +320,7 @@
   display: none !important;
 }
 
-.copilot-page .assistant-identity {
+.atm-chatbot-page .assistant-identity {
   min-width: 0;
   flex: 1 1 auto;
   gap: 12px;
@@ -335,29 +335,29 @@
   background: linear-gradient(160deg, #eaf2fd, #cfe0f5);
 }
 
-.copilot-page .assistant-identity-text {
+.atm-chatbot-page .assistant-identity-text {
   display: grid;
   min-width: 0;
   gap: 3px;
 }
 
-.copilot-page .assistant-identity strong {
+.atm-chatbot-page .assistant-identity strong {
   color: var(--navy);
   font-size: 17px;
 }
 
-.copilot-page .assistant-identity small {
+.atm-chatbot-page .assistant-identity small {
   overflow: hidden;
   color: var(--muted);
   font-size: 13px;
   white-space: nowrap;
 }
 
-.copilot-page .assistant-identity small i {
+.atm-chatbot-page .assistant-identity small i {
   background: #2fa36b;
 }
 
-.copilot-page .chat-panel[aria-busy="true"] .conversation {
+.atm-chatbot-page .chat-panel[aria-busy="true"] .conversation {
   cursor: progress;
 }
 
@@ -436,7 +436,7 @@
 }
 
 /* ---------- 5. Conversation ---------- */
-.copilot-page .chat-panel {
+.atm-chatbot-page .chat-panel {
   display: flex;
   min-height: 0;
   flex: 1 1 auto;
@@ -447,7 +447,7 @@
   box-shadow: none;
 }
 
-.copilot-page .conversation {
+.atm-chatbot-page .conversation {
   min-height: 0;
   max-height: none;
   flex: 1 1 auto;
@@ -456,12 +456,12 @@
   background: transparent;
 }
 
-.copilot-page .message {
+.atm-chatbot-page .message {
   max-width: min(100%, 760px);
   gap: 12px;
 }
 
-.copilot-page .copilot-avatar-slot {
+.atm-chatbot-page .atm-chatbot-avatar-slot {
   width: 40px;
   height: 40px;
   overflow: hidden;
@@ -469,14 +469,14 @@
   background: linear-gradient(160deg, #eaf2fd, #cfe0f5);
 }
 
-.copilot-page .message-author {
+.atm-chatbot-page .message-author {
   gap: 8px;
   margin: 2px 0 8px;
   color: var(--navy-soft);
   font-size: 13.5px;
 }
 
-.copilot-page .message-author time {
+.atm-chatbot-page .message-author time {
   color: var(--faint);
   font-size: 12px;
 }
@@ -486,7 +486,7 @@
   height: 15px !important;
 }
 
-.copilot-page .message-bubble {
+.atm-chatbot-page .message-bubble {
   padding: 14px 17px;
   border-color: var(--line);
   border-radius: 4px 16px 16px 16px;
@@ -497,11 +497,11 @@
   line-height: 1.65;
 }
 
-.copilot-page .message-bubble p + p {
+.atm-chatbot-page .message-bubble p + p {
   margin-top: 8px;
 }
 
-.copilot-page .user-message .message-bubble {
+.atm-chatbot-page .user-message .message-bubble {
   border-color: transparent;
   border-radius: 16px 4px 16px 16px;
   background: linear-gradient(135deg, #1f6fd1, #1859ad);
@@ -509,7 +509,7 @@
   color: #fff;
 }
 
-.copilot-page .voice-exchange .message-bubble {
+.atm-chatbot-page .voice-exchange .message-bubble {
   border-left: 3px solid #4f9bff;
 }
 
@@ -548,19 +548,19 @@
   background: var(--accent-pale);
 }
 
-.copilot-page .friendly-error {
+.atm-chatbot-page .friendly-error {
   border-color: #f1d2d5;
   background: #fff6f7;
   color: #6c3a40;
   font-size: 14.5px;
 }
 
-.copilot-page .friendly-error strong {
+.atm-chatbot-page .friendly-error strong {
   color: var(--danger);
   font-size: 15px;
 }
 
-.copilot-page .retry-button {
+.atm-chatbot-page .retry-button {
   display: inline-flex;
   min-height: 40px;
   gap: 7px;
@@ -569,12 +569,12 @@
   font-size: 14px;
 }
 
-.copilot-page .typing-indicator {
+.atm-chatbot-page .typing-indicator {
   padding: 15px 17px;
   border-radius: 4px 16px 16px 16px;
 }
 
-.copilot-page .typing-indicator span {
+.atm-chatbot-page .typing-indicator span {
   width: 7px;
   height: 7px;
   background: #6f9fd8;
@@ -609,7 +609,7 @@
 }
 
 /* ---------- 6. Zone de saisie ---------- */
-.copilot-page .composer-area {
+.atm-chatbot-page .composer-area {
   width: min(100%, 904px);
   margin: 0 auto;
   padding: 12px 22px 16px;
@@ -617,7 +617,7 @@
   background: transparent;
 }
 
-.copilot-page .message-composer {
+.atm-chatbot-page .message-composer {
   position: relative;
   display: flex;
   gap: 10px;
@@ -629,12 +629,12 @@
   box-shadow: 0 10px 30px rgba(15, 39, 66, 0.08);
 }
 
-.copilot-page .message-composer:focus-within {
+.atm-chatbot-page .message-composer:focus-within {
   border-color: #8db6ea;
   box-shadow: 0 0 0 4px rgba(31, 111, 209, 0.1), 0 10px 30px rgba(15, 39, 66, 0.08);
 }
 
-.copilot-page .message-composer textarea {
+.atm-chatbot-page .message-composer textarea {
   min-width: 0;
   min-height: 52px;
   max-height: 168px;
@@ -685,7 +685,7 @@
   content: "";
 }
 
-.copilot-page .send-button {
+.atm-chatbot-page .send-button {
   display: inline-flex;
   height: 52px;
   min-width: 52px;
@@ -703,16 +703,16 @@
   font-weight: 700;
 }
 
-.copilot-page .send-button:hover:not(:disabled) {
+.atm-chatbot-page .send-button:hover:not(:disabled) {
   background: var(--accent-dark);
 }
 
-.copilot-page .send-button:disabled {
+.atm-chatbot-page .send-button:disabled {
   background: #b9c8da;
   cursor: not-allowed;
 }
 
-.copilot-page .send-button span:last-child {
+.atm-chatbot-page .send-button span:last-child {
   font-size: inherit;
 }
 
@@ -736,7 +736,7 @@
 }
 
 /* Sélecteur d'équipement GAB / TPE */
-.copilot-page .device-picker {
+.atm-chatbot-page .device-picker {
   position: relative;
   display: block;
   min-width: 0;
@@ -953,7 +953,7 @@
   font-size: 12.5px;
 }
 
-.copilot-page kbd {
+.atm-chatbot-page kbd {
   font-size: 11.5px;
 }
 
@@ -1295,7 +1295,7 @@
   animation: orb-spin 1.6s linear infinite reverse; /* l'avatar reste droit */
 }
 
-/* Le Copilote parle : halos qui pulsent. */
+/* L’ATM-Chatbot parle : halos qui pulsent. */
 .voice-dialog[data-state="speaking"] .voice-orb-halo {
   animation: orb-pulse 1.4s ease-out infinite;
 }
@@ -1396,16 +1396,16 @@
   content: " »";
 }
 
-.voice-caption-copilot {
+.voice-caption-atm-chatbot {
   color: rgba(234, 242, 255, 0.62);
 }
 
-/* Pendant la réponse, seul le texte du Copilote reste en avant. */
+/* Pendant la réponse, seul le texte de l’ATM-Chatbot reste en avant. */
 .voice-dialog[data-state="speaking"] .voice-caption-user {
   opacity: 0.45;
 }
 
-.voice-dialog:is([data-state="listening"], [data-state="hearing"]) .voice-caption-copilot {
+.voice-dialog:is([data-state="listening"], [data-state="hearing"]) .voice-caption-atm-chatbot {
   display: none;
 }
 
@@ -1566,15 +1566,15 @@
 }
 
 /* ---------- 10. Paramètres ---------- */
-.copilot-page .app-dialog {
+.atm-chatbot-page .app-dialog {
   border-radius: 18px;
 }
 
-.copilot-page .dialog-header h2 {
+.atm-chatbot-page .dialog-header h2 {
   font-size: 22px;
 }
 
-.copilot-page .dialog-header p {
+.atm-chatbot-page .dialog-header p {
   font-size: 14px;
 }
 
@@ -1600,11 +1600,11 @@
   text-transform: uppercase;
 }
 
-.copilot-page .field {
+.atm-chatbot-page .field {
   font-size: 14px;
 }
 
-.copilot-page .field select {
+.atm-chatbot-page .field select {
   height: 46px;
   font-size: 15px;
 }
@@ -1764,16 +1764,16 @@
   display: block;
 }
 
-.copilot-page .button {
+.atm-chatbot-page .button {
   min-height: 46px;
   font-size: 15px;
 }
 
-.copilot-page .button-primary {
+.atm-chatbot-page .button-primary {
   background: var(--accent);
 }
 
-.copilot-page .button-primary:hover {
+.atm-chatbot-page .button-primary:hover {
   background: var(--accent-dark);
 }
 
@@ -1964,13 +1964,13 @@
 /* ---------- 12. Finitions visuelles ----------
    Couche d'habillage : dégradés, profondeur, accueil centré. Placée avant
    le responsive pour que les règles mobiles gardent le dernier mot. */
-.copilot-page {
+.atm-chatbot-page {
   --accent-gradient: linear-gradient(135deg, #2f7cf6 0%, #1d5fd6 55%, #1748b8 100%);
   --glow-accent: 0 12px 32px -10px rgba(31, 111, 209, 0.45);
 }
 
 /* Zone de conversation : image de fond claire (assets.css, --image-app-background). */
-.copilot-page .workspace {
+.atm-chatbot-page .workspace {
   background:
     radial-gradient(900px 480px at 85% -10%, rgba(79, 157, 255, 0.12), transparent 60%),
     var(--image-app-background) center / cover no-repeat,
@@ -2010,23 +2010,23 @@
   backdrop-filter: saturate(160%) blur(14px);
 }
 
-.copilot-page .pill-button-primary {
+.atm-chatbot-page .pill-button-primary {
   background: var(--accent-gradient);
   box-shadow: var(--glow-accent);
 }
 
 /* Messages */
-.copilot-page .copilot-avatar-slot {
+.atm-chatbot-page .atm-chatbot-avatar-slot {
   box-shadow: 0 0 0 2px #fff, 0 6px 16px -6px rgba(15, 39, 66, 0.35);
 }
 
-.copilot-page .assistant-message .message-bubble {
+.atm-chatbot-page .assistant-message .message-bubble {
   border: 1px solid rgba(214, 226, 240, 0.9);
   background: linear-gradient(180deg, #ffffff, #fbfdff);
   box-shadow: 0 1px 2px rgba(15, 39, 66, 0.04), 0 10px 28px -14px rgba(15, 39, 66, 0.18);
 }
 
-.copilot-page .user-message .message-bubble {
+.atm-chatbot-page .user-message .message-bubble {
   background: var(--accent-gradient);
   box-shadow: var(--glow-accent);
 }
@@ -2038,7 +2038,7 @@
 
 /* Accueil : tant que la conversation est vide, le message de bienvenue est
    centré comme une page d'accueil (avatar, titre, cas fréquents en cartes). */
-.copilot-page .conversation:has(> .welcome-message:only-child) {
+.atm-chatbot-page .conversation:has(> .welcome-message:only-child) {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -2053,7 +2053,7 @@
   animation: message-fade 420ms ease-out;
 }
 
-.conversation > .welcome-message:only-child .copilot-avatar-slot {
+.conversation > .welcome-message:only-child .atm-chatbot-avatar-slot {
   width: 92px;
   height: 92px;
   margin-bottom: 4px;
@@ -2086,7 +2086,7 @@
 }
 
 /* Zone de saisie flottante */
-.copilot-page .message-composer {
+.atm-chatbot-page .message-composer {
   border-color: rgba(205, 220, 238, 0.95);
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.92);
@@ -2094,30 +2094,30 @@
   box-shadow: 0 1px 2px rgba(15, 39, 66, 0.05), 0 18px 40px -18px rgba(15, 39, 66, 0.28);
 }
 
-.copilot-page .message-composer:focus-within {
+.atm-chatbot-page .message-composer:focus-within {
   border-color: #8db6ea;
   box-shadow: 0 0 0 4px rgba(31, 111, 209, 0.1), 0 18px 40px -18px rgba(15, 39, 66, 0.28);
 }
 
 /* Le cadre de focus est porté par toute la zone de saisie, pas par le champ seul. */
-.copilot-page .message-composer textarea:focus,
-.copilot-page .message-composer textarea:focus-visible {
+.atm-chatbot-page .message-composer textarea:focus,
+.atm-chatbot-page .message-composer textarea:focus-visible {
   outline: none;
 }
 
-.copilot-page .send-button {
+.atm-chatbot-page .send-button {
   border-radius: 999px;
   background: var(--accent-gradient);
   box-shadow: var(--glow-accent);
   transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
 }
 
-.copilot-page .send-button:hover:not(:disabled) {
+.atm-chatbot-page .send-button:hover:not(:disabled) {
   background: var(--accent-gradient);
   transform: translateY(-1px);
 }
 
-.copilot-page .send-button:disabled {
+.atm-chatbot-page .send-button:disabled {
   background: #c3d1e2;
   box-shadow: none;
 }
@@ -2160,12 +2160,12 @@
   display: none;
 }
 
-.copilot-page .mic-button {
+.atm-chatbot-page .mic-button {
   background: rgba(31, 111, 209, 0.08);
 }
 
 /* Panneau de contexte */
-.copilot-page .context-card {
+.atm-chatbot-page .context-card {
   border-color: rgba(214, 226, 240, 0.9);
   box-shadow: 0 10px 28px -18px rgba(15, 39, 66, 0.25);
 }
@@ -2181,7 +2181,7 @@
     padding: 0;
   }
 
-  .conversation > .welcome-message:only-child .copilot-avatar-slot {
+  .conversation > .welcome-message:only-child .atm-chatbot-avatar-slot {
     width: 76px;
     height: 76px;
   }
@@ -2307,7 +2307,7 @@
     height: 40px;
   }
 
-  .copilot-page .assistant-identity strong {
+  .atm-chatbot-page .assistant-identity strong {
     font-size: 16px;
   }
 
@@ -2325,31 +2325,31 @@
     display: none;
   }
 
-  .copilot-page .conversation {
+  .atm-chatbot-page .conversation {
     padding: 18px 14px;
   }
 
-  .copilot-page .message-bubble {
+  .atm-chatbot-page .message-bubble {
     font-size: 15px;
   }
 
-  .copilot-page .composer-area {
+  .atm-chatbot-page .composer-area {
     padding: 8px 10px 12px;
   }
 
   /* Saisie sur deux lignes : texte en haut, équipement + micro + envoi en bas. */
-  .copilot-page .message-composer {
+  .atm-chatbot-page .message-composer {
     flex-wrap: wrap;
   }
 
-  .copilot-page .message-composer textarea {
+  .atm-chatbot-page .message-composer textarea {
     order: -1;
     flex-basis: 100%;
     min-height: 46px;
     padding: 8px 6px;
   }
 
-  .copilot-page .device-picker {
+  .atm-chatbot-page .device-picker {
     margin-right: auto;
   }
 
@@ -2367,9 +2367,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .copilot-page *,
-  .copilot-page *::before,
-  .copilot-page *::after {
+  .atm-chatbot-page *,
+  .atm-chatbot-page *::before,
+  .atm-chatbot-page *::after {
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;

@@ -1,6 +1,6 @@
 /**
  * Page Administration : réunit l'administration de l'Espace techniciens
- * (comptes) et celle du Copilote (propositions, ajouts d'intervention,
+ * (comptes) et celle de l’ATM-Chatbot (propositions, ajouts d'intervention,
  * codes d'erreur, pannes fréquentes).
  *
  * Ce fichier ne fait que l'aiguillage :
@@ -10,7 +10,7 @@
  * Chaque rubrique vit dans son propre module (*Section.js).
  *
  * Les droits sont vérifiés côté serveur : par le conteneur auth pour les
- * comptes, par le gateway (puis la clé du chatbot) pour le Copilote.
+ * comptes, par le gateway (puis la clé du chatbot) pour l’ATM-Chatbot.
  */
 
 import { currentUserPromise } from "/shared/js/connectedPageShell.js";

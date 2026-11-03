@@ -6,8 +6,8 @@ Toutes les images modifiables du site sont rangées ici.
 assets/
 ├── images/
 │   ├── logo.svg              logo (en-têtes, pied de page, icône de l'onglet)
-│   ├── home-background.svg   fond plein écran de l'accueil + fond de la barre latérale du Copilote
-│   └── app-background.svg    fond de la zone de conversation du Copilote
+│   ├── home-background.svg   fond plein écran de l'accueil + fond de la barre latérale de l’ATM-Chatbot
+│   └── app-background.svg    fond de la zone de conversation de l’ATM-Chatbot
 └── avatars/                  vos images d'avatars (vide par défaut, voir plus bas)
 ```
 
@@ -41,7 +41,7 @@ Le logo est utilisé directement dans les pages HTML : remplacez simplement `log
 
 Par défaut, les avatars (Technicienne, Technicien) sont **dessinés en code** dans
 `public/js/components/avatar.js`. C'est ce qui permet leurs animations : yeux qui clignent,
-bouche qui bouge quand le Copilote parle.
+bouche qui bouge quand l’ATM-Chatbot parle.
 
 Pour utiliser une **image** à la place :
 

@@ -306,7 +306,7 @@ Comment ça marche :
   ne sont pas enregistrés côté backend : le LLM ne les voit pas ;
 - l'historique envoyé est limité aux `CHAT_HISTORY_MAX_MESSAGES` (100) derniers messages ;
 - si aucun `device_type` n'a été donné (ni dans l'interface, ni dans le
-  message), aucune recherche n'est lancée : le Copilote demande GAB ou TPE ;
+  message), aucune recherche n'est lancée : l’ATM-Chatbot demande GAB ou TPE ;
 - un `technician_id` inexistant provoque une erreur de clé étrangère (500).
 
 ---
@@ -346,7 +346,7 @@ l'action est cataloguée.
 | Statistiques | `symptom_action_outcome_stats` | fiabilité de chaque paire (symptôme, action) **par type d'appareil** |
 | Conversation | `conversation`, `conversation_message`, `conversation_context` | fil de chat + mémoire JSON |
 | Codes d'erreur | `fault`, `error_code` | référentiel indépendant (recherche SQL classique) ; `device_type` + `reply` = réponse enregistrée du menu de suggestions |
-| Pannes fréquentes | `usual_problem` | menu de suggestions du Copilote, réponse enregistrée par les admins (sans IA) |
+| Pannes fréquentes | `usual_problem` | menu de suggestions de l’ATM-Chatbot, réponse enregistrée par les admins (sans IA) |
 
 **Migrations** (`db/migrations/`, appliquées dans l'ordre, une seule fois,
 suivies dans `schema_migrations`) :

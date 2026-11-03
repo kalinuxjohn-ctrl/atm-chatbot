@@ -50,7 +50,7 @@ class PreviousResult(BaseModel):
     intervention_id: Optional[int] = None
     intervention_symptom_id: Optional[int] = None
     symptom_text: Optional[str] = None
-    solution_text: Optional[str] = None  # solution proposée par le Copilote pour ce résultat
+    solution_text: Optional[str] = None  # solution proposée par l’ATM-Chatbot pour ce résultat
 
 
 class ProposalContextResponse(BaseModel):

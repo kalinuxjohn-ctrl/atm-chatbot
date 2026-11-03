@@ -1,5 +1,5 @@
 /**
- * Sidebar rétractable de la page Copilote.
+ * Sidebar rétractable de la page ATM-Chatbot.
  *
  *   ≥ 720 px   : rail d'icônes par défaut ; extensible (libellés visibles)
  *   < 720 px   : cachée, s'ouvre en tiroir par-dessus la conversation

@@ -19,11 +19,11 @@ ROUTE_WITHOUT_DATABASE = "/api/chat/photo-ocr"
 
 @pytest.fixture
 def secret_configure(monkeypatch):
-    monkeypatch.setattr(settings, "copilot_gateway_shared_secret", SECRET)
+    monkeypatch.setattr(settings, "atm_chatbot_gateway_shared_secret", SECRET)
 
 
 def test_sans_secret_configure_rien_ne_change(monkeypatch):
-    monkeypatch.setattr(settings, "copilot_gateway_shared_secret", "")
+    monkeypatch.setattr(settings, "atm_chatbot_gateway_shared_secret", "")
     assert client.get(ROUTE_WITHOUT_DATABASE).status_code == 200
 
 
@@ -34,17 +34,17 @@ def test_requete_sans_identite_refusee(secret_configure):
 
 
 def test_mauvais_secret_refuse(secret_configure):
-    headers = {"X-Copilot-Gateway-Secret": "devine", "X-Authenticated-Technician-Id": "7"}
+    headers = {"X-Atm-Chatbot-Gateway-Secret": "devine", "X-Authenticated-Technician-Id": "7"}
     assert client.get(ROUTE_WITHOUT_DATABASE, headers=headers).status_code == 401
 
 
 def test_bon_secret_sans_technicien_refuse(secret_configure):
-    headers = {"X-Copilot-Gateway-Secret": SECRET, "X-Authenticated-Technician-Id": "abc"}
+    headers = {"X-Atm-Chatbot-Gateway-Secret": SECRET, "X-Authenticated-Technician-Id": "abc"}
     assert client.get(ROUTE_WITHOUT_DATABASE, headers=headers).status_code == 401
 
 
 def test_requete_du_gateway_acceptee(secret_configure):
-    headers = {"X-Copilot-Gateway-Secret": SECRET, "X-Authenticated-Technician-Id": "7"}
+    headers = {"X-Atm-Chatbot-Gateway-Secret": SECRET, "X-Authenticated-Technician-Id": "7"}
     assert client.get(ROUTE_WITHOUT_DATABASE, headers=headers).status_code == 200
 
 

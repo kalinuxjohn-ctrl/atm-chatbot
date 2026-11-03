@@ -1,7 +1,7 @@
 -- ============================================================================
 -- Migration 0011 — Réponses enregistrées : codes d'erreur et pannes fréquentes
 -- ============================================================================
--- Les menus de suggestions du Copilote (« Codes d'erreur connus », « Pannes
+-- Les menus de suggestions de l’ATM-Chatbot (« Codes d'erreur connus », « Pannes
 -- fréquentes ») répondent avec un texte rédigé à l'avance, lu en base par
 -- une simple requête SQL : ni LLM, ni embedding. Avant, ces réponses
 -- vivaient dans des fichiers JSON du frontend (codes d'erreur) ou passaient

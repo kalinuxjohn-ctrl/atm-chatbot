@@ -34,7 +34,7 @@ from app.services import llm_service, photo_ocr_service
 # Texte FIXE : la moindre variation d'un appel à l'autre empêcherait Claude
 # de relire la conversation depuis son cache. Tout ce qui change (type
 # d'appareil, résultats de recherche) va dans le dernier message.
-_SYSTEM_PROMPT = """Tu es le Copilote, l'assistant des techniciens de maintenance de GAB (distributeurs de billets) et de TPE (terminaux de paiement). Tu échanges en français avec un technicien sur le terrain.
+_SYSTEM_PROMPT = """Tu es l’ATM-Chatbot, l'assistant des techniciens de maintenance de GAB (distributeurs de billets) et de TPE (terminaux de paiement). Tu échanges en français avec un technicien sur le terrain.
 
 Tu reçois toute la conversation avec ce technicien. Lis-la en entier avant de répondre : elle donne le contexte de son dernier message.
 

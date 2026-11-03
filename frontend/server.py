@@ -34,14 +34,14 @@ BACKEND_PATHS_WITH_API_PREFIX = ("/api/chat", "/api/error_code", "/api/admin", "
 
 # En-têtes recopiés vers le backend :
 # - X-Admin-Key : clé de la page d'administration (admin.html) ;
-# - X-Copilot-Gateway-Secret et X-Authenticated-Technician-Id : identité du technicien,
+# - X-Atm-Chatbot-Gateway-Secret et X-Authenticated-Technician-Id : identité du technicien,
 #   posées par le gateway de l'Espace techniciens après vérification de la session
 #   (le backend ne les croit qu'avec le bon secret, voir app/core/gateway_identity.py).
 FORWARDED_REQUEST_HEADERS = (
     "Accept",
     "Content-Type",
     "X-Admin-Key",
-    "X-Copilot-Gateway-Secret",
+    "X-Atm-Chatbot-Gateway-Secret",
     "X-Authenticated-Technician-Id",
 )
 

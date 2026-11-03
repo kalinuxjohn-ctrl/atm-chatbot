@@ -68,7 +68,7 @@ le code d'erreur est mémorisé mais ne la filtre pas encore.
 Une panne de pgvector est remontée sans calcul Python de secours. La recherche autonome
 `GET /api/error_code/search` utilise SQL ILIKE, sans embedding ni LLM.
 
-Les menus de suggestions du Copilote répondent aussi sans IA, avec des réponses enregistrées en base (migration 0011) :
+Les menus de suggestions de l’ATM-Chatbot répondent aussi sans IA, avec des réponses enregistrées en base (migration 0011) :
 
 | Route | Rôle |
 | --- | --- |
@@ -78,7 +78,7 @@ Les menus de suggestions du Copilote répondent aussi sans IA, avec des réponse
 | `GET /api/error_code/{id}/solution` | réponse enregistrée d'un code d'erreur |
 
 Les administrateurs les gèrent dans `admin.html` (rubriques « Codes d'erreur » et « Pannes fréquentes »), via des routes protégées par `ADMIN_API_KEY` (en-tête `X-Admin-Key`) :
-`GET`/`POST /api/admin/error_code`, `PUT`/`DELETE /api/admin/error_code/{id}`, et de même pour `/api/admin/usual_problem`. Un code cité par une proposition de solution ne peut pas être supprimé (409) : vider sa réponse le retire du Copilote.
+`GET`/`POST /api/admin/error_code`, `PUT`/`DELETE /api/admin/error_code/{id}`, et de même pour `/api/admin/usual_problem`. Un code cité par une proposition de solution ne peut pas être supprimé (409) : vider sa réponse le retire de l’ATM-Chatbot.
 
 ## Erreurs des ressources externes
 
@@ -124,7 +124,7 @@ et `DATABASE_URL=sqlite:///:memory:` ; aucun schéma SQLite n'est créé.
 ## Propositions de solution
 
 Quand une réponse du chat contient des solutions, `POST /api/chat` renvoie
-`solution_proposal_available: true` et le Copilote affiche « Aucune de ces
+`solution_proposal_available: true` et l’ATM-Chatbot affiche « Aucune de ces
 solutions ne fonctionne », puis « Proposer une solution ».
 
 1. `GET /api/chat/conversations/{id}/solution-proposal-context?technician_id=`
@@ -154,7 +154,7 @@ liée à une intervention en cours, donc `device_id` reste vide.
 
 ## Ajout d'intervention
 
-Pour ajouter à l'historique un problème que le Copilote ne connaît pas, avec
+Pour ajouter à l'historique un problème que l’ATM-Chatbot ne connaît pas, avec
 tout ce que le technicien a fait. Rien n'est visible dans la recherche avant
 la validation d'un administrateur.
 
@@ -193,7 +193,7 @@ la validation d'un administrateur.
 Les écritures directes `POST /interventions` et `POST /interventions/{id}/actions`
 sont désormais réservées à l'administrateur (`X-Admin-Key`).
 
-Le Copilote expose le formulaire technicien depuis le menu gauche et sous les
+L’ATM-Chatbot expose le formulaire technicien depuis le menu gauche et sous les
 réponses sans cas pertinent. `POST /api/chat` renvoie
 `intervention_add_available` et `intervention_add_problem` pour cette offre :
 nouvelle recherche vide, ou déclaration d'absence de résultat selon les formules

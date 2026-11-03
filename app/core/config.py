@@ -78,7 +78,7 @@ class Settings(BaseSettings):
     # le technician_id envoyé par le frontend est cru. Défini = seules les requêtes
     # relayées par le gateway (session vérifiée) sont acceptées, et le technicien
     # est celui de la session.
-    copilot_gateway_shared_secret: str = ""
+    atm_chatbot_gateway_shared_secret: str = ""
 
     # extra="ignore" : le .env est partagé avec docker-compose --
     # une variable que l'app ne connaît pas ne doit pas

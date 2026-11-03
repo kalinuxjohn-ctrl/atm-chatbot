@@ -44,10 +44,10 @@ export function createAuthRouter() {
   authRouter.put("/accounts/:technicianId/password", ...administratorOnly, asyncHandler(resetPasswordOfAccount));
 
   // Appelée UNIQUEMENT par le gateway (auth_request) avant de relayer une requête
-  // vers l'administration du Copilote : 204 = administrateur connecté, 401/403 sinon.
+  // vers l'administration de l’ATM-Chatbot : 204 = administrateur connecté, 401/403 sinon.
   // Jamais joignable depuis le navigateur : le gateway renvoie 404 pour toute URL /internal/.
   authRouter.get("/internal/administrator-check", ...administratorOnly, confirmAdministratorSession);
-  // Idem avant chaque requête vers le Copilote (/copilot/app/) : tout utilisateur connecté,
+  // Idem avant chaque requête vers l’ATM-Chatbot (/atm-chatbot/app/) : tout utilisateur connecté,
   // son n° de technicien est renvoyé dans X-Authenticated-Technician-Id pour le chatbot.
   authRouter.get("/internal/session-check", requireAuthenticatedUser, confirmSessionWithTechnicianIdentity);
 

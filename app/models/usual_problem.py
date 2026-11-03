@@ -1,6 +1,6 @@
 """
 Modèle ORM des pannes fréquentes (migration 0011) : raccourcis du menu
-« Pannes fréquentes » du Copilote, rédigés par les administrateurs, avec une
+« Pannes fréquentes » de l’ATM-Chatbot, rédigés par les administrateurs, avec une
 réponse enregistrée -- aucun lien avec le catalogue symptom ni avec la
 recherche vectorielle.
 """

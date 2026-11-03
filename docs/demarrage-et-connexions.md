@@ -18,10 +18,10 @@ Le projet contient **deux applications** qui partagent une base PostgreSQL :
 
 | Application | Rôle | Code |
 |---|---|---|
-| **Chatbot (Copilote)** | Diagnostic des pannes GAB et TPE, à l'écrit ou à la voix | `app/` (API FastAPI), `frontend/` (pages) |
+| **Chatbot (ATM-Chatbot)** | Diagnostic des pannes GAB et TPE, à l'écrit ou à la voix | `app/` (API FastAPI), `frontend/` (pages) |
 | **Espace techniciens** (main app) | Connexion, carte partagée, messagerie, appels, administration | `main-app/` |
 
-**L'Espace techniciens est la seule porte d'entrée.** On s'y connecte une fois, puis on retrouve le chatbot dans l'onglet **Copilote** et son administration dans la page **Administration**. Le navigateur ne parle qu'au gateway : c'est lui qui joint le chatbot, après avoir vérifié la session.
+**L'Espace techniciens est la seule porte d'entrée.** On s'y connecte une fois, puis on retrouve le chatbot dans l'onglet **ATM-Chatbot** et son administration dans la page **Administration**. Le navigateur ne parle qu'au gateway : c'est lui qui joint le chatbot, après avoir vérifié la session.
 
 ```mermaid
 flowchart LR
@@ -36,7 +36,7 @@ flowchart LR
     end
 
     subgraph chatbot[Chatbot]
-        frontend[chatbot-frontend<br/>pages du Copilote]
+        frontend[chatbot-frontend<br/>pages de l’ATM-Chatbot]
         web[web · atm_app<br/>API FastAPI]
     end
 
@@ -45,9 +45,9 @@ flowchart LR
     navigateur -->|tout passe par ici| gateway
     gateway -->|vérifie chaque session| auth
     gateway --> map & messaging & calls
-    gateway -->|/copilot/app/ · connectés<br/>+ technicien + secret| frontend
+    gateway -->|/atm-chatbot/app/ · connectés<br/>+ technicien + secret| frontend
     frontend -->|/api/... en-têtes conservés| web
-    gateway -->|/api/copilot-admin/ · admins<br/>+ clé ADMIN_API_KEY| web
+    gateway -->|/api/atm-chatbot-admin/ · admins<br/>+ clé ADMIN_API_KEY| web
     auth & map & messaging & calls --> base
     web --> base
 ```
@@ -74,17 +74,21 @@ Copier `.env.example` en `.env` à la racine du dépôt, puis remplir :
 | `LLM_PROVIDER` | oui | `claude` (défaut) ou `gemini` |
 | `CLAUDE_API_KEY` / `GEMINI_API_KEY` | selon le fournisseur | Clé de l'IA de langage |
 | `VOYAGE_API_KEY`, `VOYAGE_MODEL` | oui | Embeddings (recherche des cas similaires) |
-| `ADMIN_API_KEY` | **oui** | Clé de l'API d'administration du chatbot. Sans elle, l'administration du Copilote est refusée. Exemple : `openssl rand -hex 32` |
+| `ADMIN_API_KEY` | **oui** | Clé de l'API d'administration du chatbot. Sans elle, l'administration de l’ATM-Chatbot est refusée. Exemple : `openssl rand -hex 32` |
 
 **Espace techniciens**
 
 | Variable | Obligatoire | Rôle |
 |---|---|---|
-| `COPILOT_GATEWAY_SHARED_SECRET` | **oui** | Secret partagé entre le gateway et l'API du chatbot : prouve que le technicien transmis a été vérifié. 32 caractères ou plus : `openssl rand -hex 32` |
+| `ATM_CHATBOT_GATEWAY_SHARED_SECRET` | **oui** | Mot de passe interne entre le gateway et l'API du chatbot (voir l'encadré ci-dessous). 32 caractères ou plus : `openssl rand -hex 32` |
 | `MAIN_APP_DATABASE_PASSWORD` | oui | Mot de passe du rôle SQL `main_app_user` (16 caractères ou plus) |
 | `MAIN_APP_MAP_TILE_URL_TEMPLATE` | oui | Fournisseur des fonds de carte, ex. `https://tile.openstreetmap.org/{z}/{x}/{y}.png` |
 | `MAIN_APP_MAP_TILE_USER_AGENT` | oui | Nom de l'application et contact, exigés par OpenStreetMap |
 | `MAIN_APP_PUBLIC_ORIGIN` | en production | Adresse publique exacte de l'Espace techniciens (défaut `http://localhost:8080`) |
+
+> **À quoi sert `ATM_CHATBOT_GATEWAY_SHARED_SECRET`, en clair ?**
+> Quand un technicien écrit à l'ATM-Chatbot, sa requête passe d'abord par le gateway, qui vérifie qu'il est connecté, puis arrive à l'API du chatbot avec la mention « c'est le technicien n° 7 ». L'API doit pouvoir croire cette mention : sinon, n'importe qui joignant l'API pourrait écrire « je suis le n° 7 ». Le secret est une longue suite de caractères aléatoires que **seuls** le gateway et l'API connaissent ; le gateway la joint à chaque requête, et l'API refuse toute requête qui ne l'a pas.
+> Personne n'a besoin de la retenir ni de la saisir : il suffit qu'elle soit présente dans `.env` (docker compose la transmet aux deux conteneurs). Si elle manque, `docker compose` refuse de démarrer avec le message « ATM_CHATBOT_GATEWAY_SHARED_SECRET manquant dans .env ».
 
 **En local, sans HTTPS**, ajouter :
 
@@ -112,9 +116,9 @@ docker compose -f docker-compose.yml -f docker-compose.main-app.yml exec main-ap
 
 Au premier démarrage, le conteneur `init-db` applique les migrations `db/migrations/0001` à `0018` (chatbot puis Espace techniciens) et insère les données de démonstration. Le job `main-app-database-setup` donne ensuite son mot de passe au rôle SQL de l'Espace techniciens.
 
-> **Toujours lancer les deux fichiers ensemble** (`-f docker-compose.yml -f docker-compose.main-app.yml`). C'est le second qui ajoute les pages du Copilote (`chatbot-frontend`), branche l'API du chatbot sur le réseau du gateway et lui donne le secret partagé.
+> **Toujours lancer les deux fichiers ensemble** (`-f docker-compose.yml -f docker-compose.main-app.yml`). C'est le second qui ajoute les pages de l’ATM-Chatbot (`chatbot-frontend`), branche l'API du chatbot sur le réseau du gateway et lui donne le secret partagé.
 
-**Chatbot seul, sans l'Espace techniciens** (démonstration, développement du chatbot) : `docker compose up -d --build`, puis `docker compose -f frontend/docker-compose.yml up -d --build` et <http://localhost:5173>. Sans `COPILOT_GATEWAY_SHARED_SECRET` dans l'environnement de l'API, le chatbot reprend son fonctionnement d'origine (connexion simulée, voir [3.4](#34-le-copilote-et-la-connexion)).
+**Chatbot seul, sans l'Espace techniciens** (démonstration, développement du chatbot) : `docker compose up -d --build`, puis `docker compose -f frontend/docker-compose.yml up -d --build` et <http://localhost:5173>. Sans `ATM_CHATBOT_GATEWAY_SHARED_SECRET` dans l'environnement de l'API, le chatbot reprend son fonctionnement d'origine (connexion simulée, voir [3.4](#34-atm-chatbot-et-connexion)).
 
 ### 1.4 Ouvrir
 
@@ -128,12 +132,12 @@ Au premier démarrage, le conteneur `init-db` applique les migrations `db/migrat
 ```bash
 curl -s http://localhost:8080/health                                  # {"status":"ok","feature":"gateway"}
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/auth/login.html   # 200 : conteneur auth joignable
-curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/copilot/app/      # 401 sans session : le Copilote est protégé
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/atm-chatbot/app/      # 401 sans session : l’ATM-Chatbot est protégé
 curl -s http://localhost:8000/health                                  # {"status":"ok"} : API du chatbot
 curl -s -o /dev/null -w '%{http_code}\n' "http://localhost:8000/api/usual_problem?device_type=gab"  # 401 : appel direct refusé
 ```
 
-Puis, dans le navigateur, connecté : l'onglet **Copilote** affiche « Bonjour <votre nom> » ; connecté en administrateur, **Administration → Propositions** affiche une liste (même vide) et non « Copilote momentanément indisponible ».
+Puis, dans le navigateur, connecté : l'onglet **ATM-Chatbot** affiche « Bonjour <votre nom> » ; connecté en administrateur, **Administration → Propositions** affiche une liste (même vide) et non « ATM-Chatbot momentanément indisponible ».
 
 ### 1.6 Ne plus se connecter à chaque test (développement)
 
@@ -141,7 +145,7 @@ Puis, dans le navigateur, connecté : l'onglet **Copilote** affiche « Bonjour <
 MAIN_APP_DEVELOPMENT_AUTO_LOGIN_USERNAME=alan_admin
 ```
 
-Toute requête **sans session** agit alors comme ce compte (qui doit exister), y compris dans le Copilote. Une vraie session reste prioritaire, ce qui permet de tester à deux comptes. Cette option est **refusée au démarrage** si `MAIN_APP_ENVIRONMENT=production`.
+Toute requête **sans session** agit alors comme ce compte (qui doit exister), y compris dans l’ATM-Chatbot. Une vraie session reste prioritaire, ce qui permet de tester à deux comptes. Cette option est **refusée au démarrage** si `MAIN_APP_ENVIRONMENT=production`.
 
 ### 1.7 Commandes utiles
 
@@ -155,7 +159,7 @@ Préfixe : `docker compose -f docker-compose.yml -f docker-compose.main-app.yml`
 | Reconstruire un service après modification | `up -d --build --no-deps main-app-gateway` |
 | Tout arrêter (données conservées) | `down` |
 
-La configuration nginx et les pages du Copilote sont copiées **dans les images** : après une modification de `main-app/gateway/` ou de `frontend/`, reconstruire `main-app-gateway` ou `chatbot-frontend`.
+La configuration nginx et les pages de l’ATM-Chatbot sont copiées **dans les images** : après une modification de `main-app/gateway/` ou de `frontend/`, reconstruire `main-app-gateway` ou `chatbot-frontend`.
 
 ---
 
@@ -168,7 +172,7 @@ La configuration nginx et les pages du Copilote sont copiées **dans les images*
 | Connexion | `/auth/login.html` | public |
 | Inscription | `/auth/register.html` | public, si `MAIN_APP_ALLOW_REGISTRATION=true` |
 | Accueil | `/` | connecté |
-| **Copilote** (onglet) | `/copilot/` | connecté |
+| **ATM-Chatbot** (onglet) | `/atm-chatbot/` | connecté |
 | Carte partagée | `/map/` | connecté |
 | Messagerie | `/messaging/` | connecté |
 | Appels | `/calls/` | connecté |
@@ -179,25 +183,25 @@ La page Administration a une rubrique par sujet ; la rubrique ouverte suit l'adr
 | Rubrique | Adresse | Contenu |
 |---|---|---|
 | Comptes | `/admin/#comptes` | Comptes et rôles de l'Espace techniciens |
-| Propositions | `/admin/#propositions` | Solutions proposées par les techniciens depuis le Copilote, à approuver ou rejeter |
-| Ajouts d'intervention | `/admin/#interventions` | Interventions racontées depuis le Copilote, à approuver ou rejeter |
+| Propositions | `/admin/#propositions` | Solutions proposées par les techniciens depuis l’ATM-Chatbot, à approuver ou rejeter |
+| Ajouts d'intervention | `/admin/#interventions` | Interventions racontées depuis l’ATM-Chatbot, à approuver ou rejeter |
 | Codes d'erreur | `/admin/#codes-erreur` | Réponses enregistrées du menu « Codes d'erreur connus » |
 | Pannes fréquentes | `/admin/#pannes-frequentes` | Réponses enregistrées du menu « Pannes fréquentes » |
 
 ### 2.2 Pages du chatbot
 
-Servies par le gateway sous `/copilot/app/` (réservé aux connectés). L'onglet Copilote affiche la première dans une iframe.
+Servies par le gateway sous `/atm-chatbot/app/` (réservé aux connectés). L'onglet ATM-Chatbot affiche la première dans une iframe.
 
 | Page | Adresse | Rôle |
 |---|---|---|
-| Copilote | `/copilot/app/copilot.html` | Conversation écrite et vocale (`?embedded=1` dans l'onglet : sans barre du haut) |
-| Accueil du chatbot | `/copilot/app/` | Page d'accueil d'origine du chatbot |
-| Diagnostic | `/copilot/app/diagnostic.html` | Recherche guidée |
-| Présentation | `/copilot/app/flow-presentation.html` | Présentation du parcours |
+| ATM-Chatbot | `/atm-chatbot/app/atm-chatbot.html` | Conversation écrite et vocale (`?embedded=1` dans l'onglet : sans barre du haut) |
+| Accueil du chatbot | `/atm-chatbot/app/` | Page d'accueil d'origine du chatbot |
+| Diagnostic | `/atm-chatbot/app/diagnostic.html` | Recherche guidée |
+| Présentation | `/atm-chatbot/app/flow-presentation.html` | Présentation du parcours |
 
 L'ancienne page d'administration du chatbot (`admin.html`, clé à saisir) redirige vers `/admin/` quand on passe par le gateway.
 
-Les pages du chatbot n'utilisent que des **chemins relatifs** (`css/…`, `api/…`) : elles fonctionnent aussi bien sous `/copilot/app/` qu'à la racine du port 5173 en mode chatbot seul.
+Les pages du chatbot n'utilisent que des **chemins relatifs** (`css/…`, `api/…`) : elles fonctionnent aussi bien sous `/atm-chatbot/app/` qu'à la racine du port 5173 en mode chatbot seul.
 
 ### 2.3 API
 
@@ -207,8 +211,8 @@ Les pages du chatbot n'utilisent que des **chemins relatifs** (`css/…`, `api/�
 | `/api/map/` | `main-app-map` | session | idem |
 | `/api/messaging/` | `main-app-messaging` | session | idem |
 | `/api/calls/`, WebSocket `/api/calls/ws` | `main-app-calls` | session (+ origine pour le WebSocket) | idem |
-| `/copilot/app/api/…` | API du chatbot (`/api/…`), via `chatbot-frontend` | session + technicien transmis par le gateway | [§ 4.3](#43-copilote--session-puis-identité-transmise-au-chatbot) ; routes : `http://localhost:8000/docs` |
-| `/api/copilot-admin/…` | API du chatbot (`/api/admin/…`) | session **admin** + clé ajoutée par le gateway | [§ 4.4](#44-administration-du-copilote--session-admin-puis-clé-du-chatbot) |
+| `/atm-chatbot/app/api/…` | API du chatbot (`/api/…`), via `chatbot-frontend` | session + technicien transmis par le gateway | [§ 4.3](#43-atm-chatbot--session-puis-identité-transmise-au-chatbot) ; routes : `http://localhost:8000/docs` |
+| `/api/atm-chatbot-admin/…` | API du chatbot (`/api/admin/…`) | session **admin** + clé ajoutée par le gateway | [§ 4.4](#44-administration-atm-chatbot--session-admin-puis-clé-du-chatbot) |
 
 ### 2.4 Ports publiés sur la machine
 
@@ -224,12 +228,12 @@ Les pages du chatbot n'utilisent que des **chemins relatifs** (`css/…`, `api/�
 
 ## 3. Le système de connexion
 
-La connexion appartient à **l'Espace techniciens**, conteneur `main-app-auth`. Le chatbot n'a pas de connexion propre : derrière l'Espace techniciens, il reçoit l'identité vérifiée ([3.4](#34-le-copilote-et-la-connexion)).
+La connexion appartient à **l'Espace techniciens**, conteneur `main-app-auth`. Le chatbot n'a pas de connexion propre : derrière l'Espace techniciens, il reçoit l'identité vérifiée ([3.4](#34-atm-chatbot-et-connexion)).
 
 ### 3.1 Comptes et identité
 
-- Chaque compte (`main_app.accounts`) est rattaché à une ligne de `public.technician`, la table des techniciens **du chatbot**. Le n° de compte et le n° de technicien du chatbot sont donc le même nombre : c'est ce qui permet au Copilote de savoir quel technicien parle.
-- Rôles : `technician`, `moderator` (gère tous les points de la carte), `admin` (gère aussi les comptes et administre le Copilote).
+- Chaque compte (`main_app.accounts`) est rattaché à une ligne de `public.technician`, la table des techniciens **du chatbot**. Le n° de compte et le n° de technicien du chatbot sont donc le même nombre : c'est ce qui permet à l’ATM-Chatbot de savoir quel technicien parle.
+- Rôles : `technician`, `moderator` (gère tous les points de la carte), `admin` (gère aussi les comptes et administre l’ATM-Chatbot).
 - Le premier admin se crée avec `createAdmin.js` ([§ 1.3](#13-démarrer)). Les suivants se créent dans **Administration → Comptes**.
 
 ### 3.2 Déroulé d'une connexion
@@ -249,14 +253,14 @@ sequenceDiagram
     A->>A: vérifie le mot de passe (argon2id)
     A->>DB: INSERT session (empreinte SHA-256 du jeton)
     A-->>T: 200 + cookie de session (HttpOnly, SameSite=Lax)
-    Note over T: le navigateur renvoie le cookie<br/>à chaque requête vers le site,<br/>Copilote compris
+    Note over T: le navigateur renvoie le cookie<br/>à chaque requête vers le site,<br/>ATM-Chatbot compris
 ```
 
 Points clés :
 
 - le cookie contient un **jeton aléatoire** de 32 octets ; la base n'en garde que l'empreinte SHA-256 ;
 - le cookie s'appelle `__Host-main_app_session` en HTTPS, `main_app_session` en développement HTTP ;
-- durée : `MAIN_APP_SESSION_DURATION_HOURS` (12 h par défaut). Déconnexion, mot de passe réinitialisé ou compte désactivé suppriment les sessions, **et coupent donc aussi l'accès au Copilote** ;
+- durée : `MAIN_APP_SESSION_DURATION_HOURS` (12 h par défaut). Déconnexion, mot de passe réinitialisé ou compte désactivé suppriment les sessions, **et coupent donc aussi l'accès à l’ATM-Chatbot** ;
 - même message d'erreur que le compte existe ou non ; verrouillage temporaire après `MAIN_APP_LOGIN_MAX_FAILED_ATTEMPTS` échecs.
 
 ### 3.3 Côté pages
@@ -269,7 +273,7 @@ Chaque page connectée charge `main-app/gateway/html/shared/js/connectedPageShel
 
 Masquer un lien ne protège rien : **c'est toujours le serveur qui décide** ([§ 4](#4-la-vérification-des-api)).
 
-### 3.4 Le Copilote et la connexion
+### 3.4 ATM-Chatbot et connexion
 
 Le chatbot a été conçu avec une connexion **simulée** : sa page d'accueil demande un n° de technicien et un nom, gardés dans le navigateur, et son API croyait le `technician_id` envoyé dans chaque requête.
 
@@ -277,11 +281,11 @@ Derrière l'Espace techniciens, ce n'est plus le cas :
 
 | Étape | Qui | Quoi |
 |---|---|---|
-| Affichage | `/copilot/` (`copilotPage.js`) | Charge `/copilot/app/copilot.html?embedded=1&theme=…&technician_id=…&display_name=…`. `frontend/public/js/embeddedMode.js` passe l'écran de connexion simulée et affiche le bon nom : **c'est seulement de l'affichage** |
-| Requête | gateway | Vérifie la session, puis ajoute à la requête le n° du technicien connecté et le secret partagé ([§ 4.3](#43-copilote--session-puis-identité-transmise-au-chatbot)) |
+| Affichage | `/atm-chatbot/` (`atmChatbotPage.js`) | Charge `/atm-chatbot/app/atm-chatbot.html?embedded=1&theme=…&technician_id=…&display_name=…`. `frontend/public/js/embeddedMode.js` passe l'écran de connexion simulée et affiche le bon nom : **c'est seulement de l'affichage** |
+| Requête | gateway | Vérifie la session, puis ajoute à la requête le n° du technicien connecté et le secret partagé ([§ 4.3](#43-atm-chatbot--session-puis-identité-transmise-au-chatbot)) |
 | Traitement | API du chatbot (`app/core/gateway_identity.py`) | Refuse toute requête sans le bon secret ; **remplace** le `technician_id` envoyé par la page par celui de la session |
 
-Résultat : un technicien ne peut ni utiliser le Copilote sans être connecté, ni parler au nom d'un collègue (en modifiant l'adresse de l'iframe ou le corps d'une requête), ni lire les conversations ou demandes d'un autre.
+Résultat : un technicien ne peut ni utiliser l’ATM-Chatbot sans être connecté, ni parler au nom d'un collègue (en modifiant l'adresse de l'iframe ou le corps d'une requête), ni lire les conversations ou demandes d'un autre.
 
 ---
 
@@ -316,7 +320,7 @@ Le WebSocket des appels (`/api/calls/ws`) vérifie en plus que l'en-tête `Origi
 | En-têtes de sécurité | CSP stricte, `X-Frame-Options`, `Permissions-Policy`, etc. (règles assouplies seulement pour les pages du chatbot, voir plus bas) |
 | Service arrêté | **503** « service indisponible » pour ce module seulement |
 
-### 4.3 Copilote : session, puis identité transmise au chatbot
+### 4.3 ATM-Chatbot : session, puis identité transmise au chatbot
 
 ```mermaid
 sequenceDiagram
@@ -327,33 +331,33 @@ sequenceDiagram
     participant F as chatbot-frontend
     participant C as API du chatbot
 
-    T->>G: POST /copilot/app/api/chat {technician_id: 1, ...}<br/>(cookie de session de Bob)
+    T->>G: POST /atm-chatbot/app/api/chat {technician_id: 1, ...}<br/>(cookie de session de Bob)
     G->>A: sous-requête auth_request<br/>GET /api/auth/internal/session-check
     alt pas de session valide
         A-->>G: 401
         G-->>T: 401 « Connectez-vous à l'Espace techniciens »
     else session de Bob
         A-->>G: 204 + X-Authenticated-Technician-Id: 2
-        G->>F: POST /api/chat<br/>+ X-Authenticated-Technician-Id: 2<br/>+ X-Copilot-Gateway-Secret
+        G->>F: POST /api/chat<br/>+ X-Authenticated-Technician-Id: 2<br/>+ X-Atm-Chatbot-Gateway-Secret
         F->>C: POST /api/chat (en-têtes recopiés)
         C->>C: secret correct ? -> technicien = 2<br/>(le technician_id: 1 envoyé est remplacé)
-        C-->>T: réponse du Copilote, au nom de Bob
+        C-->>T: réponse de l’ATM-Chatbot, au nom de Bob
     end
 ```
 
 | Pièce | Fichier |
 |---|---|
-| Relais `/copilot/app/` → `chatbot-frontend`, `auth_request`, en-têtes d'identité | `main-app/gateway/nginx.conf` (blocs `location /copilot/app/` et `/__internal/session-check`) |
+| Relais `/atm-chatbot/app/` → `chatbot-frontend`, `auth_request`, en-têtes d'identité | `main-app/gateway/nginx.conf` (blocs `location /atm-chatbot/app/` et `/__internal/session-check`) |
 | Route de contrôle de session (renvoie le n° du technicien) | `main-app/src/routes/auth/authRoutes.js` (`/internal/session-check`) |
 | Recopie des en-têtes vers l'API | `frontend/server.py` (`FORWARDED_REQUEST_HEADERS`) |
 | Vérification du secret, refus 401, remplacement du technicien | `app/core/gateway_identity.py`, utilisé par `app/api/routes/chat.py` et `intervention_add.py` |
-| Secret | `COPILOT_GATEWAY_SHARED_SECRET` (`.env`), passé au gateway et à l'API par `docker-compose.main-app.yml` |
+| Secret | `ATM_CHATBOT_GATEWAY_SHARED_SECRET` (`.env`), passé au gateway et à l'API par `docker-compose.main-app.yml` |
 
 Pourquoi un secret en plus de l'identité : l'API du chatbot est joignable sur le port 8000. Sans secret, n'importe quel programme pourrait envoyer `X-Authenticated-Technician-Id: 1`. Le secret n'est connu que du gateway et de l'API ; celui qu'un client enverrait est écrasé par le gateway.
 
-Règles de sécurité propres aux pages du chatbot (`/copilot/app/`) : elles peuvent être affichées dans une iframe **du même site** (`X-Frame-Options: SAMEORIGIN`, `frame-ancestors 'self'`), charger la police Google Fonts, et utiliser le micro (dictée, chat vocal). Les scripts écrits dans le HTML restent interdits.
+Règles de sécurité propres aux pages du chatbot (`/atm-chatbot/app/`) : elles peuvent être affichées dans une iframe **du même site** (`X-Frame-Options: SAMEORIGIN`, `frame-ancestors 'self'`), charger la police Google Fonts, et utiliser le micro (dictée, chat vocal). Les scripts écrits dans le HTML restent interdits.
 
-### 4.4 Administration du Copilote : session admin, puis clé du chatbot
+### 4.4 Administration ATM-Chatbot : session admin, puis clé du chatbot
 
 L'API d'administration du chatbot n'accepte que l'en-tête `X-Admin-Key` égal à `ADMIN_API_KEY` (`app/api/routes/admin.py`, `require_admin`). Pour que les administrateurs s'en servent **sans connaître la clé**, le gateway fait le lien :
 
@@ -365,7 +369,7 @@ sequenceDiagram
     participant A as main-app-auth
     participant C as API du chatbot
 
-    Ad->>G: POST /api/copilot-admin/solution-proposals/3/approve<br/>(cookie de session)
+    Ad->>G: POST /api/atm-chatbot-admin/solution-proposals/3/approve<br/>(cookie de session)
     G->>A: sous-requête auth_request<br/>GET /api/auth/internal/administrator-check
     alt session absente
         A-->>G: 401
@@ -387,10 +391,10 @@ sequenceDiagram
 
 | Pièce | Fichier |
 |---|---|
-| Relais, `auth_request`, ajout de la clé | `main-app/gateway/nginx.conf` (blocs `location /api/copilot-admin/` et `/__internal/administrator-check`) |
-| Clé et secret écrits au démarrage du gateway | `main-app/gateway/templates/copilot-settings.conf.template` → `/tmp/copilot-settings.conf` |
+| Relais, `auth_request`, ajout de la clé | `main-app/gateway/nginx.conf` (blocs `location /api/atm-chatbot-admin/` et `/__internal/administrator-check`) |
+| Clé et secret écrits au démarrage du gateway | `main-app/gateway/templates/atm-chatbot-settings.conf.template` → `/tmp/atm-chatbot-settings.conf` |
 | Route de contrôle admin | `main-app/src/routes/auth/authRoutes.js` (`/internal/administrator-check`) |
-| Appels depuis la page Administration | `main-app/gateway/html/admin/js/copilotAdminApi.js` |
+| Appels depuis la page Administration | `main-app/gateway/html/admin/js/atmChatbotAdminApi.js` |
 
 ---
 
@@ -403,7 +407,7 @@ sequenceDiagram
 | Se connecter | `main-app-auth` | Mot de passe → session en base → cookie |
 | Utiliser la carte, la messagerie, les appels | chaque conteneur | `requireAuthenticatedUser` (cookie → session en base) |
 | Gérer les comptes | `main-app-auth` | `requireAuthenticatedUser` + `requireRole("admin")` |
-| Discuter avec le Copilote, proposer une solution, ajouter une intervention | gateway puis chatbot | `auth_request` (session) → n° du technicien + secret → `gateway_identity.py` |
+| Discuter avec l’ATM-Chatbot, proposer une solution, ajouter une intervention | gateway puis chatbot | `auth_request` (session) → n° du technicien + secret → `gateway_identity.py` |
 | Valider une proposition, modifier un code d'erreur… | gateway puis chatbot | `auth_request` (session admin) → `X-Admin-Key` ajouté par le gateway |
 
 ### 5.2 Protéger une nouvelle route de l'Espace techniciens
@@ -427,7 +431,7 @@ Rien à changer dans le gateway : `/api/map/` y est déjà relayé avec l'anti-C
 
 ### 5.3 Ajouter une route au chatbot
 
-**Route utilisée par le Copilote** (technicien) : rien à faire côté gateway ni côté sécurité, le middleware de `app/core/gateway_identity.py` protège déjà toutes les routes. Si elle reçoit un `technician_id`, le remplacer par celui de la session :
+**Route utilisée par l’ATM-Chatbot** (technicien) : rien à faire côté gateway ni côté sécurité, le middleware de `app/core/gateway_identity.py` protège déjà toutes les routes. Si elle reçoit un `technician_id`, le remplacer par celui de la session :
 
 ```python
 from fastapi import Request
@@ -447,14 +451,14 @@ def ma_route(payload: MonSchema, request: Request, db: Session = Depends(get_db)
    router = APIRouter(prefix="/api/admin/xxx", tags=["admin"], dependencies=[Depends(require_admin)])
    ```
 
-2. **rien à changer dans le gateway** : tout `/api/copilot-admin/<chemin>` est relayé vers `/api/admin/<chemin>` ;
-3. côté page, appeler `requestCopilotAdmin("/xxx")` (`main-app/gateway/html/admin/js/copilotAdminApi.js`), puis ajouter une rubrique dans `admin/index.html` et un module `*Section.js` branché dans `administrationPage.js`.
+2. **rien à changer dans le gateway** : tout `/api/atm-chatbot-admin/<chemin>` est relayé vers `/api/admin/<chemin>` ;
+3. côté page, appeler `requestAtmChatbotAdmin("/xxx")` (`main-app/gateway/html/admin/js/atmChatbotAdminApi.js`), puis ajouter une rubrique dans `admin/index.html` et un module `*Section.js` branché dans `administrationPage.js`.
 
 ### 5.4 Ce qui reste à savoir
 
 - **Port 8000** : l'API du chatbot reste publiée par `docker-compose.yml` (fichier du chatbot laissé intact). Elle refuse les appels sans secret, mais pour la production, la publier sur `127.0.0.1` seulement (`"127.0.0.1:8000:8000"`) ou plus du tout.
 - **Le secret doit rester secret** : quiconque le connaît peut appeler l'API du chatbot au nom de n'importe quel technicien. Le changer = modifier `.env` puis recréer `web` et `main-app-gateway`.
-- **Chatbot seul** (sans `COPILOT_GATEWAY_SHARED_SECRET`) : retour au fonctionnement d'origine, sans vraie connexion. À réserver aux démonstrations locales.
+- **Chatbot seul** (sans `ATM_CHATBOT_GATEWAY_SHARED_SECRET`) : retour au fonctionnement d'origine, sans vraie connexion. À réserver aux démonstrations locales.
 
 ---
 

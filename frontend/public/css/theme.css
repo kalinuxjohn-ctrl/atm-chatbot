@@ -15,7 +15,7 @@
      2. Base commune (corps, en-tête, boutons, champs, dialogues)
      3. Interrupteur de thème
      4. Accueil
-     5. Copilote (cadre, barre du haut, rail, carte, saisie, contexte)
+     5. ATM-Chatbot (cadre, barre du haut, rail, carte, saisie, contexte)
      6. Diagnostic
      7. Administration
      8. Présentation du parcours
@@ -23,7 +23,7 @@
 
 /* ---------- 1. Jetons ---------- */
 :root,
-:root .copilot-page {
+:root .atm-chatbot-page {
   color-scheme: light;
   --font: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
 
@@ -107,7 +107,7 @@
 }
 
 :root[data-theme="dark"],
-:root[data-theme="dark"] .copilot-page {
+:root[data-theme="dark"] .atm-chatbot-page {
   color-scheme: dark;
 
   --bg: #040805;
@@ -248,7 +248,7 @@ body {
 }
 
 .button-primary,
-.copilot-page .button-primary {
+.atm-chatbot-page .button-primary {
   border-color: transparent;
   background: var(--gradient);
   box-shadow: var(--glow);
@@ -257,7 +257,7 @@ body {
 }
 
 .button-primary:hover,
-.copilot-page .button-primary:hover {
+.atm-chatbot-page .button-primary:hover {
   background: var(--gradient);
   transform: translateY(-1px);
 }
@@ -576,10 +576,10 @@ kbd {
   color: var(--text-faint);
 }
 
-/* ---------- 5. Copilote ---------- */
+/* ---------- 5. ATM-Chatbot ---------- */
 /* Reproduit docs/visuel_frontend.png : cadre à bordure épaisse sur fond vert
    flouté, cartes transparentes bordées, rail d'icônes rondes, orbe vert. */
-:root .copilot-page {
+:root .atm-chatbot-page {
   --sidebar-compact-width: 60px;
   --sidebar-width: 236px;
   --context-width: 330px;
@@ -601,7 +601,7 @@ kbd {
   --new-button-text: #ffffff;
 }
 
-:root[data-theme="dark"] .copilot-page {
+:root[data-theme="dark"] .atm-chatbot-page {
   --outer-background:
     radial-gradient(820px 660px at 6% 28%, rgba(132, 204, 22, 0.45), transparent 62%),
     radial-gradient(760px 620px at 96% 88%, rgba(74, 160, 90, 0.45), transparent 62%),
@@ -621,7 +621,7 @@ kbd {
   --new-button-text: #ffffff;
 }
 
-.copilot-page {
+.atm-chatbot-page {
   background: var(--outer-background);
   color: var(--text-soft);
 }
@@ -643,7 +643,7 @@ kbd {
     0 50px 110px -40px rgba(0, 0, 0, 0.75);
 }
 
-.copilot-page .app-shell {
+.atm-chatbot-page .app-shell {
   height: auto;
   min-height: 0;
   flex: 1 1 auto;
@@ -824,11 +824,11 @@ kbd {
 
 @media (min-width: 720px) {
   /* Le logo est déjà dans la barre du haut. */
-  .copilot-page .sidebar-brand {
+  .atm-chatbot-page .sidebar-brand {
     display: none;
   }
 
-  .copilot-page .sidebar-header {
+  .atm-chatbot-page .sidebar-header {
     justify-content: center;
   }
 
@@ -878,7 +878,7 @@ kbd {
 }
 
 /* ----- Carte centrale : la conversation ----- */
-.copilot-page .workspace {
+.atm-chatbot-page .workspace {
   position: relative;
   overflow: hidden;
   border: 1px solid var(--card-border);
@@ -898,7 +898,7 @@ kbd {
 }
 
 /* Pastille d'identité, comme « Chatterbox AI ». */
-.copilot-page .assistant-identity {
+.atm-chatbot-page .assistant-identity {
   flex: 0 1 auto;
   gap: 10px;
   padding: 5px 18px 5px 5px;
@@ -915,22 +915,22 @@ kbd {
 }
 
 .toolbar-avatar,
-.copilot-page .copilot-avatar-slot {
+.atm-chatbot-page .atm-chatbot-avatar-slot {
   background: linear-gradient(160deg, #e9f9ee, #d3efdc);
 }
 
-.copilot-page .assistant-identity strong {
+.atm-chatbot-page .assistant-identity strong {
   color: var(--text);
   font-size: 14px;
   font-weight: 600;
 }
 
-.copilot-page .assistant-identity small {
+.atm-chatbot-page .assistant-identity small {
   color: var(--text-muted);
   font-size: 11.5px;
 }
 
-.copilot-page .assistant-identity small i {
+.atm-chatbot-page .assistant-identity small i {
   background: var(--teal);
   box-shadow: 0 0 8px var(--teal);
 }
@@ -954,14 +954,14 @@ kbd {
 }
 
 /* Chat vocal : pilule discrète bordée de vert, pas un aplat. */
-.copilot-page .pill-button-primary {
+.atm-chatbot-page .pill-button-primary {
   border-color: var(--accent-border);
   background: var(--accent-fill);
   box-shadow: none;
   color: var(--accent-text);
 }
 
-.copilot-page .pill-button-primary:hover {
+.atm-chatbot-page .pill-button-primary:hover {
   background: var(--accent-fill);
   box-shadow: 0 0 18px -6px rgba(74, 222, 128, 0.7);
 }
@@ -974,20 +974,20 @@ kbd {
 }
 
 /* ----- Messages ----- */
-.copilot-page .message-author {
+.atm-chatbot-page .message-author {
   color: var(--text-soft);
 }
 
-.copilot-page .message-author time {
+.atm-chatbot-page .message-author time {
   color: var(--text-faint);
 }
 
-.copilot-page .copilot-avatar-slot {
+.atm-chatbot-page .atm-chatbot-avatar-slot {
   box-shadow: 0 0 0 2px var(--accent-border);
 }
 
-.copilot-page .message-bubble,
-.copilot-page .assistant-message .message-bubble {
+.atm-chatbot-page .message-bubble,
+.atm-chatbot-page .assistant-message .message-bubble {
   border: 1px solid var(--card-border);
   border-radius: 6px 20px 20px 20px;
   background: var(--chip-background);
@@ -995,7 +995,7 @@ kbd {
   color: var(--text-soft);
 }
 
-.copilot-page .user-message .message-bubble {
+.atm-chatbot-page .user-message .message-bubble {
   border: 1px solid var(--user-bubble-border);
   border-radius: 20px 6px 20px 20px;
   background: var(--user-bubble-bg);
@@ -1003,7 +1003,7 @@ kbd {
   color: var(--user-bubble-text);
 }
 
-.copilot-page .voice-exchange .message-bubble {
+.atm-chatbot-page .voice-exchange .message-bubble {
   border-left: 3px solid var(--teal);
 }
 
@@ -1018,13 +1018,13 @@ kbd {
   background: var(--accent-fill);
 }
 
-.copilot-page .friendly-error {
+.atm-chatbot-page .friendly-error {
   border-color: var(--red-border);
   background: var(--red-fill);
   color: var(--text-soft);
 }
 
-.copilot-page .friendly-error strong {
+.atm-chatbot-page .friendly-error strong {
   color: var(--red);
 }
 
@@ -1044,13 +1044,13 @@ kbd {
   background: var(--chip-background);
 }
 
-.copilot-page .typing-indicator span,
+.atm-chatbot-page .typing-indicator span,
 .typing-indicator span {
   background: var(--teal);
 }
 
-/* ----- Accueil du Copilote : orbe à filaments lumineux ----- */
-.copilot-page .conversation:has(> .welcome-message:only-child) {
+/* ----- Accueil de l’ATM-Chatbot : orbe à filaments lumineux ----- */
+.atm-chatbot-page .conversation:has(> .welcome-message:only-child) {
   justify-content: safe center;
 }
 
@@ -1059,7 +1059,7 @@ kbd {
   flex-shrink: 0;
 }
 
-.conversation > .welcome-message:only-child .copilot-avatar-slot {
+.conversation > .welcome-message:only-child .atm-chatbot-avatar-slot {
   display: none;
 }
 
@@ -1213,7 +1213,7 @@ kbd {
   content: "";
 }
 
-.copilot-page .copilot-avatar-slot {
+.atm-chatbot-page .atm-chatbot-avatar-slot {
   position: relative;
 }
 
@@ -1286,12 +1286,12 @@ kbd {
 }
 
 /* ----- Zone de saisie : grande carte, texte en haut, pastilles en bas ----- */
-.copilot-page .composer-area {
+.atm-chatbot-page .composer-area {
   width: min(100%, 820px);
   padding: 8px 24px 26px;
 }
 
-.copilot-page .message-composer {
+.atm-chatbot-page .message-composer {
   flex-direction: column;
   align-items: stretch;
   gap: 14px;
@@ -1303,13 +1303,13 @@ kbd {
   backdrop-filter: none;
 }
 
-.copilot-page .message-composer:focus-within {
+.atm-chatbot-page .message-composer:focus-within {
   border-color: var(--accent-border);
   box-shadow: 0 0 0 4px var(--accent-fill);
 }
 
 /* Étincelle devant le texte, comme sur la maquette. */
-.copilot-page .message-composer textarea {
+.atm-chatbot-page .message-composer textarea {
   min-height: 84px;
   padding: 2px 6px 2px 30px;
   background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2394a69a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6'/%3E%3C/svg%3E") no-repeat 4px 3px;
@@ -1439,7 +1439,7 @@ kbd {
 
 /* Micro et Chat vocal : boutons ronds discrets. */
 .mic-button,
-.copilot-page .mic-button,
+.atm-chatbot-page .mic-button,
 .composer-voice-button {
   width: 42px;
   height: 42px;
@@ -1487,7 +1487,7 @@ kbd {
 }
 
 /* Envoi : le bouton rond vert néon. */
-.copilot-page .send-button {
+.atm-chatbot-page .send-button {
   width: 48px;
   min-width: 48px;
   height: 48px;
@@ -1498,11 +1498,11 @@ kbd {
   color: var(--on-accent);
 }
 
-.copilot-page .send-button .send-button-label {
+.atm-chatbot-page .send-button .send-button-label {
   display: none;
 }
 
-.copilot-page .send-button:disabled {
+.atm-chatbot-page .send-button:disabled {
   background: var(--gradient);
   box-shadow: none;
   color: var(--on-accent);
@@ -1603,7 +1603,7 @@ kbd {
 }
 
 .context-card,
-.copilot-page .context-card {
+.atm-chatbot-page .context-card {
   padding: 0;
   border: 0;
   background: transparent;
@@ -1752,7 +1752,7 @@ kbd {
    bordure du cadre éclairée, halo de lumière dans le coin haut gauche qui
    déborde en voile jaune-vert sur les cartes, liserés lumineux sur les
    cartes et les boutons. Tout passe par les jetons ci-dessous. */
-:root .copilot-page {
+:root .atm-chatbot-page {
   /* Bandes verticales : chaque colonne passe du clair au sombre. */
   --flutes: repeating-linear-gradient(90deg,
     rgba(255, 255, 255, 0.34) 0,
@@ -1794,7 +1794,7 @@ kbd {
   --bezel-shine: rgba(255, 255, 255, 1);
 }
 
-:root[data-theme="dark"] .copilot-page {
+:root[data-theme="dark"] .atm-chatbot-page {
   --flutes: repeating-linear-gradient(90deg,
     rgba(255, 255, 255, 0.1) 0,
     rgba(255, 255, 255, 0.025) 46px,
@@ -1837,7 +1837,7 @@ kbd {
 }
 
 /* Ombres du relief, partagées par toutes les zones. */
-:root .copilot-page {
+:root .atm-chatbot-page {
   --glass-3d:
     inset 1px 1.5px 0 var(--edge-light),
     inset -1px -1.5px 0 var(--edge-dark),
@@ -1857,7 +1857,7 @@ kbd {
 }
 
 /* Fond : verre cannelé posé sur les nappes de vert. */
-.copilot-page {
+.atm-chatbot-page {
   background: var(--flutes), var(--outer-background);
   background-attachment: fixed;
 }
@@ -1904,8 +1904,8 @@ kbd {
 
 /* Liseré lumineux en dégradé : un calque masqué qui ne laisse voir que le
    bord (la carte reste transparente au halo du cadre). */
-.copilot-page .workspace::before,
-.copilot-page .message-composer::before {
+.atm-chatbot-page .workspace::before,
+.atm-chatbot-page .message-composer::before {
   position: absolute;
   inset: 0;
   padding: 1px;
@@ -1918,7 +1918,7 @@ kbd {
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
 }
 
-.copilot-page .workspace {
+.atm-chatbot-page .workspace {
   border-color: transparent;
   background:
     radial-gradient(560px 420px at 50% 36%, var(--card-glow), transparent 70%),
@@ -1926,7 +1926,7 @@ kbd {
   box-shadow: var(--glass-3d);
 }
 
-.copilot-page .message-composer {
+.atm-chatbot-page .message-composer {
   position: relative;
   border-color: transparent;
   background:
@@ -1961,12 +1961,12 @@ kbd {
 /* Pilules du haut : verre avec reflet. */
 .topbar-tabs,
 .topbar-tools,
-.copilot-page .assistant-identity {
+.atm-chatbot-page .assistant-identity {
   background: var(--chip-gloss), var(--chip-background);
   box-shadow: var(--glass-3d-small);
 }
 
-.copilot-page .assistant-identity {
+.atm-chatbot-page .assistant-identity {
   box-shadow: var(--glass-3d-small), 0 0 20px -8px rgba(74, 222, 128, 0.6);
 }
 
@@ -1983,21 +1983,21 @@ kbd {
 }
 
 /* Boutons ronds : petites sphères brillantes, liseré coloré en bas à droite. */
-.copilot-page .icon-button,
+.atm-chatbot-page .icon-button,
 .sidebar-collapse-button,
 .mic-button,
-.copilot-page .mic-button,
+.atm-chatbot-page .mic-button,
 .composer-voice-button,
 .device-trigger,
 .suggestion-menu,
-.copilot-page .pill-button {
+.atm-chatbot-page .pill-button {
   box-shadow: var(--sphere-3d);
 }
 
-.copilot-page .icon-button,
+.atm-chatbot-page .icon-button,
 .sidebar-collapse-button,
 .mic-button,
-.copilot-page .mic-button,
+.atm-chatbot-page .mic-button,
 .composer-voice-button {
   background: var(--button-gloss);
 }
@@ -2020,7 +2020,7 @@ kbd {
   }
 
   /* Une teinte de liseré par bouton, comme sur la maquette. */
-  .app-shell[data-sidebar="collapsed"] .sidebar-link[data-sidebar-label="Copilote"] { --rim: rgba(190, 200, 60, 0.55); }
+  .app-shell[data-sidebar="collapsed"] .sidebar-link[data-sidebar-label="ATM-Chatbot"] { --rim: rgba(190, 200, 60, 0.55); }
   .app-shell[data-sidebar="collapsed"] .sidebar-link[data-sidebar-label="Diagnostic"] { --rim: rgba(167, 139, 250, 0.5); }
   .app-shell[data-sidebar="collapsed"] .sidebar-link[data-sidebar-label="Nouvelle conversation"] { --rim: rgba(96, 165, 250, 0.5); }
   .app-shell[data-sidebar="collapsed"] .sidebar-link[data-sidebar-label="Chat vocal"] { --rim: rgba(45, 212, 191, 0.5); }
@@ -2037,7 +2037,7 @@ kbd {
 }
 
 /* Envoi : sphère néon avec reflet blanc. */
-.copilot-page .send-button {
+.atm-chatbot-page .send-button {
   background:
     radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.55), transparent 45%),
     linear-gradient(135deg, #d9f99d 0%, #4ade80 50%, #14b8a6 100%);
@@ -2046,7 +2046,7 @@ kbd {
     0 0 22px -4px rgba(74, 222, 128, 0.75);
 }
 
-.copilot-page .send-button:disabled {
+.atm-chatbot-page .send-button:disabled {
   background:
     radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.55), transparent 45%),
     linear-gradient(135deg, #d9f99d 0%, #4ade80 50%, #14b8a6 100%);
@@ -2057,7 +2057,7 @@ kbd {
    saisie, messages) ; les boutons sont des bulles de verre posées sur ces
    vitres. Une vitre : remplissage translucide + flou de ce qui est derrière +
    relief des bords (--glass-3d). */
-:root .copilot-page {
+:root .atm-chatbot-page {
   --sidebar-compact-width: 70px;
 
   --pane-fill: linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.42) 45%, rgba(255, 255, 255, 0.62));
@@ -2075,7 +2075,7 @@ kbd {
   --button-gloss: var(--bubble-fill);
 }
 
-:root[data-theme="dark"] .copilot-page {
+:root[data-theme="dark"] .atm-chatbot-page {
   --pane-fill: linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.015) 45%, rgba(255, 255, 255, 0.04));
   --pane-border: rgba(255, 255, 255, 0.08);
   --popover-fill: rgba(9, 16, 12, 0.95);
@@ -2092,13 +2092,13 @@ kbd {
 }
 
 /* Vitres principales */
-.copilot-page .workspace,
+.atm-chatbot-page .workspace,
 .context-panel {
   -webkit-backdrop-filter: blur(14px) saturate(140%);
   backdrop-filter: blur(14px) saturate(140%);
 }
 
-.copilot-page .workspace {
+.atm-chatbot-page .workspace {
   background:
     radial-gradient(560px 420px at 50% 36%, var(--card-glow), transparent 70%),
     var(--pane-fill);
@@ -2113,7 +2113,7 @@ kbd {
 
 /* Le rail : une vitre rectangulaire aux coins arrondis. */
 @media (min-width: 720px) {
-  .copilot-page .app-sidebar {
+  .atm-chatbot-page .app-sidebar {
     padding: 14px 0;
     border: 1px solid var(--pane-border);
     border-radius: 30px;
@@ -2129,7 +2129,7 @@ kbd {
 }
 
 /* La zone de saisie : une vitre, ses boutons sont des bulles. */
-.copilot-page .message-composer {
+.atm-chatbot-page .message-composer {
   background:
     radial-gradient(420px 200px at 35% 100%, rgba(45, 212, 191, 0.1), transparent 70%),
     var(--pane-fill);
@@ -2137,9 +2137,9 @@ kbd {
   backdrop-filter: blur(12px) saturate(140%);
 }
 
-.copilot-page .icon-button,
+.atm-chatbot-page .icon-button,
 .sidebar-collapse-button,
-.copilot-page .mic-button,
+.atm-chatbot-page .mic-button,
 .composer-voice-button {
   background: var(--bubble-fill);
   box-shadow: var(--sphere-3d);
@@ -2150,7 +2150,7 @@ kbd {
   box-shadow: none;
 }
 
-.copilot-page :is(.sidebar-collapse-button, .panel-toggle-button, #context-close-button) {
+.atm-chatbot-page :is(.sidebar-collapse-button, .panel-toggle-button, #context-close-button) {
   min-width: 44px;
   height: 44px;
   border: 1px solid var(--accent-border);
@@ -2161,23 +2161,23 @@ kbd {
   transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
-.copilot-page :is(.sidebar-collapse-button, .panel-toggle-button, #context-close-button):hover {
+.atm-chatbot-page :is(.sidebar-collapse-button, .panel-toggle-button, #context-close-button):hover {
   border-color: var(--accent-text);
   box-shadow: 0 0 0 3px var(--accent-fill), 0 4px 16px rgba(24, 130, 76, 0.2);
   transform: translateY(-1px);
 }
 
-.copilot-page :is(.sidebar-collapse-button, .panel-toggle-button, #context-close-button):active {
+.atm-chatbot-page :is(.sidebar-collapse-button, .panel-toggle-button, #context-close-button):active {
   transform: translateY(1px);
 }
 
-.copilot-page :is(.sidebar-collapse-button, .panel-toggle-button)[aria-expanded="true"] {
+.atm-chatbot-page :is(.sidebar-collapse-button, .panel-toggle-button)[aria-expanded="true"] {
   border-color: var(--accent-text);
   background: var(--accent-fill);
   box-shadow: inset 0 -3px 0 var(--accent-border);
 }
 
-.copilot-page .panel-toggle-button {
+.atm-chatbot-page .panel-toggle-button {
   display: inline-flex;
   width: auto;
   gap: 8px;
@@ -2194,13 +2194,13 @@ kbd {
     display: none;
   }
 
-  .copilot-page .panel-toggle-button {
+  .atm-chatbot-page .panel-toggle-button {
     padding-inline: 10px;
   }
 }
 
 /* Palette du mode clair uniquement : le mode sombre conserve ses verts. */
-:root:not([data-theme="dark"]) .copilot-page {
+:root:not([data-theme="dark"]) .atm-chatbot-page {
   --bg: #eef5fc;
   --surface-2: #f4f8fe;
   --text: #10253e;
@@ -2263,11 +2263,11 @@ kbd {
     inset 0 8px 12px -8px #ffffff, 0 10px 18px -10px rgba(20, 50, 95, 0.28);
 }
 
-:root:not([data-theme="dark"]) .copilot-page .message-composer {
+:root:not([data-theme="dark"]) .atm-chatbot-page .message-composer {
   background: radial-gradient(420px 200px at 35% 100%, rgba(56, 189, 248, 0.1), transparent 70%), var(--pane-fill);
 }
 
-:root:not([data-theme="dark"]) .copilot-page .reactor-scene {
+:root:not([data-theme="dark"]) .atm-chatbot-page .reactor-scene {
   --reactor-bright: #d0f0ff;
   --reactor-color: #38a5ff;
   --reactor-rgb: 47, 139, 255;
@@ -2275,7 +2275,7 @@ kbd {
   --reactor-hub: #091f40;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .context-panel {
+:root:not([data-theme="dark"]) .atm-chatbot-page .context-panel {
   border-color: var(--accent-border);
   background:
     radial-gradient(260px 220px at 0% 0%, rgba(147, 197, 253, 0.4), transparent 70%),
@@ -2284,13 +2284,13 @@ kbd {
   box-shadow: var(--glass-3d), inset 2px 0 0 -1px rgba(96, 165, 250, 0.12);
 }
 
-:root:not([data-theme="dark"]) .copilot-page .send-button {
+:root:not([data-theme="dark"]) .atm-chatbot-page .send-button {
   background: radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.55), transparent 45%), var(--gradient);
   box-shadow: inset 0 -3px 8px -2px rgba(30, 64, 175, 0.3), 0 0 22px -4px rgba(59, 130, 246, 0.5);
 }
 
-:root:not([data-theme="dark"]) .copilot-page .context-panel,
-:root[data-theme="dark"] .copilot-page .context-panel {
+:root:not([data-theme="dark"]) .atm-chatbot-page .context-panel,
+:root[data-theme="dark"] .atm-chatbot-page .context-panel {
   border-top: 1px solid rgba(255, 255, 255, 0.85);
   border-left: 2px solid rgba(255, 255, 255, 0.95);
   border-right: 1px solid var(--card-border);
@@ -2302,7 +2302,7 @@ kbd {
     5px 12px 24px -16px rgba(10, 25, 45, 0.4);
 }
 
-:root:not([data-theme="dark"]) .copilot-page .context-panel {
+:root:not([data-theme="dark"]) .atm-chatbot-page .context-panel {
   box-shadow:
     inset 3px 0 8px -3px #ffffff,
     inset 0 2px 3px rgba(255, 255, 255, 0.65),
@@ -2310,7 +2310,7 @@ kbd {
     5px 12px 24px -16px rgba(30, 65, 110, 0.3);
 }
 
-/* ----- Avatar du Copilote dans la barre du haut ----- */
+/* ----- Avatar de l’ATM-Chatbot dans la barre du haut ----- */
 .topbar-avatar {
   overflow: hidden;
   padding: 0;
@@ -2330,9 +2330,9 @@ kbd {
 }
 
 /* ----- Messages : des vitres ----- */
-.copilot-page .message:not(.welcome-message) .message-bubble,
-.copilot-page .conversation > .welcome-message:not(:only-child) .message-bubble,
-.copilot-page .typing-indicator {
+.atm-chatbot-page .message:not(.welcome-message) .message-bubble,
+.atm-chatbot-page .conversation > .welcome-message:not(:only-child) .message-bubble,
+.atm-chatbot-page .typing-indicator {
   position: relative;
   overflow: hidden;
   border: 1px solid var(--pane-border);
@@ -2343,14 +2343,14 @@ kbd {
   color: var(--text-soft);
 }
 
-.copilot-page .user-message .message-bubble {
+.atm-chatbot-page .user-message .message-bubble {
   border-color: var(--user-bubble-border);
   background: var(--user-glass);
   color: var(--user-bubble-text);
 }
 
 /* Reflet qui traverse la vitre quand un message arrive. */
-.copilot-page .message-bubble::after {
+.atm-chatbot-page .message-bubble::after {
   position: absolute;
   inset: 0;
   background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.32) 48%, transparent 60%);
@@ -2359,16 +2359,16 @@ kbd {
   transform: translateX(-130%);
 }
 
-.copilot-page .message-bubble.is-landing {
+.atm-chatbot-page .message-bubble.is-landing {
   animation: bubble-land 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.copilot-page .message-bubble.is-landing::after,
-.copilot-page .message-enter-fade .message-bubble::after {
+.atm-chatbot-page .message-bubble.is-landing::after,
+.atm-chatbot-page .message-enter-fade .message-bubble::after {
   animation: glass-sheen 900ms ease-out 120ms;
 }
 
-.copilot-page .message-enter-fade {
+.atm-chatbot-page .message-enter-fade {
   animation: glass-rise 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -2676,11 +2676,11 @@ kbd {
 
 /* ----- Envoi : l'avion en papier de la maquette ----- */
 /* L'icône est foncée (style.css colore le dernier span du bouton en clair). */
-.copilot-page .send-button span:last-child {
+.atm-chatbot-page .send-button span:last-child {
   color: #03200d;
 }
 
-.copilot-page .send-button .icon {
+.atm-chatbot-page .send-button .icon {
   width: 21px;
   height: 21px;
   stroke-width: 2.3;
@@ -2688,11 +2688,11 @@ kbd {
   transition: transform 200ms ease;
 }
 
-.copilot-page .send-button:hover:not(:disabled) .icon {
+.atm-chatbot-page .send-button:hover:not(:disabled) .icon {
   transform: translate(1px, -1px) rotate(-6deg);
 }
 
-.copilot-page .send-button:disabled {
+.atm-chatbot-page .send-button:disabled {
   filter: saturate(0.8);
   opacity: 0.8;
 }
@@ -2705,7 +2705,7 @@ kbd {
 }
 
 /* Le fil s'efface en haut et en bas au lieu d'être coupé net. */
-.copilot-page .conversation {
+.atm-chatbot-page .conversation {
   -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 28px, #000 calc(100% - 10px), transparent 100%);
   mask-image: linear-gradient(180deg, transparent 0, #000 28px, #000 calc(100% - 10px), transparent 100%);
 }
@@ -2748,15 +2748,15 @@ kbd {
     background: var(--surface);
   }
 
-  .copilot-page .workspace {
+  .atm-chatbot-page .workspace {
     border-radius: 22px;
   }
 
-  .copilot-page .composer-area {
+  .atm-chatbot-page .composer-area {
     padding: 6px 8px 10px;
   }
 
-  .copilot-page .message-composer textarea {
+  .atm-chatbot-page .message-composer textarea {
     order: 0;
     flex-basis: auto;
     min-height: 56px;
@@ -2776,8 +2776,8 @@ kbd {
   }
 }
 
-/* Mode clair du Copilote : surfaces glacier et navigation bleu nuit. */
-:root:not([data-theme="dark"]) .copilot-page {
+/* Mode clair de l’ATM-Chatbot : surfaces glacier et navigation bleu nuit. */
+:root:not([data-theme="dark"]) .atm-chatbot-page {
   --bg: #f0f6ff;
   --surface: #ffffff;
   --surface-2: #f3f8ff;
@@ -2811,19 +2811,19 @@ kbd {
   background: linear-gradient(135deg, #e7f0fc, #f7faff 55%, #eaf4ff);
 }
 
-:root:not([data-theme="dark"]) .copilot-page .app-frame {
+:root:not([data-theme="dark"]) .atm-chatbot-page .app-frame {
   border: 1px solid #d4e4f8;
   background: #f7faff;
   box-shadow: 0 18px 60px -32px rgba(19, 53, 105, 0.35);
 }
 
-:root:not([data-theme="dark"]) .copilot-page .app-frame::before,
-:root:not([data-theme="dark"]) .copilot-page .app-frame::after,
-:root:not([data-theme="dark"]) .copilot-page .workspace::before {
+:root:not([data-theme="dark"]) .atm-chatbot-page .app-frame::before,
+:root:not([data-theme="dark"]) .atm-chatbot-page .app-frame::after,
+:root:not([data-theme="dark"]) .atm-chatbot-page .workspace::before {
   display: none;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .app-sidebar {
+:root:not([data-theme="dark"]) .atm-chatbot-page .app-sidebar {
   padding: 16px 12px;
   border: 1px solid #183861;
   border-radius: 16px;
@@ -2832,21 +2832,21 @@ kbd {
   color: #d1e3ff;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .app-sidebar :is(.sidebar-brand, .sidebar-greeting-title, .technician-card-text strong) {
+:root:not([data-theme="dark"]) .atm-chatbot-page .app-sidebar :is(.sidebar-brand, .sidebar-greeting-title, .technician-card-text strong) {
   color: #f0f6ff;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .app-sidebar :is(.sidebar-greeting-text, .sidebar-section-title, .technician-card-text small, .technician-card-text > span) {
+:root:not([data-theme="dark"]) .atm-chatbot-page .app-sidebar :is(.sidebar-greeting-text, .sidebar-section-title, .technician-card-text small, .technician-card-text > span) {
   color: #a6bfdf;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .sidebar-greeting {
+:root:not([data-theme="dark"]) .atm-chatbot-page .sidebar-greeting {
   border-color: #274467;
   border-radius: 10px;
   background: rgba(91, 155, 255, 0.07);
 }
 
-:root:not([data-theme="dark"]) .copilot-page .app-sidebar :is(.sidebar-link, .sidebar-collapse-button) {
+:root:not([data-theme="dark"]) .atm-chatbot-page .app-sidebar :is(.sidebar-link, .sidebar-collapse-button) {
   --rim: #2b4c77;
   border-color: transparent;
   border-radius: 9px;
@@ -2855,20 +2855,20 @@ kbd {
   color: #c0d6f5;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .app-sidebar :is(.sidebar-link, .sidebar-collapse-button):hover {
+:root:not([data-theme="dark"]) .atm-chatbot-page .app-sidebar :is(.sidebar-link, .sidebar-collapse-button):hover {
   border-color: #2e5485;
   background: #173b69;
   color: #ffffff;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .app-sidebar .sidebar-link.is-active {
+:root:not([data-theme="dark"]) .atm-chatbot-page .app-sidebar .sidebar-link.is-active {
   border-color: #147aff;
   background: linear-gradient(120deg, #087dff, #0752d5);
   box-shadow: 0 5px 16px -8px rgba(0, 119, 255, 0.8);
   color: #ffffff;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .app-sidebar .sidebar-link.sidebar-intervention-add {
+:root:not([data-theme="dark"]) .atm-chatbot-page .app-sidebar .sidebar-link.sidebar-intervention-add {
   margin-top: 10px;
   border-color: #32669c;
   background: #143b68;
@@ -2876,53 +2876,53 @@ kbd {
   box-shadow: inset 3px 0 #39a8ff;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .app-sidebar .sidebar-link.sidebar-intervention-add:hover {
+:root:not([data-theme="dark"]) .atm-chatbot-page .app-sidebar .sidebar-link.sidebar-intervention-add:hover {
   border-color: #55aeff;
   background: #1b497c;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .sidebar-footer {
+:root:not([data-theme="dark"]) .atm-chatbot-page .sidebar-footer {
   padding-top: 12px;
   border-top: 1px solid #244264;
 }
 
-:root:not([data-theme="dark"]) .copilot-page :is(.sidebar-brand-avatar, .toolbar-avatar, .copilot-avatar-slot, .topbar-avatar .toolbar-avatar) {
+:root:not([data-theme="dark"]) .atm-chatbot-page :is(.sidebar-brand-avatar, .toolbar-avatar, .atm-chatbot-avatar-slot, .topbar-avatar .toolbar-avatar) {
   background: linear-gradient(145deg, #ffffff, #d6e8ff);
 }
 
-:root:not([data-theme="dark"]) .copilot-page .topbar-logo {
+:root:not([data-theme="dark"]) .atm-chatbot-page .topbar-logo {
   background: #e5f0ff;
   box-shadow: 0 0 0 1px #cce1ff;
   color: #0767ef;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .topbar-tab.is-active {
+:root:not([data-theme="dark"]) .atm-chatbot-page .topbar-tab.is-active {
   border-color: #bdd8ff;
   background: #e9f3ff;
   box-shadow: inset 0 -2px #0878ff;
   color: #0757d5;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .workspace {
+:root:not([data-theme="dark"]) .atm-chatbot-page .workspace {
   border: 1px solid #dce9fb;
   border-radius: 14px;
   background: linear-gradient(160deg, #ffffff, #f1f7ff);
   box-shadow: var(--glass-3d);
 }
 
-:root:not([data-theme="dark"]) .copilot-page .workspace-header {
+:root:not([data-theme="dark"]) .atm-chatbot-page .workspace-header {
   border-bottom: 1px solid #e0edff;
   background: linear-gradient(100deg, #ffffff, #f0f7ff);
 }
 
-:root:not([data-theme="dark"]) .copilot-page .assistant-identity {
+:root:not([data-theme="dark"]) .atm-chatbot-page .assistant-identity {
   border-color: #d6e6fc;
   border-radius: 12px;
   background: #f7fbff;
   box-shadow: none;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .context-panel {
+:root:not([data-theme="dark"]) .atm-chatbot-page .context-panel {
   border: 1px solid #d4e6ff;
   border-left: 2px solid #ffffff;
   border-radius: 14px;
@@ -2930,7 +2930,7 @@ kbd {
   box-shadow: -5px 4px 18px -14px rgba(20, 66, 138, 0.45), inset 1px 1px #ffffff;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .context-card {
+:root:not([data-theme="dark"]) .atm-chatbot-page .context-card {
   padding: 14px 12px;
   border: 1px solid #d8e8fc;
   border-radius: 10px;
@@ -2938,52 +2938,52 @@ kbd {
   box-shadow: 0 3px 10px -8px rgba(26, 82, 159, 0.25);
 }
 
-:root:not([data-theme="dark"]) .copilot-page .context-card h3 {
+:root:not([data-theme="dark"]) .atm-chatbot-page .context-card h3 {
   color: #154b9a;
   font-weight: 700;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .message-composer {
+:root:not([data-theme="dark"]) .atm-chatbot-page .message-composer {
   border: 1px solid #cfe3ff;
   border-radius: 16px;
   background: #ffffff;
   box-shadow: 0 5px 20px -12px rgba(0, 100, 237, 0.25);
 }
 
-:root:not([data-theme="dark"]) .copilot-page .message-composer:focus-within {
+:root:not([data-theme="dark"]) .atm-chatbot-page .message-composer:focus-within {
   border-color: #69aaff;
   box-shadow: 0 0 0 3px rgba(8, 120, 255, 0.08);
 }
 
-:root:not([data-theme="dark"]) .copilot-page :is(.send-button, .composer-voice-button, .mic-button) {
+:root:not([data-theme="dark"]) .atm-chatbot-page :is(.send-button, .composer-voice-button, .mic-button) {
   border-color: #1985ff;
   background: linear-gradient(145deg, #168cff, #0560f2);
   box-shadow: 0 4px 12px -5px rgba(0, 106, 255, 0.45);
   color: #ffffff;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .send-button span:last-child {
+:root:not([data-theme="dark"]) .atm-chatbot-page .send-button span:last-child {
   color: #ffffff;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .send-button:disabled {
+:root:not([data-theme="dark"]) .atm-chatbot-page .send-button:disabled {
   border-color: #bfd5f2;
   background: #dce9fa;
   box-shadow: none;
   color: #718bb0;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .send-button:disabled span:last-child {
+:root:not([data-theme="dark"]) .atm-chatbot-page .send-button:disabled span:last-child {
   color: #718bb0;
 }
 
-:root:not([data-theme="dark"]) .copilot-page :is(.intervention-add-emblem, .intervention-offer) {
+:root:not([data-theme="dark"]) .atm-chatbot-page :is(.intervention-add-emblem, .intervention-offer) {
   border-color: #bcd9ff;
   background: #edf5ff;
   color: #0757d5;
 }
 
-:root:not([data-theme="dark"]) .copilot-page .intervention-add-eyebrow {
+:root:not([data-theme="dark"]) .atm-chatbot-page .intervention-add-eyebrow {
   color: #0757d5;
 }
 
@@ -3470,14 +3470,14 @@ kbd {
   font-weight: 600;
 }
 
-/* ----- Mode intégré : onglet Copilote de l'Espace techniciens (js/embeddedMode.js) -----
+/* ----- Mode intégré : onglet ATM-Chatbot de l'Espace techniciens (js/embeddedMode.js) -----
    L'Espace techniciens fournit déjà le cadre, la navigation et le thème :
    on retire le cadre « écran », la barre du haut et l'interrupteur de thème. */
-:root[data-embedded] .copilot-page {
+:root[data-embedded] .atm-chatbot-page {
   background: var(--frame-background);
 }
 
-:root[data-embedded] .copilot-page .app-frame {
+:root[data-embedded] .atm-chatbot-page .app-frame {
   height: 100dvh;
   margin: 0;
   padding: 12px;
@@ -3486,17 +3486,17 @@ kbd {
   box-shadow: none;
 }
 
-:root[data-embedded] .copilot-page .app-frame::before,
-:root[data-embedded] .copilot-page .app-frame::after,
-:root[data-embedded] .copilot-page .theme-switch,
-:root[data-embedded] .copilot-page .sidebar-logout {
+:root[data-embedded] .atm-chatbot-page .app-frame::before,
+:root[data-embedded] .atm-chatbot-page .app-frame::after,
+:root[data-embedded] .atm-chatbot-page .theme-switch,
+:root[data-embedded] .atm-chatbot-page .sidebar-logout {
   /* La session (et donc la déconnexion) appartient à l'Espace techniciens. */
   display: none;
 }
 
 /* Écran large : plus de barre du haut du tout. Petit écran : elle reste pour le bouton du menu. */
 @media (min-width: 720px) {
-  :root[data-embedded] .copilot-page .app-topbar {
+  :root[data-embedded] .atm-chatbot-page .app-topbar {
     display: none;
   }
 }

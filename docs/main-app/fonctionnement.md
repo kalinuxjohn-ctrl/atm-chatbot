@@ -54,7 +54,7 @@ Après 5 échecs pour un même couple (nom saisi, adresse IP), les tentatives so
 |---|---|
 | `technician` | Utiliser la carte, la messagerie et les appels ; modifier ses propres points |
 | `moderator` | Comme un technicien, et modifier ou supprimer **tous** les points |
-| `admin` | Comme un modérateur, et gérer les comptes et le Copilote (page `/admin/`) |
+| `admin` | Comme un modérateur, et gérer les comptes et l’ATM-Chatbot (page `/admin/`) |
 
 ### Gestion des comptes (administrateur)
 
@@ -144,7 +144,7 @@ La recherche par distance utilise les extensions PostgreSQL `cube` et `earthdist
 | Accueil | `/` |
 | Connexion | `/auth/login.html` |
 | Inscription | `/auth/register.html` |
-| Copilote (chatbot intégré) | `/copilot/` (le chatbot lui-même : `/copilot/app/`) |
+| ATM-Chatbot (chatbot intégré) | `/atm-chatbot/` (le chatbot lui-même : `/atm-chatbot/app/`) |
 | Administration (admin) | `/admin/` : `#comptes`, `#propositions`, `#interventions`, `#codes-erreur`, `#pannes-frequentes` |
 | Carte | `/map/` |
 | Messagerie | `/messaging/` |
@@ -159,10 +159,10 @@ Page unique du gateway (`gateway/html/admin/`), une rubrique par sujet ; la rubr
 | Rubrique | Source | Rôle |
 |---|---|---|
 | Comptes | `/api/auth/accounts` | Créer un compte, changer un rôle, désactiver, nouveau mot de passe |
-| Propositions | `/api/copilot-admin/solution-proposals` | Approuver (rejoint le catalogue d'actions) ou rejeter une solution proposée depuis le Copilote |
-| Ajouts d'intervention | `/api/copilot-admin/intervention_add` | Voir l'intervention racontée, l'aperçu de l'écriture, approuver ou rejeter |
-| Codes d'erreur | `/api/copilot-admin/error_code` | Réponses enregistrées du menu « Codes d'erreur connus » |
-| Pannes fréquentes | `/api/copilot-admin/usual_problem` | Réponses enregistrées du menu « Pannes fréquentes » |
+| Propositions | `/api/atm-chatbot-admin/solution-proposals` | Approuver (rejoint le catalogue d'actions) ou rejeter une solution proposée depuis l’ATM-Chatbot |
+| Ajouts d'intervention | `/api/atm-chatbot-admin/intervention_add` | Voir l'intervention racontée, l'aperçu de l'écriture, approuver ou rejeter |
+| Codes d'erreur | `/api/atm-chatbot-admin/error_code` | Réponses enregistrées du menu « Codes d'erreur connus » |
+| Pannes fréquentes | `/api/atm-chatbot-admin/usual_problem` | Réponses enregistrées du menu « Pannes fréquentes » |
 
 Les décisions sont signées avec le nom de l'administrateur connecté. Le sommaire affiche le nombre de demandes en attente.
 
@@ -202,10 +202,10 @@ Toutes les routes renvoient du JSON. Sauf indication contraire, elles demandent 
 | PUT | `/accounts/:technicianId/role` | admin | Changer le rôle |
 | PUT | `/accounts/:technicianId/active` | admin | Activer / désactiver |
 | PUT | `/accounts/:technicianId/password` | admin | Réinitialiser le mot de passe |
-| GET | `/internal/administrator-check` | gateway seulement | Contrôle `auth_request` avant l'administration du Copilote (204 = admin). Bloquée depuis le navigateur (404) |
-| GET | `/internal/session-check` | gateway seulement | Contrôle `auth_request` avant le Copilote (`/copilot/app/`) : 204 + en-tête `X-Authenticated-Technician-Id`. Bloquée depuis le navigateur (404) |
+| GET | `/internal/administrator-check` | gateway seulement | Contrôle `auth_request` avant l'administration de l’ATM-Chatbot (204 = admin). Bloquée depuis le navigateur (404) |
+| GET | `/internal/session-check` | gateway seulement | Contrôle `auth_request` avant l’ATM-Chatbot (`/atm-chatbot/app/`) : 204 + en-tête `X-Authenticated-Technician-Id`. Bloquée depuis le navigateur (404) |
 
-### Administration du Copilote : `/api/copilot-admin` (gateway → API du chatbot)
+### Administration de l’ATM-Chatbot : `/api/atm-chatbot-admin` (gateway → API du chatbot)
 
 Réservée aux administrateurs. Chaque requête est relayée vers `/api/admin/…` du chatbot avec la clé `ADMIN_API_KEY`. Les erreurs du chatbot gardent leur forme FastAPI (`{ "detail": … }`).
 

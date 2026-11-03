@@ -5,7 +5,7 @@ COPY nginx.conf /etc/nginx/nginx.conf
 COPY snippets/ /etc/nginx/snippets/
 COPY html/ /usr/share/nginx/html/
 
-# Réglages du Copilote (clé admin du chatbot, adresse publique du chatbot) :
+# Réglages de l’ATM-Chatbot (clé admin du chatbot, secret partagé avec son API) :
 # au démarrage, l'image remplace les ${VARIABLES} du modèle par celles de
 # l'environnement et écrit le résultat dans /tmp (seul dossier inscriptible :
 # le système de fichiers du conteneur est en lecture seule).

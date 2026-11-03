@@ -15,8 +15,8 @@
     <main class="page-content administration-layout">
       <div class="page-heading administration-heading">
         <p class="page-eyebrow">Administration</p>
-        <h1>Pilotage de l'Espace techniciens et du Copilote</h1>
-        <p>Comptes des techniciens, propositions à valider et réponses enregistrées du Copilote, au même endroit.</p>
+        <h1>Pilotage de l'Espace techniciens et de l’ATM-Chatbot</h1>
+        <p>Comptes des techniciens, propositions à valider et réponses enregistrées de l’ATM-Chatbot, au même endroit.</p>
       </div>
 
       <!-- Affiché à la place des rubriques si l'utilisateur n'est pas administrateur. -->
@@ -39,7 +39,7 @@
             <span class="administration-menu-counter" data-section-counter="comptes" hidden></span>
           </a>
 
-          <p class="administration-menu-title">Copilote · à valider</p>
+          <p class="administration-menu-title">ATM-Chatbot · à valider</p>
           <a class="administration-menu-link" href="#propositions" data-section-link="propositions">
             <span data-icon="lightbulb"></span><span class="administration-menu-label">Propositions</span>
             <span class="administration-menu-counter is-pending" data-section-counter="propositions" hidden></span>
@@ -49,7 +49,7 @@
             <span class="administration-menu-counter is-pending" data-section-counter="interventions" hidden></span>
           </a>
 
-          <p class="administration-menu-title">Copilote · réponses</p>
+          <p class="administration-menu-title">ATM-Chatbot · réponses</p>
           <a class="administration-menu-link" href="#codes-erreur" data-section-link="codes-erreur">
             <span data-icon="errorCode"></span><span class="administration-menu-label">Codes d'erreur</span>
             <span class="administration-menu-counter" data-section-counter="codes-erreur" hidden></span>
@@ -122,7 +122,7 @@
             <header class="administration-section-header">
               <div>
                 <h2 id="propositions-title">Propositions de solution</h2>
-                <p>Solutions trouvées sur le terrain et proposées depuis le Copilote. Approuvée, une proposition rejoint le catalogue d'actions ; rejetée, elle reste dans l'historique.</p>
+                <p>Solutions trouvées sur le terrain et proposées depuis l’ATM-Chatbot. Approuvée, une proposition rejoint le catalogue d'actions ; rejetée, elle reste dans l'historique.</p>
               </div>
             </header>
             <div class="segmented-control" role="tablist" aria-label="Statut des propositions" data-status-filter="propositions">
@@ -138,7 +138,7 @@
             <header class="administration-section-header">
               <div>
                 <h2 id="interventions-title">Ajouts d'intervention</h2>
-                <p>Interventions racontées par les techniciens depuis le Copilote. Approuvée, une demande est écrite dans l'historique et nourrit les statistiques des solutions.</p>
+                <p>Interventions racontées par les techniciens depuis l’ATM-Chatbot. Approuvée, une demande est écrite dans l'historique et nourrit les statistiques des solutions.</p>
               </div>
             </header>
             <div class="segmented-control" role="tablist" aria-label="Statut des demandes" data-status-filter="interventions">
@@ -154,7 +154,7 @@
             <header class="administration-section-header">
               <div>
                 <h2 id="codes-erreur-title">Codes d'erreur</h2>
-                <p>Un code apparaît dans le menu « Codes d'erreur connus » du Copilote s'il a un équipement et une réponse. Sans réponse, il reste trouvable par la recherche.</p>
+                <p>Un code apparaît dans le menu « Codes d'erreur connus » de l’ATM-Chatbot s'il a un équipement et une réponse. Sans réponse, il reste trouvable par la recherche.</p>
               </div>
               <button class="button" type="button" data-record-add="codes-erreur"><span data-icon="plus"></span>Ajouter un code</button>
             </header>
@@ -172,7 +172,7 @@
             <header class="administration-section-header">
               <div>
                 <h2 id="pannes-frequentes-title">Pannes fréquentes</h2>
-                <p>Chaque panne apparaît dans le menu « Pannes fréquentes » de son équipement, dans l'ordre indiqué. Le Copilote répond avec le texte enregistré, sans IA.</p>
+                <p>Chaque panne apparaît dans le menu « Pannes fréquentes » de son équipement, dans l'ordre indiqué. L’ATM-Chatbot répond avec le texte enregistré, sans IA.</p>
               </div>
               <button class="button" type="button" data-record-add="pannes-frequentes"><span data-icon="plus"></span>Ajouter une panne</button>
             </header>

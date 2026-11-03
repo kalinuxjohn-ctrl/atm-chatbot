@@ -51,7 +51,7 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Identité vérifiée par le gateway de l'Espace techniciens, si COPILOT_GATEWAY_SHARED_SECRET est défini.
+# Identité vérifiée par le gateway de l'Espace techniciens, si ATM_CHATBOT_GATEWAY_SHARED_SECRET est défini.
 app.middleware("http")(require_gateway_identity)
 
 app.include_router(interventions_router)
