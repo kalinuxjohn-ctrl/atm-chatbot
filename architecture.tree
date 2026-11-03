@@ -459,6 +459,10 @@ atm-chatbot/
 │   │   ├── 22-db-exemple-comprehension.svg
 │   │   ├── 23-db-exemple-recherche.svg
 │   │   └── 24-db-exemple-reponse.svg
+│   ├── main-app/
+│   │   ├── base-de-donnees.md
+│   │   ├── diagrammes-uml.md
+│   │   └── fonctionnement.md
 │   ├── ATM-BOT_Dossier_technique.docx
 │   ├── ATM-BOT_Dossier_technique.pdf
 │   ├── ATM-BOT_presentation (4).pptx
