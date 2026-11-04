@@ -6,6 +6,8 @@ embedding (voir usual_problem_service.py) :
     GET /api/usual_problem/{id}/solution        réponse enregistrée d'une panne
 """
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -20,7 +22,7 @@ router = APIRouter(prefix="/api/usual_problem", tags=["usual_problem"])
 
 @router.get("", response_model=list[UsualProblemOut])
 def lister_pannes_frequentes(
-    device_type: DeviceType = Query(..., description="gab ou tpe."),
+    device_type: Annotated[DeviceType, Query(description="gab ou tpe.")],
     db: Session = Depends(get_db),
 ) -> list[UsualProblemOut]:
     """Pannes fréquentes de cet équipement (liste vide s'il n'y en a aucune)."""

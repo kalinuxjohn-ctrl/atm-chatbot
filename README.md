@@ -77,6 +77,10 @@ Les menus de suggestions de l’ATM-Chatbot répondent aussi sans IA, avec des r
 | `GET /api/error_code?device_type=gab` | codes d'erreur ayant une réponse enregistrée (`error_code.device_type` et `error_code.reply`) |
 | `GET /api/error_code/{id}/solution` | réponse enregistrée d'un code d'erreur |
 
+Pour les deux listes, `device_type` est obligatoire : les espaces en bordure
+sont retirés et la casse est normalisée (`TPE` ou ` GAB ` sont acceptés).
+Toute valeur autre que `gab` ou `tpe` après normalisation est refusée en HTTP 422.
+
 Les administrateurs les gèrent dans `admin.html` (rubriques « Codes d'erreur » et « Pannes fréquentes »), via des routes protégées par `ADMIN_API_KEY` (en-tête `X-Admin-Key`) :
 `GET`/`POST /api/admin/error_code`, `PUT`/`DELETE /api/admin/error_code/{id}`, et de même pour `/api/admin/usual_problem`. Un code cité par une proposition de solution ne peut pas être supprimé (409) : vider sa réponse le retire de l’ATM-Chatbot.
 
@@ -102,6 +106,11 @@ Une recherche réussie sans résultat reste un cas métier normal, pas une panne
 Le seed n'a aucun mode dégradé : si Voyage échoue, il s'arrête en erreur.
 
 ## Tests ciblés
+
+`python -m pytest tests/test_device_type_query.py -q`
+
+Ce test couvre la normalisation et la validation HTTP des deux menus, sans base
+de données, ainsi que leur contrat OpenAPI.
 
 `python -B -m unittest discover -s tests -p test_tracing.py -v`
 

@@ -7,6 +7,8 @@ Routes HTTP des codes d'erreur -- indépendantes du pipeline vectoriel
     GET /api/error_code/search?q=E4       recherche classique (ILIKE)
 """
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -42,7 +44,7 @@ def rechercher_code_erreur(
 
 @router.get("", response_model=list[ErrorCodeSuggestionOut])
 def lister_codes_erreur_connus(
-    device_type: DeviceType = Query(..., description="gab ou tpe."),
+    device_type: Annotated[DeviceType, Query(description="gab ou tpe.")],
     db: Session = Depends(get_db),
 ) -> list[ErrorCodeSuggestionOut]:
     """Codes ayant une réponse enregistrée pour cet équipement (liste vide s'il n'y en a aucun)."""
