@@ -74,7 +74,6 @@ services:
   # compte d'administration de la base. Voir src/jobs/configureDatabaseRole.js.
   main-app-database-setup:
     <<: *main-app-node-service
-    container_name: main-app-database-setup
     restart: "no"
     command: ["node", "src/jobs/configureDatabaseRole.js"]
     networks:
@@ -94,7 +93,6 @@ services:
 
   main-app-auth:
     <<: *main-app-node-service
-    container_name: main-app-auth
     command: ["node", "src/entrypoints/auth.js"]
     environment:
       <<: *main-app-shared-environment
@@ -105,7 +103,6 @@ services:
 
   main-app-map:
     <<: *main-app-node-service
-    container_name: main-app-map
     command: ["node", "src/entrypoints/map.js"]
     environment:
       <<: *main-app-shared-environment
@@ -120,7 +117,6 @@ services:
 
   main-app-messaging:
     <<: *main-app-node-service
-    container_name: main-app-messaging
     command: ["node", "src/entrypoints/messaging.js"]
     environment:
       <<: *main-app-shared-environment
@@ -133,7 +129,6 @@ services:
 
   main-app-calls:
     <<: *main-app-node-service
-    container_name: main-app-calls
     command: ["node", "src/entrypoints/calls.js"]
     environment:
       <<: *main-app-shared-environment
@@ -146,7 +141,6 @@ services:
       context: ./main-app/gateway
       dockerfile: Dockerfile
     image: atm-main-app-gateway:latest
-    container_name: main-app-gateway
     restart: unless-stopped
     read_only: true
     tmpfs:
@@ -187,8 +181,7 @@ services:
           - chatbot-api
 
 networks:
-  main-app-network:
-    name: main-app-network
+  main-app-network: {}
 
 volumes:
   main-app-uploads:

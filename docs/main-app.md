@@ -34,6 +34,40 @@ Chaque fonctionnalité a son conteneur : on peut l'arrêter, le relancer ou le r
 
 Services : `main-app-gateway`, `main-app-auth`, `main-app-map`, `main-app-messaging`, `main-app-calls`. Il y a aussi le job ponctuel `main-app-database-setup`.
 
+Les noms des conteneurs de la main app et de son réseau sont générés par
+Compose avec le préfixe du projet (par exemple `atm-chatbot-main-app-auth-1`
+et `atm-chatbot_main-app-network`). Les noms des services et les commandes
+`docker compose exec`, `logs` et `restart` restent identiques.
+
+### Conflits avec une ancienne installation
+
+Une ancienne configuration imposait des noms globaux (`main-app-gateway`,
+`main-app-database-setup`, etc.) et le réseau `main-app-network`. Elle pouvait
+entrer en conflit avec un autre projet Compose. La configuration actuelle
+n'impose plus ces noms ; ne pas déclarer l'ancien réseau `external: true`.
+
+Avant de relancer, identifier les anciens conteneurs :
+
+```bash
+docker ps -a --filter name=main-app-
+docker inspect main-app-gateway --format '{{json .Config.Labels}}'
+```
+
+Les labels `com.docker.compose.project` et
+`com.docker.compose.project.config_files` permettent de retrouver leur projet.
+Si un ancien gateway de cette application utilise encore le port 8080,
+l'arrêter avant la relance :
+
+```bash
+docker stop main-app-gateway
+docker compose -f docker-compose.yml -f docker-compose.main-app.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.main-app.yml ps
+```
+
+Ne pas supprimer les volumes (`down -v`) : ils contiennent la base et les
+pièces jointes. Les anciens conteneurs et leur réseau peuvent être conservés
+le temps de vérifier la nouvelle installation.
+
 **Clés à ajouter dans `.env`** (modèle complet dans `.env.example`) :
 
 | Clé | Obligatoire | Rôle |
