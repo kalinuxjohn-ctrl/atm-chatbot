@@ -4,7 +4,7 @@
  * codes d'erreur, pannes fréquentes).
  *
  * Ce fichier ne fait que l'aiguillage :
- *   - vérifie que l'utilisateur est administrateur (sinon message « réservé ») ;
+ *   - vérifie que l'utilisateur est administrateur (sinon retour à l'accueil) ;
  *   - affiche la rubrique demandée par l'adresse (#comptes, #propositions…) ;
  *   - remplit les compteurs du sommaire (demandes en attente, nombre d'éléments).
  * Chaque rubrique vit dans son propre module (*Section.js).
@@ -30,10 +30,9 @@ function showSectionCounter(sectionName, count, { hideWhenZero = false } = {}) {
 
 const currentUser = await currentUserPromise;
 
-// auth indisponible (currentUser null) : on tente quand même, les API diront si l'accès est refusé.
 if (currentUser && currentUser.role !== "admin") {
-  document.querySelector("[data-administration-forbidden]").hidden = false;
-} else {
+  window.location.replace("/");
+} else if (currentUser?.role === "admin") {
   document.querySelector("[data-administration-workspace]").hidden = false;
   const reviewerName = currentUser?.fullName || currentUser?.username || "Administrateur";
 

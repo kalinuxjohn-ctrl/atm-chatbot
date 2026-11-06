@@ -1,0 +1,65 @@
+# Local Windows/WSL launcher. Reuses the existing database and upload volumes.
+services:
+  db:
+    container_name: !reset null
+    ports: !override
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+
+  init-db:
+    container_name: !reset null
+    environment:
+      SEED_DEMO_DATA: "false"
+
+  web:
+    container_name: !reset null
+    gpus: !reset []
+    ports: !override
+      - "127.0.0.1:${CHATBOT_API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  main-app-auth:
+    container_name: !reset null
+    environment:
+      MAIN_APP_ENVIRONMENT: development
+      MAIN_APP_COOKIE_SECURE: "false"
+      MAIN_APP_DEVELOPMENT_AUTO_LOGIN_USERNAME: ""
+      MAIN_APP_ALLOW_REGISTRATION: "false"
+
+  main-app-map:
+    container_name: !reset null
+    environment:
+      MAIN_APP_ENVIRONMENT: development
+      MAIN_APP_COOKIE_SECURE: "false"
+      MAIN_APP_DEVELOPMENT_AUTO_LOGIN_USERNAME: ""
+
+  main-app-messaging:
+    container_name: !reset null
+    environment:
+      MAIN_APP_ENVIRONMENT: development
+      MAIN_APP_COOKIE_SECURE: "false"
+      MAIN_APP_DEVELOPMENT_AUTO_LOGIN_USERNAME: ""
+
+  main-app-calls:
+    container_name: !reset null
+    environment:
+      MAIN_APP_ENVIRONMENT: development
+      MAIN_APP_COOKIE_SECURE: "false"
+      MAIN_APP_DEVELOPMENT_AUTO_LOGIN_USERNAME: ""
+      MAIN_APP_PUBLIC_ORIGIN: "http://localhost:${MAIN_APP_GATEWAY_PORT:-8080}"
+
+  main-app-gateway:
+    container_name: !reset null
+    ports: !override
+      - "127.0.0.1:${MAIN_APP_GATEWAY_PORT:-8080}:8080"
+
+  main-app-database-setup:
+    container_name: !reset null
+
+networks:
+  main-app-network:
+    name: !reset null

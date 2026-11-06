@@ -34,11 +34,12 @@ services:
     environment:
       PGPASSWORD: postgrespassword
       DATABASE_URL: ${DATABASE_URL}
-      HF_HOME: ${HF_HOME}
+      HF_HOME: ${HF_HOME:-/root/.cache/huggingface}
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER}
       VOYAGE_API_KEY: ${VOYAGE_API_KEY}
-      VOYAGE_MODEL: ${VOYAGE_MODEL}
-      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS}
+      VOYAGE_MODEL: ${VOYAGE_MODEL:-voyage-3-large}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1024}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
       
 
     depends_on:
@@ -93,8 +94,12 @@ services:
         # Idempotents par construction (ON CONFLICT ... DO NOTHING) --
         # peuvent donc tourner à chaque démarrage sans souci, contrairement
         # aux migrations ci-dessus.
-        python -m db.seed.seed_demo_data
-        python -m app.jobs.recompute_stats
+        if [ "$${SEED_DEMO_DATA}" = "true" ]; then
+          python -m db.seed.seed_demo_data
+          python -m app.jobs.recompute_stats
+        else
+          echo "Données existantes conservées : aucun seed de démonstration."
+        fi
 
 
   web:
@@ -112,18 +117,18 @@ services:
 
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      HF_HOME: ${HF_HOME}
-      SYMPTOM_SIMILARITY_THRESHOLD: ${SYMPTOM_SIMILARITY_THRESHOLD}
+      HF_HOME: ${HF_HOME:-/root/.cache/huggingface}
+      SYMPTOM_SIMILARITY_THRESHOLD: ${SYMPTOM_SIMILARITY_THRESHOLD:-0.5}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       LLM_PROVIDER: ${LLM_PROVIDER:-claude}
-      GEMINI_MODEL: ${GEMINI_MODEL}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
       CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
       CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-5-5}
       ADMIN_API_KEY: ${ADMIN_API_KEY:-}
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER}
       VOYAGE_API_KEY: ${VOYAGE_API_KEY}
-      VOYAGE_MODEL: ${VOYAGE_MODEL}
-      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS}
+      VOYAGE_MODEL: ${VOYAGE_MODEL:-voyage-3-large}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1024}
       # Photos du chat (OCR par Claude) : false pour désactiver la fonctionnalité.
       PHOTO_OCR_ENABLED: ${PHOTO_OCR_ENABLED:-true}
 

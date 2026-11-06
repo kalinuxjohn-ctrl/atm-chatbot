@@ -66,3 +66,29 @@ export function redirectToLoginPage() {
   const currentPath = `${window.location.pathname}${window.location.search}`;
   window.location.assign(`/auth/login.html?next=${encodeURIComponent(currentPath)}`);
 }
+
+/** Le retour après connexion respecte l'origine et les droits du compte connecté. */
+export function findSafeLoginRedirectPath(requestedPath, userRole, origin) {
+  if (!requestedPath || !requestedPath.startsWith("/") || requestedPath.startsWith("//") ||
+      requestedPath.includes("\\") || [...requestedPath].some((character) => character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127)) {
+    return "/";
+  }
+  let destination;
+  let pathname;
+  try {
+    destination = new URL(requestedPath, origin);
+    pathname = decodeURIComponent(destination.pathname);
+  } catch {
+    return "/";
+  }
+  if (destination.origin !== origin) {
+    return "/";
+  }
+  const requiresAdministrator = pathname === "/admin" || pathname.startsWith("/admin/") ||
+    pathname === "/auth/accounts.html" || pathname === "/atm-chatbot/app/admin.html" ||
+    pathname === "/atm-chatbot/app/api/admin" || pathname.startsWith("/atm-chatbot/app/api/admin/");
+  if (requiresAdministrator && userRole !== "admin") {
+    return "/";
+  }
+  return `${destination.pathname}${destination.search}${destination.hash}`;
+}

@@ -4,16 +4,10 @@
  * (?next=https://site-pirate) enverrait l'utilisateur ailleurs (open redirect).
  */
 
-import { requestJson } from "/shared/js/apiClient.js";
+import { findSafeLoginRedirectPath, requestJson } from "/shared/js/apiClient.js";
 
 const loginForm = document.querySelector("[data-login-form]");
 const formError = document.querySelector("[data-form-error]");
-
-function findSafeRedirectPath() {
-  const requestedPath = new URLSearchParams(window.location.search).get("next") ?? "/";
-  const pointsToThisSite = requestedPath.startsWith("/") && !requestedPath.startsWith("//") && !requestedPath.includes("\\");
-  return pointsToThisSite ? requestedPath : "/";
-}
 
 function showError(message) {
   formError.textContent = message;
@@ -32,8 +26,9 @@ loginForm.addEventListener("submit", async (submitEvent) => {
   const submitButton = loginForm.querySelector("[type=submit]");
   submitButton.disabled = true;
   try {
-    await requestJson("/api/auth/login", { method: "POST", body: { username, password } });
-    window.location.assign(findSafeRedirectPath());
+    const { user } = await requestJson("/api/auth/login", { method: "POST", body: { username, password } });
+    const requestedPath = new URLSearchParams(window.location.search).get("next");
+    window.location.assign(findSafeLoginRedirectPath(requestedPath, user.role, window.location.origin));
   } catch (error) {
     showError(error.message);
     loginForm.elements.password.value = "";

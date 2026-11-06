@@ -7,3 +7,4 @@ __pycache__
 env .example
 docker-cache
 frontend/node_modules
+.local

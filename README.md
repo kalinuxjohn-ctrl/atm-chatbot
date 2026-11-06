@@ -1,3 +1,66 @@
+# ATM-Chatbot et Espace techniciens
+
+## Lancement local en une commande (Windows / WSL)
+
+Depuis PowerShell, avec WSL et Docker Compose **2.24.4 ou plus** dans la distribution :
+
+```powershell
+.\start.ps1
+```
+
+Depuis WSL : `bash start.sh`.
+
+Le lanceur construit les images, applique les migrations manquantes, démarre tous
+les modules et attend leur disponibilité. Il affiche ensuite les liens exacts et
+les ports : application, connexion, administration, chatbot, API et PostgreSQL.
+Les ports par défaut sont **8080**, **8000** et **5432**, accessibles uniquement
+depuis cette machine. Les autres services restent sur le réseau Docker interne.
+
+- Le fichier `.env` existant est conservé ; seuls les paramètres locaux manquants
+  sont ajoutés. Il faut renseigner `DATABASE_URL`, `VOYAGE_API_KEY` et la clé du
+  fournisseur `LLM_PROVIDER` (`CLAUDE_API_KEY` ou `GEMINI_API_KEY`).
+- La base `atm-chatbot_pgdata` et les pièces jointes existantes sont réutilisées :
+  aucune remise à zéro, aucun seed de démonstration ni appel IA au démarrage.
+- S'il existe déjà un administrateur actif, son compte reste inchangé. Sinon,
+  le compte `admin` est créé avec un mot de passe aléatoire dans
+  [`.local/initial-admin.json`](.local/initial-admin.json), ignoré par Git.
+  Lire ce fichier localement, se connecter, changer le mot de passe dans
+  **Mon compte**, puis supprimer ce fichier. Ne jamais le partager ni le committer.
+  Si `admin` est déjà pris par un compte non administrateur, le lancement échoue
+  explicitement sans modifier ce compte : utiliser la création interactive ci-dessous.
+- Les techniciens sont créés ensuite dans **Administration → Comptes**.
+- Ce mode reste du **développement local HTTP**, sans certificat ni configuration
+  de production : connexion obligatoire, inscription libre désactivée, cookies
+  non Secure autorisés uniquement dans ce mode. Le rechargement du backend Python
+  est conservé ; les modifications des images Node nécessitent de relancer.
+- Le GPU n'est pas requis pour les API Voyage / Claude / Gemini. L'image Python
+  existante est réutilisée, ou construite si absente. Après modification de
+  `requirements.txt` ou `Dockerfile.base`, lancer `.\start.ps1 --rebuild-base`.
+
+```powershell
+.\start.ps1 status  # Etat de tous les services
+.\start.ps1 logs    # Journaux (Ctrl+C pour quitter, les services restent actifs)
+.\start.ps1 stop    # Arret sans suppression des donnees
+```
+
+Pour changer les ports, définir `MAIN_APP_GATEWAY_PORT`, `CHATBOT_API_PORT` et/ou
+`DB_PORT` dans `.env`, puis relancer. L'origine WebSocket des appels suit
+automatiquement le port de l'application. Les ports réellement publiés sont
+relus depuis Docker avant affichage ; un conflit de port arrête le lancement.
+
+La configuration locale superpose
+[`docker-compose.local.yml`](docker-compose.local.yml) aux deux fichiers Compose
+existants, avec le même nom de projet `atm-chatbot`. Ne pas utiliser `down -v` :
+cela supprimerait la base et les pièces jointes.
+
+Création interactive d'un administrateur supplémentaire depuis WSL :
+
+```bash
+docker compose -p atm-chatbot -f docker-compose.yml -f docker-compose.main-app.yml -f docker-compose.local.yml exec main-app-auth node src/jobs/createAdmin.js
+```
+
+La préparation d'un vrai déploiement HTTPS/Linux reste une étape ultérieure.
+
 # Tracing du backend
 
 Le module `app/core/tracing.py` fournit `trace(category, message, **details)`.
@@ -106,6 +169,9 @@ Une recherche réussie sans résultat reste un cas métier normal, pas une panne
 Le seed n'a aucun mode dégradé : si Voyage échoue, il s'arrête en erreur.
 
 ## Tests ciblés
+
+Lanceur local (dans WSL, sans démarrer Docker ni appeler les IA) :
+`python3 -B -m unittest discover -s tests -p test_local_startup.py -v`
 
 `python -m pytest tests/test_device_type_query.py -q`
 

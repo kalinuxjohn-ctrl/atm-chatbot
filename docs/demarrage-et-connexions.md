@@ -23,6 +23,14 @@ Le projet contient **deux applications** qui partagent une base PostgreSQL :
 
 **L'Espace techniciens est la seule porte d'entrée.** On s'y connecte une fois, puis on retrouve le chatbot dans l'onglet **ATM-Chatbot** et son administration dans la page **Administration**. Le navigateur ne parle qu'au gateway : c'est lui qui joint le chatbot, après avoir vérifié la session.
 
+La page `/admin/` et tous ses fichiers sont également protégés côté gateway :
+sans session, redirection vers la connexion ; avec un compte technicien ou
+modérateur, redirection vers l'accueil, sans servir le HTML d'administration.
+Après connexion, un retour `?next=/admin/` n'est conservé que pour un administrateur.
+Les API administratives vérifient toujours les droits indépendamment de ces
+redirections. Si le service de connexion est indisponible, le gateway refuse de
+servir l'administration (503) ; la page ne déverrouille pas les rubriques sans rôle vérifié.
+
 ```mermaid
 flowchart LR
     navigateur([Navigateur])
@@ -55,6 +63,20 @@ flowchart LR
 ---
 
 ## 1. Lancer le projet
+
+### Lancement local recommandé (Windows / WSL)
+
+Depuis PowerShell : `.\start.ps1`. Depuis WSL : `bash start.sh`.
+Cette commande lance toutes les applications, prépare les paramètres manquants,
+réutilise la base et les pièces jointes existantes, crée le premier administrateur
+si nécessaire et affiche toutes les adresses et tous les ports après vérification.
+Elle n'ajoute pas de données de démonstration. Les identifiants initiaux, seulement
+si aucun administrateur actif n'existe, sont dans `.local/initial-admin.json`
+(non suivi par Git ; changer le mot de passe puis supprimer ce fichier).
+
+Ce lancement est en **développement local HTTP**, sans GPU obligatoire ni
+certificat. Les commandes historiques ci-dessous restent disponibles ; pour le
+nouveau lanceur et ses options, voir le [README racine](../README.md).
 
 ### 1.1 Prérequis
 

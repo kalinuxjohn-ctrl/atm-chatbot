@@ -99,6 +99,13 @@ MAIN_APP_COOKIE_SECURE=false
 
 ### Démarrage
 
+Pour démarrer tout le projet en local depuis la racine :
+`.\start.ps1` dans PowerShell, ou `bash start.sh` dans WSL. Le lanceur conserve
+les données, prépare les paramètres manquants et le premier administrateur, puis
+affiche les liens et les ports. Voir le [guide racine](../../README.md).
+Ce mode est en développement HTTP ; il ne remplace pas un déploiement HTTPS
+de production. Les commandes manuelles ci-dessous restent disponibles.
+
 ```bash
 # Lancer le chatbot et l'Espace techniciens
 docker compose -f docker-compose.yml -f docker-compose.main-app.yml up -d --build
