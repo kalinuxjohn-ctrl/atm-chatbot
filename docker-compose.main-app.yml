@@ -27,10 +27,8 @@
 
 # --- Durcissement commun aux conteneurs Node -------------------------------
 x-main-app-node-service: &main-app-node-service
-  build:
-    context: ./main-app
-    dockerfile: Dockerfile
   image: atm-main-app:latest
+  pull_policy: never
   restart: unless-stopped
   # Système de fichiers en lecture seule : seul /tmp est inscriptible (en mémoire).
   read_only: true
@@ -88,7 +86,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      # Les migrations 0014 à 0018 sont appliquées par le mécanisme existant du chatbot.
+      # Les migrations 0014 à 0019 sont appliquées par le mécanisme existant du chatbot.
       init-db:
         condition: service_completed_successfully
     healthcheck:
@@ -96,6 +94,14 @@ services:
 
   main-app-auth:
     <<: *main-app-node-service
+    # Un seul export pour l'image partagee par les services Node et le job DB.
+    build:
+      context: ./main-app
+      dockerfile: Dockerfile
+      additional_contexts:
+        branding: ./scripts
+      args:
+        APP_NAME: ${APP_NAME:-atm-chatbot}
     container_name: main-app-auth
     command: ["node", "src/entrypoints/auth.js"]
     environment:
@@ -119,6 +125,7 @@ services:
       MAIN_APP_MAP_TILE_USER_AGENT: ${MAIN_APP_MAP_TILE_USER_AGENT:?MAIN_APP_MAP_TILE_USER_AGENT manquant dans .env}
       MAIN_APP_MAP_TILE_MAX_ZOOM: ${MAIN_APP_MAP_TILE_MAX_ZOOM:-19}
       MAIN_APP_MAP_TILE_CACHE_ENTRIES: ${MAIN_APP_MAP_TILE_CACHE_ENTRIES:-2000}
+      MAIN_APP_MAP_ROUTING_API_KEY: ${MAIN_APP_MAP_ROUTING_API_KEY:-}
 
   main-app-messaging:
     <<: *main-app-node-service
@@ -147,6 +154,10 @@ services:
     build:
       context: ./main-app/gateway
       dockerfile: Dockerfile
+      additional_contexts:
+        branding: ./scripts
+      args:
+        APP_NAME: ${APP_NAME:-atm-chatbot}
     image: atm-main-app-gateway:latest
     container_name: main-app-gateway
     restart: unless-stopped
@@ -186,6 +197,10 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      additional_contexts:
+        branding: ./scripts
+      args:
+        APP_NAME: ${APP_NAME:-atm-chatbot}
     image: atm-chatbot-frontend:latest
     restart: unless-stopped
     cap_drop:

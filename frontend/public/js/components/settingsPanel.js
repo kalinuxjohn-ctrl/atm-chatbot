@@ -135,7 +135,7 @@ export function createSettingsPanel({ dialog }) {
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    dialog.close();
+    if (dialog instanceof HTMLDialogElement) dialog.close();
   });
 
   testVoiceButton.addEventListener("click", () => {
@@ -150,15 +150,18 @@ export function createSettingsPanel({ dialog }) {
   } else {
     void fillVoiceOptions();
     // Edge et Chrome ajoutent parfois leurs voix en ligne après le chargement de la page.
-    window.speechSynthesis.addEventListener("voiceschanged", () => void fillVoiceOptions());
+    window.speechSynthesis?.addEventListener("voiceschanged", () => void fillVoiceOptions());
   }
   recognitionNote.hidden = isSpeechRecognitionSupported();
   onPreferencesChange(syncForm);
 
   return {
-    open() {
+    refresh() {
       syncForm();
       if (isSpeechSynthesisSupported()) void fillVoiceOptions();
+    },
+    open() {
+      this.refresh();
       dialog.showModal();
     },
   };

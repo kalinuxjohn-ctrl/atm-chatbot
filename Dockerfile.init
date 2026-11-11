@@ -1,4 +1,4 @@
-FROM atm-python-base:latest
+FROM atm-python-base
 
 WORKDIR /app
 

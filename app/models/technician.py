@@ -6,7 +6,7 @@ from app.core.database import Base
 
 
 class Technician(Base):
-    __tablename__ = "technician"
+    __tablename__ = "technicien"
 
     technician_id = Column(Integer, primary_key=True)
     full_name = Column(String, nullable=False)

@@ -12,11 +12,13 @@ class CaseSummaryPromptTests(unittest.TestCase):
         problem = "Le GAB est hors service car les piles sont mortes."
         with (
             patch.object(orchestrator, "_format_case", return_value="Cas 1 : carte retenue."),
-            patch.object(orchestrator.llm_service, "generate_reply", return_value="response") as generate,
+            patch.object(orchestrator.llm_service, "generate_chat_reply", return_value="response") as generate,
         ):
             self.assertEqual(orchestrator._summarize_cases(problem, [{}], "gab"), "response")
         generate.assert_called_once()
-        prompt = generate.call_args.args[0]
+        prompt = generate.call_args.args[0] + generate.call_args.args[1][0]["content"]
+        self.assertTrue(generate.call_args.kwargs["cache_history"])
+        self.assertNotIn(problem, generate.call_args.args[0])
         self.assertIn(problem, prompt)
         self.assertIn("Cas 1 : carte retenue.", prompt)
         self.assertIn("ne garantit PAS leur pertinence technique", prompt)
@@ -28,18 +30,18 @@ class CaseSummaryPromptTests(unittest.TestCase):
         self.assertIn("Conserve leurs numéros d'origine", prompt)
 
     def test_empty_candidates_request_explicitly_labeled_suggestions(self):
-        with patch.object(orchestrator.llm_service, "generate_reply", return_value="suggestions") as generate:
+        with patch.object(orchestrator.llm_service, "generate_chat_reply", return_value="suggestions") as generate:
             self.assertEqual(
                 orchestrator._summarize_cases("problem", []),
                 "suggestions",
             )
-        self.assertIn("Aucun cas candidat.", generate.call_args.args[0])
+        self.assertIn("Aucun cas candidat.", generate.call_args.args[1][0]["content"])
         self.assertIn("n'ajoute pas de long avertissement", generate.call_args.args[0])
 
     def test_aggregate_prompt_handles_empty_and_nonempty_results(self):
         for solutions in ([], [dict(symptom_text="carte", action_text="test", successes=1,
                                     attempts=2, accuracy_score=0.5)]):
-            with patch.object(llm_service, "generate_reply", return_value="reply") as generate:
+            with patch.object(llm_service, "generate_chat_reply", return_value="reply") as generate:
                 self.assertEqual(llm_service.summarize_solutions("rejet", solutions, "gab"), "reply")
             self.assertIn("Néanmoins, en tant que chatbot d'aide à la maintenance", generate.call_args.args[0])
             self.assertIn("En complément, voici mes conseils de chatbot", generate.call_args.args[0])

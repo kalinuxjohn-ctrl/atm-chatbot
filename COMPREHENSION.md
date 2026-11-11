@@ -174,7 +174,7 @@ case_detail_service.build_case_dossier()   relit TOUTES les tables du cas :
 - Le 2e appel n'a lieu **que** pour une demande de détail sur un cas réel. Les
   autres questions (« ça n'a pas marché », un résultat statistique) gardent la
   réponse du 1er appel, sans surcoût.
-- **Pièce en cause** : `diagnosis.root_cause_component_text`, en **texte libre**
+- **Pièce en cause** : `diagnostic.root_cause_component_text`, en **texte libre**
   (migration 0013), saisie dans le formulaire « Proposer une intervention ». Pas
   de liste ni de table à remplir avant. Les anciens diagnostics qui n'avaient
   que `root_cause_component_id` reçoivent le nom de la pièce du catalogue.
@@ -219,9 +219,9 @@ Les vecteurs de recherche unitaires sont gardés en cache (`lru_cache`).
 
 `retrieval_service.fetch_similar_symptoms_per_symptom(db, textes, device_type)`
 lance, pour chaque symptôme, `fetch_similar_symptoms(db, texte, device_type)` :
-- requête pgvector sur `intervention_symptom.embedding` avec l'opérateur
+- requête pgvector sur `symptome_intervention.embedding` avec l'opérateur
   `<=>` (distance cosinus), convertie en `similarity = 1 - distance` ;
-- **filtre par `device_type`** (jointure `intervention` → `device`) : un
+- **filtre par `device_type`** (jointure `intervention` → `appareil`) : un
   symptôme de TPE ne sort jamais pour un GAB ;
 - **filtre par modèle** si le message en cite un (`model_name_text`) ;
 - **seuil de pertinence** `SYMPTOM_SIMILARITY_THRESHOLD` (0.5 par défaut) :
@@ -240,7 +240,7 @@ lance, pour chaque symptôme, `fetch_similar_symptoms(db, texte, device_type)` :
   puis par **similarité moyenne**, et garde les **3 meilleures** ;
 - `build_case()` assemble pour chacune : technicien, machine, symptômes
   recoupés (`matched_symptoms`), actions dans l'ordre, diagnostic, résultat
-  final et **fiabilité** (lue dans `symptom_action_outcome_stats` pour l'action
+  final et **fiabilité** (lue dans `statistiques_resultats_symptome_action` pour l'action
   qui a résolu le cas). La correspondance la plus proche reste la référence
   unique du cas (`matched_symptom_text`, `matched_intervention_symptom_id`),
   utilisée par les propositions de solution.
@@ -263,7 +263,7 @@ celui-ci est alors renvoyé et la cause est journalisée.
 
 ## 7. La gestion du contexte (pour demander plus d'aide)
 
-Fichier : `app/services/context_service.py`. Table : `conversation_context`
+Fichier : `app/services/context_service.py`. Table : `contexte_conversation`
 (**une ligne JSON par conversation**).
 
 Contenu typique du contexte :
@@ -293,7 +293,7 @@ Comment ça marche :
 - après chaque recherche, `record_last_search()` mémorise **les cas affichés
   avec leur numéro** (et efface l'ancienne sélection) ;
 - à chaque message, les résultats mémorisés sont **relus en base**
-  (`build_case`) et envoyés au LLM avec toute la conversation : c'est lui qui
+  (`build_case`) et envoyés au LLM avec la mémoire de conversation : c'est lui qui
   comprend « le **cas 2** », « le deuxième » ou « celui d'Alan » ;
 - le LLM renvoie le numéro du résultat visé ; `select_result_by_position()`
   vérifie qu'il existe et le retient (référence d'une proposition de solution) ;
@@ -304,7 +304,15 @@ Comment ça marche :
 **Limites actuelles, à connaître :**
 - les échanges des menus de suggestions (pannes fréquentes, codes d'erreur)
   ne sont pas enregistrés côté backend : le LLM ne les voit pas ;
-- l'historique envoyé est limité aux `CHAT_HISTORY_MAX_MESSAGES` (100) derniers messages ;
+- les six derniers échanges (tour technicien et réponses associées) restent intacts ;
+- les échanges anciens sont condensés par Claude à partir de 12000 caractères anciens
+  ou de `CHAT_HISTORY_MAX_MESSAGES` (100) messages non résumés avec au moins 1000
+  caractères anciens. Le résumé est persisté dans le contexte JSONB, avec le dernier
+  message couvert ; les originaux restent en base. Les tours suivants réutilisent
+  ce résumé sans nouvel appel de condensation avant le prochain seuil ;
+- le résumé doit être au moins 25 % plus court que sa source et ne pas dépasser
+  6000 caractères. Il préserve les faits techniques, corrections, actions et résultats,
+  mais une reformulation ne garantit pas chaque nuance de l'échange original ;
 - si aucun `device_type` n'a été donné (ni dans l'interface, ni dans le
   message), aucune recherche n'est lancée : l’ATM-Chatbot demande GAB ou TPE ;
 - un `technician_id` inexistant provoque une erreur de clé étrangère (500).
@@ -331,7 +339,7 @@ l'action est cataloguée.
 
 **Principe clé** : on sépare
 - le **brut** (`raw_text`), c'est-à-dire ce que le technicien a écrit, qui sert à la recherche sémantique ;
-- le **catalogue** (`symptom`, `action`), c'est-à-dire un vocabulaire contrôlé qui sert aux statistiques.
+- le **catalogue** (`symptome`, `action`), c'est-à-dire un vocabulaire contrôlé qui sert aux statistiques.
 
 ---
 
@@ -339,14 +347,14 @@ l'action est cataloguée.
 
 | Groupe | Tables | Rôle |
 | --- | --- | --- |
-| Parc | `manufacturer`, `device_model`, `device_model_version`, `device` | les machines ; `device.device_type` = **`gab` ou `tpe` uniquement** (ENUM SQL) |
-| Personnes | `technician` | qui intervient |
-| Interventions | `intervention`, `intervention_symptom` (+ `embedding vector(1024)`), `intervention_action`, `diagnosis` | l'historique réel |
-| Catalogue | `component`, `symptom`, `action` | vocabulaire normalisé |
-| Statistiques | `symptom_action_outcome_stats` | fiabilité de chaque paire (symptôme, action) **par type d'appareil** |
-| Conversation | `conversation`, `conversation_message`, `conversation_context` | fil de chat + mémoire JSON |
-| Codes d'erreur | `fault`, `error_code` | référentiel indépendant (recherche SQL classique) ; `device_type` + `reply` = réponse enregistrée du menu de suggestions |
-| Pannes fréquentes | `usual_problem` | menu de suggestions de l’ATM-Chatbot, réponse enregistrée par les admins (sans IA) |
+| Parc | `fabricant`, `modele_appareil`, `version_modele_appareil`, `appareil` | les machines ; `appareil.device_type` = **`gab` ou `tpe` uniquement** (ENUM SQL) |
+| Personnes | `technicien` | qui intervient |
+| Interventions | `intervention`, `symptome_intervention` (+ `embedding vector(1024)`), `action_intervention`, `diagnostic` | l'historique réel |
+| Catalogue | `composant`, `symptome`, `action` | vocabulaire normalisé |
+| Statistiques | `statistiques_resultats_symptome_action` | fiabilité de chaque paire (symptôme, action) **par type d'appareil** |
+| Conversation | `conversation`, `message_conversation`, `contexte_conversation` | fil de chat + mémoire JSON |
+| Codes d'erreur | `panne`, `code_erreur` | référentiel indépendant (recherche SQL classique) ; `device_type` + `reply` = réponse enregistrée du menu de suggestions |
+| Pannes fréquentes | `panne_frequente` | menu de suggestions de l’ATM-Chatbot, réponse enregistrée par les admins (sans IA) |
 
 **Migrations** (`db/migrations/`, appliquées dans l'ordre, une seule fois,
 suivies dans `schema_migrations`) :
@@ -355,7 +363,7 @@ suivies dans `schema_migrations`) :
 précis · `0006` conversations + contexte · `0007` codes d'erreur · `0008`
 embeddings Voyage (1024) · `0009` propositions de solution · `0010` action
 issue d'une proposition · `0011` menus de suggestions · `0012` ajouts
-d'intervention · `0013` pièce en cause en texte libre (`diagnosis.root_cause_component_text`).
+d'intervention · `0013` pièce en cause en texte libre (`diagnostic.root_cause_component_text`).
 
 **`device_type`** : contrôlé en base (ENUM) et dans l'API par
 `app/schemas/device_type.py`. `" GAB "` et `"Tpe"` sont normalisés en
@@ -364,7 +372,7 @@ d'intervention · `0013` pièce en cause en texte libre (`diagnosis.root_cause_c
 ### Les statistiques
 
 `stats_service.recompute_stats()` vide puis recalcule
-`symptom_action_outcome_stats` : pour chaque (symptôme catalogué, action
+`statistiques_resultats_symptome_action` : pour chaque (symptôme catalogué, action
 cataloguée, `device_type`), on compte les tentatives (`attempts`), les succès
 (`successes`) et on calcule `accuracy_score = successes / attempts`.
 Il est lancé par `init-db`, après l'ajout d'une action cataloguée, et par
@@ -378,7 +386,7 @@ Il est lancé par `init-db`, après l'ajout d'une action cataloguée, et par
 - **Intervention 3045 (Bob)** : symptômes en partie communs → résolue par le
   **remplacement du capteur** : même panne, autre solution, rien n'est fusionné ;
 - pièce en cause : « Card reader » (3001) et « Card-retention sensor » (3045,
-  texte libre absent de la table `component`) ;
+  texte libre absent de la table `composant`) ;
 - codes d'erreur E42, E43, E67 ;
 - calcul des embeddings des 6 symptômes (`EMBEDDING_BACKFILL`, dont le texte
   doit être **identique mot pour mot** à celui des `INSERT`) ;
@@ -430,7 +438,7 @@ Documentation interactive : <http://localhost:8000/docs>.
 | `SYMPTOM_CATALOG_MATCH_MAX_DISTANCE` | 0.15 | seuil de rattachement automatique au catalogue |
 | `ACTION_CATALOG_MATCH_MAX_DISTANCE` | 0.15 | réutilisation d'une action du catalogue à l'approbation |
 | `MAX_SYMPTOMS_PER_MESSAGE` | 5 | symptômes d'un message cherchés séparément |
-| `CHAT_HISTORY_MAX_MESSAGES` | 100 | anciens messages envoyés au LLM |
+| `CHAT_HISTORY_MAX_MESSAGES` | 100 | seuil de condensation des messages non résumés (six derniers échanges conservés) |
 | `PHOTO_OCR_ENABLED` | `true` | photos du chat lues par Claude (§5.1) ; `false` = fonctionnalité coupée |
 | `PHOTO_MAX_BYTES` | 3 500 000 | taille maximale d'une photo, une fois décodée |
 | `ADMIN_API_KEY` | vide (admin désactivé) | clé des routes `/api/admin` |

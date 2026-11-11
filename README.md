@@ -1,5 +1,74 @@
 # ATM-Chatbot et Espace techniciens
 
+## Commandes Docker directes (WSL)
+
+Avec `.env` déjà configuré, depuis la racine du dépôt :
+
+```bash
+docker compose up --build
+```
+
+Pour lancer en arrière-plan : `docker compose up -d --build`.
+Pour voir les services et les ports : `docker compose ps`.
+[`compose.yaml`](compose.yaml), chargé automatiquement par Docker, regroupe les
+trois configurations existantes avec le même projet et les mêmes volumes.
+
+Le nom public est defini par `APP_NAME=atm-chatbot` dans `.env`. Il est applique
+au build aux titres, textes, logos SVG et a la navigation de toutes les pages
+(connexion, carte, messagerie, appels, administration et chatbot).
+Apres un changement de nom, relancer `docker compose up -d --build`.
+Utiliser 1 a 80 caracteres : lettres ASCII, chiffres, espaces, points, tirets
+ou underscores. Les routes, cles de stockage du navigateur et volumes restent
+inchanges pour conserver les sessions et les donnees.
+
+Les tables sont renommées automatiquement par la migration 0019 au démarrage,
+sans supprimer les données. Voir les [noms français et le retour arrière](docs/tables-en-francais.md).
+Les comptes existants restent inchangés. L'application utilise par défaut 8080,
+l'API 8000 et PostgreSQL 5432 ; `ps` affiche les ports réellement publiés.
+L'image Python de base est construite automatiquement avant `web` et `init-db`,
+meme sur une nouvelle installation Docker. Le service auxiliaire `python-base`
+termine immediatement avec le code 0 ; il n'ouvre aucun port.
+Les lanceurs ci-dessous sont facultatifs, pas nécessaires à ces commandes.
+
+Pour redemarrer sans changement des images, `docker compose up -d` suffit :
+`--build` n'est utile qu'apres une modification. Le contexte du build Python
+est limite a `app`, `db` et aux dependances par `.dockerignore`, sans les caches
+Python ni les fichiers locaux. Sous WSL, un depot dans `/mnt/f` reste sur le
+disque Windows ; pour de meilleures performances de lecture, preferer un
+depot dans le systeme de fichiers Linux (par exemple `~/projets/atm-chatbot`).
+
+## Carte et interface du chatbot
+
+La navigation principale est la seule barre laterale. Son en-tete salue
+l'utilisateur ; le menu deroulant du chatbot contient Conversation et Nouvelle
+conversation. L'engrenage Parametres est dans la navigation principale, sous
+Appels : theme, notifications et acces aux preferences de l'assistant.
+Le bouton en haut de la barre permet de la retracter
+ou de la deployer ; ce choix est memorise dans le navigateur.
+Le choix clair/sombre se trouve dans Parametres > Apparence et s'applique
+a toute l'application. Le chatbot reprend la palette verte de la navigation.
+Les informations du technicien sont en haut du chat, a cote du
+Chat vocal. Le panneau de contexte et les liens Diagnostic / Ajouter une
+intervention ont ete retires du chat integre. La conversation, les suggestions,
+les photos, la voix et les preferences restent disponibles.
+
+Un clic sur un point ouvre son menu : Demander l'itineraire, puis Modifier
+et Supprimer si l'utilisateur en a le droit. La localisation et le calcul ne
+demarrent qu'apres le choix de l'itineraire.
+La carte trace les itineraires avec OpenRouteService.
+Renseigner `MAIN_APP_MAP_ROUTING_API_KEY` dans `.env`, puis reconstruire les
+images avec `docker compose up -d --build`. Pour un changement de cle seul :
+`docker compose up -d --no-deps main-app-map`.
+Sans cle, les points et le fond de carte fonctionnent toujours ; le panneau
+d'itineraire indique explicitement que le service n'est pas configure.
+
+Modes : a pied, velo, voiture et moto (profil voiture, sans contraintes
+specifiques aux motos). Choix entre distance la plus courte et temps le plus
+court. Le depart peut etre la position GPS autorisee par le navigateur, ou
+un clic manuel sur la carte. La geolocalisation exige HTTPS ou localhost.
+Seules les coordonnees du trajet sont transmises au fournisseur ; la cle
+reste cote serveur et les trajets ne sont pas enregistres en base.
+
 ## Lancement local en une commande (Windows / WSL)
 
 Depuis PowerShell, avec WSL et Docker Compose **2.24.4 ou plus** dans la distribution :
@@ -82,10 +151,19 @@ prompts, réponses LLM brutes, secrets ou données personnelles à `trace()`.
 3. Un seul appel au LLM (`message_understanding_service`) reçoit toute la
    conversation (au plus `CHAT_HISTORY_MAX_MESSAGES` anciens messages), le type
    d'appareil et le détail des résultats de la dernière recherche, relus en
-   base. Avec Claude, la consigne système et les anciens messages sont mis en
-   cache (1 h) : d'un message à l'autre, ils sont relus à ~10 % du prix ; seul
-   le dernier message (contexte du tour + message du technicien) est payé plein
-   tarif. La trace `[LLM] Utilisation du cache Claude` donne les jetons lus en cache. Il renvoie une intention, des
+   base. Avec Claude, des points de cache (1 h) sont places sur la consigne
+   systeme fixe et les anciens messages. Le cache ne s'applique qu'aux prefixes
+   identiques atteignant le seuil du modele : sa presence dans la requete ne
+   garantit pas un cache hit. La premiere ecriture 1 h coute 2 fois le tarif
+   d'entree normal ; les lectures sont reduites selon le modele (5 % sur
+   Sonnet 5.5, 10 % sur plusieurs autres modeles). Le dernier message reste
+   hors cache. Les traces `[LLM]` donnent le modele reel, la duree HTTP, les
+   tokens lus/ecrits en cache, les tokens non caches, la sortie, le raisonnement
+   et la raison d'arret, sans contenu des messages ni cle API.
+   Claude utilise une sortie JSON contrainte par le schema de comprehension,
+   puis la validation metier reste appliquee. Le premier appel avec un schema
+   peut demander une compilation supplementaire cote fournisseur.
+   Il renvoie une intention, des
    références textuelles et, hors diagnostic, sa réponse. Si sa sortie est
    invalide, une erreur explicite est remontée (HTTP 503), sans deviner.
    **Photo jointe** (Claude uniquement, `photo_ocr_service.py`) : la photo part
@@ -93,6 +171,15 @@ prompts, réponses LLM brutes, secrets ou données personnelles à `trace()`.
    et, s'il décrit une panne, l'ajoute aux `symptoms`. Une photo seule (sans
    texte) est acceptée. La photo n'est jamais enregistrée, seul le texte lu
    l'est. Désactivation : `PHOTO_OCR_ENABLED=false` dans `.env`.
+
+   Configuration du modele : une seule affectation, par exemple
+   `CLAUDE_MODEL=claude-sonnet-5-5`, jamais
+   `CLAUDE_MODEL=CLAUDE_MODEL=...` (desormais rejete au demarrage).
+   Une modification de `.env` exige `docker compose up -d --no-deps web`.
+   Une API payante ne garantit pas une reponse instantanee : nombre de tokens
+   generes, raisonnement, charge et reseau interviennent ; le cache accelere
+   la lecture du prefixe, pas la generation de la reponse.
+   Le message 503 parle d'indisponibilite, pas de saturation supposee.
 4. Selon l'intention :
    - conversation (tout ce qui n'est pas une nouvelle panne : suivi, question
      générale…) : la réponse du LLM est renvoyée telle quelle, sans second appel
@@ -118,6 +205,9 @@ prompts, réponses LLM brutes, secrets ou données personnelles à `trace()`.
      historiques ni de fiabilité. Ces consignes sont communes à Gemini et Claude.
      Ce contrôle porte sur la réponse :
      les candidats mémorisés dans le contexte restent inchangés.
+     Les consignes fixes de synthese des cas et des statistiques sont egalement
+     separees du contexte variable et marquees pour le cache Claude (meme seuil
+     minimal) ; les donnees des cas restent dans le message du tour.
 5. Sans cas réel, le diagnostic tente les statistiques agrégées. Sans résultat,
    le LLM est appelé pour proposer des vérifications explicitement identifiées
    comme des conseils du chatbot après une phrase signalant l'absence de résultat,
@@ -135,9 +225,9 @@ Les menus de suggestions de l’ATM-Chatbot répondent aussi sans IA, avec des r
 
 | Route | Rôle |
 | --- | --- |
-| `GET /api/usual_problem?device_type=gab` | pannes fréquentes de l'équipement (table `usual_problem`) |
+| `GET /api/usual_problem?device_type=gab` | pannes fréquentes de l'équipement (table `panne_frequente`) |
 | `GET /api/usual_problem/{id}/solution` | réponse enregistrée d'une panne fréquente |
-| `GET /api/error_code?device_type=gab` | codes d'erreur ayant une réponse enregistrée (`error_code.device_type` et `error_code.reply`) |
+| `GET /api/error_code?device_type=gab` | codes d'erreur ayant une réponse enregistrée (`code_erreur.device_type` et `code_erreur.reply`) |
 | `GET /api/error_code/{id}/solution` | réponse enregistrée d'un code d'erreur |
 
 Pour les deux listes, `device_type` est obligatoire : les espaces en bordure
@@ -203,20 +293,20 @@ Quand une réponse du chat contient des solutions, `POST /api/chat` renvoie
 solutions ne fonctionne », puis « Proposer une solution ».
 
 1. `GET /api/chat/conversations/{id}/solution-proposal-context?technician_id=`
-   relit le problème actif dans `conversation_context` (dernière recherche,
+   relit le problème actif dans `contexte_conversation` (dernière recherche,
    résultat sélectionné sinon le premier) et le renvoie pour affichage.
    409 si aucun problème n'est identifié, 403 si la conversation appartient
    à un autre technicien.
 2. `POST /api/chat/conversations/{id}/solution-proposals` ne reçoit que
    l'action, le résultat et `outcome_status`. Le backend relit le contexte,
-   crée une ligne `solution_proposal` (statut `pending`, migration 0009) avec
+   crée une ligne `proposition_solution` (statut `pending`, migration 0009) avec
    un `conversation_context_snapshot`, et ajoute la confirmation à l'historique.
 3. Page `admin.html`, routes `/api/admin/solution-proposals` protégées par
    `ADMIN_API_KEY` (en-tête `X-Admin-Key`) : approuver ou rejeter. Une
    approbation ajoute l'action au catalogue `action`, ou réutilise une action
    équivalente (distance <= `ACTION_CATALOG_MATCH_MAX_DISTANCE`, 0.15).
    L'approbation rattache aussi la solution au problème : une ligne
-   `intervention_action` est ajoutée à l'intervention de référence, avec
+   `action_intervention` est ajoutée à l'intervention de référence, avec
    `targets_symptom_id` = le symptôme du problème (déjà vectorisé, aucun
    embedding recalculé) et `source_proposal_id` (migration 0010), puis les
    statistiques sont recalculées. Le chat la présente à part : « Solution
@@ -241,19 +331,19 @@ la validation d'un administrateur.
    avec la pièce en cause en texte libre (`root_cause_component_text`, aucune
    liste à respecter, migration 0013).
    L'appareil existant est cherché par `device_id`, sinon `serial_number`,
-   sinon type + modèle + site (`model_name` est cherché dans `device_model`).
+   sinon type + modèle + site (`model_name` est cherché dans `modele_appareil`).
    S'il n'existe pas, il sera **créé à l'approbation**, avec son modèle s'il
-   est absent de `device_model` ; `device_type` est alors obligatoire. La
+   est absent de `modele_appareil` ; `device_type` est alors obligatoire. La
    recherche est refaite à l'approbation : rien n'est créé en double.
-   Une ligne `intervention_add` est créée (statut `pending`, migration 0012).
+   Une ligne `ajout_intervention` est créée (statut `pending`, migration 0012).
    Règles vérifiées (sinon 422) : une intervention `resolved` a une action
    `is_confirmed_solution`, qui a `outcome_status = resolved`, et inversement.
    `GET /api/intervention_add?technician_id=` liste ses demandes.
 2. Routes `/api/admin/intervention_add` (clé `X-Admin-Key`) :
    - `GET /{id}` : contenu actuel et envoi d'origine (`submitted_content`, jamais modifié) ;
    - `GET /{id}/preview` : **ce que l'approbation écrira, table par table**
-     (`intervention`, `intervention_symptom`, `intervention_action`,
-     `diagnosis`, nouvelles entrées des catalogues `symptom` et `action`).
+     (`intervention`, `symptome_intervention`, `action_intervention`,
+     `diagnostic`, nouvelles entrées des catalogues `symptome` et `action`).
      Pour chaque symptôme et chaque action, `catalog_link` dit d'où vient le
      rattachement au catalogue : `chosen_by_admin`, `matched_existing`
      (distance ≤ `SYMPTOM_CATALOG_MATCH_MAX_DISTANCE` ou
@@ -300,7 +390,6 @@ La validation reste un module dans le backend existant, sans conteneur
 supplémentaire. Les dépendances sont installées dans l'image de base :
 
 ```powershell
-docker build -f Dockerfile.base -t atm-python-base:latest .
 docker compose up -d --build
 ```
 

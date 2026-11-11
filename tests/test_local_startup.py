@@ -10,6 +10,39 @@ from scripts import start
 
 
 class LocalStartupTests(unittest.TestCase):
+    def test_shared_node_image_has_only_one_build_owner(self):
+        compose = (Path(__file__).resolve().parents[1] / "docker-compose.main-app.yml").read_text(encoding="utf-8")
+        common = compose.split("x-main-app-node-service: &main-app-node-service", 1)[1].split(
+            "x-main-app-shared-environment:", 1,
+        )[0]
+        self.assertNotIn("  build:", common)
+        self.assertIn("  image: atm-main-app:latest", common)
+        self.assertIn("  pull_policy: never", common)
+        auth = compose.split("  main-app-auth:\n", 1)[1].split("  main-app-map:\n", 1)[0]
+        self.assertIn("    build:", auth)
+
+    def test_start_uses_compose_to_build_the_base_dependency(self):
+        for rebuild_base in (False, True):
+            with (
+                self.subTest(rebuild_base=rebuild_base),
+                patch.object(start, "prepare_configuration"),
+                patch.object(start, "run") as run,
+                patch.object(start, "published_port", return_value=8080),
+                patch.object(start, "check_http"),
+                patch.object(start, "bootstrap_administrator"),
+                contextlib.redirect_stdout(io.StringIO()),
+            ):
+                start.start(rebuild_base=rebuild_base)
+                commands = [call.args[0] for call in run.call_args_list]
+                self.assertIn(start.COMPOSE + [
+                    "build", "web", "init-db", "chatbot-frontend", "main-app-auth", "main-app-gateway",
+                ], commands)
+                self.assertEqual(
+                    start.COMPOSE + ["build", "--no-cache", "python-base"] in commands,
+                    rebuild_base,
+                )
+                self.assertFalse(any(command[:2] == ["docker", "build"] for command in commands))
+
     def test_status_does_not_acquire_startup_lock(self):
         with patch.object(start.sys, "argv", ["start.py", "status"]):
             with patch.object(start, "run") as run, patch.object(start.fcntl, "flock") as lock:

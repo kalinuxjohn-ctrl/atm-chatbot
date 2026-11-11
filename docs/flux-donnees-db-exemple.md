@@ -2,6 +2,9 @@
 
 Ce document suit **un seul problème réel**, de son enregistrement en base jusqu'à la réponse de l’ATM-Chatbot. Le but est de savoir, à chaque étape, **quelle table intervient, quelle ligne est lue ou écrite, et pourquoi**.
 
+Les noms de tables du texte sont ceux de la migration 0019. Les illustrations
+historiques gardent les anciens noms : voir la [correspondance](tables-en-francais.md).
+
 Les données sont celles du script de démo (`db/seed/seed_demo_data.py`). Les schémas sont dans `docs/diagrammes/` (21 à 24), avec un PNG haute définition dans `docs/diagrammes/png/`.
 
 > **Mise à jour (recherche par symptôme).** Les schémas 22 à 24 montrent encore la version précédente, avec un seul embedding par message. Le texte ci-dessous décrit le fonctionnement actuel : Claude liste chaque symptôme du message, et chaque symptôme est cherché séparément.
@@ -27,9 +30,9 @@ Cette seule visite est répartie sur **6 tables** :
 
 | intervention_id | device_id | technician_id | opened_at | final_outcome_status |
 |---|---|---|---|---|
-| 3001 | 501 → `device` | 7 → `technician` | 2026-09-02 09:14 | resolved |
+| 3001 | 501 → `appareil` | 7 → `technicien` | 2026-09-02 09:14 | resolved |
 
-**`intervention_symptom`** : les phrases écrites par le technicien, **chacune avec son embedding**.
+**`symptome_intervention`** : les phrases écrites par le technicien, **chacune avec son embedding**.
 
 | intervention_symptom_id | intervention_id | symptom_id | raw_text | embedding vector(1024) |
 |---|---|---|---|---|
@@ -37,7 +40,7 @@ Cette seule visite est répartie sur **6 tables** :
 | 9002 | 3001 | 22 | La transaction ne s'achève pas. | [-0.012, 0.061, 0.034, …, -0.020] |
 | 9003 | 3001 | 23 | Les espèces ne sont pas distribuées. | [0.044, 0.009, -0.071, …, 0.015] |
 
-**`intervention_action`** : les solutions tentées, dans l'ordre.
+**`action_intervention`** : les solutions tentées, dans l'ordre.
 
 | intervention_action_id | intervention_id | action_id | sequence_order | raw_text | outcome_status | is_confirmed_solution |
 |---|---|---|---|---|---|---|
@@ -45,25 +48,25 @@ Cette seule visite est répartie sur **6 tables** :
 | 7002 | 3001 | 42 | 2 | Checked card-retention mechanism. | no_effect | false |
 | 7003 | 3001 | 43 | 3 | Reinitialized card reader. | resolved | **TRUE** |
 
-**`diagnosis`** : la cause.
+**`diagnostic`** : la cause.
 
 | diagnosis_id | intervention_id | description |
 |---|---|---|
 | 501 | 3001 | Card reader firmware/state got stuck; reinitialization cleared it. |
 
-**`symptom`** et **`action`** (le catalogue) : les noms officiels. `9001` pointe vers `symptom 21` (« Carte retenue par le GAB ») et `7003` pointe vers `action 43` (« Reinitialize card reader »).
+**`symptome`** et **`action`** (le catalogue) : les noms officiels. `9001` pointe vers `symptom 21` (« Carte retenue par le GAB ») et `7003` pointe vers `action 43` (« Reinitialize card reader »).
 
-**`symptom_action_outcome_stats`** : le taux de réussite, **calculé** par le job `recompute_stats`, jamais saisi à la main.
+**`statistiques_resultats_symptome_action`** : le taux de réussite, **calculé** par le job `recompute_stats`, jamais saisi à la main.
 
 | symptom_id | action_id | device_type | attempts | successes | accuracy_score |
 |---|---|---|---|---|---|
 | 21 | 43 | gab | 1 | 1 | 1.0000 |
 
 ### Ce qu'il faut retenir
-- **L'embedding n'existe que dans `intervention_symptom.embedding`** : un vecteur de 1024 nombres, calculé une seule fois par Voyage AI à partir de `raw_text`, quand le symptôme est enregistré. Deux phrases de même sens donnent des vecteurs proches.
+- **L'embedding n'existe que dans `symptome_intervention.embedding`** : un vecteur de 1024 nombres, calculé une seule fois par Voyage AI à partir de `raw_text`, quand le symptôme est enregistré. Deux phrases de même sens donnent des vecteurs proches.
 - **Une solution n'a pas d'embedding.** On la retrouve parce qu'elle a le même `intervention_id` qu'un symptôme proche de la question.
 - `targets_symptom_id = NULL` : l'action vaut pour tous les symptômes de la visite. Quand il est renseigné (par exemple pour une proposition approuvée), l'action ne vise que ce symptôme-là.
-- `error_code` est un référentiel séparé, relié à `fault` et pas aux interventions.
+- `code_erreur` est un référentiel séparé, relié à `panne` et pas aux interventions.
 
 ---
 
@@ -76,10 +79,10 @@ Le technicien 4 écrit : *« Bonjour, sur le GAB Opteva 720 la carte est restée
 | # | Ce qui se passe | Tables | Lecture / écriture |
 |---|---|---|---|
 | 1 | Ouvrir la conversation | `conversation` | INSERT de la ligne 15 (premier message) |
-| 1 | Charger la mémoire | `conversation_context` | SELECT : aucune ligne, donc `{}` |
-| 2 | Vérifier et enregistrer le message | `conversation_message` | INSERT de la ligne 101 (`role = user`) |
+| 1 | Charger la mémoire | `contexte_conversation` | SELECT : aucune ligne, donc `{}` |
+| 2 | Vérifier et enregistrer le message | `message_conversation` | INSERT de la ligne 101 (`role = user`) |
 | 3 | **Appel 1 à Claude** (compréhension) | aucune | — |
-| 4 | Convertir les textes en ID | `device_model`, `error_code` | SELECT : `model_id = 10`, `error_code_id = 1` |
+| 4 | Convertir les textes en ID | `modele_appareil`, `code_erreur` | SELECT : `model_id = 10`, `error_code_id = 1` |
 | 5 | Mettre à jour la mémoire en Python | aucune (pas encore écrite) | — |
 
 **Ce que Claude renvoie** : du texte uniquement, jamais d'ID de la base.
@@ -103,7 +106,7 @@ Le technicien 4 écrit : *« Bonjour, sur le GAB Opteva 720 la carte est restée
 - `diagnostic` → recherche en base (étape 3) ;
 - `conversation` → tout le reste (demande de détail, suivi, question générale) :
   Claude a déjà rédigé sa réponse dans le même appel, avec toute la conversation
-  et les résultats de `conversation_context.last_search` relus en base.
+  et les résultats de `contexte_conversation.last_search` relus en base.
 
 ---
 
@@ -116,16 +119,16 @@ Le technicien 4 écrit : *« Bonjour, sur le GAB Opteva 720 la carte est restée
    ```sql
    SELECT isym.intervention_symptom_id, isym.intervention_id, isym.symptom_id, isym.raw_text,
           1 - (isym.embedding <=> :query_vector) AS similarity
-   FROM intervention_symptom isym
+   FROM symptome_intervention isym
    JOIN intervention iv ON iv.intervention_id = isym.intervention_id
-   JOIN device d        ON d.device_id = iv.device_id
+   JOIN appareil d        ON d.device_id = iv.device_id
    WHERE isym.embedding IS NOT NULL
      AND d.device_type = 'gab'
-     AND d.model_id IN (SELECT model_id FROM device_model WHERE UPPER(TRIM(model_name)) = 'OPTEVA 720')
+     AND d.model_id IN (SELECT model_id FROM modele_appareil WHERE UPPER(TRIM(model_name)) = 'OPTEVA 720')
    ORDER BY isym.embedding <=> :query_vector
    LIMIT 8
    ```
-   Les jointures avec `intervention`, `device` et `device_model` servent **uniquement à filtrer** (GAB, Opteva 720). La comparaison des vecteurs se fait dans `intervention_symptom`.
+   Les jointures avec `intervention`, `appareil` et `modele_appareil` servent **uniquement à filtrer** (GAB, Opteva 720). La comparaison des vecteurs se fait dans `symptome_intervention`.
 3. **Seuil de pertinence**, appliqué à chaque requête : seuls les résultats avec `similarity ≥ SYMPTOM_SIMILARITY_THRESHOLD` sont gardés. Les scores ci-dessous sont un exemple :
    - symptôme 1 (carte bloquée) : 9001 (0.91), 9004 (0.87) ;
    - symptôme 2 (transaction) : 9002 (0.88), 9005 (0.62).
@@ -135,15 +138,15 @@ Le technicien 4 écrit : *« Bonjour, sur le GAB Opteva 720 la carte est restée
 5. **Classement, 3 cas au maximum** (`_case_rank_key`) : d'abord le **nombre de symptômes recoupés**, puis la **similarité moyenne**. Une intervention qui recoupe 2 symptômes passe devant une intervention plus proche sur un seul. Ici, les deux en recoupent 2, et 3001 a la meilleure moyenne : **Cas 1 = 3001**, **Cas 2 = 3045**.
 6. **Lecture du dossier complet de chaque cas** (`build_case`) :
    - `intervention` ;
-   - `technician` (le nom) ;
-   - `device` (le site) ;
-   - `intervention_action` (triée par `sequence_order`) ;
-   - `diagnosis` ;
-   - `symptom_action_outcome_stats`, avec la clé `(21, 43, gab)`, soit 100 % sur 1 cas.
+   - `technicien` (le nom) ;
+   - `appareil` (le site) ;
+   - `action_intervention` (triée par `sequence_order`) ;
+   - `diagnostic` ;
+   - `statistiques_resultats_symptome_action`, avec la clé `(21, 43, gab)`, soit 100 % sur 1 cas.
 
-**Tables non lues pendant la recherche :** `symptom`, `action`, `component`, `error_code`, `fault`, `manufacturer`.
+**Tables non lues pendant la recherche :** `symptome`, `action`, `composant`, `code_erreur`, `panne`, `fabricant`.
 
-**Repli :** si aucun cas ne passe le seuil, `find_ranked_solutions` (avec `symptom_texts`, une recherche par symptôme dont les correspondances sont réunies) lit `symptom_action_outcome_stats` et `action`, et renvoie des résultats de type « stat ».
+**Repli :** si aucun cas ne passe le seuil, `find_ranked_solutions` (avec `symptom_texts`, une recherche par symptôme dont les correspondances sont réunies) lit `statistiques_resultats_symptome_action` et `action`, et renvoie des résultats de type « stat ».
 
 ---
 
@@ -156,11 +159,11 @@ Le technicien 4 écrit : *« Bonjour, sur le GAB Opteva 720 la carte est restée
 
 | Table | Opération | Contenu |
 |---|---|---|
-| `conversation_message` | INSERT | ligne 102, `role = assistant`, avec la réponse de Claude |
-| `conversation_context` | INSERT (1re fois) puis UPDATE | le JSON de mémoire, avec `last_search` |
+| `message_conversation` | INSERT | ligne 102, `role = assistant`, avec la réponse de Claude |
+| `contexte_conversation` | INSERT (1re fois) puis UPDATE | le JSON de mémoire, avec `last_search` |
 | `conversation` | UPDATE | `updated_at = now()` |
 
-Contenu de `conversation_context.context` après ce message :
+Contenu de `contexte_conversation.context` après ce message :
 ```json
 {
   "device_type": "gab", "model_id": 10, "model_name": "Opteva 720",
@@ -208,15 +211,15 @@ Contenu de `conversation_context.context` après ce message :
 | Table | Contenu initial | Compréhension | Recherche | Réponse |
 |---|---|---|---|---|
 | `conversation` | | INSERT (1er msg) | | UPDATE `updated_at` |
-| `conversation_message` | | INSERT (user) | | INSERT (assistant) |
-| `conversation_context` | | SELECT | | INSERT / UPDATE |
-| `device_model` | ✔ | SELECT (nom → ID) | filtre modèle | |
-| `error_code` | ✔ | SELECT (code → ID) | | |
-| `device` | ✔ | | JOIN (filtre gab) + dossier | |
-| `technician` | ✔ | | dossier (nom) | |
+| `message_conversation` | | INSERT (user) | | INSERT (assistant) |
+| `contexte_conversation` | | SELECT | | INSERT / UPDATE |
+| `modele_appareil` | ✔ | SELECT (nom → ID) | filtre modèle | |
+| `code_erreur` | ✔ | SELECT (code → ID) | | |
+| `appareil` | ✔ | | JOIN (filtre gab) + dossier | |
+| `technicien` | ✔ | | dossier (nom) | |
 | `intervention` | ✔ | | JOIN + dossier | |
-| `intervention_symptom` | ✔ + embedding | | **recherche vectorielle** (une requête par symptôme du technicien) | |
-| `intervention_action` | ✔ | | dossier (solutions) | |
-| `diagnosis` | ✔ | | dossier (cause) | |
-| `symptom_action_outcome_stats` | calculée par le job | | fiabilité | |
-| `symptom`, `action`, `component` | ✔ catalogue | | (ID seulement) | |
+| `symptome_intervention` | ✔ + embedding | | **recherche vectorielle** (une requête par symptôme du technicien) | |
+| `action_intervention` | ✔ | | dossier (solutions) | |
+| `diagnostic` | ✔ | | dossier (cause) | |
+| `statistiques_resultats_symptome_action` | calculée par le job | | fiabilité | |
+| `symptome`, `action`, `composant` | ✔ catalogue | | (ID seulement) | |

@@ -14,9 +14,9 @@ client = TestClient(app)
 
 
 def _inserer_donnees_test(db):
-    db.execute(text("INSERT INTO fault (fault_id, code, name) VALUES (9001, 'P001', 'Surchauffe moteur') ON CONFLICT DO NOTHING"))
+    db.execute(text("INSERT INTO panne (fault_id, code, name) VALUES (9001, 'P001', 'Surchauffe moteur') ON CONFLICT DO NOTHING"))
     db.execute(text("""
-        INSERT INTO error_code (error_code_id, code, description, fault_id)
+        INSERT INTO code_erreur (error_code_id, code, description, fault_id)
         VALUES (9001, 'E42', 'Code test', 9001)
         ON CONFLICT DO NOTHING
     """))
@@ -24,8 +24,8 @@ def _inserer_donnees_test(db):
 
 
 def _nettoyer_donnees_test(db):
-    db.execute(text("DELETE FROM error_code WHERE error_code_id = 9001"))
-    db.execute(text("DELETE FROM fault WHERE fault_id = 9001"))
+    db.execute(text("DELETE FROM code_erreur WHERE error_code_id = 9001"))
+    db.execute(text("DELETE FROM panne WHERE fault_id = 9001"))
     db.commit()
 
 

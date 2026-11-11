@@ -27,7 +27,7 @@ import { hashPassword } from "./passwordHashingService.js";
 const POSTGRES_UNIQUE_VIOLATION = "23505";
 
 /**
- * Crée le compte, et si besoin la ligne minimale de public.technician, en UNE
+ * Crée le compte, et si besoin la ligne minimale de public.technicien, en UNE
  * transaction : pas de technicien orphelin si le nom d'utilisateur est déjà pris.
  * Renvoie le technician_id du compte créé.
  */

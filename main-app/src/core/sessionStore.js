@@ -53,7 +53,7 @@ export async function findAuthenticatedUserBySessionToken(sessionToken) {
   const [sessionUser] = await queryDatabase(
     `SELECT accounts.technician_id, accounts.username, accounts.role
        FROM main_app.sessions AS sessions
-       JOIN main_app.accounts AS accounts ON accounts.technician_id = sessions.technician_id
+       JOIN main_app.comptes AS accounts ON accounts.technician_id = sessions.technician_id
       WHERE sessions.token_hash = $1
         AND sessions.expires_at > now()
         AND accounts.is_active`,
@@ -72,7 +72,7 @@ export async function findAuthenticatedUserBySessionToken(sessionToken) {
 export async function findActiveAccountForDevelopmentAutoLogin(username) {
   const [account] = await queryDatabase(
     `SELECT technician_id, username, role
-       FROM main_app.accounts
+       FROM main_app.comptes
       WHERE username = $1 AND is_active`,
     [username],
   );

@@ -15,6 +15,25 @@ from app.services import (
 
 
 class ConversationMessagesTests(unittest.TestCase):
+    def test_orchestrator_passes_the_persisted_context_to_memory(self):
+        db = MagicMock()
+        context = {"conversation_memory": {"summary": "Code E42", "through_message_id": 8}}
+        with patch.object(orchestrator.conversation_memory_service, "prepare_history", return_value=[]) as prepare:
+            self.assertEqual(orchestrator._load_history(db, 15, context), [])
+        prepare.assert_called_once_with(db, 15, context, orchestrator.settings.chat_history_max_messages)
+
+    def test_summary_and_recent_messages_reach_understanding(self):
+        history = [
+            {"role": "user", "content": "[Mémoire résumée des échanges anciens]\nCode E42"},
+            {"role": "user", "content": "Le code a changé"},
+            {"role": "assistant", "content": "Quel est le nouveau code ?"},
+        ]
+        messages = understanding._build_messages(history, "Maintenant E43")
+        self.assertIn("Code E42", messages[0]["content"])
+        self.assertIn("Le code a changé", messages[0]["content"])
+        self.assertEqual(messages[-1]["content"], "Maintenant E43")
+        self.assertEqual([message["role"] for message in messages], ["user", "assistant", "user"])
+
     def test_history_is_sent_in_order_and_ends_with_the_current_message(self):
         history = [
             {"role": "assistant", "content": "Bienvenue"},  # un fil ne commence jamais côté assistant
@@ -49,6 +68,10 @@ class ConversationMessagesTests(unittest.TestCase):
         call.assert_called_once()
         self.assertEqual(call.call_args.args[0], understanding._SYSTEM_PROMPT)
         self.assertTrue(call.call_args.kwargs["cache_history"])
+        schema = call.call_args.kwargs["response_schema"]
+        self.assertFalse(schema["additionalProperties"])
+        self.assertFalse(schema["$defs"]["IdentifiedSymptom"]["additionalProperties"])
+        self.assertNotIn("default", json.dumps(schema))
 
 
 class LastSearchDescriptionTests(unittest.TestCase):
@@ -182,6 +205,44 @@ class ProviderConversationPayloadTests(unittest.TestCase):
         payload = post.call_args.kwargs["json"]
         self.assertEqual(payload["messages"], self.MESSAGES[:1])
         self.assertIn("cache_control", payload["system"][0])
+
+    def test_claude_constrains_json_only_when_requested(self):
+        schema = {"type": "object", "properties": {}, "additionalProperties": False}
+        with patch.object(requests, "post", return_value=ok_response({"content": [{"type": "text", "text": "{}"}]})) as post:
+            llm_service.ClaudeProvider("key", "model").generate_chat("consigne", self.MESSAGES, response_schema=schema)
+        self.assertEqual(post.call_args.kwargs["json"]["output_config"]["format"], {"type": "json_schema", "schema": schema})
+
+    def test_claude_reports_usage_without_logging_content(self):
+        response = ok_response({
+            "model": "claude-sonnet-5-5", "stop_reason": "end_turn",
+            "content": [{"type": "text", "text": "PRIVATE_REPLY"}],
+            "usage": {"cache_read_input_tokens": 900, "cache_creation_input_tokens": 40,
+                      "input_tokens": 60, "output_tokens": 10, "output_tokens_details": {"thinking_tokens": 3}},
+        })
+        with patch.object(requests, "post", return_value=response), patch.object(llm_service, "trace") as log:
+            llm_service.ClaudeProvider("key", "model").generate("PRIVATE_PROMPT")
+        self.assertEqual(log.call_args.kwargs["cache_read_tokens"], 900)
+        self.assertEqual(log.call_args.kwargs["thinking_tokens"], 3)
+        self.assertEqual(log.call_args.kwargs["model"], "claude-sonnet-5-5")
+        self.assertNotIn("PRIVATE", str(log.call_args_list))
+        self.assertIn("elapsed_ms", log.call_args_list[0].kwargs)
+
+    def test_claude_rejects_truncated_output_even_when_text_is_present(self):
+        response = ok_response({"stop_reason": "max_tokens", "content": [{"type": "text", "text": "Incomplete"}]})
+        with patch.object(requests, "post", return_value=response):
+            with self.assertRaisesRegex(llm_service.LLMUnavailableError, "réponse incomplète"):
+                llm_service.ClaudeProvider("key", "model").generate("prompt")
+
+    def test_claude_identifies_thinking_only_token_exhaustion(self):
+        response = ok_response({"stop_reason": "max_tokens", "content": [{"type": "thinking"}]})
+        with patch.object(requests, "post", return_value=response):
+            with self.assertRaisesRegex(llm_service.LLMUnavailableError, "réponse incomplète"):
+                llm_service.ClaudeProvider("key", "model").generate("prompt")
+
+    def test_claude_joins_text_blocks_around_thinking(self):
+        response = ok_response({"content": [{"type": "text", "text": "one"}, {"type": "thinking"}, {"type": "text", "text": "two"}]})
+        with patch.object(requests, "post", return_value=response):
+            self.assertEqual(llm_service.ClaudeProvider("key", "model").generate("prompt"), "onetwo")
 
     def test_gemini_ignores_the_cache_option(self):
         response = ok_response({"candidates": [{"content": {"parts": [{"text": "ok"}]}}]})

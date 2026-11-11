@@ -1,0 +1,8 @@
+name: atm-chatbot
+
+# Compose charge ce fichier par defaut et fusionne les trois configurations.
+include:
+  - path:
+      - docker-compose.yml
+      - docker-compose.main-app.yml
+      - docker-compose.local.yml

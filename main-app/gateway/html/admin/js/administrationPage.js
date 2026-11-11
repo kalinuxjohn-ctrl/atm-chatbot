@@ -6,7 +6,7 @@
  * Ce fichier ne fait que l'aiguillage :
  *   - vérifie que l'utilisateur est administrateur (sinon retour à l'accueil) ;
  *   - affiche la rubrique demandée par l'adresse (#comptes, #propositions…) ;
- *   - remplit les compteurs du sommaire (demandes en attente, nombre d'éléments).
+ *   - remplit les compteurs du sous-menu de la navigation principale.
  * Chaque rubrique vit dans son propre module (*Section.js).
  *
  * Les droits sont vérifiés côté serveur : par le conteneur auth pour les
@@ -21,7 +21,7 @@ import { createSolutionProposalsSection } from "./solutionProposalsSection.js";
 
 const DEFAULT_SECTION_NAME = "propositions";
 
-/** Compteur à droite d'un lien du sommaire ; caché à 0 pour les demandes en attente. */
+/** Compteur du sous-menu partagé ; caché à 0 pour les demandes en attente. */
 function showSectionCounter(sectionName, count, { hideWhenZero = false } = {}) {
   const counterElement = document.querySelector(`[data-section-counter="${sectionName}"]`);
   counterElement.textContent = String(count);

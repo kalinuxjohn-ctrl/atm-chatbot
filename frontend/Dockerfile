@@ -15,6 +15,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copie uniquement le serveur et les fichiers web dans l'image.
 COPY server.py ./server.py
 COPY public ./public
+COPY --from=branding build_branding.py /tmp/build_branding.py
+ARG APP_NAME=atm-chatbot
+RUN APP_NAME="$APP_NAME" python /tmp/build_branding.py /app/public \
+    && rm /tmp/build_branding.py
 
 # L'écoute se fait sur 5173 dans le conteneur.
 EXPOSE 5173

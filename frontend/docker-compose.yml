@@ -4,6 +4,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      additional_contexts:
+        branding: ../scripts
+      args:
+        APP_NAME: ${APP_NAME:-atm-chatbot}
     container_name: atm_frontend
     restart: unless-stopped
 

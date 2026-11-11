@@ -2,7 +2,7 @@
  * Accès à PostgreSQL : un pool de connexions par conteneur.
  *
  * La base est CELLE DU CHATBOT : la main app y lit et écrit dans le schéma
- * main_app, et n'a qu'un accès restreint à public.technician (SELECT + INSERT,
+ * main_app, et n'a qu'un accès restreint à public.technicien (SELECT + INSERT,
  * voir db/migrations/0014_main_app_schema.sql). Elle se connecte avec le rôle
  * dédié main_app_user, jamais avec le compte d'administration de la base.
  *

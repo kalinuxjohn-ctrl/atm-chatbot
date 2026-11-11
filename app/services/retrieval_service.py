@@ -106,7 +106,7 @@ def _model_filter_sql(model_name: str | None) -> tuple[str, dict]:
     return (
         """
               AND d.model_id IN (
-                  SELECT dm.model_id FROM device_model dm
+                  SELECT dm.model_id FROM modele_appareil dm
                   WHERE UPPER(TRIM(dm.model_name)) = UPPER(TRIM(:model_name))
               )""",
         {"model_name": model_name},
@@ -178,9 +178,9 @@ def fetch_similar_symptoms(
                 SELECT isym.intervention_symptom_id, isym.intervention_id,
                        isym.symptom_id, isym.raw_text,
                        1 - (isym.embedding <=> CAST(:query_vector AS vector)) AS similarity
-                FROM intervention_symptom isym
+                FROM symptome_intervention isym
                 JOIN intervention iv ON iv.intervention_id = isym.intervention_id
-                JOIN device d ON d.device_id = iv.device_id
+                JOIN appareil d ON d.device_id = iv.device_id
                 WHERE isym.embedding IS NOT NULL
                   AND d.device_type = :device_type{model_filter}
                 ORDER BY isym.embedding <=> CAST(:query_vector AS vector)
@@ -280,9 +280,9 @@ def find_best_catalog_match(
                 """
                 SELECT isym.symptom_id,
                        isym.embedding <=> CAST(:query_vector AS vector) AS distance
-                FROM intervention_symptom isym
+                FROM symptome_intervention isym
                 JOIN intervention iv ON iv.intervention_id = isym.intervention_id
-                JOIN device d ON d.device_id = iv.device_id
+                JOIN appareil d ON d.device_id = iv.device_id
                 WHERE isym.embedding IS NOT NULL
                   AND isym.symptom_id IS NOT NULL
                   AND d.device_type = :device_type
@@ -313,7 +313,7 @@ def store_symptom_embedding(db, intervention_symptom_id: int, vector: Sequence[f
     """
     db.execute(
         text(
-            "UPDATE intervention_symptom SET embedding = CAST(:vector AS vector) "
+            "UPDATE symptome_intervention SET embedding = CAST(:vector AS vector) "
             "WHERE intervention_symptom_id = :intervention_symptom_id"
         ),
         {"vector": str(list(vector)), "intervention_symptom_id": intervention_symptom_id},
@@ -400,8 +400,8 @@ def find_ranked_solutions(
         SELECT stats.symptom_id, s.canonical_text AS symptom_text,
                stats.action_id, a.canonical_text AS action_text,
                stats.attempts, stats.successes, stats.accuracy_score
-        FROM symptom_action_outcome_stats stats
-        JOIN symptom s ON s.symptom_id = stats.symptom_id
+        FROM statistiques_resultats_symptome_action stats
+        JOIN symptome s ON s.symptom_id = stats.symptom_id
         JOIN action a ON a.action_id = stats.action_id
         WHERE stats.symptom_id IN :symptom_ids
           AND stats.device_type = :device_type

@@ -30,6 +30,13 @@ def api_response(payload=None, status=200):
 
 
 class ExternalProviderTests(unittest.TestCase):
+    def test_claude_uses_the_two_minute_timeout(self):
+        provider = llm_service.ClaudeProvider("test-key", "test-model")
+        with patch("requests.post", side_effect=requests.Timeout()) as post:
+            with self.assertRaisesRegex(llm_service.LLMUnavailableError, r"\(120s\)"):
+                provider.generate("test prompt")
+        self.assertEqual(post.call_args.kwargs["timeout"], 120)
+
     def setUp(self):
         self.providers = (
             (llm_service.ClaudeProvider("test-key", "test-model"), llm_service.LLMUnavailableError),
@@ -203,7 +210,7 @@ class ExternalPipelineTests(unittest.TestCase):
         failure = llm_service.LLMUnavailableError("unavailable")
         with (
             patch.object(orchestrator, "_format_case", return_value="case text"),
-            patch.object(llm_service, "generate_reply", side_effect=failure) as generate,
+            patch.object(llm_service, "generate_chat_reply", side_effect=failure) as generate,
         ):
             with self.assertRaises(llm_service.LLMUnavailableError):
                 orchestrator._summarize_cases("query", [{}])

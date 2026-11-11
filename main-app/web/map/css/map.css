@@ -26,6 +26,11 @@
 }
 
 /* --- Barre d'outils flottante --- */
+@media (max-height: 600px) and (orientation: landscape) {
+  .map-page { display: flex; flex-direction: column; }
+  .map-frame { flex: 1; height: auto; min-height: 0; }
+}
+
 .map-toolbar {
   position: absolute;
   top: 24px;
@@ -308,8 +313,19 @@
 
 .map-point-popup-actions {
   display: flex;
+  flex-direction: column;
   gap: 6px;
   margin-top: 10px;
+}
+
+[data-route-panel] .map-form-actions {
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+[data-route-panel] .muted {
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
 }
 
 /* --- Contrôles Leaflet aux couleurs du thème --- */

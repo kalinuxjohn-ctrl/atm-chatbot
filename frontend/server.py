@@ -22,8 +22,8 @@ API_BASE_URL = os.environ.get("API_BASE_URL", "http://127.0.0.1:8000").rstrip("/
 # The container must listen on every interface so Docker can publish its port.
 HOST = os.environ.get("HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT", "5173"))
-# Le backend interroge un LLM : le premier appel (chargement du modèle) peut dépasser 1 minute.
-PROXY_TIMEOUT_SECONDS = int(os.environ.get("PROXY_TIMEOUT_SECONDS", "180"))
+# Une réponse peut nécessiter plusieurs appels au LLM.
+PROXY_TIMEOUT_SECONDS = int(os.environ.get("PROXY_TIMEOUT_SECONDS", "300"))
 FRONTEND_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 PUBLIC_DIRECTORY = os.path.join(FRONTEND_DIRECTORY, "public")
 

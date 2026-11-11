@@ -2,7 +2,7 @@
  * Variables d'environnement des tests (chargé par Jest avant chaque fichier).
  *
  * Les tests d'intégration ont besoin d'une vraie base PostgreSQL avec les
- * migrations 0001 à 0018 : voir tests/integration/README.md. Sans
+ * migrations 0001 à 0019 : voir docs/tables-en-francais.md. Sans
  * MAIN_APP_TEST_DATABASE_HOST, ils sont ignorés (les tests unitaires tournent seuls).
  */
 

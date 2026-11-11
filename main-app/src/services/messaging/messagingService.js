@@ -19,6 +19,7 @@ import {
   findConversationsByTechnicianId,
   findDirectConversationIdByKey,
   findMessagingContacts,
+  findNotificationState,
   insertDirectConversation,
   isParticipantOfConversation,
   touchConversationLastMessageAt,
@@ -48,6 +49,10 @@ export async function listContacts(user, searchText) {
 
 export async function listConversationsOfUser(user) {
   return findConversationsByTechnicianId(user.technicianId);
+}
+
+export async function getNotificationState(user) {
+  return findNotificationState(user.technicianId);
 }
 
 /** Ouvre (ou retrouve) la conversation directe avec un autre technicien qui a un compte actif. */
@@ -129,7 +134,9 @@ export async function sendAttachmentMessage(user, conversationId, { fileBytes, c
 
 export async function markConversationAsRead(user, conversationId, lastReadMessageId) {
   await ensureUserParticipatesInConversation(user, conversationId);
-  await updateLastReadMessageId(conversationId, user.technicianId, lastReadMessageId);
+  if (!(await updateLastReadMessageId(conversationId, user.technicianId, lastReadMessageId))) {
+    throw new ReferenceNotFoundError("Message introuvable dans cette conversation.");
+  }
 }
 
 /** Fichier d'une pièce jointe, seulement pour un participant de sa conversation. */

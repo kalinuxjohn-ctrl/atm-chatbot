@@ -120,14 +120,8 @@ def start(*, rebuild_base=False):
     prepare_configuration()
     run(COMPOSE + ["config", "--quiet"])
     print("Construction des images et demarrage (premier lancement plus long)...", flush=True)
-    base_image = subprocess.run(
-        ["docker", "image", "inspect", "atm-python-base:latest"],
-        cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-    )
-    if rebuild_base or base_image.returncode != 0:
-        run(["docker", "build", "-f", "Dockerfile.base", "-t", "atm-python-base:latest", "."])
-    else:
-        print("Image Python de base deja disponible : reutilisation.", flush=True)
+    if rebuild_base:
+        run(COMPOSE + ["build", "--no-cache", "python-base"])
     # All four Node services and the database job use the same image.
     run(COMPOSE + ["build", "web", "init-db", "chatbot-frontend", "main-app-auth", "main-app-gateway"])
     run(COMPOSE + ["up", "-d", "--no-build", "--wait", "--wait-timeout", "180"])

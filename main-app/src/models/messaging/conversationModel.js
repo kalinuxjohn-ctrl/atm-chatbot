@@ -1,6 +1,6 @@
 /**
  * Accès SQL aux conversations et à leurs participants.
- * Le nom affiché d'un participant est son nom d'utilisateur (main_app.accounts).
+ * Le nom affiché d'un participant est son nom d'utilisateur (main_app.comptes).
  */
 
 import { queryDatabase } from "../../core/database.js";
@@ -13,7 +13,7 @@ export function buildDirectParticipantsKey(firstTechnicianId, secondTechnicianId
 
 export async function isParticipantOfConversation(conversationId, technicianId) {
   const rows = await queryDatabase(
-    "SELECT 1 FROM main_app.conversation_participants WHERE conversation_id = $1 AND technician_id = $2",
+    "SELECT 1 FROM main_app.participants_conversation WHERE conversation_id = $1 AND technician_id = $2",
     [conversationId, technicianId],
   );
   return rows.length > 0;
@@ -43,7 +43,7 @@ export async function insertDirectConversation(directParticipantsKey, participan
     return null;
   }
   await queryDatabase(
-    `INSERT INTO main_app.conversation_participants (conversation_id, technician_id)
+    `INSERT INTO main_app.participants_conversation (conversation_id, technician_id)
      SELECT $1, unnest($2::int[])`,
     [createdRow.id, participantTechnicianIds],
     databaseClient,
@@ -65,11 +65,11 @@ export async function findConversationsByTechnicianId(technicianId) {
               WHERE unread_messages.conversation_id = conversations.id
                 AND unread_messages.id > own_participation.last_read_message_id
                 AND unread_messages.sender_technician_id <> $1) AS unread_message_count
-       FROM main_app.conversation_participants AS own_participation
+       FROM main_app.participants_conversation AS own_participation
        JOIN main_app.conversations AS conversations ON conversations.id = own_participation.conversation_id
-       LEFT JOIN main_app.conversation_participants AS other_participation
+       LEFT JOIN main_app.participants_conversation AS other_participation
               ON other_participation.conversation_id = conversations.id AND other_participation.technician_id <> $1
-       LEFT JOIN main_app.accounts AS other_accounts ON other_accounts.technician_id = other_participation.technician_id
+       LEFT JOIN main_app.comptes AS other_accounts ON other_accounts.technician_id = other_participation.technician_id
        LEFT JOIN LATERAL (
             SELECT kind, text_content, sender_technician_id FROM main_app.messages
              WHERE messages.conversation_id = conversations.id
@@ -104,18 +104,41 @@ export async function touchConversationLastMessageAt(conversationId, databaseCli
 
 /** Le compteur ne recule jamais : un vieil accusé de lecture n'efface pas un plus récent. */
 export async function updateLastReadMessageId(conversationId, technicianId, lastReadMessageId) {
-  await queryDatabase(
-    `UPDATE main_app.conversation_participants
+  const rows = await queryDatabase(
+    `UPDATE main_app.participants_conversation
         SET last_read_message_id = GREATEST(last_read_message_id, $3)
-      WHERE conversation_id = $1 AND technician_id = $2`,
+      WHERE conversation_id = $1 AND technician_id = $2
+        AND EXISTS (SELECT 1 FROM main_app.messages WHERE id = $3 AND conversation_id = $1)
+      RETURNING conversation_id`,
     [conversationId, technicianId, lastReadMessageId],
   );
+  return rows.length > 0;
+}
+
+/** État léger, sans contenu de message ni limite de conversations, réservé au participant. */
+export async function findNotificationState(technicianId) {
+  const rows = await queryDatabase(
+    `SELECT participation.conversation_id,
+            count(messages.id) FILTER (WHERE messages.id > participation.last_read_message_id)::int AS unread_count,
+            COALESCE(max(messages.id), 0) AS latest_incoming_message_id
+       FROM main_app.participants_conversation AS participation
+       LEFT JOIN main_app.messages AS messages
+         ON messages.conversation_id = participation.conversation_id AND messages.sender_technician_id <> $1
+      WHERE participation.technician_id = $1
+      GROUP BY participation.conversation_id, participation.last_read_message_id`,
+    [technicianId],
+  );
+  return rows.map((row) => ({
+    conversationId: row.conversation_id,
+    unreadCount: row.unread_count,
+    latestIncomingMessageId: row.latest_incoming_message_id,
+  }));
 }
 
 /** Comptes actifs auxquels on peut écrire (recherche par nom), sauf soi-même. */
 export async function findMessagingContacts(technicianId, searchText) {
   const contactRows = await queryDatabase(
-    `SELECT technician_id, username FROM main_app.accounts
+    `SELECT technician_id, username FROM main_app.comptes
       WHERE is_active AND technician_id <> $1
         AND ($2 = '' OR username ILIKE '%' || $3 || '%')
       ORDER BY username
@@ -127,6 +150,6 @@ export async function findMessagingContacts(technicianId, searchText) {
 }
 
 export async function activeAccountExists(technicianId) {
-  const rows = await queryDatabase("SELECT 1 FROM main_app.accounts WHERE technician_id = $1 AND is_active", [technicianId]);
+  const rows = await queryDatabase("SELECT 1 FROM main_app.comptes WHERE technician_id = $1 AND is_active", [technicianId]);
   return rows.length > 0;
 }

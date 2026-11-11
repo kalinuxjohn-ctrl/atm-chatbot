@@ -66,3 +66,12 @@ export function renderMessageMarkdown(text) {
   }
   return fragment;
 }
+
+export function messageMarkdownToText(text) {
+  const fragment = renderMessageMarkdown(text);
+  return Array.from(fragment.children, (element) =>
+    element.localName === "ul" || element.localName === "ol"
+      ? Array.from(element.children, (item) => item.textContent).join("\n")
+      : element.textContent,
+  ).join("\n").trim();
+}

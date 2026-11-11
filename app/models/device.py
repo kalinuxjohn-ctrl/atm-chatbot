@@ -1,4 +1,4 @@
-"""Modèles ORM pour manufacturer, atm_model, atm_model_version et atm."""
+"""Modeles ORM des fabricants, modeles, versions et appareils."""
 
 from sqlalchemy import Column, Integer, String, Date, ForeignKey, Enum
 from sqlalchemy.orm import relationship
@@ -7,35 +7,35 @@ from app.core.database import Base
 
 
 class Manufacturer(Base):
-    __tablename__ = "manufacturer"
+    __tablename__ = "fabricant"
 
     manufacturer_id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False, unique=True)
 
 
 class DeviceModel(Base):
-    __tablename__ = "device_model"
+    __tablename__ = "modele_appareil"
 
     model_id = Column(Integer, primary_key=True)
     # Nullable en base (migration 0001) : fabricant pas toujours connu, ex. modèle ajouté par un technicien.
-    manufacturer_id = Column(Integer, ForeignKey("manufacturer.manufacturer_id"))
+    manufacturer_id = Column(Integer, ForeignKey("fabricant.manufacturer_id"))
     model_name = Column(String, nullable=False)
     category = Column(String)
     release_year = Column(Integer)
 
 
 class DeviceModelVersion(Base):
-    __tablename__ = "device_model_version"
+    __tablename__ = "version_modele_appareil"
 
     version_id = Column(Integer, primary_key=True)
-    model_id = Column(Integer, ForeignKey("device_model.model_id"), nullable=False)
+    model_id = Column(Integer, ForeignKey("modele_appareil.model_id"), nullable=False)
     version_label = Column(String, nullable=False)
     hardware_rev = Column(String)
     notes = Column(String)
 
 
 class Device(Base):
-    __tablename__ = "device"
+    __tablename__ = "appareil"
 
     device_id = Column(Integer, primary_key=True)
     # gab ou tpe -- seule colonne "externe" restée NOT NULL en base (migration 0001).
@@ -47,7 +47,7 @@ class Device(Base):
     # (voir commentaire migration 0001).
     serial_number = Column(String)
     # Nullable en base : le modèle n'est pas toujours identifié sur place.
-    model_id = Column(Integer, ForeignKey("device_model.model_id"))
+    model_id = Column(Integer, ForeignKey("modele_appareil.model_id"))
     # Nullable en base, pas de NOT NULL dans la migration.
     site_name = Column(String)
     address = Column(String)

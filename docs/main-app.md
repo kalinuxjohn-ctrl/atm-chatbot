@@ -11,6 +11,34 @@ Elle tourne en **Node.js + Express**. Son code est dans `main-app/`, séparé du
 
 ---
 
+## Paramètres et notifications web
+
+- **Paramètres** (engrenage sous **Appels**) ouvre un panneau global depuis chaque page, sans recharger le chatbot ni perdre sa conversation. Le sous-menu ATM-Chatbot conserve seulement Conversation et Nouvelle conversation. Le sous-titre « Application des techniciens » n'est plus affiché sous la salutation.
+- Une seule fenêtre défilante aligne **Apparence**, **Notifications** et tous les paramètres **Chat** d'origine (avatar, voix, conversation), sans accordéons. Le titre et le bouton Fermer restent visibles pendant le défilement. Le formulaire et le contrôleur du frontend sont réutilisés, sans seconde fenêtre ni navigation. Les choix sont enregistrés immédiatement sur cet appareil et synchronisés avec le chatbot ouvert, sans perdre son brouillon. L'ancien lien `/atm-chatbot/#settings` ouvre aussi cette fenêtre.
+- Le test de voix appelle les routes authentifiées `/atm-chatbot/app/tts` depuis toute page. La CSP autorise les médias du même site et les URL `blob:` nécessaires à leur lecture, sans élargir les origines de scripts.
+- Le **badge Messagerie** reste visible dans le rail réduit. Une carte avec une icône de message, un titre, le nombre de non-lus et un accès à la conversation annonce les arrivées. La notification système utilise également une icône de messagerie. Le polling global interroge `GET /api/messaging/notifications` toutes les 10 secondes, sans récupérer de contenu de message. Le premier état n'annonce pas les anciens messages, et les messages envoyés par soi-même sont exclus.
+- Les **non-lus sont conservés en base** via les accusés de lecture existants, par participant : recharger la page ne les efface pas. Le fil n'envoie l'accusé qu'une fois réellement visible, dans un onglet actif, arrivé en bas. Le serveur refuse les identifiants de message d'une autre conversation ou inexistants ; un ancien accusé ne peut pas faire reculer la lecture.
+- Les notifications du **navigateur sont désactivées par défaut**. Le bouton d'activation dans Paramètres demande explicitement la permission système ; refus, absence de support et besoin de HTTPS sont signalés. Aucun contenu privé n'est affiché dans la notification système. Désactiver ce bouton n'enlève ni les badges ni les alertes dans l'application. Le choix est mémorisé par utilisateur et navigateur ; les autorisations du site se révoquent aussi dans le navigateur.
+- Les curseurs d'alerte sont mémorisés localement par utilisateur. Les navigateurs disposant de Web Locks dédupliquent les alertes entre onglets ; sinon la déduplication locale est au mieux. Si le stockage local est bloqué, le badge serveur reste fiable, mais les curseurs ne survivent pas au rechargement.
+
+**Limite actuelle : application web ouverte uniquement.** Le navigateur peut ralentir ou suspendre un onglet caché. Il n'y a ni service worker push, ni notification garantie après fermeture du site, ni intégration Android native. Des notifications Android réellement en arrière-plan, de type WhatsApp, nécessiteront un projet distinct (push, enregistrement des appareils, application/service worker et gestion de livraison) ; cette version ne les prétend pas disponibles.
+
+## Navigation d'administration
+
+Pour les administrateurs, **Administration** est le premier groupe de la barre principale, avant les outils des techniciens. Son menu déroulant contient Comptes, Propositions, Ajouts d'intervention, Codes d'erreur et Pannes fréquentes. La page `/admin/` n'a plus de seconde barre latérale ; les compteurs et la rubrique active figurent dans ce sous-menu. Les liens `/admin/#<rubrique>` et l'historique du navigateur restent utilisables. Les autres rôles ne voient pas ce groupe et les protections serveur restent inchangées.
+
+## Thème GAB et orientation mobile
+
+Dans **Paramètres → Apparence**, **GAB · Vert & Or** ajoute une ambiance vert profond et dorée, des cartes ivoire et une illustration originale de distributeur en arrière-plan. **Clair** et **Sombre** restent disponibles ; le choix est mémorisé et synchronisé avec le chatbot sans le recharger. Aucun menu ni fonctionnalité n'est remplacé.
+
+La sidebar GAB est translucide ; **Réduire le menu** est en bas, au-dessus de la déconnexion. Les sous-menus, les listes du chatbot et les sélecteurs utilisent une surface sombre vitrée et des options bordées. Les sélecteurs restent natifs pour conserver clavier, groupes de voix et accessibilité : leur liste utilise `appearance: base-select` sur les navigateurs compatibles, sinon le sélecteur système reste disponible.
+
+L'image est dans `main-app/gateway/html/shared/images/gab-background.svg`. Pour la remplacer, gardez ce nom ou changez uniquement l'URL `--page-background-image` du bloc `[data-theme="gab"]` dans `main-app/gateway/html/shared/css/base.css` (JPEG/PNG acceptés). Reconstruisez ensuite `main-app-gateway`.
+
+Sur mobile en **portrait**, le rail d'icônes est vertical à gauche. En **paysage compact** (hauteur ≤ 600 px), les onglets sont horizontaux en bas. Les sous-menus restent accessibles et les paramètres défilent dans leur propre panneau.
+
+---
+
 ## 1. Lancer, arrêter, observer
 
 ```bash
@@ -23,12 +51,18 @@ docker compose -f docker-compose.yml -f docker-compose.main-app.yml exec main-ap
 
 L'app s'ouvre sur `http://localhost:8080` (variable `MAIN_APP_GATEWAY_PORT`).
 
-Chaque fonctionnalité a son conteneur : on peut l'arrêter, le relancer ou le reconstruire seul.
+Chaque fonctionnalité a son conteneur : on peut l'arrêter ou le relancer seul.
+Les services Node et le job DB partagent `atm-main-app:latest`, construite uniquement
+par `main-app-auth` pour eviter les exports concurrents vers le meme nom.
+Apres une modification Node, lancer `docker compose build main-app-auth`, puis
+`docker compose up -d --no-deps --no-build <service>` pour le service concerne.
+Le lancement global `docker compose up -d --build` reste une seule commande.
 
 | Action | Commande (préfixe : `docker compose -f docker-compose.yml -f docker-compose.main-app.yml`) |
 |---|---|
 | Arrêter / relancer | `stop <service>` · `start <service>` · `restart <service>` |
-| Reconstruire après une modification | `up -d --build <service>` (ajouter `--no-deps` pour ne pas relancer `init-db`) |
+| Reconstruire Node après une modification | `build main-app-auth`, puis `up -d --no-deps --no-build <service>` |
+| Reconstruire la passerelle | `up -d --build --no-deps main-app-gateway` |
 | Suivre les journaux | `logs -f <service>` |
 | État | `ps` |
 
@@ -78,15 +112,15 @@ Si le chatbot est arrêté, l'onglet ATM-Chatbot affiche « service indisponible
 
 ### Tables partagées
 
-`public.technician` est la **table d'identité commune**. Chaque compte de la main app **est** une ligne de `technician`.
+`public.technicien` est la **table d'identité commune**. Chaque compte de la main app **est** une ligne de `technicien`.
 
 | Table du chatbot | Accès de la main app | Utilisation |
 |---|---|---|
-| `public.technician` | **SELECT** | Rattacher un compte à un technicien existant |
-| `public.technician` | **INSERT** (et la séquence `technician_technician_id_seq`) | Créer un compte avec un nouveau technicien |
+| `public.technicien` | **SELECT** | Rattacher un compte à un technicien existant |
+| `public.technicien` | **INSERT** (et la séquence `technician_technician_id_seq`) | Créer un compte avec un nouveau technicien |
 | Toutes les autres | **aucun** | — |
 
-À la création d'un compte, la ligne de `technician` est **minimale** :
+À la création d'un compte, la ligne de `technicien` est **minimale** :
 - `full_name` est la seule colonne obligatoire. On y met le nom complet saisi, ou le nom d'utilisateur à défaut.
 - `active` prend sa valeur par défaut (`TRUE`).
 - `employee_code`, `email`, `phone` et `region` restent vides (NULL). Le modèle SQLAlchemy du chatbot déclare `employee_code` obligatoire, mais la colonne accepte NULL en base (migration 0001). Le chatbot n'en dépend pas pour ses recherches.
@@ -103,10 +137,10 @@ Les clés étrangères vers `technician(technician_id)` (de type `INTEGER`, car 
 | Migration | Tables |
 |---|---|
 | `0014_main_app_schema.sql` | Schéma, extensions `citext`, `cube`, `earthdistance`, ENUM `account_role`, rôle `main_app_user` et ses droits |
-| `0015_main_app_auth.sql` | `accounts`, `sessions`, `login_throttles` |
-| `0016_main_app_map.sql` | `map_points` (index GiST sur `ll_to_earth(latitude, longitude)`) |
-| `0017_main_app_messaging.sql` | `conversations`, `conversation_participants`, `messages`, `message_attachments` |
-| `0018_main_app_calls.sql` | `call_logs` |
+| `0015_main_app_auth.sql` | `comptes`, `sessions`, `blocages_connexion` |
+| `0016_main_app_map.sql` | `points_carte` (index GiST sur `ll_to_earth(latitude, longitude)`) |
+| `0017_main_app_messaging.sql` | `conversations`, `participants_conversation`, `messages`, `pieces_jointes_message` |
+| `0018_main_app_calls.sql` | `journal_appels` |
 
 ### Rôle SQL dédié et job `main-app-database-setup`
 
@@ -225,13 +259,13 @@ Règles :
 - **Contre la découverte des comptes et la force brute** :
   - même message d'erreur que le compte existe ou non, et même s'il est désactivé ;
   - un mot de passe est toujours vérifié, contre une empreinte leurre si le compte n'existe pas : le temps de réponse est comparable ;
-  - verrouillage temporaire après `MAIN_APP_LOGIN_MAX_FAILED_ATTEMPTS` échecs **par couple (nom saisi, IP)**, dans `login_throttles`. Le verrou est par couple plutôt que dans `accounts` : il fonctionne aussi pour un nom inexistant, et un attaquant ne peut pas bloquer un collègue depuis une autre adresse ;
+  - verrouillage temporaire après `MAIN_APP_LOGIN_MAX_FAILED_ATTEMPTS` échecs **par couple (nom saisi, IP)**, dans `blocages_connexion`. Le verrou est par couple plutôt que dans `comptes` : il fonctionne aussi pour un nom inexistant, et un attaquant ne peut pas bloquer un collègue depuis une autre adresse ;
   - `limit_req` nginx sur la connexion et l'inscription.
 - **Rôles** :
 
   | Rôle | Droits |
   |---|---|
-  | `technician` | gère ses propres points |
+  | `technicien` | gère ses propres points |
   | `moderator` | gère tous les points |
   | `admin` | gère aussi les comptes et les rôles, et administre l’ATM-Chatbot (`/admin/`) |
 
@@ -279,7 +313,7 @@ Règles :
   - le destinataire le récupère par **polling** : `GET /conversations/:id/messages?after=<dernier id>`, toutes les 3 s, la liste toutes les 10 s, en pause quand l'onglet est caché.
 
   Aucune clé ni aucun service tiers côté navigateur. Il n'y a pas de WebSocket ici.
-- **Conversations** : directes, entre 2 personnes, avec une seule conversation par couple (clé unique). La table `conversation_participants` permet d'ajouter des groupes plus tard.
+- **Conversations** : directes, entre 2 personnes, avec une seule conversation par couple (clé unique). La table `participants_conversation` permet d'ajouter des groupes plus tard.
 - **Le texte reste du texte (anti-XSS)** :
   - le message est stocké tel quel en UTF-8 (emojis libres) et affiché **uniquement** avec `textContent`, sans rendu HTML ni Markdown ;
   - 2000 caractères au plus, comptés en caractères affichés (un emoji = 1) ;
@@ -318,7 +352,7 @@ Règles :
   - seul l'appelé répond ou refuse ;
   - seuls les deux onglets engagés dans l'appel peuvent signaler.
 - **Appel entrant sur toute page** : chaque page connectée ouvre le WebSocket et affiche un bandeau « Répondre / Refuser » (`gateway/html/shared/js/incomingCallListener.js`). « Répondre » ouvre la page Appels. Pendant le changement de page, le serveur garde l'appel en sonnerie et le renvoie à la nouvelle connexion.
-- **Journal** `call_logs` :
+- **Journal** `journal_appels` :
   - statut `missed`, `answered`, `declined` ou `failed` ;
   - `end_reason` précise la cause : `busy`, `callee_offline`, `no_answer`, `hung_up`, `connection_lost`… ;
   - historique consultable sur la page Appels.

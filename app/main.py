@@ -39,14 +39,15 @@ from app.core.errors import (
     StateConflictError,
 )
 from app.core.gateway_identity import require_gateway_identity
+from app.core.config import settings
 from app.core.tracing import trace
 
 # Seul texte renvoyé au client quand une IA externe fait défaut (voir le
 # gestionnaire _service_externe_indisponible plus bas).
-SERVICE_SATURE_MESSAGE = "Le chatbot est momentanément saturé. Réessayez dans quelques instants."
+SERVICE_INDISPONIBLE_MESSAGE = "Le service de réponse est momentanément indisponible. Réessayez dans quelques instants."
 
 app = FastAPI(
-    title="Device Maintenance Chatbot API",
+    title=f"{settings.app_name} API",
     description="Enregistrement et recherche des interventions de maintenance ATM/GAB.",
     version="0.1.0",
 )
@@ -100,7 +101,7 @@ def _service_externe_indisponible(request: Request, error: ExternalServiceUnavai
         error_type=type(error).__name__,
         cause=str(error),
     )
-    return JSONResponse(status_code=503, content={"detail": SERVICE_SATURE_MESSAGE})
+    return JSONResponse(status_code=503, content={"detail": SERVICE_INDISPONIBLE_MESSAGE})
 
 
 @app.exception_handler(SQLAlchemyError)

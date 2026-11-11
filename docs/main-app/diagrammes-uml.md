@@ -282,7 +282,7 @@ sequenceDiagram
     Page->>Map: POST /api/map/points
     Map->>BD: vérifier la session
     Map->>Map: valider titre, catégorie, coordonnées
-    Map->>BD: INSERT INTO map_points
+    Map->>BD: INSERT INTO points_carte
     BD-->>Map: point créé
     Map-->>Page: 201 + point
     Page-->>Technicien: nouvelle épingle sur la carte

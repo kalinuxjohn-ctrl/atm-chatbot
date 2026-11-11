@@ -209,7 +209,7 @@ def _lookup_confidence(db: Session, intervention: Intervention, actions: list, d
     row = db.execute(
         text(
             """
-            SELECT accuracy_score, attempts FROM symptom_action_outcome_stats
+            SELECT accuracy_score, attempts FROM statistiques_resultats_symptome_action
             WHERE symptom_id = :symptom_id AND action_id = :action_id AND device_type = :device_type
             """
         ),

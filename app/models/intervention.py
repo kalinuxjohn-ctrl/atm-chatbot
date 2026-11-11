@@ -1,6 +1,6 @@
 """
 Modèles ORM pour intervention (la table centrale) et tout ce qui s'y
-accroche : intervention_symptom, intervention_action, diagnosis.
+accroche : symptome_intervention, action_intervention, diagnostic.
 """
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum, Boolean
@@ -13,8 +13,8 @@ class Intervention(Base):
     __tablename__ = "intervention"
 
     intervention_id = Column(Integer, primary_key=True)
-    device_id = Column(Integer, ForeignKey("device.device_id"), nullable=False)
-    technician_id = Column(Integer, ForeignKey("technician.technician_id"), nullable=False)
+    device_id = Column(Integer, ForeignKey("appareil.device_id"), nullable=False)
+    technician_id = Column(Integer, ForeignKey("technicien.technician_id"), nullable=False)
     ticket_reference = Column(String)
     opened_at = Column(DateTime, nullable=False)
     closed_at = Column(DateTime)
@@ -32,11 +32,11 @@ class Intervention(Base):
 
 
 class InterventionSymptom(Base):
-    __tablename__ = "intervention_symptom"
+    __tablename__ = "symptome_intervention"
 
     intervention_symptom_id = Column(Integer, primary_key=True)
     intervention_id = Column(Integer, ForeignKey("intervention.intervention_id"), nullable=False)
-    symptom_id = Column(Integer, ForeignKey("symptom.symptom_id"))  # NULL si pas encore rattaché au catalogue
+    symptom_id = Column(Integer, ForeignKey("symptome.symptom_id"))  # NULL si pas encore rattaché au catalogue
     raw_text = Column(String, nullable=False)  # formulation exacte du technicien
     severity = Column(String)
     # Remarque : la colonne `embedding` (vector) existe déjà en base
@@ -47,7 +47,7 @@ class InterventionSymptom(Base):
 
 
 class InterventionAction(Base):
-    __tablename__ = "intervention_action"
+    __tablename__ = "action_intervention"
 
     intervention_action_id = Column(Integer, primary_key=True)
     intervention_id = Column(Integer, ForeignKey("intervention.intervention_id"), nullable=False)
@@ -67,19 +67,19 @@ class InterventionAction(Base):
     # Quel symptôme précis cette action visait -- NULL = comptée pour tous
     # les symptômes de l'intervention (comportement historique, voir
     # migration 0005 et stats_service.recompute_stats).
-    targets_symptom_id = Column(Integer, ForeignKey("intervention_symptom.intervention_symptom_id"))
+    targets_symptom_id = Column(Integer, ForeignKey("symptome_intervention.intervention_symptom_id"))
     # NULL = action faite pendant la visite d'origine ; sinon = solution
     # ajoutée après coup par l'approbation d'une proposition (migration 0010).
-    source_proposal_id = Column(Integer, ForeignKey("solution_proposal.proposal_id"))
+    source_proposal_id = Column(Integer, ForeignKey("proposition_solution.proposal_id"))
 
 
 class Diagnosis(Base):
-    __tablename__ = "diagnosis"
+    __tablename__ = "diagnostic"
 
     diagnosis_id = Column(Integer, primary_key=True)
     intervention_id = Column(Integer, ForeignKey("intervention.intervention_id"), nullable=False)
     description = Column(String, nullable=False)
-    root_cause_component_id = Column(Integer, ForeignKey("component.component_id"))
+    root_cause_component_id = Column(Integer, ForeignKey("composant.component_id"))
     # Pièce en cause, en texte libre (migration 0013) : pas besoin de la créer
     # dans la table component avant de la citer.
     root_cause_component_text = Column(String)

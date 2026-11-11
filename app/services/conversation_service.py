@@ -58,9 +58,8 @@ def save_message(db: Session, conversation_id: int, role: str, content: str) -> 
 
 def get_recent_messages(db: Session, conversation_id: int, limit: int = 10) -> list[ConversationMessage]:
     """
-    Les `limit` derniers messages, en ordre chronologique. Sert à envoyer la
-    conversation au LLM à chaque message (chat_orchestrator_service, limite
-    settings.chat_history_max_messages) et à la photo d'une proposition de solution.
+    Les `limit` derniers messages, en ordre chronologique. Sert notamment
+    à retrouver la photo d'une proposition de solution.
     """
     return (
         db.query(ConversationMessage)
@@ -70,4 +69,17 @@ def get_recent_messages(db: Session, conversation_id: int, limit: int = 10) -> l
         .order_by(ConversationMessage.created_at.desc(), ConversationMessage.message_id.desc())
         .limit(limit)
         .all()[::-1]
+    )
+
+
+def get_messages_after(db: Session, conversation_id: int, message_id: int = 0) -> list[ConversationMessage]:
+    """Messages non encore résumés, sans supprimer les anciens échanges de la mémoire."""
+    return (
+        db.query(ConversationMessage)
+        .filter(
+            ConversationMessage.conversation_id == conversation_id,
+            ConversationMessage.message_id > message_id,
+        )
+        .order_by(ConversationMessage.message_id.asc())
+        .all()
     )

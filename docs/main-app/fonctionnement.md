@@ -52,7 +52,7 @@ Après 5 échecs pour un même couple (nom saisi, adresse IP), les tentatives so
 
 | Rôle | Peut faire |
 |---|---|
-| `technician` | Utiliser la carte, la messagerie et les appels ; modifier ses propres points |
+| `technicien` | Utiliser la carte, la messagerie et les appels ; modifier ses propres points |
 | `moderator` | Comme un technicien, et modifier ou supprimer **tous** les points |
 | `admin` | Comme un modérateur, et gérer les comptes et l’ATM-Chatbot (page `/admin/`) |
 
@@ -105,7 +105,7 @@ La recherche par distance utilise les extensions PostgreSQL `cube` et `earthdist
   - sonnerie de 30 secondes au plus, puis « manqué » ;
   - seul l'appelé peut répondre ou refuser.
 - **Appel entrant** : un bandeau « Répondre / Refuser » s'affiche sur toutes les pages de l'application.
-- **Historique** : chaque appel terminé est enregistré dans `call_logs` (manqué, décroché, refusé, échoué) et affiché sur la page Appels.
+- **Historique** : chaque appel terminé est enregistré dans `journal_appels` (manqué, décroché, refusé, échoué) et affiché sur la page Appels.
 - **Contacts** : la page indique qui est en ligne (au moins un onglet de l'application ouvert).
 
 ### Messages du WebSocket

@@ -109,6 +109,36 @@ describeWithDatabase("messagerie", () => {
     const afterReading = await sendAs(messagingApp, bob).get("/api/messaging/conversations");
     expect(afterReading.body.conversations.find((conversation) => conversation.id === conversationId).unreadMessageCount).toBe(0);
   });
+
+  test("notifications : état durable par participant, sans contenu, accusés bornés à la conversation", async () => {
+    const alan = await createAccountWithSession();
+    const bob = await createAccountWithSession();
+    const outsider = await createAccountWithSession();
+    const conversationId = await openConversationBetween(messagingApp, alan, bob);
+    const unrelatedId = await openConversationBetween(messagingApp, alan, outsider);
+    const post = (id, account, text) => sendAs(messagingApp, account).post(`/api/messaging/conversations/${id}/messages`).send({ text });
+    const first = (await post(conversationId, alan, "Fixture un")).body.message.id;
+    const second = (await post(conversationId, alan, "Fixture deux")).body.message.id;
+    const unrelated = (await post(unrelatedId, alan, "Autre fixture")).body.message.id;
+    const own = (await post(conversationId, bob, "Réponse fixture")).body.message.id;
+    const state = async (account) => (await sendAs(messagingApp, account).get("/api/messaging/notifications")).body.conversations;
+    expect(await state(bob)).toEqual([{ conversationId, unreadCount: 2, latestIncomingMessageId: second }]);
+    expect(await state(outsider)).toEqual([{ conversationId: unrelatedId, unreadCount: 1, latestIncomingMessageId: unrelated }]);
+    expect((await state(alan)).find((item) => item.conversationId === conversationId))
+      .toEqual({ conversationId, unreadCount: 1, latestIncomingMessageId: own });
+    expect((await sendAs(messagingApp, null).get("/api/messaging/notifications")).status).toBe(401);
+    for (const invalidId of [unrelated, 2_000_000_000]) {
+      expect((await sendAs(messagingApp, bob).post(`/api/messaging/conversations/${conversationId}/read`)
+        .send({ lastReadMessageId: invalidId })).status).toBe(404);
+    }
+    expect((await state(bob))[0].unreadCount).toBe(2);
+    expect((await sendAs(messagingApp, bob).post(`/api/messaging/conversations/${conversationId}/read`)
+      .send({ lastReadMessageId: second })).status).toBe(204);
+    await sendAs(messagingApp, bob).post(`/api/messaging/conversations/${conversationId}/read`).send({ lastReadMessageId: first });
+    expect((await state(bob))[0].unreadCount).toBe(0);
+    const third = (await post(conversationId, alan, "Fixture trois")).body.message.id;
+    expect((await state(bob))[0]).toEqual({ conversationId, unreadCount: 1, latestIncomingMessageId: third });
+  });
 });
 
 describeWithDatabase("pièces jointes", () => {

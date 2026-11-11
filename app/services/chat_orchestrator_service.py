@@ -26,6 +26,7 @@ from app.services import (
     case_detail_service,
     case_retrieval_service,
     context_service,
+    conversation_memory_service,
     conversation_service,
     llm_service,
     message_understanding_service,
@@ -86,7 +87,7 @@ def handle_chat_message(
     can_understand = validation.valid or photo is not None
     technician_text = validation.cleaned_text if validation.valid else photo_ocr_service.PHOTO_ONLY_MESSAGE
     # Lu AVANT d'enregistrer le message courant : il est envoyé à part au LLM.
-    history = _load_history(db, conversation.conversation_id) if can_understand else []
+    history = _load_history(db, conversation.conversation_id, context) if can_understand else []
 
     # Comparé après le routage : record_last_search remplace l'objet, donc une
     # identité différente = une nouvelle recherche a eu lieu pendant CE message.
@@ -182,14 +183,10 @@ def _is_case(resultat: dict) -> bool:
     return (resultat.get("kind") or _infer_legacy_kind(resultat)) == "case"
 
 
-def _load_history(db: Session, conversation_id: int) -> list[dict]:
-    """Anciens messages de la conversation, du plus ancien au plus récent (les plus récents si elle est très longue)."""
-    return [
-        {"role": message.role, "content": message.content}
-        for message in conversation_service.get_recent_messages(
-            db, conversation_id, limit=settings.chat_history_max_messages
-        )
-    ]
+def _load_history(db: Session, conversation_id: int, context: dict) -> list[dict]:
+    return conversation_memory_service.prepare_history(
+        db, conversation_id, context, settings.chat_history_max_messages,
+    )
 
 
 def _describe_last_search(db: Session, context: dict) -> str | None:
@@ -272,7 +269,7 @@ def _handle_symptom_search(
         return _DEVICE_TYPE_REQUIRED_REPLY
 
     # Service d'embedding indisponible : EmbeddingUnavailableError remonte
-    # telle quelle -> 503 « chatbot saturé » (app/main.py), cause précise
+    # telle quelle -> 503 « service indisponible » (app/main.py), cause précise
     # dans les journaux. Aucun message technique dans la conversation.
     # Modèle pris dans le JSON de CE message uniquement (pas dans le contexte) :
     # un modèle cité dans un message précédent ne doit pas filtrer celui-ci.
@@ -390,14 +387,16 @@ def _summarize_cases(
         else ""
     )
 
-    prompt = (
-        "Tu es un assistant pour techniciens de maintenance ATM. "
+    turn_context = (
         f"{llm_service.device_type_instruction(device_type)}"
         f"Un technicien décrit ce symptôme : « {problem_text} ».\n"
         f"{multi_symptom_instruction}"
         "Voici des cas candidats issus d'une recherche vectorielle, classés par similarité. "
         "Leur présence dans cette liste ne garantit PAS leur pertinence technique :\n"
-        f"{lignes}\n\n"
+        f"{lignes}"
+    )
+    instructions = (
+        "Tu es un assistant pour techniciens de maintenance ATM. "
         "Avant de répondre, vérifie si le sens du problème du technicien correspond réellement "
         "aux symptômes, diagnostics et résultats décrits dans chaque cas. "
         "Un même type d'appareil ou une panne générique ne suffit pas : conserve les précisions "
@@ -437,9 +436,11 @@ def _summarize_cases(
         "CONTEXT",
         "Contexte de synthèse préparé (LLM niveau 2)",
         case_count=len(cases),
-        prompt_length=len(prompt),
+        prompt_length=len(instructions) + len(turn_context),
     )
-    return llm_service.generate_reply(prompt)
+    return llm_service.generate_chat_reply(
+        instructions, [{"role": "user", "content": turn_context}], cache_history=True,
+    )
 
 
 def _format_case(case: dict, index: int | None = None) -> str:

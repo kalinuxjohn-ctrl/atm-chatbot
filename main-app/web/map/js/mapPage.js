@@ -11,8 +11,10 @@
 import * as maplibreModule from "/map/vendor/maplibre-gl/maplibre-gl.mjs";
 import { requestJson } from "/shared/js/apiClient.js";
 import "/shared/js/connectedPageShell.js";
-import { createButton, createElementWithText, formatDateTime } from "/shared/js/domHelpers.js";
+import { createButton, createElementWithText } from "/shared/js/domHelpers.js";
 import { createIcon } from "/shared/js/icons.js";
+import { confirmAction } from "/shared/js/confirmationDialog.js";
+import { createRoutePlanner } from "./routePlanner.js";
 
 // Le pont Leaflet <-> MapLibre (script UMD) attend MapLibre en variable globale.
 globalThis.maplibregl = maplibreModule.default ?? maplibreModule;
@@ -57,6 +59,8 @@ const nearbySummary = document.querySelector("[data-nearby-summary]");
 let pointBeingEdited = null;
 let coordinatesOfNewPoint = null;
 let currentPositionMarker = null;
+let routePlanner = null;
+let routingEnabled = false;
 const markersByPointId = new Map();
 /** Catégorie affichée ("" = toutes) et derniers points chargés (pour refiltrer sans requête). */
 let selectedCategory = "";
@@ -107,7 +111,8 @@ function renderCategoryFilters(leafletMap) {
 }
 
 async function createMap() {
-  const { attribution, maximumZoom } = await requestJson("/api/map/settings");
+  const { attribution, maximumZoom, routingEnabled: enabled } = await requestJson("/api/map/settings");
+  routingEnabled = enabled;
   const mapCanvas = document.querySelector("[data-map-canvas]");
   const leafletMap = L.map(mapCanvas, { maxZoom: maximumZoom, worldCopyJump: true });
   leafletMap.setView(INITIAL_MAP_CENTER, INITIAL_MAP_ZOOM);
@@ -203,10 +208,18 @@ function displayPoints(leafletMap) {
     }
   }
   for (const point of visiblePoints) {
-    markersByPointId.get(point.id)?.remove();
+    const previousMarker = markersByPointId.get(point.id);
+    const wasOpen = previousMarker?.isPopupOpen();
+    previousMarker?.remove();
     const marker = L.marker([point.latitude, point.longitude], { icon: createPinIcon(point.category), title: point.title, riseOnHover: true });
     marker.bindPopup(() => createPointPopupContent(leafletMap, point), { maxWidth: 300, minWidth: 220 });
+    marker.on("click", () => {
+      routePlanner.close();
+      closePointForm();
+      nearbyPanel.hidden = true;
+    });
     marker.addTo(leafletMap);
+    if (wasOpen) marker.openPopup();
     markersByPointId.set(point.id, marker);
   }
 }
@@ -220,27 +233,38 @@ function createPointPopupContent(leafletMap, point) {
     createElementWithText("span", "", CATEGORY_LABELS[point.category] ?? point.category),
   );
   popupContent.append(categoryBadge, createElementWithText("strong", "map-point-popup-title", point.title));
-  if (point.description) {
-    popupContent.append(createElementWithText("p", "map-point-popup-description", point.description));
-  }
-  popupContent.append(
-    createElementWithText(
-      "div",
-      "map-point-popup-author",
-      `Ajouté par ${point.createdByUsername ?? "un ancien utilisateur"} · modifié ${formatDateTime(point.updatedAt)}`,
-    ),
-  );
+  const actions = createElementWithText("div", "map-point-popup-actions");
+  actions.setAttribute("role", "group");
+  actions.setAttribute("aria-label", `Actions pour ${point.title}`);
+  const routeButton = createButton("Demander l’itinéraire", {
+    className: "button button-small",
+    onClick: () => {
+      leafletMap.closePopup();
+      routePlanner.open(point);
+    },
+  });
+  routeButton.prepend(createIcon("map"));
+  actions.append(routeButton);
   if (point.canModify) {
-    const actions = createElementWithText("div", "map-point-popup-actions");
     const editButton = createButton("Modifier", {
       className: "button button-secondary button-small",
-      onClick: () => openPointForm({ pointToEdit: point }),
+      onClick: () => {
+        leafletMap.closePopup();
+        openPointForm({ pointToEdit: point });
+      },
     });
     editButton.prepend(createIcon("edit"));
     const deleteButton = createButton("Supprimer", {
       className: "button button-danger button-small",
       onClick: async () => {
-        if (!window.confirm(`Supprimer le point « ${point.title} » ?`)) {
+        const confirmed = await confirmAction({
+          title: "Supprimer ce lieu ?",
+          message: `Le point « ${point.title} » sera supprimé de la carte.`,
+          confirmLabel: "Oui, supprimer",
+          cancelLabel: "Non",
+          danger: true,
+        });
+        if (!confirmed) {
           return;
         }
         try {
@@ -254,14 +278,15 @@ function createPointPopupContent(leafletMap, point) {
     });
     deleteButton.prepend(createIcon("trash"));
     actions.append(editButton, deleteButton);
-    popupContent.append(actions);
   }
+  popupContent.append(actions);
   return popupContent;
 }
 
 // --- Formulaire de création / modification ----------------------------------
 
 function openPointForm({ pointToEdit = null, coordinates = null }) {
+  routePlanner?.close();
   pointBeingEdited = pointToEdit;
   coordinatesOfNewPoint = coordinates;
   pointForm.reset();
@@ -326,7 +351,7 @@ function locateCurrentUser(leafletMap) {
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        // La position reste dans le navigateur : rien n'est envoyé tant qu'on ne crée pas de point.
+        // La position n'est transmise que pour une recherche proche ou un itinéraire.
         const currentPosition = [coords.latitude, coords.longitude];
         currentPositionMarker?.remove();
         currentPositionMarker = L.circleMarker(currentPosition, { radius: 8, className: "current-position-marker" })
@@ -346,6 +371,7 @@ function locateCurrentUser(leafletMap) {
 }
 
 async function showNearbyPoints(leafletMap) {
+  routePlanner.close();
   const center = currentPositionMarker?.getLatLng() ?? leafletMap.getCenter();
   const searchParameters = new URLSearchParams({ lat: center.lat.toFixed(6), lng: center.lng.toFixed(6), radius: NEARBY_RADIUS_METERS });
   try {
@@ -391,12 +417,22 @@ function formatDistance(distanceMeters) {
 fillCategoryOptions();
 try {
   const leafletMap = await createMap();
+  routePlanner = createRoutePlanner({
+    map: leafletMap,
+    locate: () => locateCurrentUser(leafletMap),
+    enabled: routingEnabled,
+    closeOtherPanels: () => {
+      closePointForm();
+      nearbyPanel.hidden = true;
+    },
+  });
   let reloadTimer = null;
   leafletMap.on("moveend", () => {
     clearTimeout(reloadTimer);
     reloadTimer = setTimeout(() => reloadVisiblePoints(leafletMap), 250);
   });
   leafletMap.on("click", ({ latlng }) => {
+    if (routePlanner.selectStart(latlng)) return;
     openPointForm({ coordinates: { latitude: latlng.lat, longitude: L.Util.wrapNum(latlng.lng, [-180, 180], true) } });
   });
   pointForm.addEventListener("submit", (submitEvent) => {

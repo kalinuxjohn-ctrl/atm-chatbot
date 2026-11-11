@@ -6,14 +6,14 @@
   --accent-fill: #edf5ff;
   --accent-border: #cbdef3;
   --border: #e5ebf2;
-  --home-paper: #ffffff;
   --home-card: #ffffff;
   --gradient: linear-gradient(135deg, #0784ed, #0064c2);
   --on-accent: #ffffff;
   --navy: var(--text);
   --ink: var(--text-soft);
   --muted: var(--text-muted);
-  background: var(--home-paper);
+  background: var(--app-background);
+  background-attachment: fixed;
   color: var(--text-soft);
 }
 
@@ -25,7 +25,6 @@
   --accent-fill: #162f4d;
   --accent-border: #315274;
   --border: #263b51;
-  --home-paper: #0b1726;
   --home-card: #112338;
   --surface: #112338;
   --border-strong: #355475;
@@ -105,25 +104,6 @@
 .hero-secondary { color: var(--text); font-size: 12px; text-decoration: none; }
 .hero-secondary:hover { color: var(--accent-text); }
 
-.home-page .hero-visual {
-  position: absolute;
-  top: 8px;
-  right: 22px;
-  height: 390px;
-  width: 46%;
-  min-height: 0;
-  overflow: hidden;
-  border: 0;
-  border-radius: 0;
-  background: radial-gradient(ellipse at 55% 48%, #e9eef377, transparent 70%);
-  box-shadow: none;
-  backdrop-filter: none;
-  pointer-events: none;
-  -webkit-mask-image: linear-gradient(#000 75%, transparent 100%);
-  mask-image: linear-gradient(#000 75%, transparent 100%);
-}
-.hero-technician { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
-
 .equipment-section {
   position: relative;
   z-index: 1;
@@ -146,8 +126,6 @@
 :root[data-theme="dark"] .equipment-card-tpe { border-color: #654837; background: linear-gradient(125deg, #332e2c, #2b2524); }
 :root[data-theme="dark"] .equipment-card h3 { color: #f1f6ff; }
 :root[data-theme="dark"] .equipment-picture { mix-blend-mode: normal; filter: drop-shadow(0 6px 10px #0008); }
-:root[data-theme="dark"] .home-page .hero-visual { background: none; }
-
 .home-services { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(1120px, calc(100% - 64px)); gap: 36px; margin: 62px auto 0; padding-bottom: 48px; }
 .home-services > :is(a, button) { display: flex; gap: 15px; align-items: flex-start; padding: 0; border: 0; background: none; color: var(--text-soft); font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
 .service-symbol { width: 28px; height: 28px; flex: 0 0 28px; }
@@ -188,7 +166,6 @@
   .home-page .hero-section { width: calc(100% - 40px); min-height: 330px; padding-top: 40px; }
   .home-page .hero-copy h1 { font-size: 31px; }
   .home-page .hero-description { max-width: 300px; font-size: 13px; }
-  .home-page .hero-visual { top: 12px; right: -10px; height: 350px; width: 44%; }
   .equipment-section { width: calc(100% - 40px); margin-top: 0; }
   .equipment-grid { gap: 16px; }
   .equipment-card { padding: 16px; }
@@ -200,6 +177,10 @@
   .home-page .steps-section, .home-final-cta { width: calc(100% - 40px); }
 }
 @media (max-width: 540px) {
+  .home-page {
+    background-attachment: scroll;
+    background-position: center top;
+  }
   .home-page .brand { gap: 6px; font-size: 13px; }
   .home-page .site-header { gap: 8px; }
   .home-page .header-action { max-width: 130px; padding: 8px; font-size: 10px; }
@@ -209,7 +190,6 @@
   .home-page .hero-section { display: flex; flex-direction: column; padding-top: 28px; }
   .home-page .hero-copy h1 { font-size: 32px; }
   .home-page .hero-description { max-width: 340px; }
-  .home-page .hero-visual { position: relative; top: auto; right: auto; width: 100%; height: 310px; margin: 22px 0 -26px; }
   .equipment-section > h2 { font-size: 22px; }
   .equipment-grid { grid-template-columns: 1fr; }
   .equipment-card-body { min-height: 110px; justify-content: center; gap: 28px; }

@@ -1,5 +1,5 @@
 /*
- * Thème clair / sombre, appliqué AVANT le premier affichage.
+ * Thème clair, sombre ou GAB, appliqué AVANT le premier affichage.
  *
  * Script classique (pas un module) chargé dans <head> sans defer : il pose
  * <html data-theme> avant que la page ne s'affiche, sinon elle clignoterait
@@ -19,6 +19,6 @@
   };
   const savedTheme = readSavedTheme();
   const systemPrefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-  const theme = savedTheme === "dark" || savedTheme === "light" ? savedTheme : systemPrefersDark ? "dark" : "light";
+  const theme = ["dark", "light", "gab"].includes(savedTheme) ? savedTheme : systemPrefersDark ? "dark" : "light";
   document.documentElement.dataset.theme = theme;
 })();

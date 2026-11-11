@@ -6,23 +6,19 @@
  *        ▲            ▲
  *   chat écrit    Chat vocal (voiceMode) : les deux passent par submitMessage()
  *
- *   sidebar / contextPanel / devicePicker / suggestions / composerDictation
+ *   devicePicker / suggestions / composerDictation
  *   ─> uniquement de l'affichage et des interactions, aucun appel réseau.
  */
 
 import { FORCE_MOCKS } from "../config.js";
-import { renderAvatar } from "../components/avatar.js";
 import { createChatView, playSendBurst } from "../components/chatView.js";
 import { createComposerDictation } from "../components/composerDictation.js";
 import { createComposerPhoto } from "../components/composerPhoto.js";
-import { createContextPanel } from "../components/contextPanel.js";
 import { DEVICE_OPTIONS, createDevicePicker } from "../components/devicePicker.js";
 import { hydrateIcons } from "../components/icons.js";
-import { createSettingsPanel, formatVoiceLabel } from "../components/settingsPanel.js";
-import { createSidebar } from "../components/sidebar.js";
+import { createSettingsPanel } from "../components/settingsPanel.js";
 import { createSuggestionMenus } from "../components/suggestions.js";
 import { createSolutionProposalDialog } from "../components/solutionProposalDialog.js";
-import { createInterventionAddDialog } from "../components/interventionAddDialog.js";
 import { createVoiceMode } from "../components/voiceMode.js";
 import { getFriendlyErrorMessage } from "../core/httpClient.js";
 import { createConversationService } from "../services/conversationService.js";
@@ -30,24 +26,14 @@ import { getErrorCodeReply, listKnownErrorCodes } from "../services/api/errorCod
 import { isPhotoOcrEnabled } from "../services/api/photoApi.js";
 import { getUsualProblemReply, listUsualProblems } from "../services/api/usualProblemApi.js";
 import { getPreferences, onPreferencesChange } from "../services/preferencesService.js";
-import { logout, requireSession } from "../services/sessionService.js";
-import {
-  getOnDeviceRecognitionStatus,
-  isSpeechRecognitionSupported,
-} from "../services/speech/speechRecognitionService.js";
+import { requireSession } from "../services/sessionService.js";
 import {
   isSpeechSynthesisSupported,
-  resolveVoice,
   speak,
   stopSpeaking,
 } from "../services/speech/speechSynthesisService.js";
 
 const READY_STATUS = "Prêt à vous aider";
-const RECOGNITION_LABELS = {
-  available: "Dictée disponible (hors ligne)",
-  downloadable: "Dictée en ligne (hors ligne téléchargeable)",
-  downloading: "Dictée en ligne (téléchargement…)",
-};
 
 const session = requireSession();
 if (session) void initAtmChatbot(session);
@@ -59,16 +45,10 @@ async function initAtmChatbot({ technicianId, displayName }) {
   hydrateIcons(document);
 
   const elements = {
-    shell: $("#app-shell"),
-    brandAvatar: $("#sidebar-brand-avatar"),
-    greetingName: $("#greeting-name"),
     technicianAvatar: $("#technician-avatar"),
     technicianName: $("#technician-name"),
     technicianNumber: $("#technician-number"),
-    logoutButton: $("#logout-button"),
-    // Deux boutons : dans la barre latérale et en tête du panneau de contexte.
     newConversationButtons: $$("[data-new-conversation]"),
-    toolbarAvatar: $("#toolbar-avatar"),
     status: $("#atm-chatbot-status"),
     demoBadge: $("#demo-badge"),
     stopReadingButton: $("#stop-reading-button"),
@@ -94,29 +74,12 @@ async function initAtmChatbot({ technicianId, displayName }) {
   // Entrées des menus de suggestions, lues par le backend pour l'équipement sélectionné.
   let suggestionLists = { usualProblems: [], errorCodes: [] };
 
-  createSidebar({
-    shell: elements.shell,
-    sidebar: $("#app-sidebar"),
-    collapseButton: $("#sidebar-collapse-button"),
-    openButtons: $$("[data-open-sidebar]"),
-    backdrop: $("#sidebar-backdrop"),
-  });
-
-  const contextPanel = createContextPanel({
-    shell: elements.shell,
-    panel: $("#context-panel"),
-    toggleButtons: $$("[data-toggle-context]"),
-    closeButton: $("#context-close-button"),
-    backdrop: $("#context-backdrop"),
-  });
-
   const chatView = createChatView({
     conversationElement: elements.conversation,
     userName: displayName,
     getAvatarKind: () => getPreferences().avatar,
     onListen: (text) => void readAloud(text),
     onProposeSolution: () => openSolutionProposal(),
-    onAddIntervention: (problemText) => openInterventionAdd(problemText || "", true),
   });
 
   // « Proposer une solution » : le problème est relu par le backend, la page
@@ -128,29 +91,6 @@ async function initAtmChatbot({ technicianId, displayName }) {
       conversation.addAssistantMessage(reply);
     },
   });
-
-  const interventionAddDialog = createInterventionAddDialog({
-    dialog: $("#intervention-add-dialog"),
-    onSubmitted: ({ id, conversationId }) => {
-      if (conversationId !== null && conversationId === conversation.conversationId) {
-        chatView.dismissProposalOffer();
-        conversation.dismissContributionOffers();
-        conversation.addAssistantMessage(`Votre proposition d’intervention n° ${id} a été envoyée. Elle sera ajoutée à la base uniquement après validation par un administrateur.`);
-      }
-    },
-  });
-
-  function openInterventionAdd(problemText = "", fromChat = false) {
-    if (requestInProgress) return;
-    dictation.cancel();
-    stopReading();
-    interventionAddDialog.open({
-      technicianId: conversation.technicianId,
-      conversationId: fromChat ? conversation.conversationId : null,
-      problemText: problemText || "",
-      deviceType: conversation.deviceType,
-    });
-  }
 
   function openSolutionProposal() {
     if (requestInProgress) return;
@@ -167,7 +107,6 @@ async function initAtmChatbot({ technicianId, displayName }) {
     onChange: (deviceType) => {
       conversation.setDeviceType(deviceType);
       void loadSuggestions();
-      updateContext();
     },
   });
 
@@ -208,7 +147,6 @@ async function initAtmChatbot({ technicianId, displayName }) {
   const settingsPanel = createSettingsPanel({ dialog: $("#settings-dialog") });
 
   /* ---------- Identité du technicien ---------- */
-  elements.greetingName.textContent = displayName;
   elements.technicianName.textContent = displayName;
   elements.technicianNumber.textContent = `Technicien n° ${technicianId}`;
   elements.technicianAvatar.textContent = getInitials(displayName);
@@ -218,50 +156,17 @@ async function initAtmChatbot({ technicianId, displayName }) {
   /** Texte sous le nom de l’ATM-Chatbot + animation de son avatar. */
   function setStatus(text, avatarState = "idle") {
     elements.status.textContent = text;
-    elements.toolbarAvatar.firstElementChild?.setAttribute("data-state", avatarState);
+    elements.conversation.dataset.avatarState = avatarState;
   }
 
   /* ---------- Préférences (avatar, voix, fonctions vocales) ---------- */
   function applyPreferences(preferences) {
-    // Avatar de l’ATM-Chatbot : en-tête de la sidebar, barre du haut et messages.
-    elements.brandAvatar.replaceChildren(renderAvatar(preferences.avatar));
-    elements.toolbarAvatar.replaceChildren(renderAvatar(preferences.avatar));
+    // Avatar de l’ATM-Chatbot dans les messages.
     chatView.refreshAvatars();
 
     elements.micButton.hidden = !preferences.voiceModeEnabled;
     elements.voiceModeButtons.forEach((button) => (button.hidden = !preferences.voiceModeEnabled));
     if (!preferences.voiceModeEnabled) dictation.cancel();
-    void updateVoiceContext(preferences);
-  }
-
-  /* ---------- Panneau de contexte ---------- */
-  function updateContext() {
-    const device = DEVICE_OPTIONS.find((option) => option.value === conversation.deviceType);
-    contextPanel.update({
-      technician: `${displayName} (n° ${technicianId})`,
-      device: device ? `${device.name} · ${device.description}` : "—",
-      conversation: conversation.conversationId ? `n° ${conversation.conversationId}` : "Nouvelle",
-      messages: String(conversation.messageCount),
-    });
-  }
-
-  async function updateVoiceContext(preferences = getPreferences()) {
-    if (!isSpeechSynthesisSupported()) {
-      contextPanel.update({ voice: "Non disponible", "voice-language": "—" });
-    } else {
-      const { description } = await resolveVoice(preferences);
-      contextPanel.update({
-        voice: description ? formatVoiceLabel(description) : "Voix par défaut du système",
-        "voice-language": description ? description.languageLabel : "Aucune voix française",
-      });
-    }
-
-    if (!isSpeechRecognitionSupported()) {
-      contextPanel.update({ recognition: "Dictée non disponible (Chrome / Edge)" });
-      return;
-    }
-    const onDevice = await getOnDeviceRecognitionStatus();
-    contextPanel.update({ recognition: RECOGNITION_LABELS[onDevice] || "Dictée en ligne (navigateur)" });
   }
 
   /* ---------- Lecture à voix haute ---------- */
@@ -296,6 +201,9 @@ async function initAtmChatbot({ technicianId, displayName }) {
     requestInProgress = isBusy;
     elements.chatPanel.setAttribute("aria-busy", String(isBusy));
     elements.newConversationButtons.forEach((button) => (button.disabled = isBusy));
+    if (document.documentElement.hasAttribute("data-embedded")) {
+      window.parent.postMessage({ type: "atm-chatbot:state", busy: isBusy }, window.location.origin);
+    }
     updateSuggestionMenusState();
     devicePicker.setDisabled(isBusy);
     setStatus(isBusy ? "L’ATM-Chatbot réfléchit…" : READY_STATUS, isBusy ? "processing" : "idle");
@@ -327,7 +235,6 @@ async function initAtmChatbot({ technicianId, displayName }) {
     } finally {
       removeTyping();
       setBusy(false);
-      updateContext();
     }
     if (reply && readReply && getPreferences().autoRead) void readAloud(reply);
     return { reply, error };
@@ -449,42 +356,33 @@ async function initAtmChatbot({ technicianId, displayName }) {
     }),
   );
   elements.settingsButtons.forEach((button) => button.addEventListener("click", () => settingsPanel.open()));
-  $$("[data-add-intervention]").forEach((button) => button.addEventListener("click", () => openInterventionAdd()));
   elements.stopReadingButton.addEventListener("click", stopReading);
 
-  elements.newConversationButtons.forEach((button) =>
-    button.addEventListener("click", () => {
+  function startNewConversation() {
       if (requestInProgress) return;
       dictation.cancel();
       stopReading();
+      voiceMode.close();
+      elements.input.value = "";
+      photoAttachment.clear();
+      resizeInput();
+      updateComposerState();
       void conversation.reset();
-    })
-  );
-
-  elements.logoutButton.addEventListener("click", async () => {
-    dictation.cancel();
-    stopReading();
-    await logout();
-    window.location.href = "./";
-  });
+  }
+  elements.newConversationButtons.forEach((button) => button.addEventListener("click", startNewConversation));
 
   /* ---------- Synchronisation vue <-> conversation ---------- */
   // Tous les messages (écrits OU vocaux) arrivent par cet abonnement.
   conversation.subscribe((event) => {
     if (event.type === "message") {
       chatView.appendMessage(event.message);
-      updateContext();
     }
     if (event.type === "reset") {
       chatView.reset();
-      updateContext();
       elements.input.focus();
     }
   });
   onPreferencesChange(applyPreferences);
-  if (isSpeechSynthesisSupported()) {
-    window.speechSynthesis.addEventListener("voiceschanged", () => void updateVoiceContext());
-  }
 
   /* ---------- Démarrage : restauration de la conversation de l'onglet ---------- */
   applyPreferences(getPreferences());
@@ -492,9 +390,17 @@ async function initAtmChatbot({ technicianId, displayName }) {
   devicePicker.setValue(restored.deviceType);
   chatView.reset();
   restored.messages.forEach((message) => chatView.appendMessage(message, { animate: false }));
-  updateContext();
   updateComposerState();
   setStatus(READY_STATUS);
+  if (document.documentElement.hasAttribute("data-embedded")) {
+    window.addEventListener("message", (event) => {
+      if (event.origin !== window.location.origin || event.source !== window.parent) return;
+      if (event.data?.type !== "atm-chatbot:command") return;
+      if (event.data.action === "settings") settingsPanel.open();
+      if (event.data.action === "new-conversation") startNewConversation();
+    });
+    window.parent.postMessage({ type: "atm-chatbot:ready" }, window.location.origin);
+  }
 
   // Sans bloquer le démarrage : les menus apparaissent dès que le backend a
   // répondu (en cas d'échec, seuls ces menus manquent).

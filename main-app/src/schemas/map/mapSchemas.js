@@ -10,6 +10,18 @@ import { z } from "zod";
 
 export const MAP_POINT_CATEGORIES = ["atm_site", "tpe_client", "parts_depot", "difficult_access", "other"];
 
+const routeLocationSchema = z.object({
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+});
+
+export const routeRequestSchema = z.object({
+  start: routeLocationSchema,
+  end: routeLocationSchema,
+  mode: z.enum(["walking", "cycling", "motorcycle", "driving"]),
+  preference: z.enum(["shortest", "fastest"]).default("shortest"),
+});
+
 // Caractères de contrôle (sauf retour à la ligne) et caractères de direction
 // du texte : invisibles, ils servent à maquiller un texte affiché.
 // eslint-disable-next-line no-control-regex -- c'est justement le but : détecter ces caractères.

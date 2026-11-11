@@ -10,10 +10,13 @@ plutôt que de planter plus tard avec une erreur confuse.
 
 from typing import Optional
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    app_name: str = "atm-chatbot"
+
     # --- Base de données ---
     database_url: str = "postgresql+psycopg2://postgres:postgrespassword@localhost:5432/atm_chatbot"
 
@@ -30,12 +33,11 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-3.5-flash-lite"
     # Utilisés par ClaudeProvider (llm_service.py) quand llm_provider="claude".
     claude_api_key: str = ""
-    claude_model: str = "claude-sonnet-5-5"
+    claude_model: str = Field(default="claude-sonnet-5-5", pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 
     # --- Conversation avec le LLM (message_understanding_service) ---
-    # Nombre maximal d'anciens messages de la conversation envoyés au LLM à
-    # chaque tour (les plus récents) : garde-fou contre une facture qui
-    # grossit sans fin sur une très longue conversation.
+    # Seuil de condensation des échanges anciens (aussi déclenchée à 12000
+    # caractères anciens). Six derniers échanges intacts ; originaux conservés.
     chat_history_max_messages: int = 100
 
     # --- Rattachement automatique au catalogue de symptômes ---

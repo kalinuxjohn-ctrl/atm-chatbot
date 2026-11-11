@@ -20,6 +20,7 @@ import {
 import {
   ensureUserParticipatesInConversation,
   findAttachmentFileForUser,
+  getNotificationState,
   listContacts,
   listConversationsOfUser,
   markConversationAsRead,
@@ -74,6 +75,11 @@ export async function searchContacts(request, response) {
 
 export async function listConversations(request, response) {
   response.json({ conversations: await listConversationsOfUser(request.user) });
+}
+
+export async function notificationState(request, response) {
+  response.set("Cache-Control", "no-store");
+  response.json({ conversations: await getNotificationState(request.user) });
 }
 
 export async function openConversation(request, response) {

@@ -2,6 +2,26 @@
 
 Frontend vanilla HTML, CSS et JavaScript pour l’API FastAPI existante.
 
+Dans l'application integree, l'accueil est celui de la main app. Le chat
+n'affiche plus de barre laterale ni de panneau de contexte : Conversation,
+Nouvelle conversation est dans le menu deroulant du chatbot
+de la navigation principale retractable. Parametres est sous Appels :
+La meme fenetre defilante aligne Apparence, Notifications
+et les parametres Chat d'origine (avatar, voix et conversation), sans accordeons.
+Les preferences sont synchronisees avec le chat sans recharger la conversation.
+Le theme optionnel GAB (vert profond et or) est synchronise comme Clair et Sombre.
+Le technicien est affiche en haut, pres du Chat vocal. Les acces
+Diagnostic et Ajouter une intervention ont ete retires de cette page.
+En mode autonome, Nouvelle conversation et Parametres restent accessibles
+en haut de la conversation.
+
+Dans la pile complete lancee depuis la racine avec `docker compose up --build`,
+le nom affiche est construit depuis `APP_NAME=atm-chatbot` dans le `.env` racine.
+Un changement de nom demande un rebuild. Les chemins `/atm-chatbot/` restent fixes.
+Le mode de developpement autonome ci-dessous monte les sources `public` :
+ce montage remplace les fichiers de l'image, donc leurs textes restent ceux
+des sources, sans personnalisation du build.
+
 ## Démarrage avec Docker
 
 Depuis la racine du projet, démarrez d’abord le backend et sa base de données :
@@ -38,7 +58,10 @@ Correspondance des chemins dans le proxy (`server.py`) :
 | `/api/intervention_add/...`, `/api/admin/...` | identiques |
 | `/api/health`, `/api/catalog/...`, `/api/interventions/...` | `/api` retiré : `/health`, `/catalog/...`, `/interventions/...` |
 
-Le premier appel au LLM peut dépasser une minute (chargement du modèle) : le proxy attend jusqu’à 180 s (`PROXY_TIMEOUT_SECONDS`).
+Chaque appel a Claude dispose de 120 s. Une reponse peut necessiter plusieurs
+appels : le proxy et la passerelle attendent jusqu'a 300 s, et le navigateur
+jusqu'a 305 s (marge pour recevoir une erreur du proxy).
+Le delai du proxy est configurable avec `PROXY_TIMEOUT_SECONDS`.
 
 Si le conteneur existait avant l'ajout du volume, appliquez une seule fois
 la nouvelle configuration depuis le dossier `frontend` :
@@ -97,14 +120,9 @@ intégrer les visuels à la page. Le fichier fourni reste intact ; aucun
 hébergement d'images externe n'est utilisé. Il s'agit de visuels d'illustration,
 pas de photos d'un membre de l'équipe ou d'un matériel installé.
 
-Dans l’ATM-Chatbot, les commandes du menu et du contexte ont un contour accentué
-et un état ouvert/fermé visible. Le bouton « Contexte » affiche son libellé sur
-grand écran ; son libellé accessible et son info-bulle suivent l'état du panneau.
-Le thème clair associe une sidebar bleu nuit, une navigation active bleu vif,
-des surfaces blanc glacier et des cartes de contexte bordées de bleu pâle.
-Les commandes vocales, l'envoi, l'animation de maintenance et le formulaire
-d'intervention suivent la même palette bleue. Le contenu et les interactions
-restent identiques ; le thème sombre conserve sa palette verte.
+L’ATM-Chatbot utilise les mêmes accents verts que la navigation principale,
+avec des surfaces claires ou sombres selon le thème choisi dans les paramètres.
+Il n'a ni navigation latérale interne ni panneau de contexte.
 Pendant l'attente d'une réponse, les trois points restent affichés et l'avatar SVG
 anime une pose de réflexion (main au menton, tête inclinée et regard vers le haut).
 Les avatars personnalisés sous forme d'image s'inclinent uniquement. En mode
@@ -120,10 +138,8 @@ Les réponses du chatbot affichent un sous-ensemble Markdown : gras, italique,
 titres, listes et code. Le texte utilisateur reste littéral ; le HTML et les
 liens renvoyés par le modèle ne sont jamais exécutés ni rendus comme liens actifs.
 Les entrées des suggestions sont des lignes de texte sans icône de conversation
-répétée ; les codes d'erreur restent identifiables par leur code. Le panneau
-Contexte présente les libellés et valeurs avec des séparateurs sobres et un fin
-liseré coloré, sans bulles. Son bord blanc éclairé et son ombre asymétrique donnent
-un effet de plaque de verre soulevée à gauche. De petits cercles décorent les choix des menus et
+répétée ; les codes d'erreur restent identifiables par leur code.
+De petits cercles décorent les choix des menus et
 se remplissent sur l'entrée active, en suivant les couleurs du thème.
 
 ### Proposer une intervention
@@ -238,6 +254,7 @@ Le backend ne reçoit que du texte (`POST /api/chat`, comme le chat écrit). La 
 - **Micro de la zone de saisie** : dicte le texte dans le champ, sans l’envoyer. États affichés : « Autorisation du micro… », « Écoute en cours… », « Traitement… », « Erreur microphone : … ».
 - **Chat vocal** : écran plein, comme un appel ; la messagerie est masquée. Conversation entièrement à la voix : on parle naturellement, le message part tout seul après ~1,3 s de silence, la réponse est lue, puis le micro se rouvre automatiquement. Toucher la bulle envoie tout de suite (pendant l’écoute) ou interrompt l’ATM-Chatbot (pendant la lecture). C’est la **même** conversation : les échanges apparaissent dans le chat à la fermeture.
 - **Voix** : uniquement des voix **françaises**. Par défaut, voix naturelles du serveur (Denise / Henri, et d’autres voix fr-FR, fr-BE, fr-CA, fr-CH), identiques dans tous les navigateurs. Si le serveur de synthèse est injoignable, l’ATM-Chatbot se rabat automatiquement sur les voix françaises du navigateur (jamais une voix anglaise).
+- **Texte lu** : la lecture automatique, le bouton Ecouter et le chat vocal lisent le texte affiche, sans les marqueurs Markdown (`**`, `***`, etc.). La mise en forme visuelle reste conservee.
 - **Erreur « réseau » de la reconnaissance vocale** : Chrome et Edge envoient l’audio à leur propre service de transcription. Si ce service est injoignable, par exemple dans le navigateur intégré de VS Code, Brave, Opera, un réseau filtré ou un VPN, le navigateur renvoie l’erreur `network` même si Internet fonctionne. L’ATM-Chatbot l’explique, propose la reconnaissance hors ligne lorsque Chrome la prend en charge, ainsi qu’une saisie au clavier ou la dictée Windows (⊞ + H).
 
 ## Diagnostic

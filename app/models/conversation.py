@@ -17,7 +17,7 @@ class Conversation(Base):
     __tablename__ = "conversation"
 
     conversation_id = Column(Integer, primary_key=True)
-    technician_id = Column(Integer, ForeignKey("technician.technician_id"), nullable=False)
+    technician_id = Column(Integer, ForeignKey("technicien.technician_id"), nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
 
@@ -30,7 +30,7 @@ class Conversation(Base):
 
 
 class ConversationMessage(Base):
-    __tablename__ = "conversation_message"
+    __tablename__ = "message_conversation"
 
     message_id = Column(Integer, primary_key=True)
     conversation_id = Column(
@@ -51,7 +51,7 @@ class ConversationContext(Base):
     de pouvoir faire évoluer leur forme sans migration (spec §5).
     """
 
-    __tablename__ = "conversation_context"
+    __tablename__ = "contexte_conversation"
 
     conversation_id = Column(
         Integer, ForeignKey("conversation.conversation_id", ondelete="CASCADE"), primary_key=True

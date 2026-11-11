@@ -19,6 +19,13 @@ export const DEFAULT_PREFERENCES = Object.freeze({
 
 const listeners = new Set();
 
+window.addEventListener("storage", (event) => {
+  if (event.storageArea === localStorage && (event.key === STORAGE_KEYS.preferences || event.key === null)) {
+    const preferences = getPreferences();
+    listeners.forEach((listener) => listener(preferences));
+  }
+});
+
 export function getPreferences() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.preferences) || "{}");

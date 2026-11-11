@@ -13,6 +13,7 @@ import {
   listConversations,
   listMessages,
   markAsRead,
+  notificationState,
   openConversation,
   postAttachmentMessage,
   postTextMessage,
@@ -24,6 +25,7 @@ export function createMessagingRouter() {
   messagingRouter.use(requireAuthenticatedUser);
 
   messagingRouter.get("/contacts", asyncHandler(searchContacts));
+  messagingRouter.get("/notifications", asyncHandler(notificationState));
   messagingRouter.get("/conversations", asyncHandler(listConversations));
   messagingRouter.post("/conversations", asyncHandler(openConversation));
   messagingRouter.get("/conversations/:conversationId/messages", asyncHandler(listMessages));

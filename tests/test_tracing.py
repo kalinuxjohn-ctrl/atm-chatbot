@@ -94,7 +94,8 @@ class TracingTests(unittest.TestCase):
         body = response.body.decode("utf-8")
         self.assertEqual(response.status_code, 503)
         self.assertNotIn("Gemini", body)  # le client ne doit pas deviner le fournisseur
-        self.assertIn("saturé", body)
+        self.assertIn("indisponible", body)
+        self.assertNotIn("saturé", body)
         self.assertIn("Gemini a répondu avec une erreur (503).", self.output.getvalue())  # cause claire côté serveur
 
     def test_reference_resolution_keeps_returned_ids(self):

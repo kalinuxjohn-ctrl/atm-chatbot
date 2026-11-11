@@ -22,6 +22,11 @@
 }
 
 /* --- Liste des conversations --- */
+@media (max-height: 600px) and (orientation: landscape) {
+  .messaging-page { display: flex; flex-direction: column; }
+  .messaging-layout { flex: 1; height: auto; min-height: 0; padding: 6px; }
+}
+
 .conversation-sidebar {
   display: flex;
   flex-direction: column;

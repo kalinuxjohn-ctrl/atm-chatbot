@@ -3,6 +3,8 @@
 import unittest
 from unittest.mock import patch
 
+from pydantic import ValidationError
+
 from app.core.config import Settings
 from app.services import llm_service
 
@@ -25,6 +27,12 @@ class LLMProviderTests(unittest.TestCase):
         with patch.object(llm_service.settings, "llm_provider", "unsupported"):
             with self.assertRaisesRegex(llm_service.LLMUnavailableError, "Fournisseur LLM inconnu"):
                 llm_service.get_llm_provider()
+
+    def test_model_rejects_an_accidentally_pasted_assignment(self):
+        for value in ("CLAUDE_MODEL=claude-sonnet-5-5", " claude-sonnet-5-5", "claude sonnet", ""):
+            with self.subTest(value=value), self.assertRaises(ValidationError):
+                Settings(_env_file=None, claude_model=value)
+        self.assertEqual(Settings(_env_file=None, claude_model="claude-sonnet-5-5").claude_model, "claude-sonnet-5-5")
 
 
 if __name__ == "__main__":

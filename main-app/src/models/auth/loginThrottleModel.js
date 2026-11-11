@@ -1,5 +1,5 @@
 /**
- * Accès SQL au verrouillage temporaire des connexions (main_app.login_throttles),
+ * Accès SQL au verrouillage temporaire des connexions (main_app.blocages_connexion),
  * par couple (nom saisi, adresse IP).
  */
 
@@ -8,7 +8,7 @@ import { queryDatabase } from "../../core/database.js";
 /** Fin du verrouillage en cours pour ce couple, ou null s'il n'est pas verrouillé. */
 export async function findActiveLockEnd(attemptedUsername, ipAddress) {
   const [throttleRow] = await queryDatabase(
-    `SELECT locked_until FROM main_app.login_throttles
+    `SELECT locked_until FROM main_app.blocages_connexion
       WHERE attempted_username = $1 AND ip_address = $2 AND locked_until > now()`,
     [attemptedUsername, ipAddress],
   );
@@ -22,7 +22,7 @@ export async function findActiveLockEnd(attemptedUsername, ipAddress) {
  */
 export async function recordFailedAttempt(attemptedUsername, ipAddress, { maximumFailedAttempts, lockMinutes }) {
   await queryDatabase(
-    `INSERT INTO main_app.login_throttles AS throttles (attempted_username, ip_address, failed_attempts, first_failed_at)
+    `INSERT INTO main_app.blocages_connexion AS throttles (attempted_username, ip_address, failed_attempts, first_failed_at)
      VALUES ($1, $2, 1, now())
      ON CONFLICT (attempted_username, ip_address) DO UPDATE SET
        failed_attempts = CASE
@@ -41,7 +41,7 @@ export async function recordFailedAttempt(attemptedUsername, ipAddress, { maximu
 }
 
 export async function clearFailedAttempts(attemptedUsername, ipAddress) {
-  await queryDatabase("DELETE FROM main_app.login_throttles WHERE attempted_username = $1 AND ip_address = $2", [
+  await queryDatabase("DELETE FROM main_app.blocages_connexion WHERE attempted_username = $1 AND ip_address = $2", [
     attemptedUsername,
     ipAddress,
   ]);
@@ -50,7 +50,7 @@ export async function clearFailedAttempts(attemptedUsername, ipAddress) {
 /** Nettoyage périodique : les entrées anciennes et non verrouillées ne servent plus. */
 export async function deleteExpiredThrottles() {
   const deletedRows = await queryDatabase(
-    `DELETE FROM main_app.login_throttles
+    `DELETE FROM main_app.blocages_connexion
       WHERE (locked_until IS NULL OR locked_until < now())
         AND first_failed_at < now() - interval '1 day'
       RETURNING 1`,

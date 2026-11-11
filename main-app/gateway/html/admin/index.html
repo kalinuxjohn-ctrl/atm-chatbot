@@ -15,7 +15,7 @@
     <main class="page-content administration-layout">
       <div class="page-heading administration-heading">
         <p class="page-eyebrow">Administration</p>
-        <h1>Pilotage de l'Espace techniciens et de l’ATM-Chatbot</h1>
+        <h1>Pilotage de l'application</h1>
         <p>Comptes des techniciens, propositions à valider et réponses enregistrées de l’ATM-Chatbot, au même endroit.</p>
       </div>
 
@@ -27,39 +27,6 @@
       </section>
 
       <div class="administration-workspace" data-administration-workspace hidden>
-        <!--
-          Sommaire des rubriques. Chaque lien pointe vers #<rubrique> : la rubrique
-          ouverte suit l'adresse (on peut la partager, et « Précédent » fonctionne).
-          Les compteurs [data-section-counter] sont remplis par administrationPage.js.
-        -->
-        <nav class="card administration-menu" aria-label="Rubriques d'administration">
-          <p class="administration-menu-title">Espace techniciens</p>
-          <a class="administration-menu-link" href="#comptes" data-section-link="comptes">
-            <span data-icon="users"></span><span class="administration-menu-label">Comptes</span>
-            <span class="administration-menu-counter" data-section-counter="comptes" hidden></span>
-          </a>
-
-          <p class="administration-menu-title">ATM-Chatbot · à valider</p>
-          <a class="administration-menu-link" href="#propositions" data-section-link="propositions">
-            <span data-icon="lightbulb"></span><span class="administration-menu-label">Propositions</span>
-            <span class="administration-menu-counter is-pending" data-section-counter="propositions" hidden></span>
-          </a>
-          <a class="administration-menu-link" href="#interventions" data-section-link="interventions">
-            <span data-icon="clipboardList"></span><span class="administration-menu-label">Ajouts d'intervention</span>
-            <span class="administration-menu-counter is-pending" data-section-counter="interventions" hidden></span>
-          </a>
-
-          <p class="administration-menu-title">ATM-Chatbot · réponses</p>
-          <a class="administration-menu-link" href="#codes-erreur" data-section-link="codes-erreur">
-            <span data-icon="errorCode"></span><span class="administration-menu-label">Codes d'erreur</span>
-            <span class="administration-menu-counter" data-section-counter="codes-erreur" hidden></span>
-          </a>
-          <a class="administration-menu-link" href="#pannes-frequentes" data-section-link="pannes-frequentes">
-            <span data-icon="listOrdered"></span><span class="administration-menu-label">Pannes fréquentes</span>
-            <span class="administration-menu-counter" data-section-counter="pannes-frequentes" hidden></span>
-          </a>
-        </nav>
-
         <!-- Une seule rubrique visible à la fois ; chaque module JS remplit la sienne. -->
         <div class="administration-sections">
           <section class="administration-section" id="comptes" data-section="comptes" aria-labelledby="comptes-title" hidden>

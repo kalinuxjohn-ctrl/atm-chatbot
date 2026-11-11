@@ -92,10 +92,10 @@
   height: 14px;
 }
 
-/* Mobile : barre du haut et onglets du bas autour de l'iframe. */
-@media (max-width: 720px) {
+/* Paysage : barre du haut et navigation horizontale autour de l'iframe. */
+@media (max-height: 600px) and (orientation: landscape) {
   .atm-chatbot-layout {
-    height: calc(100dvh - 52px - var(--mobile-tab-bar-height) - env(safe-area-inset-bottom));
+    height: calc(100dvh - var(--mobile-header-height) - var(--mobile-tab-bar-height) - env(safe-area-inset-bottom));
     padding: 8px;
   }
 
@@ -106,4 +106,9 @@
   .atm-chatbot-footnote span:first-child {
     display: none;
   }
+}
+
+@media (max-width: 720px) and (orientation: portrait) {
+  .atm-chatbot-layout { height: 100dvh; padding: 6px 6px 6px 0; }
+  .atm-chatbot-footnote { display: none; }
 }

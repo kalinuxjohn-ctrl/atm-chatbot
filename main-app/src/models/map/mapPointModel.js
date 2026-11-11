@@ -1,6 +1,6 @@
 /**
- * Accès SQL aux points de la carte (main_app.map_points).
- * Le nom de l'auteur vient de main_app.accounts (nom d'utilisateur affiché).
+ * Accès SQL aux points de la carte (main_app.points_carte).
+ * Le nom de l'auteur vient de main_app.comptes (nom d'utilisateur affiché).
  */
 
 import { queryDatabase } from "../../core/database.js";
@@ -14,8 +14,8 @@ const MAP_POINT_COLUMNS = `
   points.created_by, points.created_at, points.updated_at, accounts.username AS created_by_username`;
 
 const MAP_POINT_SOURCE = `
-  main_app.map_points AS points
-  LEFT JOIN main_app.accounts AS accounts ON accounts.technician_id = points.created_by`;
+  main_app.points_carte AS points
+  LEFT JOIN main_app.comptes AS accounts ON accounts.technician_id = points.created_by`;
 
 function toMapPoint(pointRow) {
   return {
@@ -77,7 +77,7 @@ export async function findMapPointsNearLocation({ latitude, longitude, radiusMet
 
 export async function insertMapPoint({ title, description, category, latitude, longitude, createdByTechnicianId }) {
   const [createdRow] = await queryDatabase(
-    `INSERT INTO main_app.map_points (title, description, category, latitude, longitude, created_by)
+    `INSERT INTO main_app.points_carte (title, description, category, latitude, longitude, created_by)
      VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING id`,
     [title, description, category, latitude, longitude, createdByTechnicianId],
@@ -88,7 +88,7 @@ export async function insertMapPoint({ title, description, category, latitude, l
 /** Ne modifie que les champs fournis (COALESCE : null = garder la valeur actuelle). */
 export async function updateMapPoint(pointId, { title, description, category, latitude, longitude }) {
   await queryDatabase(
-    `UPDATE main_app.map_points SET
+    `UPDATE main_app.points_carte SET
         title = COALESCE($2, title),
         description = COALESCE($3, description),
         category = COALESCE($4::main_app.map_point_category, category),
@@ -101,5 +101,5 @@ export async function updateMapPoint(pointId, { title, description, category, la
 }
 
 export async function deleteMapPoint(pointId) {
-  await queryDatabase("DELETE FROM main_app.map_points WHERE id = $1", [pointId]);
+  await queryDatabase("DELETE FROM main_app.points_carte WHERE id = $1", [pointId]);
 }

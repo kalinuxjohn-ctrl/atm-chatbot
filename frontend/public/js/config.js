@@ -9,9 +9,9 @@
 // derrière l'Espace techniciens (/atm-chatbot/app/).
 export const API_BASE_URL = "api";
 
-// Le backend appelle un LLM (le premier appel charge le modèle : parfois > 1 min).
+// Une réponse peut nécessiter plusieurs appels au LLM.
 // Doit rester un peu supérieur au délai du proxy (PROXY_TIMEOUT_SECONDS de server.py).
-export const REQUEST_TIMEOUT_MS = 185000;
+export const REQUEST_TIMEOUT_MS = 305000;
 
 // Langue utilisée pour la reconnaissance et la synthèse vocale.
 export const SPEECH_LANG = "fr-FR";

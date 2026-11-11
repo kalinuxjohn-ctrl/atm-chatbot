@@ -67,6 +67,41 @@
         <p class="muted" data-nearby-summary></p>
         <ol class="nearby-point-list" data-nearby-list></ol>
       </aside>
+
+      <aside class="card map-side-panel" data-route-panel hidden>
+        <div class="card-header">
+          <h2>Itinéraire</h2>
+          <button class="icon-button" type="button" data-close-route aria-label="Fermer l’itinéraire"><span data-icon="close"></span></button>
+        </div>
+        <p><strong data-route-destination></strong></p>
+        <p class="muted" data-route-departure></p>
+        <div class="map-form-actions">
+          <button class="button button-secondary button-small" type="button" data-route-locate>Ma position</button>
+          <button class="button button-secondary button-small" type="button" data-route-pick-start>Départ sur la carte</button>
+        </div>
+        <form data-route-form>
+          <label class="form-field">Déplacement
+            <select name="mode">
+              <option value="walking">À pied</option>
+              <option value="cycling">Vélo</option>
+              <option value="motorcycle">Moto (profil voiture)</option>
+              <option value="driving" selected>Voiture</option>
+            </select>
+          </label>
+          <label class="form-field">Priorité
+            <select name="preference">
+              <option value="shortest">Distance la plus courte</option>
+              <option value="fastest">Temps le plus court</option>
+            </select>
+          </label>
+          <div class="map-form-actions">
+            <button class="button" type="submit">Tracer l’itinéraire</button>
+            <button class="button button-secondary" type="button" data-clear-route>Effacer</button>
+          </div>
+        </form>
+        <p data-route-summary role="status"></p>
+        <p class="form-error" data-route-status role="status" hidden></p>
+      </aside>
     </main>
   </body>
 </html>

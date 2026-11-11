@@ -16,12 +16,14 @@ import {
   updatePoint,
 } from "../../controllers/map/mapPointController.js";
 import { readMapSettings, serveTile } from "../../controllers/map/mapTileController.js";
+import { readRoute } from "../../controllers/map/routingController.js";
 
 export function createMapRouter() {
   const mapRouter = Router();
   mapRouter.use(requireAuthenticatedUser);
 
   mapRouter.get("/settings", asyncHandler(readMapSettings));
+  mapRouter.post("/route", asyncHandler(readRoute));
   mapRouter.get("/tiles/:z/:x/:y", asyncHandler(serveTile));
 
   mapRouter.get("/points", asyncHandler(listPointsInBoundingBox));

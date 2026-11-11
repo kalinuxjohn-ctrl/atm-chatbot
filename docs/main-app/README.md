@@ -116,7 +116,8 @@ docker compose -f docker-compose.yml -f docker-compose.main-app.yml exec main-ap
 
 L'application est disponible sur <http://localhost:8080>.
 
-Les tables sont créées automatiquement au démarrage par les migrations `db/migrations/0014` à `0018`.
+Les tables sont créées automatiquement au démarrage par les migrations `db/migrations/0014` à `0018`,
+puis leurs noms passent en français avec `0019` (sans modifier les comptes).
 
 ### Désactiver la connexion en développement
 

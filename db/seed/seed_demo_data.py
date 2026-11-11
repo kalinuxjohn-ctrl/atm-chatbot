@@ -35,51 +35,51 @@ from app.services.embeddings_service import generate_embeddings_batch
 SEED_STATEMENTS = [
     # --- Fabricant, modèle, machines ---
     """
-    INSERT INTO manufacturer (manufacturer_id, name)
+    INSERT INTO fabricant (manufacturer_id, name)
     VALUES (1, 'Diebold Nixdorf')
     ON CONFLICT (manufacturer_id) DO NOTHING;
     """,
     """
-    INSERT INTO device_model (model_id, manufacturer_id, model_name)
+    INSERT INTO modele_appareil (model_id, manufacturer_id, model_name)
     VALUES (10, 1, 'Opteva 720')
     ON CONFLICT (model_id) DO NOTHING;
     """,
     """
-    INSERT INTO device (device_id, device_type, serial_number, model_id, site_name, status)
+    INSERT INTO appareil (device_id, device_type, serial_number, model_id, site_name, status)
     VALUES (501, 'gab', 'ON-DN-88213', 10, 'Branch 14, Main St', 'active')
     ON CONFLICT (device_id) DO NOTHING;
     """,
     # Deuxième machine, différente, pour l'intervention de Bob.
     """
-    INSERT INTO device (device_id, device_type, serial_number, model_id, site_name, status)
+    INSERT INTO appareil (device_id, device_type, serial_number, model_id, site_name, status)
     VALUES (502, 'gab', 'ON-DN-88214', 10, 'Branch 22, Elm St', 'active')
     ON CONFLICT (device_id) DO NOTHING;
     """,
 
     # --- Techniciens ---
     """
-    INSERT INTO technician (technician_id, full_name, employee_code)
+    INSERT INTO technicien (technician_id, full_name, employee_code)
     VALUES (7, 'Alan Moreau', 'T-0071')
     ON CONFLICT (technician_id) DO NOTHING;
     """,
     """
-    INSERT INTO technician (technician_id, full_name, employee_code)
+    INSERT INTO technicien (technician_id, full_name, employee_code)
     VALUES (8, 'Bob Nguyen', 'T-0082')
     ON CONFLICT (technician_id) DO NOTHING;
     """,
         # --- Techniciens ---
     """
-    INSERT INTO technician (technician_id, full_name, employee_code)
+    INSERT INTO technicien (technician_id, full_name, employee_code)
     VALUES (4, 'Technicien Test API', 'T-0004')
     ON CONFLICT (technician_id) DO NOTHING;
     """,
     """
-    INSERT INTO technician (technician_id, full_name, employee_code)
+    INSERT INTO technicien (technician_id, full_name, employee_code)
     VALUES (7, 'Alan Moreau', 'T-0071')
     ON CONFLICT (technician_id) DO NOTHING;
     """,
     """
-    INSERT INTO technician (technician_id, full_name, employee_code)
+    INSERT INTO technicien (technician_id, full_name, employee_code)
     VALUES (8, 'Bob Nguyen', 'T-0082')
     ON CONFLICT (technician_id) DO NOTHING;
     """,
@@ -87,12 +87,12 @@ SEED_STATEMENTS = [
 
     # --- Catalogue partagé : composant, symptômes, actions ---
     """
-    INSERT INTO component (component_id, name)
+    INSERT INTO composant (component_id, name)
     VALUES (1, 'Card reader')
     ON CONFLICT (component_id) DO NOTHING;
     """,
     """
-    INSERT INTO symptom (symptom_id, canonical_text, component_id) VALUES
+    INSERT INTO symptome (symptom_id, canonical_text, component_id) VALUES
         (21, 'Carte retenue par le GAB', 1),
         (22, 'La transaction ne s''achève pas', NULL),
         (23, 'Les espèces ne sont pas distribuées', NULL),
@@ -113,13 +113,13 @@ SEED_STATEMENTS = [
     # Choisis pour correspondre au même scénario "lecteur de carte"
     # qu'Alan et Bob, par cohérence avec le reste de la démo. ---
     """
-    INSERT INTO fault (fault_id, code, name) VALUES
+    INSERT INTO panne (fault_id, code, name) VALUES
         (1, 'P001', 'Lecteur de carte bloqué'),
         (2, 'P002', 'Distributeur de billets en défaut')
     ON CONFLICT (fault_id) DO NOTHING;
     """,
     """
-    INSERT INTO error_code (error_code_id, code, description, fault_id) VALUES
+    INSERT INTO code_erreur (error_code_id, code, description, fault_id) VALUES
         (1, 'E42', 'Capteur de rétention de carte ne répond pas', 1),
         (2, 'E43', 'Moteur du lecteur de carte bloqué', 1),
         (3, 'E67', 'Distributeur de billets : bourrage détecté', 2)
@@ -133,14 +133,14 @@ SEED_STATEMENTS = [
     ON CONFLICT (intervention_id) DO NOTHING;
     """,
     """
-    INSERT INTO intervention_symptom (intervention_symptom_id, intervention_id, symptom_id, raw_text) VALUES
+    INSERT INTO symptome_intervention (intervention_symptom_id, intervention_id, symptom_id, raw_text) VALUES
         (9001, 3001, 21, 'La carte est retenue par le GAB.'),
         (9002, 3001, 22, 'La transaction ne s''achève pas.'),
         (9003, 3001, 23, 'Les espèces ne sont pas distribuées.')
     ON CONFLICT (intervention_symptom_id) DO NOTHING;
     """,
     """
-    INSERT INTO intervention_action
+    INSERT INTO action_intervention
         (intervention_action_id, intervention_id, action_id, raw_text, sequence_order,
          result_description, outcome_status, is_confirmed_solution)
     VALUES
@@ -154,7 +154,7 @@ SEED_STATEMENTS = [
     ON CONFLICT (intervention_action_id) DO NOTHING;
     """,
     """
-    INSERT INTO diagnosis
+    INSERT INTO diagnostic
         (diagnosis_id, intervention_id, description, root_cause_component_id, root_cause_component_text, confirmed)
     VALUES (501, 3001, 'Card reader firmware/state got stuck; reinitialization cleared it.', 1, 'Card reader', TRUE)
     ON CONFLICT (diagnosis_id) DO NOTHING;
@@ -171,14 +171,14 @@ SEED_STATEMENTS = [
     ON CONFLICT (intervention_id) DO NOTHING;
     """,
     """
-    INSERT INTO intervention_symptom (intervention_symptom_id, intervention_id, symptom_id, raw_text) VALUES
+    INSERT INTO symptome_intervention (intervention_symptom_id, intervention_id, symptom_id, raw_text) VALUES
         (9004, 3045, 21, 'La carte reste coincée dans le distributeur.'),
         (9005, 3045, 22, 'La transaction ne se termine jamais.'),
         (9006, 3045, 24, 'L''imprimante de reçus est bloquée.')
     ON CONFLICT (intervention_symptom_id) DO NOTHING;
     """,
     """
-    INSERT INTO intervention_action
+    INSERT INTO action_intervention
         (intervention_action_id, intervention_id, action_id, raw_text, sequence_order,
          result_description, outcome_status, is_confirmed_solution)
     VALUES
@@ -188,7 +188,7 @@ SEED_STATEMENTS = [
     """,
     # Pièce en cause en texte libre seulement (migration 0013) : absente de la table component.
     """
-    INSERT INTO diagnosis (diagnosis_id, intervention_id, description, root_cause_component_text, confirmed)
+    INSERT INTO diagnostic (diagnosis_id, intervention_id, description, root_cause_component_text, confirmed)
     VALUES (502, 3045, 'Card-retention sensor failed: the reader never detected the card leaving.',
             'Card-retention sensor', TRUE)
     ON CONFLICT (diagnosis_id) DO NOTHING;
@@ -310,22 +310,22 @@ USUAL_PROBLEMS = [
 # risquerait de retomber sur un ID déjà pris et de planter avec une violation
 # de contrainte unique. On recale donc chaque séquence sur le MAX() réel.
 SEQUENCE_RESETS = [
-    "SELECT setval('manufacturer_manufacturer_id_seq', (SELECT MAX(manufacturer_id) FROM manufacturer));",
-    "SELECT setval('device_model_model_id_seq', (SELECT MAX(model_id) FROM device_model));",
-    "SELECT setval('device_device_id_seq', (SELECT MAX(device_id) FROM device));",
-    "SELECT setval('technician_technician_id_seq', (SELECT MAX(technician_id) FROM technician));",
-    "SELECT setval('component_component_id_seq', (SELECT MAX(component_id) FROM component));",
-    "SELECT setval('symptom_symptom_id_seq', (SELECT MAX(symptom_id) FROM symptom));",
+    "SELECT setval('manufacturer_manufacturer_id_seq', (SELECT MAX(manufacturer_id) FROM fabricant));",
+    "SELECT setval('device_model_model_id_seq', (SELECT MAX(model_id) FROM modele_appareil));",
+    "SELECT setval('device_device_id_seq', (SELECT MAX(device_id) FROM appareil));",
+    "SELECT setval('technician_technician_id_seq', (SELECT MAX(technician_id) FROM technicien));",
+    "SELECT setval('component_component_id_seq', (SELECT MAX(component_id) FROM composant));",
+    "SELECT setval('symptom_symptom_id_seq', (SELECT MAX(symptom_id) FROM symptome));",
     "SELECT setval('action_action_id_seq', (SELECT MAX(action_id) FROM action));",
-    "SELECT setval('fault_fault_id_seq', (SELECT MAX(fault_id) FROM fault));",
-    "SELECT setval('error_code_error_code_id_seq', (SELECT MAX(error_code_id) FROM error_code));",
-    "SELECT setval('usual_problem_usual_problem_id_seq', (SELECT MAX(usual_problem_id) FROM usual_problem));",
+    "SELECT setval('fault_fault_id_seq', (SELECT MAX(fault_id) FROM panne));",
+    "SELECT setval('error_code_error_code_id_seq', (SELECT MAX(error_code_id) FROM code_erreur));",
+    "SELECT setval('usual_problem_usual_problem_id_seq', (SELECT MAX(usual_problem_id) FROM panne_frequente));",
     "SELECT setval('intervention_intervention_id_seq', (SELECT MAX(intervention_id) FROM intervention));",
     "SELECT setval('intervention_symptom_intervention_symptom_id_seq', "
-    "(SELECT MAX(intervention_symptom_id) FROM intervention_symptom));",
+    "(SELECT MAX(intervention_symptom_id) FROM symptome_intervention));",
     "SELECT setval('intervention_action_intervention_action_id_seq', "
-    "(SELECT MAX(intervention_action_id) FROM intervention_action));",
-    "SELECT setval('diagnosis_diagnosis_id_seq', (SELECT MAX(diagnosis_id) FROM diagnosis));",
+    "(SELECT MAX(intervention_action_id) FROM action_intervention));",
+    "SELECT setval('diagnosis_diagnosis_id_seq', (SELECT MAX(diagnosis_id) FROM diagnostic));",
 ]
 
 # Le seed insère les symptômes via du SQL brut (raw_text seulement) --
@@ -367,12 +367,12 @@ def run_seed() -> None:
                 # Ne remplit que les codes encore sans réponse : une réponse
                 # modifiée depuis par un administrateur n'est pas écrasée.
                 cursor.executemany(
-                    "UPDATE error_code SET device_type = %s, reply = %s "
+                    "UPDATE code_erreur SET device_type = %s, reply = %s "
                     "WHERE error_code_id = %s AND reply IS NULL",
                     [(device_type, "\n".join(reply), error_code_id) for error_code_id, device_type, reply in ERROR_CODE_REPLIES],
                 )
                 cursor.executemany(
-                    "INSERT INTO usual_problem (usual_problem_id, device_type, display_order, label, reply) "
+                    "INSERT INTO panne_frequente (usual_problem_id, device_type, display_order, label, reply) "
                     "VALUES (%s, %s, %s, %s, %s) ON CONFLICT (usual_problem_id) DO NOTHING",
                     [
                         (usual_problem_id, device_type, display_order, label, "\n".join(reply))
@@ -385,7 +385,7 @@ def run_seed() -> None:
                 # symptômes SANS vecteur sont envoyés à Voyage. Base déjà
                 # remplie = aucun appel réseau.
                 cursor.execute(
-                    "SELECT intervention_symptom_id FROM intervention_symptom "
+                    "SELECT intervention_symptom_id FROM symptome_intervention "
                     "WHERE intervention_symptom_id = ANY(%s) AND embedding IS NULL",
                     ([intervention_symptom_id for intervention_symptom_id, _ in EMBEDDING_BACKFILL],),
                 )
@@ -398,7 +398,7 @@ def run_seed() -> None:
                     vecteurs = generate_embeddings_batch([raw_text for _, raw_text in a_vectoriser])
                     for (intervention_symptom_id, _), vecteur in zip(a_vectoriser, vecteurs):
                         cursor.execute(
-                            "UPDATE intervention_symptom SET embedding = %s::vector "
+                            "UPDATE symptome_intervention SET embedding = %s::vector "
                             "WHERE intervention_symptom_id = %s",
                             (str(vecteur), intervention_symptom_id),
                         )

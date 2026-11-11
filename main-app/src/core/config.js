@@ -54,6 +54,7 @@ const featureConfigurationSchemas = {
     MAIN_APP_LOGIN_LOCK_MINUTES: positiveIntegerFromText.max(24 * 60).default(15),
   }),
   map: z.object({
+    MAIN_APP_MAP_ROUTING_API_KEY: z.string().trim().min(1).optional(),
     // Gabarit FIXE du fournisseur de tuiles, ex. https://tile.openstreetmap.org/{z}/{x}/{y}.png.
     // Le client n'envoie que z/x/y validés : il ne peut jamais choisir l'hôte appelé (pas de SSRF).
     MAIN_APP_MAP_TILE_URL_TEMPLATE: z

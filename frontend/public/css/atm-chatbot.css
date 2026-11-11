@@ -1274,6 +1274,9 @@
   z-index: 1;
   width: 80%;
   aspect-ratio: 1;
+  display: block;
+  overflow: hidden;
+  border-radius: 50%;
 }
 
 .voice-avatar .avatar {
@@ -1288,11 +1291,11 @@
 
 /* Réflexion : l'anneau coloré tourne. */
 .voice-dialog:is([data-state="processing"], [data-state="thinking"], [data-state="requesting"]) .voice-orb-core {
-  animation: orb-spin 1.6s linear infinite;
+  animation: orb-breathe 4s ease-in-out infinite;
 }
 
 .voice-dialog:is([data-state="processing"], [data-state="thinking"], [data-state="requesting"]) .voice-avatar {
-  animation: orb-spin 1.6s linear infinite reverse; /* l'avatar reste droit */
+  animation: none;
 }
 
 /* L’ATM-Chatbot parle : halos qui pulsent. */
@@ -1310,7 +1313,7 @@
 
 @keyframes orb-breathe {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.04); }
+  50% { transform: scale(1.015); }
 }
 
 @keyframes orb-spin {
@@ -1318,8 +1321,8 @@
 }
 
 @keyframes orb-pulse {
-  from { opacity: 0.6; transform: scale(0.95); }
-  to { opacity: 0; transform: scale(1.45); }
+  from { opacity: 0.3; transform: scale(1); }
+  to { opacity: 0.12; transform: scale(1.08); }
 }
 
 /* --- Statut et sous-titres --- */
@@ -1971,10 +1974,7 @@
 
 /* Zone de conversation : image de fond claire (assets.css, --image-app-background). */
 .atm-chatbot-page .workspace {
-  background:
-    radial-gradient(900px 480px at 85% -10%, rgba(79, 157, 255, 0.12), transparent 60%),
-    var(--image-app-background) center / cover no-repeat,
-    var(--canvas);
+  background: var(--app-background);
 }
 
 /* Sidebar : reprend l'image de l'accueil sous un voile bleu nuit, pour

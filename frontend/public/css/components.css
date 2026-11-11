@@ -45,6 +45,8 @@
   display: block;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  border-radius: 50%;
 }
 
 .avatar svg {
@@ -74,7 +76,7 @@
 }
 
 .avatar[data-state="speaking"] .avatar-mouth {
-  animation: avatar-talk 260ms ease-in-out infinite alternate;
+  animation: avatar-talk 700ms ease-in-out infinite alternate;
 }
 
 .avatar[data-state="listening"] .avatar-mouth {
@@ -185,7 +187,7 @@
 
 @keyframes avatar-talk {
   from { transform: scale(1, 1); }
-  to { transform: scale(0.85, 3.2); }
+  to { transform: scale(0.96, 1.5); }
 }
 
 .message-markdown :is(h3, h4, h5, h6) {

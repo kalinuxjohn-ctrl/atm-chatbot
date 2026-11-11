@@ -58,7 +58,8 @@ export function createChatView({
   onListen,
   createWelcomeExtras = () => null,
   onProposeSolution = () => {},
-  onAddIntervention = () => {},
+  onAddIntervention = null,
+  compactWelcome = false,
 }) {
   let welcomeExtrasSlot = null;
   // Une seule offre de proposition à la fois : sous la DERNIÈRE réponse qui
@@ -184,7 +185,7 @@ export function createChatView({
     listenButton.addEventListener("click", () => onListen(text));
     body.append(listenButton);
 
-    if (canAddIntervention) {
+    if (canAddIntervention && onAddIntervention) {
       dismissProposalOffer();
       activeProposalOffer = createElement("div", "proposal-offer intervention-offer");
       const title = createElement("strong", "", "Vous avez rencontré et traité cette panne ?");
@@ -270,10 +271,12 @@ export function createChatView({
       activeProposalOffer = null;
       const { message, body } = createAssistantShell("À l’instant");
       message.classList.remove("message-enter-fade");
-      message.classList.add("welcome-message");
-      message.prepend(createWelcomeReactor());
+      if (!compactWelcome) {
+        message.classList.add("welcome-message");
+        message.prepend(createWelcomeReactor());
+      }
       welcomeExtrasSlot = createElement("div", "welcome-extras");
-      body.append(createTextBubble(greeting(userName).join("\n")), welcomeExtrasSlot);
+      body.append(createTextBubble((compactWelcome ? greeting("").slice(1) : greeting(userName)).join("\n")), welcomeExtrasSlot);
       conversationElement.replaceChildren(message);
       renderWelcomeExtras();
     },

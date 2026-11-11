@@ -1,10 +1,10 @@
 /**
  * Outils communs aux tests d'intégration : vraie base (migrations 0001 à
- * 0018 appliquées), vraies apps Express, appelées avec supertest.
+ * 0019 appliquées), vraies apps Express, appelées avec supertest.
  *
  * Chaque test crée ses propres comptes avec un nom unique : pas besoin de
  * vider les tables entre deux tests (et main_app_user n'a de toute façon pas
- * le droit de supprimer des lignes de public.technician).
+ * le droit de supprimer des lignes de public.technicien).
  */
 
 import { randomBytes } from "node:crypto";

@@ -20,6 +20,6 @@ export async function serveTile(request, response) {
 }
 
 export function readMapSettings(request, response) {
-  const { MAIN_APP_MAP_TILE_ATTRIBUTION, MAIN_APP_MAP_TILE_MAX_ZOOM } = request.app.locals.configuration;
-  response.json({ attribution: MAIN_APP_MAP_TILE_ATTRIBUTION, maximumZoom: MAIN_APP_MAP_TILE_MAX_ZOOM });
+  const { MAIN_APP_MAP_TILE_ATTRIBUTION, MAIN_APP_MAP_TILE_MAX_ZOOM, MAIN_APP_MAP_ROUTING_API_KEY } = request.app.locals.configuration;
+  response.json({ attribution: MAIN_APP_MAP_TILE_ATTRIBUTION, maximumZoom: MAIN_APP_MAP_TILE_MAX_ZOOM, routingEnabled: Boolean(MAIN_APP_MAP_ROUTING_API_KEY) });
 }

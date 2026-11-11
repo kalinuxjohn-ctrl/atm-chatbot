@@ -3,7 +3,7 @@
  * ATM-Chatbot de l'Espace techniciens (main app, iframe sur /atm-chatbot/app/), l'adresse contient :
  *
  *   ?embedded=1                 masque la barre du haut (l'Espace techniciens a déjà sa navigation)
- *   &theme=dark|light           thème de l'Espace techniciens
+ *   &theme=dark|light|gab       thème de l'Espace techniciens
  *   &technician_id=7            technicien connecté à l'Espace techniciens
  *   &display_name=Alan%20Test   son nom
  *
@@ -31,8 +31,8 @@
   rootElement.dataset.embedded = "";
 
   function applyTheme(theme) {
-    if (theme === "dark") {
-      rootElement.dataset.theme = "dark";
+    if (theme === "dark" || theme === "gab") {
+      rootElement.dataset.theme = theme;
     } else if (theme === "light") {
       delete rootElement.dataset.theme;
     }
@@ -59,7 +59,7 @@
 
   window.addEventListener("message", function onParentMessage(messageEvent) {
     // Seule la page de l'Espace techniciens qui contient l'iframe (même site) est écoutée.
-    if (messageEvent.origin !== window.location.origin) {
+    if (messageEvent.origin !== window.location.origin || messageEvent.source !== window.parent) {
       return;
     }
     if (messageEvent.data && messageEvent.data.type === THEME_MESSAGE_TYPE) {

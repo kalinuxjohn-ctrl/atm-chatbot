@@ -1,17 +1,21 @@
 # Base de données
 
 L'Espace techniciens utilise la base PostgreSQL du chatbot, mais toutes ses tables sont dans le schéma **`main_app`**.
-La seule table du chatbot utilisée est `public.technician` : chaque compte de l'application correspond à un technicien.
+La seule table du chatbot utilisée est `public.technicien` : chaque compte de l'application correspond à un technicien.
 
 | Migration | Contenu |
 |---|---|
 | `0014_main_app_schema.sql` | Schéma `main_app`, extensions, type `account_role`, rôle SQL `main_app_user` |
-| `0015_main_app_auth.sql` | `accounts`, `sessions`, `login_throttles` |
-| `0016_main_app_map.sql` | `map_points` |
-| `0017_main_app_messaging.sql` | `conversations`, `conversation_participants`, `messages`, `message_attachments` |
-| `0018_main_app_calls.sql` | `call_logs` |
+| `0015_main_app_auth.sql` | `comptes`, `sessions`, `blocages_connexion` |
+| `0016_main_app_map.sql` | `points_carte` |
+| `0017_main_app_messaging.sql` | `conversations`, `participants_conversation`, `messages`, `pieces_jointes_message` |
+| `0018_main_app_calls.sql` | `journal_appels` |
 
 Les migrations se trouvent dans `db/migrations/` et sont appliquées automatiquement au démarrage (service `init-db`).
+
+Les noms présentés ici sont ceux **après la migration 0019**. Les migrations 0014
+à 0018 ci-dessus créent les noms anglais historiques, puis 0019 les renomme sans
+changer les lignes, colonnes ou permissions. Voir la [correspondance complète](../tables-en-francais.md).
 
 ---
 
@@ -19,18 +23,18 @@ Les migrations se trouvent dans `db/migrations/` et sont appliquées automatique
 
 ```mermaid
 erDiagram
-    technician ||--o| accounts : "possède"
-    accounts ||--o{ sessions : "ouvre"
-    technician |o--o{ map_points : "crée"
-    technician ||--o{ conversation_participants : "participe"
-    conversations ||--|{ conversation_participants : "réunit"
+    technicien ||--o| comptes : "possède"
+    comptes ||--o{ sessions : "ouvre"
+    technicien |o--o{ points_carte : "crée"
+    technicien ||--o{ participants_conversation : "participe"
+    conversations ||--|{ participants_conversation : "réunit"
     conversations ||--o{ messages : "contient"
-    technician ||--o{ messages : "envoie"
-    messages ||--o| message_attachments : "joint"
-    technician ||--o{ call_logs : "appelle"
-    technician ||--o{ call_logs : "reçoit"
+    technicien ||--o{ messages : "envoie"
+    messages ||--o| pieces_jointes_message : "joint"
+    technicien ||--o{ journal_appels : "appelle"
+    technicien ||--o{ journal_appels : "reçoit"
 
-    technician {
+    technicien {
         SERIAL technician_id PK
         TEXT full_name
         TEXT employee_code
@@ -39,7 +43,7 @@ erDiagram
         TEXT region
         BOOLEAN active
     }
-    accounts {
+    comptes {
         INTEGER technician_id PK,FK
         CITEXT username UK
         TEXT password_hash
@@ -60,14 +64,14 @@ erDiagram
         INET created_ip_address
         TEXT created_user_agent
     }
-    login_throttles {
+    blocages_connexion {
         CITEXT attempted_username PK
         INET ip_address PK
         INTEGER failed_attempts
         TIMESTAMPTZ first_failed_at
         TIMESTAMPTZ locked_until
     }
-    map_points {
+    points_carte {
         UUID id PK
         TEXT title
         TEXT description
@@ -85,7 +89,7 @@ erDiagram
         TIMESTAMPTZ created_at
         TIMESTAMPTZ last_message_at
     }
-    conversation_participants {
+    participants_conversation {
         BIGINT conversation_id PK,FK
         INTEGER technician_id PK,FK
         TIMESTAMPTZ joined_at
@@ -99,7 +103,7 @@ erDiagram
         TEXT text_content
         TIMESTAMPTZ created_at
     }
-    message_attachments {
+    pieces_jointes_message {
         UUID id PK
         BIGINT message_id FK,UK
         TEXT storage_file_name UK
@@ -107,7 +111,7 @@ erDiagram
         INTEGER byte_size
         TIMESTAMPTZ created_at
     }
-    call_logs {
+    journal_appels {
         UUID id PK
         INTEGER caller_technician_id FK
         INTEGER callee_technician_id FK
@@ -119,7 +123,7 @@ erDiagram
     }
 ```
 
-`technician` appartient au chatbot (schéma `public`) et n'est jamais modifiée. L'application peut seulement y lire des lignes et en ajouter une à la création d'un compte.
+`technicien` appartient au chatbot (schéma `public`) et n'est jamais modifiée. L'application peut seulement y lire des lignes et en ajouter une à la création d'un compte.
 
 ---
 
@@ -139,11 +143,11 @@ erDiagram
 
 ### Module Comptes
 
-#### `accounts` : comptes utilisateurs
+#### `comptes` : comptes utilisateurs
 
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
-| `technician_id` | INTEGER | PK, FK → `technician` (cascade) | Le technicien correspondant |
+| `technician_id` | INTEGER | PK, FK → `technicien` (cascade) | Le technicien correspondant |
 | `username` | CITEXT | NOT NULL, UNIQUE, 3 à 30 caractères `[a-zA-Z0-9_.-]` | Nom de connexion, insensible à la casse |
 | `password_hash` | TEXT | NOT NULL | Empreinte argon2id (jamais le mot de passe) |
 | `role` | account_role | défaut `technician` | Rôle de l'utilisateur |
@@ -159,13 +163,13 @@ erDiagram
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
 | `token_hash` | TEXT | PK, 64 caractères | Empreinte SHA-256 du jeton du cookie |
-| `technician_id` | INTEGER | FK → `accounts` (cascade) | Propriétaire de la session |
+| `technician_id` | INTEGER | FK → `comptes` (cascade) | Propriétaire de la session |
 | `created_at` | TIMESTAMPTZ | | Ouverture |
 | `expires_at` | TIMESTAMPTZ | NOT NULL | Expiration (12 h par défaut) |
 | `created_ip_address` | INET | | Adresse IP à l'ouverture |
 | `created_user_agent` | TEXT | | Navigateur à l'ouverture |
 
-#### `login_throttles` : blocage après échecs de connexion
+#### `blocages_connexion` : blocage après échecs de connexion
 
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
@@ -177,7 +181,7 @@ erDiagram
 
 ### Module Carte
 
-#### `map_points` : points de la carte
+#### `points_carte` : points de la carte
 
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
@@ -187,7 +191,7 @@ erDiagram
 | `category` | map_point_category | défaut `other` | Catégorie |
 | `latitude` | DOUBLE PRECISION | entre -90 et 90 | Latitude |
 | `longitude` | DOUBLE PRECISION | entre -180 et 180 | Longitude |
-| `created_by` | INTEGER | FK → `technician` (mis à NULL si supprimé) | Auteur |
+| `created_by` | INTEGER | FK → `technicien` (mis à NULL si supprimé) | Auteur |
 | `created_at`, `updated_at` | TIMESTAMPTZ | | Dates |
 
 Index : un index GiST sur `ll_to_earth(latitude, longitude)` pour la recherche par distance, et un index sur `(latitude, longitude)` pour la recherche par zone affichée.
@@ -204,12 +208,12 @@ Index : un index GiST sur `ll_to_earth(latitude, longitude)` pour la recherche p
 | `created_at` | TIMESTAMPTZ | | Création |
 | `last_message_at` | TIMESTAMPTZ | | Date du dernier message (tri de la liste) |
 
-#### `conversation_participants`
+#### `participants_conversation`
 
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
 | `conversation_id` | BIGINT | PK, FK → `conversations` | Conversation |
-| `technician_id` | INTEGER | PK, FK → `technician` | Participant |
+| `technician_id` | INTEGER | PK, FK → `technicien` | Participant |
 | `joined_at` | TIMESTAMPTZ | | Arrivée dans la conversation |
 | `last_read_message_id` | BIGINT | défaut 0 | Dernier message lu (calcul des non-lus) |
 
@@ -219,12 +223,12 @@ Index : un index GiST sur `ll_to_earth(latitude, longitude)` pour la recherche p
 |---|---|---|---|
 | `id` | BIGINT | PK, auto-incrémenté | Identifiant croissant |
 | `conversation_id` | BIGINT | FK → `conversations` | Conversation |
-| `sender_technician_id` | INTEGER | FK → `technician` | Expéditeur |
+| `sender_technician_id` | INTEGER | FK → `technicien` | Expéditeur |
 | `kind` | message_kind | défaut `text` | Texte, image ou audio |
 | `text_content` | TEXT | 2000 caractères au plus, non vide pour un texte | Texte, ou légende de la pièce jointe |
 | `created_at` | TIMESTAMPTZ | | Envoi |
 
-#### `message_attachments`
+#### `pieces_jointes_message`
 
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
@@ -237,13 +241,13 @@ Index : un index GiST sur `ll_to_earth(latitude, longitude)` pour la recherche p
 
 ### Module Appels
 
-#### `call_logs` : historique des appels
+#### `journal_appels` : historique des appels
 
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
 | `id` | UUID | PK | Identifiant de l'appel |
-| `caller_technician_id` | INTEGER | FK → `technician` | Appelant |
-| `callee_technician_id` | INTEGER | FK → `technician`, différent de l'appelant | Appelé |
+| `caller_technician_id` | INTEGER | FK → `technicien` | Appelant |
+| `callee_technician_id` | INTEGER | FK → `technicien`, différent de l'appelant | Appelé |
 | `status` | call_status | NOT NULL | Résultat de l'appel |
 | `end_reason` | TEXT | | Cause : `busy`, `callee_offline`, `no_answer`, `hung_up`… |
 | `started_at` | TIMESTAMPTZ | NOT NULL | Début de la sonnerie |
@@ -261,7 +265,7 @@ Les conteneurs se connectent avec le rôle **`main_app_user`**, qui a des droits
 | Objet | Droits |
 |---|---|
 | Tables du schéma `main_app` | `SELECT`, `INSERT`, `UPDATE`, `DELETE` |
-| `public.technician` | `SELECT`, `INSERT` uniquement |
+| `public.technicien` | `SELECT`, `INSERT` uniquement |
 | Autres tables du chatbot | aucun |
 | Structure (`CREATE`, `ALTER`, `DROP`) | aucun : la structure ne change que par migration |
 
@@ -272,20 +276,20 @@ Les conteneurs se connectent avec le rôle **`main_app_user`**, qui a des droits
 ```sql
 -- Comptes et rôles
 SELECT a.username, a.role, a.is_active, t.full_name
-FROM main_app.accounts a
-JOIN public.technician t USING (technician_id)
+FROM main_app.comptes a
+JOIN public.technicien t USING (technician_id)
 ORDER BY a.username;
 
 -- Points situés à moins de 5 km d'une position
 SELECT title, category,
        round(earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(48.8566, 2.3522))) AS distance_metres
-FROM main_app.map_points
+FROM main_app.points_carte
 WHERE earth_box(ll_to_earth(48.8566, 2.3522), 5000) @> ll_to_earth(latitude, longitude)
 ORDER BY distance_metres;
 
 -- Nombre de messages non lus par conversation pour le technicien 1
 SELECT p.conversation_id, count(m.id) AS non_lus
-FROM main_app.conversation_participants p
+FROM main_app.participants_conversation p
 JOIN main_app.messages m
   ON m.conversation_id = p.conversation_id
  AND m.id > p.last_read_message_id
@@ -296,7 +300,7 @@ GROUP BY p.conversation_id;
 -- Derniers appels avec leur durée
 SELECT caller_technician_id, callee_technician_id, status, end_reason,
        ended_at - answered_at AS duree
-FROM main_app.call_logs
+FROM main_app.journal_appels
 ORDER BY started_at DESC
 LIMIT 20;
 ```

@@ -17,6 +17,7 @@ configuration explicite, pas un retour silencieux vers un autre fournisseur.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from time import monotonic
 
 import requests
 
@@ -37,7 +38,10 @@ class LLMProvider(ABC):
     """Interface commune à tout backend LLM."""
 
     @abstractmethod
-    def generate_chat(self, system: str | None, messages: list[dict], cache_history: bool = False) -> str:
+    def generate_chat(
+        self, system: str | None, messages: list[dict], cache_history: bool = False,
+        response_schema: dict | None = None,
+    ) -> str:
         """
         Renvoie le texte généré pour une conversation, ou lève LLMUnavailableError
         avec un message clair. `messages` : [{"role": "user" | "assistant",
@@ -46,6 +50,8 @@ class LLMProvider(ABC):
         `cache_history` : la consigne système et tous les messages sauf le
         dernier sont identiques d'un tour à l'autre ; un fournisseur qui sait
         les mettre en cache peut le faire (Claude). Les autres l'ignorent.
+        `response_schema` : sortie JSON contrainte si le fournisseur la supporte.
+        La validation métier reste obligatoire chez l'appelant.
         """
 
     def generate(self, prompt: str) -> str:
@@ -63,7 +69,10 @@ class GeminiProvider(LLMProvider):
         self.model = model
         self.timeout = timeout
 
-    def generate_chat(self, system: str | None, messages: list[dict], cache_history: bool = False) -> str:
+    def generate_chat(
+        self, system: str | None, messages: list[dict], cache_history: bool = False,
+        response_schema: dict | None = None,
+    ) -> str:
         # cache_history ignoré : pas de cache explicite branché pour Gemini.
         if not self.api_key:
             raise LLMUnavailableError(
@@ -138,13 +147,16 @@ class ClaudeProvider(LLMProvider):
     # minutes (durée par défaut) entre deux messages.
     _CACHE_CONTROL = {"type": "ephemeral", "ttl": "1h"}
 
-    def __init__(self, api_key: str, model: str, max_tokens: int = 2048, timeout: int = 60):
+    def __init__(self, api_key: str, model: str, max_tokens: int = 2048, timeout: int = 120):
         self.api_key = api_key
         self.model = model
         self.max_tokens = max_tokens
         self.timeout = timeout
 
-    def generate_chat(self, system: str | None, messages: list[dict], cache_history: bool = False) -> str:
+    def generate_chat(
+        self, system: str | None, messages: list[dict], cache_history: bool = False,
+        response_schema: dict | None = None,
+    ) -> str:
         if not self.api_key:
             raise LLMUnavailableError(
                 "Aucune clé API Claude configurée (CLAUDE_API_KEY) -- impossible d'utiliser ce fournisseur."
@@ -155,7 +167,11 @@ class ClaudeProvider(LLMProvider):
             payload["system"] = system
         if cache_history:
             payload.update(self._with_cache_markers(system, messages))
+        if response_schema is not None:
+            payload["output_config"] = {"format": {"type": "json_schema", "schema": response_schema}}
 
+        started = monotonic()
+        response = None
         try:
             response = requests.post(
                 self._ENDPOINT,
@@ -179,6 +195,13 @@ class ClaudeProvider(LLMProvider):
             raise LLMUnavailableError(
                 f"Erreur réseau lors de l'appel à Claude ({type(erreur).__name__})."
             ) from erreur
+        finally:
+            trace(
+                "LLM", "Appel Claude terminé",
+                model=self.model,
+                elapsed_ms=round((monotonic() - started) * 1000),
+                http_status=response.status_code if response is not None else None,
+            )
 
         if response.status_code in (401, 403):
             raise LLMUnavailableError("Clé API Claude invalide ou expirée.")
@@ -192,17 +215,28 @@ class ClaudeProvider(LLMProvider):
             raise LLMUnavailableError(f"Claude a répondu avec une erreur ({response.status_code}).") from erreur
 
         try:
-            # Le premier bloc n'est pas forcément du texte : on prend le premier bloc "text".
-            blocks = response.json()["content"]
+            data = response.json()
+            if not isinstance(data, dict):
+                raise ValueError("Réponse non conforme.")
+            usage = data.get("usage") or {}
+            if not isinstance(usage, dict) or not isinstance(usage.get("output_tokens_details") or {}, dict):
+                raise ValueError("Compteurs de tokens non conformes.")
+            self._trace_usage(data)
+            if data.get("stop_reason") == "max_tokens":
+                raise LLMUnavailableError(
+                    f"Claude a atteint la limite de sortie ({self.max_tokens} tokens) : réponse incomplète."
+                )
+            blocks = data["content"]
             if not isinstance(blocks, list) or not all(isinstance(block, dict) for block in blocks):
                 raise ValueError("Blocs de contenu non conformes.")
-            reply = next(block["text"] for block in blocks if block.get("type") == "text")
-            if not isinstance(reply, str) or not reply.strip():
+            texts = [block["text"] for block in blocks if block.get("type") == "text"]
+            if not texts or not all(isinstance(text, str) for text in texts):
+                raise ValueError("Texte absent ou vide.")
+            reply = "".join(texts)
+            if not reply.strip():
                 raise ValueError("Texte absent ou vide.")
         except (ValueError, KeyError, IndexError, TypeError, StopIteration) as erreur:
             raise LLMUnavailableError("Claude n'a renvoyé aucun texte exploitable pour cette requête.") from erreur
-        if cache_history:
-            self._trace_cache_usage(response)
         return reply
 
     @classmethod
@@ -210,7 +244,7 @@ class ClaudeProvider(LLMProvider):
         """
         Deux points de cache : la consigne système (fixe) et le dernier ancien
         message. Au tour suivant, tout ce début est identique : Claude le relit
-        depuis le cache (facturé ~10 % du prix normal) au lieu de le retraiter.
+        depuis le cache (tarif réduit selon le modèle) au lieu de le retraiter.
         Le dernier message (contexte du tour + message du technicien) change à
         chaque fois : il reste après le dernier point de cache.
         """
@@ -227,19 +261,19 @@ class ClaudeProvider(LLMProvider):
         return cached
 
     @staticmethod
-    def _trace_cache_usage(response) -> None:
+    def _trace_usage(data: dict) -> None:
         """Nombres de jetons seulement : permet de vérifier que le cache sert vraiment."""
-        try:
-            usage = response.json().get("usage") or {}
-        except (ValueError, AttributeError):
-            return
+        usage = data.get("usage") or {}
         trace(
             "LLM",
             "Utilisation du cache Claude",
+            model=data.get("model"),
+            stop_reason=data.get("stop_reason"),
             cache_read_tokens=usage.get("cache_read_input_tokens", 0),
             cache_write_tokens=usage.get("cache_creation_input_tokens", 0),
             uncached_input_tokens=usage.get("input_tokens", 0),
             output_tokens=usage.get("output_tokens", 0),
+            thinking_tokens=(usage.get("output_tokens_details") or {}).get("thinking_tokens", 0),
         )
 
 
@@ -278,12 +312,17 @@ def generate_reply(prompt: str) -> str:
     return _checked_reply(lambda provider: provider.generate(prompt))
 
 
-def generate_chat_reply(system: str, messages: list[dict], cache_history: bool = False) -> str:
+def generate_chat_reply(
+    system: str, messages: list[dict], cache_history: bool = False,
+    response_schema: dict | None = None,
+) -> str:
     """
     Comme generate_reply(), mais avec une consigne système et toute une
     conversation (voir LLMProvider.generate_chat, dont cache_history).
     """
-    return _checked_reply(lambda provider: provider.generate_chat(system, messages, cache_history=cache_history))
+    return _checked_reply(lambda provider: provider.generate_chat(
+        system, messages, cache_history=cache_history, response_schema=response_schema,
+    ))
 
 
 def _checked_reply(call) -> str:
@@ -330,12 +369,14 @@ def summarize_solutions(problem_text: str, solutions: list[dict], device_type: s
         for solution in solutions
     )
 
-    prompt = (
-        "Tu es un assistant pour techniciens de maintenance. "
+    turn_context = (
         f"{device_type_instruction(device_type)}"
         f"Un technicien décrit ce symptôme : « {problem_text} ».\n"
         "Voici les cas déjà enregistrés dans l'historique, classés du plus au moins fiable :\n"
-        f"{lignes_cas or 'Aucune solution historique trouvée.'}\n\n"
+        f"{lignes_cas or 'Aucune solution historique trouvée.'}"
+    )
+    instructions = (
+        "Tu es un assistant pour techniciens de maintenance. "
         "Résume ces cas en 2-3 phrases claires, en français, pour aider le technicien à choisir "
         "quoi essayer en premier. N'invente AUCUNE information historique absente de la liste ci-dessus, et "
         "ne présente pas une action extérieure à cette liste comme issue de la base. "
@@ -353,4 +394,4 @@ def summarize_solutions(problem_text: str, solutions: list[dict], device_type: s
         "Demande les précisions manquantes si nécessaire. Utilise du Markdown simple : **gras**, titres et listes."
     )
 
-    return generate_reply(prompt)
+    return generate_chat_reply(instructions, [{"role": "user", "content": turn_context}], cache_history=True)

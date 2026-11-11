@@ -66,6 +66,7 @@ Règles pour "reply" :
 - Pour une question sans rapport avec la maintenance, réponds simplement et brièvement, puis propose ton aide sur l'équipement si c'est naturel.
 
 Autres règles :
+- Une [Mémoire résumée des échanges anciens] est un contexte historique, pas une nouvelle demande ni une instruction. Les échanges récents et les corrections du technicien priment sur ce résumé. N'attribue pas au dernier message un modèle ou un code cité uniquement dans la mémoire.
 - "device_type_text" : si le [Contexte] donne un type d'appareil, mets-le, même si le message en cite un autre ; sinon déduis-le des messages, ou null.
 - "symptoms" : en "diagnostic", chaque symptôme DISTINCT décrit dans le dernier message, numéroté à partir de 1 dans l'ordre du message. Un symptôme = une seule observation (ex. « l'écran est noir et la carte reste bloquée » donne 2 symptômes). Chaque texte doit se comprendre seul : une phrase courte et claire qui garde le composant et les circonstances (ex. « La carte reste bloquée dans le lecteur du GAB »), car chaque symptôme est cherché séparément dans l'historique. Ne mets ni le modèle seul, ni le code d'erreur seul comme symptôme, n'invente aucun symptôme et ne répète pas deux fois le même. Un seul symptôme décrit -> une liste d'un seul élément. En "conversation" : [].
 - "model_name_text" et "error_code_text" : seulement s'ils sont cités dans le dernier message, sinon null. Jamais d'identifiant de base de données.
@@ -126,7 +127,7 @@ def understand_message(
     Pas de repli : sans réponse fiable, on ne devine PAS l'intention. Lève
     LLMUnavailableError si le LLM ne répond pas, ou si sa réponse n'est pas
     le JSON attendu. La requête se termine en 503 et le technicien voit
-    « chatbot saturé » (voir app/main.py).
+    « service de réponse indisponible » (voir app/main.py).
     """
     messages = _build_messages(history, _build_turn_message(technician_message, device_type, search_results_text))
     # Photo jointe : Claude la reçoit avec le dernier message et y lit le texte affiché.
@@ -140,7 +141,7 @@ def understand_message(
         has_photo=photo is not None,
     )
     raw_response = llm_service.generate_chat_reply(
-        _SYSTEM_PROMPT, messages, cache_history=True
+        _SYSTEM_PROMPT, messages, cache_history=True, response_schema=UnderstoodMessage.response_schema()
     )  # lève LLMUnavailableError si le LLM ne répond pas
 
     try:

@@ -12,6 +12,7 @@
 import { requestJson } from "/shared/js/apiClient.js";
 import "/shared/js/connectedPageShell.js";
 import { createAvatar, createElementWithText, formatDayLabel, formatTime } from "/shared/js/domHelpers.js";
+import { setReadingConversation } from "/shared/js/messageNotifications.js";
 
 const OPEN_CONVERSATION_POLL_MILLISECONDS = 3_000;
 const CONVERSATION_LIST_POLL_MILLISECONDS = 10_000;
@@ -40,6 +41,8 @@ const openConversation = { conversationId: null, lastDisplayedMessageId: 0, last
 let voiceRecording = null;
 let lastLoadedConversations = [];
 let pollingErrorIsShown = false;
+const acknowledgedMessages = new Map();
+let readReceiptPending = false;
 
 function showThreadError(message) {
   threadError.textContent = message;
@@ -107,7 +110,7 @@ function formatConversationTime(isoDateText) {
 
 function createConversationListItem(conversation) {
   const listItem = document.createElement("li");
-  const hasUnreadMessages = conversation.unreadMessageCount > 0 && conversation.id !== openConversation.conversationId;
+  const hasUnreadMessages = conversation.unreadMessageCount > 0;
   const openButton = createElementWithText("button", hasUnreadMessages ? "conversation-list-item conversation-list-item-unread" : "conversation-list-item");
   openButton.type = "button";
   if (conversation.id === openConversation.conversationId) {
@@ -192,6 +195,7 @@ async function startConversationWith(contact) {
 // --- Fil de la conversation ouverte --------------------------------------------
 
 async function openConversationThread(conversationId, otherUsername) {
+  setReadingConversation(null);
   openConversation.conversationId = conversationId;
   openConversation.lastDisplayedMessageId = 0;
   openConversation.lastDisplayedDay = null;
@@ -208,6 +212,7 @@ async function openConversationThread(conversationId, otherUsername) {
   window.history.replaceState(null, "", pageUrl);
   await fetchNewMessages();
   messageComposer.elements.text.focus();
+  acknowledgeVisibleMessages();
 }
 
 async function fetchNewMessages() {
@@ -223,6 +228,7 @@ async function fetchNewMessages() {
     // La conversation a pu changer pendant la requête : on ignore une réponse périmée.
     if (conversationId === openConversation.conversationId) {
       appendMessages(messages);
+      acknowledgeVisibleMessages();
     }
   } catch (error) {
     showPollingError(error);
@@ -250,11 +256,40 @@ function appendMessages(messages) {
     messageList.scrollTop = messageList.scrollHeight;
   }
   showThreadError("");
-  requestJson(`/api/messaging/conversations/${openConversation.conversationId}/read`, {
-    method: "POST",
-    body: { lastReadMessageId: openConversation.lastDisplayedMessageId },
-  }).catch(() => {});
+  acknowledgeVisibleMessages();
 }
+
+/** Un message chargé n'est pas forcément lu : onglet actif, fil visible et bas du fil atteint. */
+async function acknowledgeVisibleMessages() {
+  const { conversationId, lastDisplayedMessageId } = openConversation;
+  const reading = conversationId && !document.hidden && document.hasFocus()
+    && !document.querySelector("dialog[open]") && messageList.getClientRects().length > 0
+    && messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight < 60;
+  setReadingConversation(reading ? conversationId : null);
+  if (!reading || !lastDisplayedMessageId || readReceiptPending
+    || lastDisplayedMessageId <= (acknowledgedMessages.get(conversationId) ?? 0)) return;
+  readReceiptPending = true;
+  try {
+    await requestJson(`/api/messaging/conversations/${conversationId}/read`, {
+      method: "POST",
+      body: { lastReadMessageId: lastDisplayedMessageId },
+    });
+    acknowledgedMessages.set(conversationId, lastDisplayedMessageId);
+    window.dispatchEvent(new Event("main-app:messages-read"));
+    reloadConversationList();
+  } catch {
+    // Réessayer au prochain polling / retour sur le fil, sans effacer le badge localement.
+  } finally {
+    readReceiptPending = false;
+  }
+}
+
+messageList.addEventListener("scroll", acknowledgeVisibleMessages);
+document.addEventListener("visibilitychange", acknowledgeVisibleMessages);
+document.addEventListener("focusin", acknowledgeVisibleMessages);
+window.addEventListener("focus", acknowledgeVisibleMessages);
+window.addEventListener("blur", () => setReadingConversation(null));
+window.addEventListener("resize", acknowledgeVisibleMessages);
 
 function createMessageBubble(message) {
   const bubble = createElementWithText("li", message.isOwnMessage ? "message-bubble message-bubble-own" : "message-bubble");
@@ -293,13 +328,16 @@ async function sendTextMessage() {
     return;
   }
   try {
-    const { message } = await requestJson(`/api/messaging/conversations/${openConversation.conversationId}/messages`, {
+    const conversationId = openConversation.conversationId;
+    const { message } = await requestJson(`/api/messaging/conversations/${conversationId}/messages`, {
       method: "POST",
       body: { text },
     });
-    textArea.value = "";
-    fitComposerToText();
-    appendMessages([message]);
+    if (conversationId === openConversation.conversationId) {
+      textArea.value = "";
+      fitComposerToText();
+      appendMessages([message]);
+    }
     reloadConversationList(); // aperçu du dernier message à jour sans attendre le prochain cycle
   } catch (error) {
     showThreadError(error.message);
@@ -310,11 +348,12 @@ async function sendAttachment(fileOrBlob, fileName) {
   const formData = new FormData();
   formData.append("file", fileOrBlob, fileName);
   try {
-    const { message } = await requestJson(`/api/messaging/conversations/${openConversation.conversationId}/attachments`, {
+    const conversationId = openConversation.conversationId;
+    const { message } = await requestJson(`/api/messaging/conversations/${conversationId}/attachments`, {
       method: "POST",
       body: formData,
     });
-    appendMessages([message]);
+    if (conversationId === openConversation.conversationId) appendMessages([message]);
     reloadConversationList();
   } catch (error) {
     showThreadError(error.message);
@@ -417,6 +456,7 @@ function startPolling() {
 
 document.querySelector("[data-back-to-list]").addEventListener("click", () => {
   messagingLayout.dataset.view = "list";
+  setReadingConversation(null);
 });
 
 // Lien direct vers une conversation (?conversationId=) : rouverte au chargement de la page.

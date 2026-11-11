@@ -18,16 +18,16 @@ def recompute_stats(db) -> int:
             -- enregistrées en même temps) : sans ce verrou, deux
             -- DELETE + INSERT entrelacés violeraient la clé primaire.
             -- Les lectures (SELECT) restent possibles pendant le recalcul.
-            LOCK TABLE symptom_action_outcome_stats IN EXCLUSIVE MODE;
+            LOCK TABLE statistiques_resultats_symptome_action IN EXCLUSIVE MODE;
 
-            DELETE FROM symptom_action_outcome_stats;
+            DELETE FROM statistiques_resultats_symptome_action;
 
             -- On ajoute une jointure jusqu'à `device` (via `intervention`)
             -- pour connaître le device_type de la machine sur laquelle
             -- l'action a été tentée, et on l'inclut dans le GROUP BY : un
             -- (symptom_id, action_id) donne donc une ligne par type
             -- d'appareil, pas une ligne unique tous appareils confondus.
-            INSERT INTO symptom_action_outcome_stats
+            INSERT INTO statistiques_resultats_symptome_action
                 (symptom_id, action_id, device_type, attempts, successes, accuracy_score, last_computed_at)
             SELECT
                 isym.symptom_id,
@@ -37,11 +37,11 @@ def recompute_stats(db) -> int:
                 SUM(CASE WHEN ia.is_confirmed_solution THEN 1 ELSE 0 END) AS successes,
                 AVG(CASE WHEN ia.is_confirmed_solution THEN 1.0 ELSE 0.0 END) AS accuracy_score,
                 NOW() AS last_computed_at
-            FROM intervention_action ia
-            JOIN intervention_symptom isym ON isym.intervention_id = ia.intervention_id
+            FROM action_intervention ia
+            JOIN symptome_intervention isym ON isym.intervention_id = ia.intervention_id
             AND (ia.targets_symptom_id IS NULL OR ia.targets_symptom_id = isym.intervention_symptom_id)
             JOIN intervention iv ON iv.intervention_id = ia.intervention_id
-            JOIN device d ON d.device_id = iv.device_id
+            JOIN appareil d ON d.device_id = iv.device_id
             -- Indispensable : symptom_id et action_id sont NOT NULL dans
             -- cette table (migration 0004). Une action pas encore rattachée
             -- au catalogue (action_id NULL -- exactement le cas d'une
@@ -54,7 +54,7 @@ def recompute_stats(db) -> int:
         )
     )
     db.commit()
-    row_count = db.execute(text("SELECT COUNT(*) FROM symptom_action_outcome_stats")).scalar()
+    row_count = db.execute(text("SELECT COUNT(*) FROM statistiques_resultats_symptome_action")).scalar()
     return int(row_count or 0)
 
 

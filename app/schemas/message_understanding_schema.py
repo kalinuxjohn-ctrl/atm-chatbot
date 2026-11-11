@@ -53,6 +53,25 @@ class UnderstoodMessage(BaseModel):
     photo_text: Optional[str] = None
     photo_meaning: Optional[str] = None
 
+    @classmethod
+    def response_schema(cls) -> dict:
+        """Schéma fermé pour les sorties structurées Claude, sans valeurs par défaut."""
+        schema = cls.model_json_schema()
+
+        def constrain(node):
+            if isinstance(node, dict):
+                node.pop("default", None)
+                if node.get("type") == "object":
+                    node["additionalProperties"] = False
+                for value in node.values():
+                    constrain(value)
+            elif isinstance(node, list):
+                for value in node:
+                    constrain(value)
+
+        constrain(schema)
+        return schema
+
     @field_validator("photo_text", "photo_meaning", mode="before")
     @classmethod
     def _empty_text_to_none(cls, value):

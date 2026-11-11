@@ -34,6 +34,7 @@ ICONS_USED_BY_THE_APP = {
     "map": "map",
     "message": "message-circle",
     "phone": "phone",
+    "settings": "settings",
     "shield": "shield-check",
     "logout": "log-out",
     "sun": "sun",

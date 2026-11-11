@@ -2,10 +2,11 @@
 # ============================================================================
 # Lance TOUS les tests (unitaires + intégration) contre une base PostgreSQL
 # JETABLE : même image que le chatbot (pgvector/pgvector:pg16), mêmes
-# migrations (db/migrations/0001 à 0018), puis tout est supprimé.
+# migrations (db/migrations/0001 à 0019), puis tout est supprimé.
 # La base du chatbot n'est jamais touchée.
 #
 #   sh main-app/tests/integration/runIntegrationTestsWithDisposableDatabase.sh
+# Sélection ciblée : ajouter les chemins Jest après le nom du script.
 #
 # Prérequis : Docker. Les node_modules sont gardés dans un volume Docker
 # (main-app-test-node-modules) : rien n'est installé sur la machine hôte.
@@ -54,4 +55,4 @@ docker run --rm --network "$network_name" \
   -e MAIN_APP_TEST_DATABASE_USER=main_app_user \
   -e MAIN_APP_TEST_DATABASE_PASSWORD="$test_password" \
   node:22-bookworm-slim \
-  sh -c "if ! cmp -s package-lock.json node_modules/.installed-package-lock.json; then npm ci --no-audit --no-fund --loglevel=error --fetch-retries=5 --fetch-timeout=120000 && cp package-lock.json node_modules/.installed-package-lock.json; fi && npm run lint && npm test"
+  sh -c 'if ! cmp -s package-lock.json node_modules/.installed-package-lock.json; then npm ci --no-audit --no-fund --loglevel=error --fetch-retries=5 --fetch-timeout=120000 && cp package-lock.json node_modules/.installed-package-lock.json; fi && npm run lint && npm test -- "$@"' sh "$@"

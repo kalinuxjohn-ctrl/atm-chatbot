@@ -3,7 +3,7 @@
  * /shared/css/base.css : aucune couleur en dur ici, seulement des var(--…).
  *
  * Plan :
- *   1. Mise en page : sommaire à gauche, rubrique à droite
+ *   1. Mise en page : rubrique pleine largeur, navigation principale partagée
  *   2. En-tête de rubrique, filtres, recherche
  *   3. Cartes de demande à valider (propositions, ajouts d'intervention)
  *   4. Formulaire de décision et bandeau de résultat
@@ -38,88 +38,9 @@
 
 .administration-workspace {
   display: grid;
-  grid-template-columns: 264px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 20px;
-}
-
-.administration-menu {
-  position: sticky;
-  top: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 12px;
-}
-
-.administration-menu-title {
-  margin: 14px 0 6px;
-  padding: 0 10px;
-  color: var(--color-text-muted);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.administration-menu-title:first-child {
-  margin-top: 4px;
-}
-
-.administration-menu-link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
-  border: 1px solid transparent;
-  border-radius: 12px;
-  color: var(--color-text-soft);
-  font-size: 0.92rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background-color 120ms ease, color 120ms ease;
-}
-
-.administration-menu-link:hover {
-  background: var(--color-surface-hover);
-  color: var(--color-text);
-}
-
-.administration-menu-link[aria-current="page"] {
-  background: var(--color-accent-fill);
-  border-color: var(--color-accent-border);
-  color: var(--color-accent-strong);
-}
-
-.administration-menu-link .icon {
-  width: 18px;
-  height: 18px;
-}
-
-.administration-menu-label {
-  flex: 1;
-  min-width: 0;
-}
-
-.administration-menu-counter {
-  display: inline-grid;
-  place-items: center;
-  min-width: 24px;
-  height: 22px;
-  padding: 0 7px;
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
-  border-radius: 11px;
-  color: var(--color-text-muted);
-  font-size: 0.74rem;
-  font-weight: 700;
-}
-
-/* Demandes en attente : compteur mis en avant, c'est ce qui appelle une action. */
-.administration-menu-counter.is-pending {
-  background: var(--color-warning-fill);
-  border-color: var(--color-warning-border);
-  color: var(--color-warning);
 }
 
 .administration-sections {
@@ -130,6 +51,13 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  padding: 20px;
+  color: var(--color-text);
+  background: var(--color-content-glass);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(14px);
   animation: administration-section-appear 160ms ease-out;
 }
 
@@ -165,6 +93,8 @@
 
 .segmented-control {
   display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   align-self: flex-start;
   gap: 2px;
   padding: 4px;
@@ -680,32 +610,15 @@
 
 /* ---------- 7. Mobile ---------- */
 
-@media (max-width: 980px) {
-  .administration-workspace {
-    grid-template-columns: 1fr;
-  }
-
-  /* Le sommaire devient une rangée de puces qui défile horizontalement. */
-  .administration-menu {
-    position: static;
-    flex-direction: row;
-    gap: 6px;
-    overflow-x: auto;
-    padding: 6px;
-    scrollbar-width: none;
-  }
-
-  .administration-menu-title {
-    display: none;
-  }
-
-  .administration-menu-link {
-    flex: none;
-    white-space: nowrap;
-  }
-}
-
 @media (max-width: 720px) {
+  .administration-section {
+    padding: 14px;
+  }
+
+  .segmented-control button {
+    padding: 6px 8px;
+  }
+
   .data-table thead {
     display: none;
   }

@@ -101,6 +101,43 @@
   text-align: center;
 }
 
+.login-page .authentication-layout {
+  grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
+  max-width: 1200px;
+  justify-content: start;
+}
+
+.login-page .authentication-brand-panel {
+  display: none;
+}
+
+.login-page .authentication-card {
+  grid-column: 1;
+  grid-row: 1;
+  background: rgb(255 255 255 / 58%);
+  border-color: rgb(255 255 255 / 72%);
+  backdrop-filter: blur(20px) saturate(135%);
+}
+
+:root[data-theme="dark"] .login-page .authentication-card {
+  background: rgb(10 16 12 / 62%);
+  border-color: rgb(255 255 255 / 18%);
+}
+
+:root[data-theme="gab"] .login-page .authentication-card {
+  background: rgb(255 253 246 / 62%);
+  border-color: rgb(255 253 246 / 72%);
+}
+
+.login-page .authentication-card-brand {
+  margin: 0 0 6px;
+  color: var(--color-accent-strong);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 /* Mobile : formulaire seul, la marque se réduit à un en-tête. */
 @media (max-width: 820px) {
   .authentication-layout {
@@ -138,5 +175,9 @@
 
   .authentication-card {
     padding: 20px;
+  }
+
+  .login-page .authentication-layout {
+    width: min(440px, 100%);
   }
 }

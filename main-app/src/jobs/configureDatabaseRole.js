@@ -18,18 +18,18 @@ import pg from "pg";
 
 import { trace } from "../core/tracing.js";
 
-// Tables attendues après les migrations 0014 à 0018 : sans elles, les
+// Tables attendues apres les migrations 0014 a 0019 : sans elles, les
 // conteneurs échoueraient à la première requête. Mieux vaut le dire ici.
 const EXPECTED_MAIN_APP_TABLES = [
-  "accounts",
+  "comptes",
   "sessions",
-  "login_throttles",
-  "map_points",
+  "blocages_connexion",
+  "points_carte",
   "conversations",
-  "conversation_participants",
+  "participants_conversation",
   "messages",
-  "message_attachments",
-  "call_logs",
+  "pieces_jointes_message",
+  "journal_appels",
 ];
 
 async function configureDatabaseRole() {

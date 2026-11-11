@@ -18,14 +18,15 @@
  */
 
 import { SPEECH_LANG } from "../../config.js";
+import { messageMarkdownToText } from "../../utils/messageMarkdown.js";
 
 const synth = window.speechSynthesis;
 
 const FRENCH_PREFIX = "fr";
 const PREFERRED_LANG = SPEECH_LANG.toLowerCase(); // "fr-fr"
 const SERVER_PREFIX = "server:";
-const SERVER_VOICES_URL = "tts/voices"; // relatif, comme API_BASE_URL (config.js)
-const SERVER_TTS_URL = "tts";
+const SERVER_VOICES_URL = new URL("../../../tts/voices", import.meta.url).href;
+const SERVER_TTS_URL = new URL("../../../tts", import.meta.url).href;
 const SERVER_TIMEOUT_MS = 20000;
 // Après un échec du serveur, on reste sur le navigateur un moment avant de réessayer.
 const SERVER_RETRY_DELAY_MS = 60000;
@@ -359,6 +360,8 @@ async function speakWithBrowser(text, preferences, token) {
  */
 export async function speak(text, preferences, { onStart = () => {} } = {}) {
   if (!text?.trim()) return;
+  text = messageMarkdownToText(text);
+  if (!text) return;
   stopSpeaking();
   const token = speakToken;
 

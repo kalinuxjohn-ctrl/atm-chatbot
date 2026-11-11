@@ -69,7 +69,7 @@ def resolve_technical_references(
 def _resolve_model_id(db: Session, model_name_text: str) -> int | None:
     row = db.execute(
         text(
-            "SELECT model_id FROM device_model "
+            "SELECT model_id FROM modele_appareil "
             "WHERE UPPER(TRIM(model_name)) = UPPER(TRIM(:model_name_text)) LIMIT 1"
         ),
         {"model_name_text": model_name_text},
@@ -80,7 +80,7 @@ def _resolve_model_id(db: Session, model_name_text: str) -> int | None:
 def _resolve_error_code_id(db: Session, error_code_text: str) -> int | None:
     """Réutilise le même index que error_code_service (idx_error_code_code_ci, migration 0007)."""
     row = db.execute(
-        text("SELECT error_code_id FROM error_code WHERE UPPER(code) = UPPER(TRIM(:error_code_text)) LIMIT 1"),
+        text("SELECT error_code_id FROM code_erreur WHERE UPPER(code) = UPPER(TRIM(:error_code_text)) LIMIT 1"),
         {"error_code_text": error_code_text},
     ).first()
     return row[0] if row else None

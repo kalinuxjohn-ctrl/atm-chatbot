@@ -110,8 +110,8 @@ class OrchestratorValidationTests(unittest.TestCase):
             "save_context": patch.object(orchestrator.context_service, "save_context"),
             "active": patch.object(orchestrator.conversation_service, "mark_conversation_active"),
             "history": patch.object(
-                orchestrator.conversation_service, "get_recent_messages",
-                return_value=[SimpleNamespace(role="user", content="avant"), SimpleNamespace(role="assistant", content="réponse")],
+                orchestrator.conversation_memory_service, "prepare_history",
+                return_value=[{"role": "user", "content": "avant"}, {"role": "assistant", "content": "réponse"}],
             ),
             "understand": patch.object(
                 orchestrator.message_understanding_service, "understand_message",
@@ -154,7 +154,9 @@ class OrchestratorValidationTests(unittest.TestCase):
         call = self.mocks["understand"].call_args
         self.assertEqual(call.args, ("VPN KO",))
         self.assertEqual(call.kwargs["device_type"], "gab")
-        # Toute la conversation précédente est transmise au LLM, sans le message courant.
+        self.mocks["history"].assert_called_once_with(
+            self.db, 7, self.context, orchestrator.settings.chat_history_max_messages,
+        )
         self.assertEqual(
             call.kwargs["history"],
             [{"role": "user", "content": "avant"}, {"role": "assistant", "content": "réponse"}],

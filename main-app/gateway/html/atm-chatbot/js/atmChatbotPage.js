@@ -12,7 +12,7 @@
  * Quand l'utilisateur change de thème ici, l'iframe est prévenue (postMessage).
  */
 
-import { currentUserPromise } from "/shared/js/connectedPageShell.js";
+import { applyAppTheme, currentUserPromise, openAppSettings } from "/shared/js/connectedPageShell.js";
 
 const ATM_CHATBOT_PAGE_PATH = "/atm-chatbot/app/atm-chatbot.html";
 // Même valeur que THEME_MESSAGE_TYPE dans frontend/public/js/embeddedMode.js (chatbot).
@@ -20,8 +20,49 @@ const THEME_MESSAGE_TYPE = "espace-techniciens:theme";
 
 const atmChatbotFrame = document.querySelector("[data-atm-chatbot-frame]");
 const loadingPanel = document.querySelector("[data-atm-chatbot-loading]");
+let chatbotReady = false;
+let chatbotBusy = false;
 
-const readCurrentTheme = () => (document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+function sendChatbotAction(action) {
+  if (action === "settings") {
+    openAppSettings({ section: "chat" });
+    return;
+  }
+  if (!chatbotReady || (action === "new-conversation" && chatbotBusy)) return;
+  atmChatbotFrame.contentWindow.postMessage({ type: "atm-chatbot:command", action }, window.location.origin);
+}
+
+function applyPendingAction() {
+  const action = window.location.hash.slice(1);
+  if (!chatbotReady || !["settings", "new-conversation"].includes(action)) return;
+  sendChatbotAction(action);
+  window.history.replaceState(null, "", window.location.pathname);
+}
+
+window.addEventListener("message", (event) => {
+  if (event.origin !== window.location.origin || event.source !== atmChatbotFrame.contentWindow) return;
+  if (event.data?.type === "atm-chatbot:theme") {
+    applyAppTheme(event.data.theme);
+  }
+  if (event.data?.type === "atm-chatbot:ready") {
+    chatbotReady = true;
+    applyPendingAction();
+  }
+  if (event.data?.type === "atm-chatbot:state") {
+    chatbotBusy = event.data.busy === true;
+    document.querySelector('[data-chatbot-action="new-conversation"]')?.setAttribute("aria-disabled", String(chatbotBusy));
+  }
+});
+document.addEventListener("click", (event) => {
+  const actionLink = event.target.closest("[data-chatbot-action]");
+  if (!actionLink || actionLink.dataset.chatbotAction === "conversation") return;
+  event.preventDefault();
+  if (chatbotReady) sendChatbotAction(actionLink.dataset.chatbotAction);
+  else window.location.hash = actionLink.dataset.chatbotAction;
+});
+window.addEventListener("hashchange", applyPendingAction);
+
+const readCurrentTheme = () => document.documentElement.dataset.theme || "light";
 
 const embeddedPageParameters = new URLSearchParams({ embedded: "1", theme: readCurrentTheme() });
 const currentUser = await currentUserPromise;

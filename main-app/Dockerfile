@@ -9,6 +9,12 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --no-audit --no-fund
 
 # --- Étape 2 : image finale, sans npm cache ni outils de build ---
+FROM python:3.12-slim AS branded-web
+COPY web /web
+COPY --from=branding build_branding.py /build_branding.py
+ARG APP_NAME=atm-chatbot
+RUN APP_NAME="$APP_NAME" python /build_branding.py /web
+
 FROM node:22.23.4-bookworm-slim
 ENV MAIN_APP_ENVIRONMENT=production \
     NODE_ENV=production
@@ -17,7 +23,7 @@ WORKDIR /main-app
 COPY --from=production-dependencies /main-app/node_modules ./node_modules
 COPY package.json ./
 COPY src ./src
-COPY web ./web
+COPY --from=branded-web /web ./web
 
 # Dossier des pièces jointes : créé ici, au nom de l'utilisateur node, pour
 # qu'un volume Docker neuf monté à cet endroit en hérite (sinon il

@@ -78,6 +78,22 @@ Ce lancement est en **développement local HTTP**, sans GPU obligatoire ni
 certificat. Les commandes historiques ci-dessous restent disponibles ; pour le
 nouveau lanceur et ses options, voir le [README racine](../README.md).
 
+### Erreur « Service momentanément indisponible » dans l'administration
+
+Les propositions, interventions et réponses enregistrées dépendent du service
+`web` (API du chatbot), même si la connexion et les comptes fonctionnent encore.
+Vérifier `docker compose ps` puis `docker compose logs --tail 80 web`.
+Une erreur `Input/output error` ou CRC pendant un import Python indique un
+problème de lecture du disque, pas un mot de passe incorrect. Sauvegarder le
+projet sur un disque sain et récupérer les fichiers illisibles depuis Git après
+confirmation ; ne pas réinitialiser la base ni supprimer ses volumes.
+
+Après déplacement du projet, relancer depuis son nouveau dossier avec
+`.\start.ps1` pour recréer les conteneurs avec les bons chemins de montage.
+La base et les pièces jointes restent dans les volumes Docker du projet
+`atm-chatbot`. Les fichiers `.env` et `.local/` restent locaux et ne doivent
+jamais être poussés sur GitHub.
+
 ### 1.1 Prérequis
 
 - Docker et Docker Compose (sous Windows : Docker dans WSL ou Docker Desktop).
@@ -126,17 +142,17 @@ Sans ces deux lignes, le cookie de session est marqué `Secure` et certains navi
 Toutes les commandes se lancent depuis la racine du dépôt.
 
 ```bash
-# 1. Image de base Python du chatbot (une seule fois, puis après un changement de requirements.txt)
-docker build -f Dockerfile.base -t atm-python-base:latest .
-
-# 2. Tout le reste : base, API et pages du chatbot, Espace techniciens
+# 1. Tout construire, y compris automatiquement l'image de base Python.
 docker compose -f docker-compose.yml -f docker-compose.main-app.yml up -d --build
 
-# 3. Premier administrateur de l'Espace techniciens (saisie interactive, mot de passe masqué)
+# 2. Premier administrateur de l'Espace techniciens (saisie interactive, mot de passe masqué)
 docker compose -f docker-compose.yml -f docker-compose.main-app.yml exec main-app-auth node src/jobs/createAdmin.js
 ```
 
-Au premier démarrage, le conteneur `init-db` applique les migrations `db/migrations/0001` à `0018` (chatbot puis Espace techniciens) et insère les données de démonstration. Le job `main-app-database-setup` donne ensuite son mot de passe au rôle SQL de l'Espace techniciens.
+Au premier démarrage, le conteneur `init-db` applique les migrations `db/migrations/0001` à `0019`
+(chatbot puis Espace techniciens, puis noms français). Avec les deux fichiers historiques
+seuls, il insère aussi les données de démonstration ; le fichier local désactive ce seed.
+Le job `main-app-database-setup` donne ensuite son mot de passe au rôle SQL de l'Espace techniciens.
 
 > **Toujours lancer les deux fichiers ensemble** (`-f docker-compose.yml -f docker-compose.main-app.yml`). C'est le second qui ajoute les pages de l’ATM-Chatbot (`chatbot-frontend`), branche l'API du chatbot sur le réseau du gateway et lui donne le secret partagé.
 
@@ -254,8 +270,8 @@ La connexion appartient à **l'Espace techniciens**, conteneur `main-app-auth`. 
 
 ### 3.1 Comptes et identité
 
-- Chaque compte (`main_app.accounts`) est rattaché à une ligne de `public.technician`, la table des techniciens **du chatbot**. Le n° de compte et le n° de technicien du chatbot sont donc le même nombre : c'est ce qui permet à l’ATM-Chatbot de savoir quel technicien parle.
-- Rôles : `technician`, `moderator` (gère tous les points de la carte), `admin` (gère aussi les comptes et administre l’ATM-Chatbot).
+- Chaque compte (`main_app.comptes`) est rattaché à une ligne de `public.technicien`, la table des techniciens **du chatbot**. Le n° de compte et le n° de technicien du chatbot sont donc le même nombre : c'est ce qui permet à l’ATM-Chatbot de savoir quel technicien parle.
+- Rôles : `technicien`, `moderator` (gère tous les points de la carte), `admin` (gère aussi les comptes et administre l’ATM-Chatbot).
 - Le premier admin se crée avec `createAdmin.js` ([§ 1.3](#13-démarrer)). Les suivants se créent dans **Administration → Comptes**.
 
 ### 3.2 Déroulé d'une connexion

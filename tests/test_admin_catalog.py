@@ -22,8 +22,8 @@ def cle_admin_et_nettoyage(monkeypatch):
     monkeypatch.setattr(settings, "admin_api_key", ADMIN_KEY)
     yield
     db = SessionLocal()
-    db.execute(text("DELETE FROM error_code WHERE code LIKE 'ZADM%'"))
-    db.execute(text("DELETE FROM usual_problem WHERE label LIKE 'Panne admin test%'"))
+    db.execute(text("DELETE FROM code_erreur WHERE code LIKE 'ZADM%'"))
+    db.execute(text("DELETE FROM panne_frequente WHERE label LIKE 'Panne admin test%'"))
     db.commit()
     db.close()
 
