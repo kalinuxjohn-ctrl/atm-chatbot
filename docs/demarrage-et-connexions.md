@@ -45,7 +45,7 @@ flowchart LR
 
     subgraph chatbot[Chatbot]
         frontend[chatbot-frontend<br/>pages de l’ATM-Chatbot]
-        web[web · atm_app<br/>API FastAPI]
+        backend[chatbot-backend<br/>API FastAPI]
     end
 
     base[(PostgreSQL<br/>atm_db)]
@@ -54,10 +54,10 @@ flowchart LR
     gateway -->|vérifie chaque session| auth
     gateway --> map & messaging & calls
     gateway -->|/atm-chatbot/app/ · connectés<br/>+ technicien + secret| frontend
-    frontend -->|/api/... en-têtes conservés| web
-    gateway -->|/api/atm-chatbot-admin/ · admins<br/>+ clé ADMIN_API_KEY| web
+    frontend -->|/api/... en-têtes conservés| backend
+    gateway -->|/api/atm-chatbot-admin/ · admins<br/>+ clé ADMIN_API_KEY| backend
     auth & map & messaging & calls --> base
-    web --> base
+    backend --> base
 ```
 
 ---
@@ -81,8 +81,8 @@ nouveau lanceur et ses options, voir le [README racine](../README.md).
 ### Erreur « Service momentanément indisponible » dans l'administration
 
 Les propositions, interventions et réponses enregistrées dépendent du service
-`web` (API du chatbot), même si la connexion et les comptes fonctionnent encore.
-Vérifier `docker compose ps` puis `docker compose logs --tail 80 web`.
+`chatbot-backend` (API du chatbot), même si la connexion et les comptes fonctionnent encore.
+Vérifier `docker compose ps` puis `docker compose logs --tail 80 chatbot-backend`.
 Une erreur `Input/output error` ou CRC pendant un import Python indique un
 problème de lecture du disque, pas un mot de passe incorrect. Sauvegarder le
 projet sur un disque sain et récupérer les fichiers illisibles depuis Git après
@@ -98,7 +98,7 @@ jamais être poussés sur GitHub.
 
 - Docker et Docker Compose (sous Windows : Docker dans WSL ou Docker Desktop).
 - Pour le chatbot : une clé d'IA de langage (Claude ou Gemini) et une clé Voyage AI (embeddings).
-- Une carte graphique NVIDIA est déclarée pour l'API du chatbot (`gpus: all` dans `docker-compose.yml`).
+- Aucun GPU n'est requis : les embeddings et le langage utilisent les API Voyage et Claude/Gemini, sans PyTorch/CUDA local.
 
 ### 1.2 Créer le fichier `.env`
 
@@ -143,10 +143,10 @@ Toutes les commandes se lancent depuis la racine du dépôt.
 
 ```bash
 # 1. Tout construire, y compris automatiquement l'image de base Python.
-docker compose -f docker-compose.yml -f docker-compose.main-app.yml up -d --build
+docker compose -f compose.backend.yaml -f docker-compose.main-app.yml up -d --build
 
 # 2. Premier administrateur de l'Espace techniciens (saisie interactive, mot de passe masqué)
-docker compose -f docker-compose.yml -f docker-compose.main-app.yml exec main-app-auth node src/jobs/createAdmin.js
+docker compose -f compose.backend.yaml -f docker-compose.main-app.yml exec main-app-auth node src/jobs/createAdmin.js
 ```
 
 Au premier démarrage, le conteneur `init-db` applique les migrations `db/migrations/0001` à `0019`
@@ -154,7 +154,7 @@ Au premier démarrage, le conteneur `init-db` applique les migrations `db/migrat
 seuls, il insère aussi les données de démonstration ; le fichier local désactive ce seed.
 Le job `main-app-database-setup` donne ensuite son mot de passe au rôle SQL de l'Espace techniciens.
 
-> **Toujours lancer les deux fichiers ensemble** (`-f docker-compose.yml -f docker-compose.main-app.yml`). C'est le second qui ajoute les pages de l’ATM-Chatbot (`chatbot-frontend`), branche l'API du chatbot sur le réseau du gateway et lui donne le secret partagé.
+> **Toujours lancer les deux fichiers ensemble** (`-f compose.backend.yaml -f docker-compose.main-app.yml`). C'est le second qui ajoute les pages de l’ATM-Chatbot (`chatbot-frontend`), branche l'API du chatbot sur le réseau du gateway et lui donne le secret partagé.
 
 **Chatbot seul, sans l'Espace techniciens** (démonstration, développement du chatbot) : `docker compose up -d --build`, puis `docker compose -f frontend/docker-compose.yml up -d --build` et <http://localhost:5173>. Sans `ATM_CHATBOT_GATEWAY_SHARED_SECRET` dans l'environnement de l'API, le chatbot reprend son fonctionnement d'origine (connexion simulée, voir [3.4](#34-atm-chatbot-et-connexion)).
 
@@ -187,7 +187,7 @@ Toute requête **sans session** agit alors comme ce compte (qui doit exister), y
 
 ### 1.7 Commandes utiles
 
-Préfixe : `docker compose -f docker-compose.yml -f docker-compose.main-app.yml`
+Préfixe : `docker compose -f compose.backend.yaml -f docker-compose.main-app.yml`
 
 | Action | Commande |
 |---|---|
@@ -257,8 +257,8 @@ Les pages du chatbot n'utilisent que des **chemins relatifs** (`css/…`, `api/�
 | Port | Service | Remarque |
 |---|---|---|
 | 8080 | `main-app-gateway` | Seule entrée utile. Publié sur `127.0.0.1` par défaut (`MAIN_APP_GATEWAY_PUBLISHED_ADDRESS`) |
-| 8000 | `atm_app` (`web`) | API du chatbot. Publié par `docker-compose.yml`, mais **refuse** tout appel qui ne vient pas du gateway (sauf `/health`, `/docs` et `/api/admin/` avec sa clé) |
-| 5432 | `atm_db` | PostgreSQL |
+| 8000 | `chatbot-backend` | API du chatbot. Publié par `compose.backend.yaml`, mais **refuse** tout appel qui ne vient pas du gateway (sauf `/health`, `/docs` et `/api/admin/` avec sa clé) |
+| 5433 | `db` | PostgreSQL en local ; port interne 5432 |
 
 `chatbot-frontend` et les conteneurs `main-app-auth`, `-map`, `-messaging`, `-calls` ne publient **aucun** port : on ne les joint que par le gateway.
 
@@ -494,8 +494,8 @@ def ma_route(payload: MonSchema, request: Request, db: Session = Depends(get_db)
 
 ### 5.4 Ce qui reste à savoir
 
-- **Port 8000** : l'API du chatbot reste publiée par `docker-compose.yml` (fichier du chatbot laissé intact). Elle refuse les appels sans secret, mais pour la production, la publier sur `127.0.0.1` seulement (`"127.0.0.1:8000:8000"`) ou plus du tout.
-- **Le secret doit rester secret** : quiconque le connaît peut appeler l'API du chatbot au nom de n'importe quel technicien. Le changer = modifier `.env` puis recréer `web` et `main-app-gateway`.
+- **Port 8000** : l'API du chatbot reste publiée par `compose.backend.yaml` (fichier du chatbot laissé intact). Elle refuse les appels sans secret, mais pour la production, la publier sur `127.0.0.1` seulement (`"127.0.0.1:8000:8000"`) ou plus du tout.
+- **Le secret doit rester secret** : quiconque le connaît peut appeler l'API du chatbot au nom de n'importe quel technicien. Le changer = modifier `.env` puis recréer `chatbot-backend` et `main-app-gateway`.
 - **Chatbot seul** (sans `ATM_CHATBOT_GATEWAY_SHARED_SECRET`) : retour au fonctionnement d'origine, sans vraie connexion. À réserver aux démonstrations locales.
 
 ---

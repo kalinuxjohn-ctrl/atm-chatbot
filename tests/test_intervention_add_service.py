@@ -7,6 +7,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
+from app.core.database import get_db
 from app.core.errors import (
     AccessDeniedError,
     ExternalServiceUnavailableError,
@@ -22,6 +23,7 @@ from app.models.intervention import Diagnosis, Intervention, InterventionAction,
 from app.models.intervention_add import InterventionAdd
 from app.models.technician import Technician
 from app.schemas.intervention_add_schema import (
+    AdminInterventionCreate,
     InterventionAddRequest,
     InterventionAddApproval,
     InterventionAddEdit,
@@ -447,11 +449,114 @@ class RouteProtectionTests(unittest.TestCase):
             self.assertEqual(self.client.get("/api/admin/intervention_add").status_code, 403)
             response = self.client.post("/api/admin/intervention_add/1/approve", json={"reviewed_by": "X"})
             self.assertEqual(response.status_code, 403)
+            direct = self.client.post("/api/admin/intervention_add", json={})
+            self.assertEqual(direct.status_code, 403)
 
     def test_direct_history_writes_are_admin_only(self):
         with patch.object(service.settings, "admin_api_key", "secret"):
             response = self.client.post("/interventions", json={"device_id": 501, "technician_id": 4, "symptoms": [{"raw_text": "x"}]})
         self.assertEqual(response.status_code, 403)
+
+
+class AdminDirectCreationTests(InterventionAddTestCase):
+    def content(self, **overrides):
+        payload = intervention_add_payload(**overrides)
+        payload.pop("technician_id")
+        return AdminInterventionCreate(**payload)
+
+    def test_direct_creation_has_admin_origin_and_multiple_indexed_symptoms(self):
+        with patch.object(service.stats_service, "recompute_stats") as stats:
+            addition, preview, written = service.create_admin_intervention(self.db, self.content(), "admin.test")
+        self.assertIsNone(addition.technician_id)
+        self.assertIsNone(addition.conversation_id)
+        self.assertEqual(addition.created_by_admin, "admin.test")
+        self.assertEqual(addition.status, "approved")
+        self.assertEqual(addition.reviewed_by, "admin.test")
+        self.assertEqual(addition.created_intervention_id, written.intervention_id)
+        intervention = self.db.added_of(Intervention)[0]
+        self.assertIsNone(intervention.technician_id)
+        self.assertEqual(intervention.created_by_admin, "admin.test")
+        self.assertIsNotNone(intervention.opened_at)
+        self.assertIsNone(intervention.closed_at)
+        self.assertEqual(len(self.db.added_of(InterventionSymptom)), 2)
+        self.assertEqual(len(self.stored_vectors), 2)
+        self.assertEqual(len(self.db.added_of(InterventionAction)), 3)
+        self.assertEqual(preview.intervention_add_id, addition.intervention_add_id)
+        self.assertEqual(service.describe_intervention_add(self.db, addition)["origin"], "admin")
+        stats.assert_called_once_with(self.db, commit=False)
+        self.assertEqual(self.db.commits, 1)
+
+    def test_embedding_failure_does_not_create_any_request_or_intervention(self):
+        self.mocks[0].side_effect = ExternalServiceUnavailableError("Voyage indisponible")
+        with self.assertRaises(ExternalServiceUnavailableError):
+            service.create_admin_intervention(self.db, self.content(), "admin.test")
+        self.assertEqual(self.db.added, [])
+        self.assertEqual(self.db.commits, 0)
+
+    def test_stats_failure_rolls_back_without_a_successful_commit(self):
+        with patch.object(service.stats_service, "recompute_stats", side_effect=RuntimeError("stats")):
+            with self.assertRaisesRegex(RuntimeError, "stats"):
+                service.create_admin_intervention(self.db, self.content(), "admin.test")
+        self.assertEqual(self.db.rollbacks, 1)
+        self.assertEqual(self.db.commits, 0)
+
+    def test_admin_cannot_forge_technician_conversation_or_author(self):
+        for key, value in (("technician_id", 4), ("conversation_id", 15), ("created_by_admin", "other")):
+            payload = self.content().model_dump()
+            payload[key] = value
+            with self.subTest(key=key), self.assertRaises(ValidationError):
+                AdminInterventionCreate(**payload)
+
+    def test_no_visit_dates_required_or_accepted(self):
+        content = self.content()
+        self.assertIsNone(content.opened_at)
+        self.assertIsNone(content.closed_at)
+        for field in ("opened_at", "closed_at"):
+            with self.subTest(field=field), self.assertRaises(ValidationError):
+                self.content(**{field: "2020-01-01T10:00:00"})
+
+    def test_type_must_match_an_existing_device(self):
+        with self.assertRaisesRegex(InvalidReferenceError, "est un GAB, pas un TPE"):
+            service.create_admin_intervention(
+                self.db, self.content(device={"device_id": 501, "device_type": "tpe"}), "admin.test",
+            )
+
+    def test_direct_route_requires_server_supplied_admin_identity(self):
+        client = TestClient(app)
+        with patch.object(service.settings, "admin_api_key", "test-admin-key"):
+            response = client.post(
+                "/api/admin/intervention_add", headers={"X-Admin-Key": "test-admin-key"},
+                json=self.content().model_dump(mode="json"),
+            )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.db.added, [])
+
+    def test_direct_route_returns_201_and_authenticated_author(self):
+        client = TestClient(app)
+        with patch.dict(app.dependency_overrides, {get_db: lambda: self.db}):
+            with patch.object(service.settings, "admin_api_key", "test-admin-key"), patch.object(service.stats_service, "recompute_stats"):
+                response = client.post(
+                    "/api/admin/intervention_add",
+                    headers={"X-Admin-Key": "test-admin-key", "X-Authenticated-Admin-Username": "admin.test"},
+                    json=self.content().model_dump(mode="json"),
+                )
+        self.assertEqual(response.status_code, 201, response.text)
+        result = response.json()
+        self.assertEqual(result["intervention_add"]["origin"], "admin")
+        self.assertEqual(result["intervention_add"]["created_by_admin"], "admin.test")
+        self.assertIsNone(result["intervention_add"]["technician_id"])
+        self.assertEqual(len(result["created_intervention_symptom_ids"]), 2)
+
+    def test_invalid_admin_identity_is_rejected(self):
+        client = TestClient(app)
+        for username in ("x", "admin invalid", "a" * 31):
+            with self.subTest(username=username), patch.object(service.settings, "admin_api_key", "test-admin-key"):
+                response = client.post(
+                    "/api/admin/intervention_add",
+                    headers={"X-Admin-Key": "test-admin-key", "X-Authenticated-Admin-Username": username},
+                    json=self.content().model_dump(mode="json"),
+                )
+                self.assertEqual(response.status_code, 403)
 
 
 if __name__ == "__main__":

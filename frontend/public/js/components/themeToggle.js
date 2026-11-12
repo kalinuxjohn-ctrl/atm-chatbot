@@ -18,7 +18,7 @@ const ICONS = {
   gab:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M7 5h10v6H7zM7 15h4M7 18h4M15 15h2M15 18h2"/></svg>',
 };
-const LABELS = { light: "Mode clair", dark: "Mode sombre", gab: "GAB · Vert & Or" };
+const LABELS = { light: "Mode clair", dark: "Mode sombre", gab: "GAB · Marron & Crème" };
 
 const currentTheme = () => document.documentElement.dataset.theme || "light";
 

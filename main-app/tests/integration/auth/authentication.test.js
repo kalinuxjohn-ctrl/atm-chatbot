@@ -161,7 +161,11 @@ describeWithDatabase("administration des comptes et rôles", () => {
 
   test("contrôle admin du gateway (administration de l’ATM-Chatbot) : 204 admin, 403 autres rôles, 401 sans session", async () => {
     const checkPath = "/api/auth/internal/administrator-check";
-    expect((await sendAs(authApp, await createAccountWithSession({ role: "admin" })).get(checkPath)).status).toBe(204);
+    const administrator = await createAccountWithSession({ role: "admin" });
+    const adminCheck = await sendAs(authApp, administrator).get(checkPath)
+      .set("X-Authenticated-Admin-Username", "forged");
+    expect(adminCheck.status).toBe(204);
+    expect(adminCheck.headers["x-authenticated-admin-username"]).toBe(administrator.username);
     for (const role of ["technician", "moderator"]) {
       expect((await sendAs(authApp, await createAccountWithSession({ role })).get(checkPath)).status).toBe(403);
     }

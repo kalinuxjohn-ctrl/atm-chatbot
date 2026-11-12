@@ -1,0 +1,16 @@
+{
+  "catalog_number": 30,
+  "code": "36",
+  "label": "Cassette 6 : trop de défauts de séparation",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 36, cassette 6 : trop de défauts pendant la séparation des billets. Des billets rétrécis, mal séparés ou des perturbations photoélectriques peuvent provoquer des rejets.\nUn premier avertissement peut être ignoré selon le document. En cas de répétition : vérifier le type, l'orientation et l'appui des billets dans la cassette 6 ; rechercher des restes de billets dans le retrait et le transport jusqu'à la pince ; contrôler les connecteurs du contrôleur CMD ; effectuer la détermination de la valeur de référence selon sa procédure.\nLes procédures détaillées citées ne sont pas incluses dans cet extrait.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 10,
+    "family": "3x",
+    "cassette": 6,
+    "component": "Cassette 6 / séparation des billets",
+    "kind": "warning"
+  }
+}

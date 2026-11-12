@@ -8,6 +8,9 @@ Puis tester sur http://localhost:8000/docs (documentation interactive
 générée automatiquement par FastAPI).
 """
 
+import logging
+from urllib.parse import urlsplit
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
@@ -36,15 +39,24 @@ from app.core.errors import (
     ExternalServiceUnavailableError,
     InvalidReferenceError,
     ReferenceNotFoundError,
+    SERVICE_INDISPONIBLE_MESSAGE,
     StateConflictError,
 )
 from app.core.gateway_identity import require_gateway_identity
 from app.core.config import settings
 from app.core.tracing import trace
 
-# Seul texte renvoyé au client quand une IA externe fait défaut (voir le
-# gestionnaire _service_externe_indisponible plus bas).
-SERVICE_INDISPONIBLE_MESSAGE = "Le service de réponse est momentanément indisponible. Réessayez dans quelques instants."
+class HealthAccessFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args
+        return not (
+            isinstance(args, tuple) and len(args) == 5
+            and isinstance(args[2], str) and urlsplit(args[2]).path == "/health"
+            and args[4] == 200
+        )
+
+
+logging.getLogger("uvicorn.access").addFilter(HealthAccessFilter())
 
 app = FastAPI(
     title=f"{settings.app_name} API",

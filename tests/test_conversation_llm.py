@@ -225,7 +225,9 @@ class ProviderConversationPayloadTests(unittest.TestCase):
         self.assertEqual(log.call_args.kwargs["thinking_tokens"], 3)
         self.assertEqual(log.call_args.kwargs["model"], "claude-sonnet-5-5")
         self.assertNotIn("PRIVATE", str(log.call_args_list))
-        self.assertIn("elapsed_ms", log.call_args_list[0].kwargs)
+        completed = [call for call in log.call_args_list if call.args[1] == "Appel Claude terminé"]
+        self.assertEqual(len(completed), 1)
+        self.assertIn("elapsed_ms", completed[0].kwargs)
 
     def test_claude_rejects_truncated_output_even_when_text_is_present(self):
         response = ok_response({"stop_reason": "max_tokens", "content": [{"type": "text", "text": "Incomplete"}]})

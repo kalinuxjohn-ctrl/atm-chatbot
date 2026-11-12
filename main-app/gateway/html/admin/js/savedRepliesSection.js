@@ -49,15 +49,16 @@ function createFormField(fieldDescription, currentValue) {
 }
 
 /** Valeurs du formulaire prêtes à envoyer : champ vide -> null, nombre -> Number. */
-function readFormValues(formElement, fieldDescriptions) {
+function readFormValues(formElement, fieldDescriptions, record) {
   const values = {};
   for (const fieldDescription of fieldDescriptions) {
     const rawValue = formElement.elements[fieldDescription.name].value.trim();
-    if (rawValue === "") {
-      values[fieldDescription.name] = null;
-    } else {
-      values[fieldDescription.name] = fieldDescription.type === "number" ? Number(rawValue) : rawValue;
-    }
+    const value = rawValue === "" ? null : fieldDescription.type === "number" ? Number(rawValue) : rawValue;
+    const [parent, child] = fieldDescription.name.split(".");
+    if (child) {
+      values[parent] ??= { ...record?.[parent] };
+      values[parent][child] = value;
+    } else values[parent] = value;
   }
   return values;
 }
@@ -94,7 +95,8 @@ function createSavedRepliesSection({ sectionName, resource, nouns, fields, descr
     recordForm.noValidate = true;
     const formTitle = createElementWithText("h3", "", record ? `Modifier « ${describeRecord(record).title} »` : `Nouveau ${nouns.one}`);
     const fieldGrid = createElementWithText("div", "form-grid");
-    fieldGrid.append(...fields.map((fieldDescription) => createFormField(fieldDescription, record?.[fieldDescription.name])));
+    fieldGrid.append(...fields.map((fieldDescription) => createFormField(fieldDescription,
+      fieldDescription.name.split(".").reduce((value, key) => value?.[key], record))));
     const errorMessage = createElementWithText("p", "form-error");
     errorMessage.setAttribute("role", "alert");
     errorMessage.hidden = true;
@@ -115,7 +117,7 @@ function createSavedRepliesSection({ sectionName, resource, nouns, fields, descr
       saveButton.disabled = true;
       errorMessage.hidden = true;
       try {
-        const values = readFormValues(recordForm, fields);
+        const values = readFormValues(recordForm, fields, record);
         const savedRecord = record ? await resource.update(record.id, values) : await resource.create(values);
         records = record ? records.map((item) => (item.id === record.id ? savedRecord : item)) : [savedRecord, ...records];
         renderRecords();
@@ -206,6 +208,10 @@ export function createErrorCodesSection({ showRecordCount }) {
     showRecordCount,
     fields: [
       { name: "code", label: "Code", type: "text", required: true, maxLength: 50, hint: "Tel qu'affiché par l'équipement, ex. E42." },
+      { name: "documentation.module", label: "Module concerné", type: "text", maxLength: 100, hint: "Ex. CMD-V4 (142, 153), pas le modèle complet du GAB." },
+      { name: "documentation.component", label: "Composant concerné", type: "text", maxLength: 300 },
+      { name: "documentation.source", label: "Document source", type: "text", maxLength: 200 },
+      { name: "documentation.source_page", label: "Page source", type: "number" },
       { name: "label", label: "Libellé", type: "text", maxLength: 500, hint: "Affiché dans le menu, à côté du code." },
       {
         name: "device_type",
@@ -218,6 +224,9 @@ export function createErrorCodesSection({ showRecordCount }) {
     describeRecord: (record) => ({
       title: record.label ? `${record.code} — ${record.label}` : record.code,
       pills: [
+        `N° ${record.catalog_number} · JSON ${record.catalog_number}.json`,
+        ...(record.documentation?.module ? [record.documentation.module] : []),
+        ...(record.documentation?.source ? [`${record.documentation.source}${record.documentation.source_page ? ` · p. ${record.documentation.source_page}` : ""}`] : []),
         record.device_type && record.reply ? `Dans l’ATM-Chatbot · ${DEVICE_TYPE_LABELS[record.device_type]}` : "Absent du menu",
         ...(record.fault ? [`Panne ${record.fault.code || record.fault.name}`] : []),
       ],

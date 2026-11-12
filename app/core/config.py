@@ -20,8 +20,7 @@ class Settings(BaseSettings):
     # --- Base de données ---
     database_url: str = "postgresql+psycopg2://postgres:postgrespassword@localhost:5432/atm_chatbot"
 
-    # --- Moteur de vecteurs (auto-hébergé, remplace Voyage AI) ---
-    embedding_model_name: str = "OrdalieTech/Solon-embeddings-base-0.1"
+    # --- Vecteurs Voyage AI, stockés dans PostgreSQL/pgvector ---
     embedding_dimensions: int = 1024
 
     # --- Paramètres de la recherche (retrieval) ---
@@ -34,6 +33,8 @@ class Settings(BaseSettings):
     # Utilisés par ClaudeProvider (llm_service.py) quand llm_provider="claude".
     claude_api_key: str = ""
     claude_model: str = Field(default="claude-sonnet-5-5", pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+    # Sonnet 5.5 : synthèses sans réflexion préalable ; compréhension JSON inchangée.
+    claude_fast_chat: bool = True
 
     # --- Conversation avec le LLM (message_understanding_service) ---
     # Seuil de condensation des échanges anciens (aussi déclenchée à 12000
@@ -70,6 +71,7 @@ class Settings(BaseSettings):
     # Clé des routes /api/admin, envoyée dans l'en-tête X-Admin-Key. Vide =
     # administration désactivée (toutes les routes admin répondent 403).
     admin_api_key: str = ""
+    error_code_documents_dir: str = "db/code_erreurs"
     # À l'approbation (proposition de solution ou rapport d'intervention), une
     # action du catalogue plus proche que cette distance cosinus (0 = identique)
     # est réutilisée au lieu de créer un doublon.

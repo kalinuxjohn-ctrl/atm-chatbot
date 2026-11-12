@@ -90,6 +90,37 @@
   margin-top: 6px;
 }
 
+.password-input {
+  position: relative;
+}
+
+.password-input input {
+  width: 100%;
+  padding-right: 52px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.password-toggle:hover,
+.password-toggle[aria-pressed="true"] {
+  background: var(--color-accent-fill);
+  color: var(--color-accent-strong);
+}
+
 .authentication-footnote {
   display: flex;
   flex-wrap: wrap;
@@ -120,13 +151,13 @@
 }
 
 :root[data-theme="dark"] .login-page .authentication-card {
-  background: rgb(10 16 12 / 62%);
+  background: rgb(24 27 30 / 62%);
   border-color: rgb(255 255 255 / 18%);
 }
 
 :root[data-theme="gab"] .login-page .authentication-card {
-  background: rgb(255 253 246 / 62%);
-  border-color: rgb(255 253 246 / 72%);
+  background: rgb(255 255 255 / 62%);
+  border-color: rgb(255 255 255 / 72%);
 }
 
 .login-page .authentication-card-brand {

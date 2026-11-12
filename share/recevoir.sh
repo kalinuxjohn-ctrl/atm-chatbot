@@ -62,7 +62,7 @@ while read -r volume label; do
 done < "$WORK_DIR/volumes.txt"
 
 # `gpus: all` exige une carte NVIDIA prise en charge par Docker : sans elle, le
-# conteneur web ne démarre pas. Le projet n'en a pas besoin avec Voyage.
+# conteneur chatbot-backend ne démarre pas. Le projet n'en a pas besoin avec Voyage.
 if ! docker info --format '{{json .Runtimes}}' 2>/dev/null | grep -q nvidia; then
   sed -i 's/^\([[:space:]]*\)gpus: all/\1# gpus: all  # désactivé à l'\''installation : pas de GPU NVIDIA pour Docker sur ce PC/' "$DEST/docker-compose.yml"
   echo "==> Pas de GPU NVIDIA pour Docker : « gpus: all » désactivé dans docker-compose.yml"

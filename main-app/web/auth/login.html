@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Connexion | Espace techniciens</title>
+    <link rel="icon" type="image/svg+xml" href="/shared/images/favicon.svg">
     <script src="/shared/js/applySavedTheme.js"></script>
     <link rel="stylesheet" href="/shared/css/base.css">
     <link rel="stylesheet" href="/auth/css/auth.css">
@@ -30,9 +31,15 @@
         <label class="form-field">Nom d'utilisateur
           <input name="username" autocomplete="username" required maxlength="30" autocapitalize="none" spellcheck="false">
         </label>
-        <label class="form-field">Mot de passe
-          <input name="password" type="password" autocomplete="current-password" required maxlength="128">
-        </label>
+        <div class="form-field">
+          <label for="login-password">Mot de passe</label>
+          <div class="password-input">
+            <input id="login-password" name="password" type="password" autocomplete="current-password" required maxlength="128">
+            <button class="password-toggle" type="button" data-password-toggle aria-controls="login-password" aria-label="Afficher le mot de passe" aria-pressed="false">
+              <span data-icon="eye"></span>
+            </button>
+          </div>
+        </div>
         <p class="form-error" data-form-error role="alert" hidden></p>
         <button class="button authentication-submit" type="submit">Se connecter</button>
         <p class="muted authentication-footnote">Mot de passe oublié ? Demandez une réinitialisation à un administrateur.</p>

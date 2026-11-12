@@ -1,0 +1,16 @@
+{
+  "catalog_number": 45,
+  "code": "63",
+  "label": "Cassette 3 défectueuse",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 63 : cassette 3 défectueuse.\nRemplacer la cassette 3 par une nouvelle cassette initialisée.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "family": "6x",
+    "cassette": 3,
+    "component": "Cassette 3",
+    "kind": "error"
+  }
+}

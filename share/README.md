@@ -8,7 +8,7 @@ installé et démarré.
 
 | Fichier du paquet | Contenu |
 |---|---|
-| `images.tar` | images Docker déjà construites : `atm-chatbot-web`, `atm-chatbot-init-db`, `pgvector/pgvector:pg16`, `frontend-frontend` |
+| `images.tar` | images Docker déjà construites : `atm-chatbot-backend:latest`, `atm-chatbot-init-db`, `pgvector/pgvector:pg16`, `frontend-frontend` |
 | `volume-atm-chatbot_pgdata.tar` | la base PostgreSQL actuelle (interventions, embeddings, conversations…) |
 | `project.tar` | le dossier du projet, **`.env` et ses clés API compris** |
 | `manifest.txt` | l'empreinte SHA-256 de chaque fichier, vérifiée à l'arrivée |

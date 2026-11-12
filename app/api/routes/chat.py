@@ -5,7 +5,10 @@ technicien) :
   GAB ou un TPE, l'API renvoie les solutions déjà connues, classées par
   accuracy décroissante.
 - POST /chat : message du technicien (et photo éventuelle), routé par chat_orchestrator_service.
+- POST /chat/stream : même traitement, avec événements NDJSON progressifs.
 - GET  /chat/photo-ocr : la fonctionnalité photo est-elle active ? (bouton photo du chat)
+- GET  /chat/conversations : historique paginé du compte connecté.
+- GET  /chat/conversations/{id} : messages et appareil pour reprendre un échange.
 - GET  /chat/conversations/{id}/solution-proposal-context : problème actif
   à afficher quand aucune solution proposée n'a marché.
 - POST /chat/conversations/{id}/solution-proposals : proposition du
@@ -14,13 +17,23 @@ technicien) :
 Aucune logique métier ici : tout est délégué à retrieval_service.py.
 """
 
+import asyncio
+import json
+from threading import Event, Thread
+
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import StreamingResponse
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from app.core.tracing import trace
-from app.schemas.conversation_schema import ChatRequest, ChatResponse
+from app.schemas.conversation_schema import ChatRequest, ChatResponse, ConversationHistory, ConversationList, SavedErrorCodeRequest
 from app.services import chat_orchestrator_service, photo_ocr_service
 
-from app.core.database import get_db
+from app.core.database import SessionLocal, get_db
+from app.core.errors import (
+    AccessDeniedError, ExternalServiceUnavailableError, InvalidReferenceError,
+    ReferenceNotFoundError, SERVICE_INDISPONIBLE_MESSAGE, StateConflictError,
+)
 from app.core.gateway_identity import effective_technician_id
 from app.schemas.chat_schema import SymptomSearchRequest, SymptomSearchResponse
 from app.services.retrieval_service import find_ranked_solutions
@@ -31,9 +44,34 @@ from app.schemas.solution_proposal_schema import (
     SolutionProposalCreate,
     SolutionProposalCreated,
 )
-from app.services import solution_proposal_service
+from app.services import solution_proposal_service, conversation_service
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
+
+
+@router.get("/conversations", response_model=ConversationList)
+def lister_conversations(
+    request: Request,
+    technician_id: int = Query(..., gt=0),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(30, ge=1, le=100),
+    db: Session = Depends(get_db),
+) -> dict:
+    return conversation_service.list_conversations(
+        db, effective_technician_id(request, technician_id), offset, limit,
+    )
+
+
+@router.get("/conversations/{conversation_id}", response_model=ConversationHistory)
+def lire_conversation(
+    conversation_id: int,
+    request: Request,
+    technician_id: int = Query(..., gt=0),
+    db: Session = Depends(get_db),
+) -> dict:
+    return conversation_service.get_conversation_history(
+        db, conversation_id, effective_technician_id(request, technician_id),
+    )
 
 
 @router.post("/search-symptom", response_model=SymptomSearchResponse)
@@ -123,6 +161,91 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db), request: Request =
         conversation_id=resultat["conversation_id"],
     )
     return response
+
+
+@router.post("/error-code", response_model=ChatResponse)
+def choisir_code_erreur(
+    payload: SavedErrorCodeRequest, request: Request, db: Session = Depends(get_db),
+) -> dict:
+    return chat_orchestrator_service.handle_error_code_selection(
+        db, payload.conversation_id, effective_technician_id(request, payload.technician_id),
+        payload.device_type, payload.error_code_id,
+    )
+
+
+class _StreamDisconnected(Exception):
+    pass
+
+
+@router.post("/stream")
+def stream_chat(payload: ChatRequest, request: Request) -> StreamingResponse:
+    payload.technician_id = effective_technician_id(request, payload.technician_id)
+
+    async def events():
+        pending = asyncio.Queue()
+        loop = asyncio.get_running_loop()
+        disconnected = Event()
+
+        def send(event):
+            if not disconnected.is_set():
+                loop.call_soon_threadsafe(pending.put_nowait, event)
+
+        def emit(text):
+            if disconnected.is_set():
+                raise _StreamDisconnected()
+            if text:
+                send({"type": "delta", "text": text})
+
+        def run():
+            try:
+                # La session appartient au producteur, pas au thread qui lit les événements.
+                with SessionLocal() as db:
+                    result = chat_orchestrator_service.handle_chat_message(
+                        db=db, conversation_id=payload.conversation_id,
+                        technician_id=payload.technician_id, message=payload.message,
+                        device_type=payload.device_type, photo=payload.photo, on_reply_delta=emit,
+                    )
+                    send({"type": "done", "response": ChatResponse(**result).model_dump()})
+            except _StreamDisconnected:
+                trace("REQUEST", "Flux du chat interrompu par le client", conversation_id=payload.conversation_id)
+            except Exception as error:
+                status, detail = 500, "Impossible de traiter votre demande pour le moment. Réessayez."
+                if isinstance(error, ExternalServiceUnavailableError):
+                    status, detail = 503, SERVICE_INDISPONIBLE_MESSAGE
+                elif isinstance(error, SQLAlchemyError):
+                    status, detail = 503, "Le service de données est momentanément indisponible. Réessayez plus tard."
+                else:
+                    for error_class, code in (
+                        (ReferenceNotFoundError, 404), (AccessDeniedError, 403),
+                        (InvalidReferenceError, 422), (StateConflictError, 409),
+                    ):
+                        if isinstance(error, error_class):
+                            status, detail = code, str(error)
+                            break
+                trace(
+                    "ERROR", "Échec du flux du chat",
+                    conversation_id=payload.conversation_id, error_type=type(error).__name__,
+                    status=status,
+                )
+                send({"type": "error", "status": status, "detail": detail})
+
+        Thread(target=run, daemon=True).start()
+        try:
+            while True:
+                try:
+                    event = await asyncio.wait_for(pending.get(), timeout=5)
+                except asyncio.TimeoutError:
+                    event = {"type": "ping"}
+                yield json.dumps(event, ensure_ascii=False) + "\n"
+                if event["type"] in {"done", "error"}:
+                    break
+        finally:
+            disconnected.set()
+
+    return StreamingResponse(
+        events(), media_type="application/x-ndjson",
+        headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.get("/photo-ocr")

@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE code_erreur ADD COLUMN IF NOT EXISTS documentation JSONB NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE code_erreur ALTER COLUMN error_code_id DROP DEFAULT;
+
+COMMIT;

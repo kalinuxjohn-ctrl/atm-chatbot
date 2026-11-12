@@ -17,13 +17,30 @@ configuration explicite, pas un retour silencieux vers un autre fournisseur.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from contextvars import ContextVar
+import json
 from time import monotonic
+from typing import Callable
 
 import requests
+from urllib3.exceptions import ReadTimeoutError
 
 from app.core.config import settings
 from app.core.errors import ExternalServiceUnavailableError
 from app.core.tracing import trace
+
+_reply_delta_callback: ContextVar[Callable[[str], None] | None] = ContextVar("reply_delta_callback", default=None)
+
+
+@contextmanager
+def stream_reply(on_delta: Callable[[str], None] | None):
+    """Expose uniquement la rédaction finale, jamais le JSON de compréhension."""
+    token = _reply_delta_callback.set(on_delta)
+    try:
+        yield
+    finally:
+        _reply_delta_callback.reset(token)
 
 
 class LLMUnavailableError(ExternalServiceUnavailableError):
@@ -126,6 +143,9 @@ class GeminiProvider(LLMProvider):
             reply = response.json()["candidates"][0]["content"]["parts"][0]["text"]
             if not isinstance(reply, str) or not reply.strip():
                 raise ValueError("Texte absent ou vide.")
+            callback = _reply_delta_callback.get()
+            if callback is not None:
+                callback(reply)
             return reply
         except (ValueError, KeyError, IndexError, TypeError) as erreur:
             # Arrive par exemple si Gemini bloque la réponse (finishReason="SAFETY") --
@@ -147,11 +167,15 @@ class ClaudeProvider(LLMProvider):
     # minutes (durée par défaut) entre deux messages.
     _CACHE_CONTROL = {"type": "ephemeral", "ttl": "1h"}
 
-    def __init__(self, api_key: str, model: str, max_tokens: int = 2048, timeout: int = 120):
+    def __init__(
+        self, api_key: str, model: str, max_tokens: int = 2048, timeout: int = 120,
+        fast_chat: bool = True,
+    ):
         self.api_key = api_key
         self.model = model
         self.max_tokens = max_tokens
         self.timeout = timeout
+        self.fast_chat = fast_chat
 
     def generate_chat(
         self, system: str | None, messages: list[dict], cache_history: bool = False,
@@ -167,11 +191,35 @@ class ClaudeProvider(LLMProvider):
             payload["system"] = system
         if cache_history:
             payload.update(self._with_cache_markers(system, messages))
+        streaming = (
+            self.model == "claude-sonnet-5-5" or self.model.startswith("claude-sonnet-5-5-")
+        )
+        fast_chat = self.fast_chat and streaming and response_schema is None
+        if fast_chat:
+            # Sonnet 5.5 refuse thinking="disabled". Sans outils, between_tools
+            # supprime la réflexion préalable, qui partage sinon le budget de sortie.
+            payload["thinking"] = {"type": "between_tools"}
+            payload["output_config"] = {"effort": "low"}
         if response_schema is not None:
-            payload["output_config"] = {"format": {"type": "json_schema", "schema": response_schema}}
+            payload.setdefault("output_config", {})["format"] = {"type": "json_schema", "schema": response_schema}
+        if streaming:
+            payload["stream"] = True
 
         started = monotonic()
         response = None
+        data = None
+        deadline_seconds = min(self.timeout, 45) if streaming else self.timeout
+        read_timeout = deadline_seconds if streaming else self.timeout
+        trace(
+            "LLM", "Appel Claude démarré",
+            model=self.model,
+            fast_chat=fast_chat,
+            max_tokens=self.max_tokens,
+            timeout_seconds=deadline_seconds,
+            read_timeout_seconds=read_timeout,
+            structured_output=response_schema is not None,
+            streaming=streaming,
+        )
         try:
             response = requests.post(
                 self._ENDPOINT,
@@ -181,41 +229,63 @@ class ClaudeProvider(LLMProvider):
                     "Content-Type": "application/json",
                 },
                 json=payload,
-                timeout=self.timeout,
+                timeout=(5, read_timeout) if streaming else self.timeout,
+                stream=streaming,
             )
-        except requests.Timeout as erreur:
+            if streaming:
+                self._check_http_status(response)
+                trace(
+                    "LLM", "Connexion Claude établie",
+                    model=self.model, elapsed_ms=round((monotonic() - started) * 1000),
+                    http_status=response.status_code,
+                )
+                response.encoding = "utf-8"
+                data = self._read_stream(response, started, deadline_seconds)
+        except requests.ConnectTimeout as erreur:
             raise LLMUnavailableError(
-                f"Claude n'a pas répondu dans le délai imparti ({self.timeout}s)."
+                f"La connexion à Claude n'a pas pu être établie dans le délai imparti "
+                f"({5 if streaming else self.timeout}s)."
             ) from erreur
-        except requests.ConnectionError as erreur:
+        except (requests.Timeout, requests.ConnectionError) as erreur:
+            if isinstance(erreur, requests.Timeout) or (
+                erreur.args and isinstance(erreur.args[0], ReadTimeoutError)
+            ):
+                if streaming:
+                    waiting_for = "sans données" if response is not None else "en attendant les en-têtes HTTP"
+                    detail = f"{read_timeout}s {waiting_for}"
+                else:
+                    detail = f"{self.timeout}s"
+                raise LLMUnavailableError(
+                    f"Claude n'a pas répondu dans le délai imparti ({detail})."
+                ) from erreur
             raise LLMUnavailableError(
-                "Impossible de joindre l'API Claude -- vérifiez la connexion réseau du conteneur."
+                "La connexion Claude a été interrompue pendant la réception du flux."
+                if streaming and response is not None
+                else "Impossible de joindre l'API Claude -- vérifiez la connexion réseau du conteneur."
             ) from erreur
         except requests.RequestException as erreur:
             raise LLMUnavailableError(
                 f"Erreur réseau lors de l'appel à Claude ({type(erreur).__name__})."
             ) from erreur
+        except (ValueError, KeyError, IndexError, TypeError) as erreur:
+            raise LLMUnavailableError("Claude a renvoyé un flux inexploitable.") from erreur
         finally:
+            if streaming and response is not None:
+                response.close()
             trace(
                 "LLM", "Appel Claude terminé",
                 model=self.model,
                 elapsed_ms=round((monotonic() - started) * 1000),
                 http_status=response.status_code if response is not None else None,
+                fast_chat=fast_chat,
             )
 
-        if response.status_code in (401, 403):
-            raise LLMUnavailableError("Clé API Claude invalide ou expirée.")
-        if response.status_code == 429:
-            raise LLMUnavailableError("Limite de requêtes Claude atteinte -- réessayez plus tard.")
-        if response.status_code == 404:
-            raise LLMUnavailableError(f"Modèle Claude '{self.model}' introuvable ou non accessible avec cette clé.")
-        try:
-            response.raise_for_status()
-        except requests.HTTPError as erreur:
-            raise LLMUnavailableError(f"Claude a répondu avec une erreur ({response.status_code}).") from erreur
+        if not streaming:
+            self._check_http_status(response)
 
         try:
-            data = response.json()
+            if not streaming:
+                data = response.json()
             if not isinstance(data, dict):
                 raise ValueError("Réponse non conforme.")
             usage = data.get("usage") or {}
@@ -237,7 +307,100 @@ class ClaudeProvider(LLMProvider):
                 raise ValueError("Texte absent ou vide.")
         except (ValueError, KeyError, IndexError, TypeError, StopIteration) as erreur:
             raise LLMUnavailableError("Claude n'a renvoyé aucun texte exploitable pour cette requête.") from erreur
+        if not streaming:
+            callback = _reply_delta_callback.get()
+            if callback is not None and response_schema is None:
+                callback(reply)
         return reply
+
+    def _check_http_status(self, response: requests.Response) -> None:
+        if response.status_code in (401, 403):
+            raise LLMUnavailableError("Clé API Claude invalide ou expirée.")
+        if response.status_code == 429:
+            raise LLMUnavailableError("Limite de requêtes Claude atteinte -- réessayez plus tard.")
+        if response.status_code == 404:
+            raise LLMUnavailableError(f"Modèle Claude '{self.model}' introuvable ou non accessible avec cette clé.")
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as erreur:
+            raise LLMUnavailableError(f"Claude a répondu avec une erreur ({response.status_code}).") from erreur
+
+    def _read_stream(self, response: requests.Response, started: float, deadline_seconds: int) -> dict:
+        message = None
+        blocks = {}
+        open_blocks = set()
+        received_delta = False
+        first_text = False
+        event_lines = []
+        for line in response.iter_lines(chunk_size=1, decode_unicode=True):
+            if monotonic() - started >= deadline_seconds:
+                raise LLMUnavailableError(f"Claude a dépassé le délai de génération ({deadline_seconds}s).")
+            if line:
+                if line.startswith("data:"):
+                    event_lines.append(line[5:].lstrip(" "))
+                continue
+            if not event_lines:
+                continue
+            event = json.loads("\n".join(event_lines))
+            event_lines.clear()
+            if not isinstance(event, dict):
+                raise ValueError("Événement non conforme.")
+            event_type = event["type"]
+            if event_type == "error":
+                error_type = event["error"]["type"]
+                raise LLMUnavailableError(f"Claude a interrompu le flux ({error_type}).")
+            if event_type == "message_start":
+                if message is not None or not isinstance(event["message"], dict):
+                    raise ValueError("Début de message non conforme.")
+                message = event["message"]
+                if message.get("content") != [] or not isinstance(message.get("usage"), dict):
+                    raise ValueError("Message initial non conforme.")
+            elif event_type in {"content_block_start", "content_block_delta", "content_block_stop"}:
+                index = event["index"]
+                if message is None or type(index) is not int or index < 0:
+                    raise ValueError("Bloc hors message.")
+                if event_type == "content_block_start":
+                    block = event["content_block"]
+                    if index in blocks or not isinstance(block, dict) or not isinstance(block.get("type"), str):
+                        raise ValueError("Bloc initial non conforme.")
+                    blocks[index] = block
+                    open_blocks.add(index)
+                else:
+                    if index not in open_blocks:
+                        raise ValueError("Bloc absent ou déjà terminé.")
+                    if event_type == "content_block_stop":
+                        open_blocks.remove(index)
+                    else:
+                        delta = event["delta"]
+                        if delta["type"] == "text_delta":
+                            text = delta["text"]
+                            block = blocks[index]
+                            if block["type"] != "text" or not isinstance(text, str) or not isinstance(block.get("text"), str):
+                                raise ValueError("Texte du bloc non conforme.")
+                            block["text"] += text
+                            callback = _reply_delta_callback.get()
+                            if text and callback is not None:
+                                callback(text)
+                            if text and not first_text:
+                                first_text = True
+                                trace(
+                                    "LLM", "Premier texte Claude reçu",
+                                    model=self.model, elapsed_ms=round((monotonic() - started) * 1000),
+                                )
+            elif event_type == "message_delta":
+                if message is None or not isinstance(event["delta"], dict) or not isinstance(event["usage"], dict):
+                    raise ValueError("Fin de message non conforme.")
+                message.update(event["delta"])
+                message["usage"].update(event["usage"])
+                received_delta = True
+            elif event_type == "message_stop":
+                if message is None or not received_delta or open_blocks or not message.get("stop_reason"):
+                    raise ValueError("Message incomplet.")
+                message["content"] = [blocks[index] for index in sorted(blocks)]
+                return message
+            elif event_type != "ping":
+                trace("LLM", "Événement Claude non utilisé", event_type=event_type)
+        raise LLMUnavailableError("Claude a interrompu le flux avant la fin du message : réponse incomplète.")
 
     @classmethod
     def _with_cache_markers(cls, system: str | None, messages: list[dict]) -> dict:
@@ -279,7 +442,9 @@ class ClaudeProvider(LLMProvider):
 
 _PROVIDERS = {
     "gemini": lambda: GeminiProvider(api_key=settings.gemini_api_key, model=settings.gemini_model),
-    "claude": lambda: ClaudeProvider(api_key=settings.claude_api_key, model=settings.claude_model),
+    "claude": lambda: ClaudeProvider(
+        api_key=settings.claude_api_key, model=settings.claude_model, fast_chat=settings.claude_fast_chat,
+    ),
 }
 
 

@@ -47,6 +47,19 @@ class ErrorCodeReplyOut(ErrorCodeSuggestionOut):
     reply: str
 
 
+class ErrorCodeDocumentation(BaseModel):
+    module: str | None = Field(default=None, max_length=100)
+    source: str | None = Field(default=None, max_length=200)
+    source_page: int | None = Field(default=None, ge=1)
+    component: str | None = Field(default=None, max_length=300)
+    family: str | None = Field(default=None, pattern=r"^[3-8]x$")
+    cassette: int | None = Field(default=None, ge=1, le=6)
+    kind: str = Field(default="error", pattern=r"^(error|warning)$")
+    notes: str | None = Field(default=None, max_length=2000)
+
+    model_config = {"extra": "forbid"}
+
+
 # ---------- Administration (/api/admin/error_code) ----------
 
 class ErrorCodeAdminIn(BaseModel):
@@ -56,6 +69,7 @@ class ErrorCodeAdminIn(BaseModel):
     label: Optional[str] = Field(default=None, max_length=500)
     device_type: Optional[DeviceType] = None
     reply: Optional[str] = Field(default=None, max_length=5000)
+    documentation: ErrorCodeDocumentation = Field(default_factory=ErrorCodeDocumentation)
 
     @field_validator("label", "reply", mode="before")
     @classmethod
@@ -67,15 +81,27 @@ class ErrorCodeAdminIn(BaseModel):
         # Sans device_type, la réponse ne s'afficherait dans aucun menu.
         if self.reply and not self.device_type:
             raise ValueError("Choisissez l'équipement (GAB ou TPE) pour que la réponse apparaisse dans l’ATM-Chatbot.")
+        if self.documentation.family:
+            cassette = self.documentation.cassette
+            if cassette is None or self.code != self.documentation.family.replace("x", str(cassette)):
+                raise ValueError("Le code doit correspondre à sa famille et à sa cassette (1 à 6).")
         return self
 
 
 class ErrorCodeAdminOut(BaseModel):
     id: int = Field(validation_alias="error_code_id")
+    catalog_number: int
     code: str
     label: str | None = Field(default=None, validation_alias="description")
     device_type: str | None = None
     reply: str | None = None
     fault: FaultOut | None = None
+    documentation: ErrorCodeDocumentation = Field(default_factory=ErrorCodeDocumentation)
 
     model_config = {"from_attributes": True, "populate_by_name": True}
+
+
+class ErrorCodeDocument(ErrorCodeAdminIn):
+    catalog_number: int = Field(gt=0, strict=True)
+
+    model_config = {"extra": "forbid"}

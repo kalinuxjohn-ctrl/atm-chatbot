@@ -22,25 +22,43 @@ const atmChatbotFrame = document.querySelector("[data-atm-chatbot-frame]");
 const loadingPanel = document.querySelector("[data-atm-chatbot-loading]");
 let chatbotReady = false;
 let chatbotBusy = false;
+const overlaySurroundings = [...document.querySelectorAll("[data-page-shell], .atm-chatbot-footnote")];
+const previousInert = new Map();
+
+function setCodeDialogOpen(open) {
+  document.body.classList.toggle("has-code-dialog", open);
+  for (const element of overlaySurroundings) {
+    if (open) {
+      if (!previousInert.has(element)) previousInert.set(element, element.inert);
+      element.inert = true;
+    } else if (previousInert.has(element)) {
+      element.inert = previousInert.get(element);
+      previousInert.delete(element);
+    }
+  }
+}
 
 function sendChatbotAction(action) {
   if (action === "settings") {
     openAppSettings({ section: "chat" });
     return;
   }
-  if (!chatbotReady || (action === "new-conversation" && chatbotBusy)) return;
+  if (!chatbotReady || chatbotBusy) return;
   atmChatbotFrame.contentWindow.postMessage({ type: "atm-chatbot:command", action }, window.location.origin);
 }
 
 function applyPendingAction() {
   const action = window.location.hash.slice(1);
-  if (!chatbotReady || !["settings", "new-conversation"].includes(action)) return;
+  if (!chatbotReady || !["settings", "new-conversation", "conversations"].includes(action)) return;
   sendChatbotAction(action);
   window.history.replaceState(null, "", window.location.pathname);
 }
 
 window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin || event.source !== atmChatbotFrame.contentWindow) return;
+  if (event.data?.type === "atm-chatbot:code-dialog") {
+    setCodeDialogOpen(event.data.open === true);
+  }
   if (event.data?.type === "atm-chatbot:theme") {
     applyAppTheme(event.data.theme);
   }
@@ -51,6 +69,7 @@ window.addEventListener("message", (event) => {
   if (event.data?.type === "atm-chatbot:state") {
     chatbotBusy = event.data.busy === true;
     document.querySelector('[data-chatbot-action="new-conversation"]')?.setAttribute("aria-disabled", String(chatbotBusy));
+    document.querySelector('[data-chatbot-action="conversations"]')?.setAttribute("aria-disabled", String(chatbotBusy));
   }
 });
 document.addEventListener("click", (event) => {
@@ -72,6 +91,7 @@ if (currentUser) {
 }
 
 atmChatbotFrame.addEventListener("load", () => {
+  setCodeDialogOpen(false);
   loadingPanel.hidden = true;
   atmChatbotFrame.hidden = false;
 });

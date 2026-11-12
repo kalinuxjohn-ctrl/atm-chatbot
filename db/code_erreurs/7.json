@@ -1,0 +1,13 @@
+{
+  "catalog_number": 7,
+  "code": "11",
+  "label": "Logiciel manquant (Download)",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 11 : logiciel manquant, état Download.\nEffectuer un RESET avec le capteur de fonction. Si 11 persiste, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 6,
+    "kind": "error"
+  }
+}

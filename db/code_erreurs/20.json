@@ -1,0 +1,15 @@
+{
+  "catalog_number": 20,
+  "code": "24",
+  "label": "Entraînement de rejet/retrait MA6 défectueux ou bloqué",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 24 : défaut ou blocage de l'entraînement de rejet/retrait MA6 (électroaimant de levage).\nVider le compartiment de rejet de la cassette de rejet/retrait selon la procédure associée, puis contrôler le transport collecteur.\nRemettre le module en position de fonctionnement et attendre son état prêt. Si le problème demeure, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 8,
+    "component": "MA6",
+    "kind": "error",
+    "notes": "La procédure « Vider la cassette de rejet/retrait » n'est pas détaillée dans cet extrait."
+  }
+}

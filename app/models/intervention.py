@@ -14,7 +14,8 @@ class Intervention(Base):
 
     intervention_id = Column(Integer, primary_key=True)
     device_id = Column(Integer, ForeignKey("appareil.device_id"), nullable=False)
-    technician_id = Column(Integer, ForeignKey("technicien.technician_id"), nullable=False)
+    technician_id = Column(Integer, ForeignKey("technicien.technician_id"), nullable=True)
+    created_by_admin = Column(String)
     ticket_reference = Column(String)
     opened_at = Column(DateTime, nullable=False)
     closed_at = Column(DateTime)

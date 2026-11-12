@@ -1,6 +1,7 @@
 from html.parser import HTMLParser
 from pathlib import Path
 import unittest
+import xml.etree.ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,12 +18,41 @@ class Elements(HTMLParser):
 
 
 class ChatbotLayoutTests(unittest.TestCase):
+    def test_main_app_pages_share_a_replaceable_favicon(self):
+        pages = [
+            *ROOT.joinpath("main-app/gateway/html").rglob("*.html"),
+            *ROOT.joinpath("main-app/web").rglob("*.html"),
+        ]
+        for page in pages:
+            with self.subTest(page=page.relative_to(ROOT)):
+                icons = [attributes for tag, attributes in Elements(page).tags
+                         if tag == "link" and attributes.get("rel") == "icon"]
+                self.assertEqual(len(icons), 1)
+                self.assertEqual(icons[0]["type"], "image/svg+xml")
+                asset = ROOT / "main-app/gateway/html" / icons[0]["href"].lstrip("/")
+                self.assertEqual(asset.name, "favicon.svg")
+                self.assertEqual(ET.parse(asset).getroot().tag, "{http://www.w3.org/2000/svg}svg")
+
+    def test_admin_can_create_interventions_without_technician_or_visit_dates(self):
+        page = Elements(ROOT / "main-app/gateway/html/admin/index.html")
+        self.assertTrue(any("data-intervention-create-toggle" in attributes for _, attributes in page.tags))
+        self.assertTrue(any("data-admin-intervention-form" in attributes for _, attributes in page.tags))
+        self.assertTrue(any("data-admin-add-symptom" in attributes for _, attributes in page.tags))
+        form = (ROOT / "main-app/gateway/html/admin/js/adminInterventionForm.js").read_text(encoding="utf-8")
+        self.assertIn("symptomRows.map", form)
+        self.assertIn("interventionAddApi.create(body)", form)
+        self.assertNotIn("technician_id:", form)
+        self.assertNotIn("opened_at:", form)
+        self.assertNotIn("closed_at:", form)
+        gateway = (ROOT / "main-app/gateway/nginx.conf").read_text(encoding="utf-8")
+        self.assertIn("proxy_set_header X-Authenticated-Admin-Username $authenticated_admin_username", gateway)
+
     def test_text_over_the_photo_uses_contrasting_panels_in_every_theme(self):
         styles = (ROOT / "main-app/gateway/html/shared/css/base.css").read_text(encoding="utf-8")
         admin_styles = (ROOT / "main-app/gateway/html/admin/css/administration.css").read_text(encoding="utf-8")
         self.assertIn("--color-content-glass: rgb(255 255 255 / 94%)", styles)
-        self.assertIn("--color-content-glass: rgb(10 16 12 / 96%)", styles)
-        self.assertIn("--color-content-glass: rgb(255 253 246 / 96%)", styles)
+        self.assertIn("--color-content-glass: rgb(24 27 30 / 96%)", styles)
+        self.assertIn("--color-content-glass: rgb(255 255 255 / 96%)", styles)
         self.assertIn("background: var(--color-content-glass)", admin_styles)
         self.assertIn(".page-heading,\n.home-hero {", styles)
         self.assertNotIn(':root[data-theme="gab"] :is(.home-hero, .page-heading) p', styles)
@@ -108,7 +138,12 @@ class ChatbotLayoutTests(unittest.TestCase):
         self.assertIn("--color-navigation-glass: rgb(255 255 255 / 88%)", gateway_styles)
         self.assertIn("backdrop-filter: blur(20px) saturate(135%)", gateway_styles)
         self.assertIn(".app-sidebar-footer .app-sidebar-logout", gateway_styles)
-        self.assertIn("color: #dc2626", gateway_styles)
+        self.assertIn("color: var(--sidebar-logout-color)", gateway_styles)
+        self.assertIn("--sidebar-logout-color: #b45309", gateway_styles)
+        self.assertIn("--sidebar-logout-color: #fb923c", gateway_styles)
+        self.assertIn("background: var(--sidebar-background)", gateway_styles)
+        self.assertIn("--sidebar-padding-top: 30px", gateway_styles)
+        self.assertIn("padding: var(--sidebar-padding-top) 12px 16px", gateway_styles)
 
     def test_map_deletion_uses_the_same_yes_no_dialog(self):
         map_script = (ROOT / "main-app/web/map/js/mapPage.js").read_text(encoding="utf-8")
@@ -119,28 +154,37 @@ class ChatbotLayoutTests(unittest.TestCase):
         self.assertIn('cancelLabel: "Non"', map_script)
         self.assertNotIn("window.confirm(", map_script)
 
-    def test_dropdowns_share_the_smoked_glass_style_across_themes(self):
+    def test_sidebar_has_chatbot_submenu_and_a_persistent_rotating_icon(self):
         styles = (ROOT / "main-app/gateway/html/shared/css/base.css").read_text(encoding="utf-8")
         shell_script = (ROOT / "main-app/gateway/html/shared/js/connectedPageShell.js").read_text(encoding="utf-8")
 
         self.assertIn("--dropdown-background: rgb(43 39 36 / 84%)", styles)
         self.assertIn("select:not([multiple])::picker(select)", styles)
         self.assertNotIn(':root[data-theme="gab"] select', styles)
-        self.assertIn('["conversation", "Conversation", "message"]', shell_script)
-        self.assertIn('["new-conversation", "Nouvelle conversation", "plus"]', shell_script)
-        self.assertIn(".app-chatbot-menu::details-content", styles)
-        self.assertIn("block-size var(--dropdown-motion-duration)", styles)
-        self.assertIn(".app-chatbot-action + .app-chatbot-action", styles)
-        self.assertIn("border-top-color: transparent", styles)
+        self.assertIn('createNavigationSection("Administration")', shell_script)
+        self.assertIn('createNavigationSection("Fonctionnalités")', shell_script)
+        self.assertIn('path: "/atm-chatbot/#new-conversation"', shell_script)
+        self.assertIn('createElementWithText("details", "app-chatbot-menu")', shell_script)
+        self.assertIn('path: "/atm-chatbot/#conversations"', shell_script)
+        self.assertIn('label: "Voir les conversations"', shell_script)
+        self.assertNotIn("toggleButton.replaceChildren", shell_script)
+        self.assertIn('createIcon("collapseSidebar", "icon app-sidebar-toggle-icon")', shell_script)
+        self.assertIn('.app-sidebar-toggle[aria-expanded="false"] .app-sidebar-toggle-icon', styles)
+        self.assertIn("transition: transform 280ms ease", styles)
+        self.assertIn("--sidebar-compact-footer-gap: 32px", styles)
         self.assertIn("prefers-reduced-motion: reduce", styles)
 
     def test_sidebar_spacing_and_home_chatbot_image_are_customizable(self):
         styles = (ROOT / "main-app/gateway/html/shared/css/base.css").read_text(encoding="utf-8")
         home = Elements(ROOT / "main-app/gateway/html/home.html")
-        self.assertIn("--sidebar-item-gap: 8px", styles)
+        self.assertIn("--sidebar-item-gap: 12px", styles)
+        self.assertIn("--sidebar-label-size: 1.067rem", styles)
+        self.assertIn("--sidebar-option-icon-size: 22px", styles)
+        self.assertIn("font-size: var(--sidebar-label-size)", styles)
+        self.assertIn("width: var(--sidebar-option-icon-size)", styles)
         self.assertIn("gap: var(--sidebar-item-gap)", styles)
         self.assertIn("margin-top: var(--sidebar-footer-gap)", styles)
-        self.assertIn("--sidebar-footer-gap: clamp(48px, 10vh, 100px)", styles)
+        self.assertIn("--sidebar-footer-gap: clamp(72px, 13vh, 130px)", styles)
         self.assertIn("--sidebar-footer-item-gap: 20px", styles)
         self.assertIn("padding-top: var(--sidebar-footer-padding-top)", styles)
         self.assertIn("flex: 0 1 auto", styles)

@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Administration | Espace techniciens</title>
+    <link rel="icon" type="image/svg+xml" href="/shared/images/favicon.svg">
     <script src="/shared/js/applySavedTheme.js"></script>
     <link rel="stylesheet" href="/shared/css/base.css">
     <link rel="stylesheet" href="/admin/css/administration.css">
@@ -105,9 +106,51 @@
             <header class="administration-section-header">
               <div>
                 <h2 id="interventions-title">Ajouts d'intervention</h2>
-                <p>Interventions racontées par les techniciens depuis l’ATM-Chatbot. Approuvée, une demande est écrite dans l'historique et nourrit les statistiques des solutions.</p>
+                <p>Validez les demandes des techniciens ou ajoutez directement une intervention d'origine admin pour enrichir la base.</p>
               </div>
+              <button class="button" type="button" data-intervention-create-toggle aria-expanded="false" aria-controls="admin-intervention-form" aria-label="Ajouter une intervention"><span data-icon="plus"></span>Ajouter</button>
             </header>
+            <form class="card admin-intervention-form" id="admin-intervention-form" data-admin-intervention-form hidden>
+              <div class="card-header"><h3>Ajouter une intervention</h3><span class="badge badge-accent">Origine : admin</span></div>
+              <p class="muted form-hint">Enregistrement direct dans la base, sans demande à approuver. Aucun technicien ni date de visite à renseigner.</p>
+              <div class="form-grid">
+                <label class="form-field">Type d'appareil
+                  <select name="device_type" required><option value="">Choisir…</option><option value="gab">GAB</option><option value="tpe">TPE</option></select>
+                </label>
+                <label class="form-field">Modèle (facultatif)<input name="model_name" maxlength="200"></label>
+                <label class="form-field">Site (facultatif)<input name="site_name" maxlength="200"></label>
+                <label class="form-field">N° de série (facultatif)<input name="serial_number" maxlength="100"></label>
+              </div>
+              <fieldset class="admin-intervention-group">
+                <legend>Symptômes constatés</legend>
+                <p class="muted form-hint">Un problème par ligne. Vous pouvez ajouter jusqu'à 20 symptômes.</p>
+                <div class="admin-intervention-rows" data-admin-symptoms></div>
+                <button class="button button-secondary" type="button" data-admin-add-symptom><span data-icon="plus"></span>Ajouter un symptôme</button>
+              </fieldset>
+              <fieldset class="admin-intervention-group">
+                <legend>Actions et résultats</legend>
+                <div class="admin-intervention-rows" data-admin-actions></div>
+                <button class="button button-secondary" type="button" data-admin-add-action><span data-icon="plus"></span>Ajouter une action</button>
+              </fieldset>
+              <div class="form-grid">
+                <label class="form-field">État final
+                  <select name="final_outcome_status" required>
+                    <option value="resolved">Résolue</option><option value="partially_resolved">Résolue en partie</option>
+                    <option value="unresolved">Non résolue</option><option value="escalated">Escaladée</option>
+                  </select>
+                </label>
+                <label class="form-field">Résumé (facultatif)<textarea name="summary_text" maxlength="2000" rows="3"></textarea></label>
+                <label class="form-field">Diagnostic (facultatif)<textarea name="diagnosis" maxlength="2000" rows="3"></textarea></label>
+                <label class="form-field">Composant en cause (facultatif)<input name="root_cause_component_text" maxlength="200"></label>
+              </div>
+              <label class="admin-intervention-checkbox"><input type="checkbox" name="diagnosis_confirmed">Diagnostic confirmé</label>
+              <p class="form-error" data-admin-intervention-error role="alert" hidden></p>
+              <div class="form-actions">
+                <button class="button button-secondary" type="button" data-admin-intervention-cancel>Annuler</button>
+                <button class="button" type="submit" data-admin-intervention-submit>Enregistrer dans la base</button>
+              </div>
+            </form>
+            <p class="form-success" data-admin-intervention-success role="status" hidden></p>
             <div class="segmented-control" role="tablist" aria-label="Statut des demandes" data-status-filter="interventions">
               <button type="button" role="tab" data-status="pending" aria-selected="true">En attente</button>
               <button type="button" role="tab" data-status="approved" aria-selected="false">Approuvées</button>
@@ -122,6 +165,7 @@
               <div>
                 <h2 id="codes-erreur-title">Codes d'erreur</h2>
                 <p>Un code apparaît dans le menu « Codes d'erreur connus » de l’ATM-Chatbot s'il a un équipement et une réponse. Sans réponse, il reste trouvable par la recherche.</p>
+                <p>Chaque ajout reçoit un ID entier et crée son fichier dans db/code_erreurs avant l'enregistrement en base. Les modifications et suppressions sont synchronisées avec ce JSON.</p>
               </div>
               <button class="button" type="button" data-record-add="codes-erreur"><span data-icon="plus"></span>Ajouter un code</button>
             </header>

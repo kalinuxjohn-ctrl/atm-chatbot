@@ -8,9 +8,10 @@ fichier existant utilisé par une fonctionnalité différente.
 
 from __future__ import annotations
 
-from typing import Optional
+from datetime import datetime
+from typing import Literal, Optional
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from app.schemas.device_type import DeviceType
 from app.schemas.photo_schema import PhotoAttachment
@@ -37,6 +38,8 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     conversation_id: int
     reply: str
+    detected_error_code: Optional[str] = None
+    error_code_id: Optional[int] = None
     # True quand CE message a produit des solutions (nouvelle recherche avec
     # au moins un résultat) : le frontend affiche alors « Aucune de ces
     # solutions ne fonctionne ». Champ ajouté : les clients existants l'ignorent.
@@ -45,4 +48,35 @@ class ChatResponse(BaseModel):
     intervention_add_problem: Optional[str] = None
 
 
-    
+class SavedErrorCodeRequest(BaseModel):
+    conversation_id: Optional[int] = None
+    technician_id: int = Field(gt=0)
+    device_type: DeviceType
+    error_code_id: int = Field(gt=0)
+
+
+class ConversationSummary(BaseModel):
+    conversation_id: int
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class ConversationList(BaseModel):
+    items: list[ConversationSummary]
+    has_more: bool
+
+
+class ConversationMessageOut(BaseModel):
+    message_id: int
+    role: Literal["user", "assistant"]
+    content: str
+    detected_error_code: Optional[str] = None
+    error_code_id: Optional[int] = None
+    created_at: datetime
+
+
+class ConversationHistory(BaseModel):
+    conversation_id: int
+    device_type: DeviceType
+    messages: list[ConversationMessageOut]

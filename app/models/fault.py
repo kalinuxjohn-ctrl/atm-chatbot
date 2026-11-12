@@ -7,6 +7,7 @@ jamais de pipeline vectoriel ici.
 
 from sqlalchemy import Column, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app.core.database import Base
 
@@ -27,6 +28,7 @@ class ErrorCode(Base):
     __tablename__ = "code_erreur"
 
     error_code_id = Column(Integer, primary_key=True)
+    catalog_number = Column(Integer, nullable=False, unique=True)
     # Pas de unique=True ici : l'unicité réelle (insensible à la casse) est
     # portée par l'index UPPER(code) de la migration 0007, qu'un simple
     # unique=True sur cette colonne ne reproduirait pas.
@@ -37,5 +39,6 @@ class ErrorCode(Base):
     # le code n'y apparaît que si ces deux colonnes sont remplies.
     device_type = Column(Enum("gab", "tpe", name="device_type", create_type=False))
     reply = Column(String)
+    documentation = Column(JSONB, nullable=False, default=dict)
 
     fault = relationship("Fault")

@@ -13,6 +13,7 @@
 import { createElementWithText } from "/shared/js/domHelpers.js";
 import { createIcon } from "/shared/js/icons.js";
 import { interventionAddApi } from "./atmChatbotAdminApi.js";
+import { connectAdminInterventionForm } from "./adminInterventionForm.js";
 import {
   STATUS_LABELS,
   connectStatusFilter,
@@ -155,10 +156,15 @@ export function createInterventionAddsSection({ reviewerName, showPendingCount }
       createElementWithText(
         "p",
         "muted",
-        `Demande n° ${interventionAdd.intervention_add_id} · ${interventionAdd.technician_name || `Technicien ${interventionAdd.technician_id}`} · ${formatDateTime(interventionAdd.created_at)}`,
+        interventionAdd.origin === "admin"
+          ? `Ajout n° ${interventionAdd.intervention_add_id} · Admin (${interventionAdd.created_by_admin}) · ${formatDateTime(interventionAdd.created_at)}`
+          : `Demande n° ${interventionAdd.intervention_add_id} · ${interventionAdd.technician_name || `Technicien ${interventionAdd.technician_id}`} · ${formatDateTime(interventionAdd.created_at)}`,
       ),
     );
     const headerBadges = createElementWithText("div", "review-card-badges");
+    if (interventionAdd.origin === "admin") {
+      headerBadges.append(createElementWithText("span", "badge badge-accent", "Origine : admin"));
+    }
     if (interventionAdd.edited_by_admin) {
       headerBadges.append(createElementWithText("span", "badge", `Corrigée par ${interventionAdd.last_edited_by ?? "un admin"}`));
     }
@@ -170,8 +176,8 @@ export function createInterventionAddsSection({ reviewerName, showPendingCount }
       createFactList([
         ["Issue", FINAL_OUTCOME_LABELS[content.final_outcome_status] ?? content.final_outcome_status],
         ["Ticket", content.ticket_reference],
-        ["Ouverte", formatDateTime(content.opened_at)],
-        ["Fermée", formatDateTime(content.closed_at)],
+        ["Ouverte", interventionAdd.origin === "admin" ? null : formatDateTime(content.opened_at)],
+        ["Fermée", interventionAdd.origin === "admin" ? null : formatDateTime(content.closed_at)],
         ["N° de série", content.device?.serial_number],
         ["Conversation", interventionAdd.conversation_id ? `n° ${interventionAdd.conversation_id}` : null],
       ]),
@@ -263,6 +269,12 @@ export function createInterventionAddsSection({ reviewerName, showPendingCount }
   connectStatusFilter(sectionElement.querySelector('[data-status-filter="interventions"]'), (status) => {
     selectedStatus = status;
     loadInterventionAdds();
+  });
+
+  connectAdminInterventionForm(sectionElement, async () => {
+    const approvedTab = sectionElement.querySelector('[data-status="approved"]');
+    approvedTab.click();
+    await refreshPendingCount();
   });
 
   return { load: loadInterventionAdds, refreshPendingCount };

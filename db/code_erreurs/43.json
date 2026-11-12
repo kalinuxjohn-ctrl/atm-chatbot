@@ -1,0 +1,16 @@
+{
+  "catalog_number": 43,
+  "code": "61",
+  "label": "Cassette 1 défectueuse",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 61 : cassette 1 défectueuse.\nRemplacer la cassette 1 par une nouvelle cassette initialisée.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "family": "6x",
+    "cassette": 1,
+    "component": "Cassette 1",
+    "kind": "error"
+  }
+}

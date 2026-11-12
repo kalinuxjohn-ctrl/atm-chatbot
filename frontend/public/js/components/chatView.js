@@ -173,8 +173,14 @@ export function createChatView({
     activeProposalOffer = null;
   }
 
-  function appendAssistant({ text, channel, time, canProposeSolution = false, canAddIntervention = false, interventionProblem = null }, { animate = true } = {}) {
-    const { message, body } = createAssistantShell(time);
+  function appendAssistant({ text, channel, time, canProposeSolution = false, canAddIntervention = false, interventionProblem = null }, { animate = true, existingShell = null } = {}) {
+    const followsBottom = conversationElement.scrollHeight - conversationElement.clientHeight - conversationElement.scrollTop <= 80;
+    const { message, body } = existingShell || createAssistantShell(time);
+    if (existingShell) {
+      body.replaceChildren(createAuthor("ATM-Chatbot", time));
+      message.classList.remove("streaming-message");
+      message.removeAttribute("aria-busy");
+    }
     if (!animate) message.classList.remove("message-enter-fade");
     body.append(createTextBubble(text, true));
 
@@ -203,8 +209,8 @@ export function createChatView({
     }
 
     if (channel === "voice") message.classList.add("voice-exchange");
-    conversationElement.append(message);
-    scrollToBottom();
+    if (!existingShell) conversationElement.append(message);
+    if (!existingShell || followsBottom) scrollToBottom();
   }
 
   function renderWelcomeExtras() {
@@ -214,6 +220,52 @@ export function createChatView({
   }
 
   return {
+    beginStreamingReply({ channel = "text" } = {}) {
+      const followsBottom = conversationElement.scrollHeight - conversationElement.clientHeight - conversationElement.scrollTop <= 80;
+      const shell = createAssistantShell(formatTime());
+      shell.message.classList.add("streaming-message");
+      shell.message.setAttribute("aria-busy", "true");
+      if (channel === "voice") shell.message.classList.add("voice-exchange");
+      const bubble = createElement("div", "message-bubble message-markdown streaming-message-bubble");
+      shell.body.append(bubble);
+      conversationElement.append(shell.message);
+      if (followsBottom) scrollToBottom();
+      let text = "";
+      let frame = null;
+      const stopFrame = () => {
+        if (frame !== null) cancelAnimationFrame(frame);
+        frame = null;
+      };
+      return {
+        appendDelta(delta) {
+          text += delta;
+          if (frame !== null) return;
+          frame = requestAnimationFrame(() => {
+            frame = null;
+            const followsBottom = conversationElement.scrollHeight - conversationElement.clientHeight - conversationElement.scrollTop <= 80;
+            bubble.replaceChildren(renderMessageMarkdown(text));
+            if (followsBottom) conversationElement.scrollTop = conversationElement.scrollHeight;
+          });
+        },
+        complete(message) {
+          stopFrame();
+          appendAssistant(message, { animate: false, existingShell: shell });
+        },
+        interrupt() {
+          stopFrame();
+          bubble.replaceChildren(renderMessageMarkdown(text));
+          shell.message.classList.remove("streaming-message");
+          shell.message.classList.add("interrupted-message");
+          shell.message.removeAttribute("aria-busy");
+          shell.body.append(createElement("p", "stream-interrupted-notice", "Réponse interrompue — texte incomplet, à ne pas considérer comme une réponse finale."));
+        },
+        remove() {
+          stopFrame();
+          shell.message.remove();
+        },
+      };
+    },
+
     /** Le prochain message du technicien partira de ce rectangle (la zone de saisie). */
     launchNextUserMessage(originRect) {
       pendingLaunch = originRect;

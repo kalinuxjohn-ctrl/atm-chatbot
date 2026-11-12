@@ -1,0 +1,14 @@
+{
+  "catalog_number": 2,
+  "code": "05",
+  "label": "Communication avec le contrôleur ChipCard",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 05 : problème de communication avec le contrôleur ChipCard.\nEffectuer un RESET avec le capteur de fonction. Si 05 reste affiché, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 6,
+    "component": "Contrôleur ChipCard",
+    "kind": "error"
+  }
+}

@@ -6,8 +6,8 @@
  *   [ Pannes fréquentes      ▾ ]  GET /api/usual_problem?device_type=...
  *   [ Codes d'erreur connus  ▾ ]  GET /api/error_code?device_type=...
  *
- * Chaque menu est une pastille qui ouvre, au-dessus de la saisie, un panneau
- * en verre (titre, filtre, liste). Accessible au clavier : flèches pour se
+ * Sur téléphone, les codes ouvrent un dialogue modal central. Les autres
+ * menus ouvrent un panneau au-dessus de la saisie. Flèches pour se
  * déplacer, Entrée pour choisir, Échap pour fermer.
  *
  * Pour en ajouter : remplir les tables usual_problem / error_code (colonnes
@@ -74,6 +74,8 @@ export function createSuggestionMenus({
 function createMenu({ title, ariaLabel, icon, options, onChoose, className = "" }) {
   const menuId = `suggestion-menu-${Math.random().toString(36).slice(2, 8)}`;
   const root = createElement("div", `suggestion-dropdown ${className}`.trim());
+  const mobileDialog = className === "error-code-menu" ? createElement("dialog", "error-code-dialog") : null;
+  if (mobileDialog) mobileDialog.id = `${menuId}-dialog`;
 
   /* ----- Pastille ----- */
   const trigger = createElement("button", "suggestion-trigger");
@@ -82,6 +84,10 @@ function createMenu({ title, ariaLabel, icon, options, onChoose, className = "" 
   trigger.setAttribute("aria-expanded", "false");
   trigger.setAttribute("aria-controls", menuId);
   trigger.setAttribute("aria-label", ariaLabel);
+  if (mobileDialog && window.matchMedia("(max-width: 760px)").matches) {
+    trigger.setAttribute("aria-haspopup", "dialog");
+    trigger.setAttribute("aria-controls", mobileDialog.id);
+  }
   const triggerIcon = createElement("span", "suggestion-trigger-icon");
   triggerIcon.append(createIcon(icon));
   trigger.append(
@@ -98,11 +104,29 @@ function createMenu({ title, ariaLabel, icon, options, onChoose, className = "" 
   const headerIcon = createElement("span", "suggestion-popover-icon");
   headerIcon.append(createIcon(icon));
   const headerText = createElement("span", "suggestion-popover-title");
+  headerText.id = `${menuId}-title`;
   headerText.append(
     createElement("strong", "", title),
     createElement("small", "", `${options.length} ${options.length > 1 ? "réponses enregistrées" : "réponse enregistrée"}`),
   );
   header.append(headerIcon, headerText);
+  if (mobileDialog) {
+    mobileDialog.setAttribute("aria-labelledby", headerText.id);
+    const closeButton = createElement("button", "error-code-dialog-close");
+    closeButton.type = "button";
+    closeButton.setAttribute("aria-label", "Fermer les codes d’erreur");
+    closeButton.append(createIcon("close"));
+    closeButton.addEventListener("click", () => close({ focusTrigger: true }));
+    header.append(closeButton);
+    root.append(mobileDialog);
+    mobileDialog.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      close({ focusTrigger: true });
+    });
+    mobileDialog.addEventListener("click", (event) => {
+      if (event.target === mobileDialog) close({ focusTrigger: true });
+    });
+  }
   popover.append(header);
 
   let filterInput = null;
@@ -176,6 +200,18 @@ function createMenu({ title, ariaLabel, icon, options, onChoose, className = "" 
     popover.hidden = false;
     root.classList.add("is-open");
     trigger.setAttribute("aria-expanded", "true");
+    if (mobileDialog && window.matchMedia("(max-width: 760px)").matches) {
+      mobileDialog.append(popover);
+      trigger.setAttribute("aria-haspopup", "dialog");
+      trigger.setAttribute("aria-controls", `${menuId}-dialog`);
+      mobileDialog.showModal();
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: "atm-chatbot:code-dialog", open: true }, window.location.origin);
+      }
+    } else {
+      trigger.setAttribute("aria-haspopup", "listbox");
+      trigger.setAttribute("aria-controls", menuId);
+    }
     if (filterInput) {
       filterInput.value = "";
       applyFilter();
@@ -184,12 +220,19 @@ function createMenu({ title, ariaLabel, icon, options, onChoose, className = "" 
       setActive(optionElements[0]);
       listbox.focus();
     }
-    document.addEventListener("pointerdown", handleOutsidePointer);
+    if (!mobileDialog?.open) document.addEventListener("pointerdown", handleOutsidePointer);
   }
 
   function close({ focusTrigger = false } = {}) {
     if (popover.hidden) return;
     popover.hidden = true;
+    if (mobileDialog?.open) {
+      mobileDialog.close();
+      root.append(popover);
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: "atm-chatbot:code-dialog", open: false }, window.location.origin);
+      }
+    }
     root.classList.remove("is-open");
     trigger.setAttribute("aria-expanded", "false");
     document.removeEventListener("pointerdown", handleOutsidePointer);
@@ -217,7 +260,7 @@ function createMenu({ title, ariaLabel, icon, options, onChoose, className = "" 
     } else if (event.key === "Escape") {
       event.preventDefault();
       close({ focusTrigger: true });
-    } else if (event.key === "Tab") {
+    } else if (event.key === "Tab" && !mobileDialog?.open) {
       close();
     }
   }

@@ -30,6 +30,11 @@
   border: 0;
 }
 
+.has-code-dialog :is([data-page-shell], .atm-chatbot-footnote) {
+  filter: blur(7px);
+  pointer-events: none;
+}
+
 .atm-chatbot-loading {
   position: absolute;
   inset: 0;

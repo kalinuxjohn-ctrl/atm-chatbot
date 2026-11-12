@@ -141,6 +141,14 @@ class ReviewedInterventionContent(SubmittedInterventionContent):
     diagnosis: Optional[ReviewedDiagnosis] = None
 
 
+class AdminInterventionCreate(ReviewedInterventionContent):
+    """Ajout direct : l'auteur vient de la session, pas du formulaire."""
+
+    model_config = {"extra": "forbid"}
+    opened_at: None = None
+    closed_at: None = None
+
+
 def _check_intervention_consistency(content: SubmittedInterventionContent) -> None:
     """Règles qui gardent les statistiques justes (sinon 422 avant tout enregistrement)."""
     device = content.device
@@ -191,7 +199,9 @@ class InterventionAddRejection(BaseModel):
 class InterventionAddOut(BaseModel):
     intervention_add_id: int
     status: InterventionAddStatus
-    technician_id: int
+    technician_id: Optional[int] = None
+    origin: Literal["technician", "admin"] = "technician"
+    created_by_admin: Optional[str] = None
     technician_name: Optional[str] = None
     conversation_id: Optional[int] = None
     device_label: Optional[str] = None  # ex. "GAB · Opteva 720 · Branch 14, Main St"
@@ -224,7 +234,8 @@ class PlannedDevice(BaseModel):
 
 class PlannedIntervention(BaseModel):
     device_id: Optional[int] = None  # vide tant que le nouvel appareil n'est pas créé
-    technician_id: int
+    technician_id: Optional[int] = None
+    created_by_admin: Optional[str] = None
     ticket_reference: Optional[str] = None
     opened_at: datetime
     closed_at: Optional[datetime] = None

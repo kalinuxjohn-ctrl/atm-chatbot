@@ -38,6 +38,8 @@ class ConversationMessage(Base):
     )
     role = Column(Text, nullable=False)  # "user" | "assistant" -- contraint en base (CHECK)
     content = Column(Text, nullable=False)
+    detected_error_code = Column(Text)
+    error_code_id = Column(Integer, ForeignKey("code_erreur.error_code_id", ondelete="SET NULL"))
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
 
     conversation = relationship("Conversation", back_populates="messages")

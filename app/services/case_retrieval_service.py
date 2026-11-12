@@ -120,17 +120,19 @@ def build_case(
     if intervention is None:
         return None
 
-    technician = db.get(Technician, intervention.technician_id)
+    technician = db.get(Technician, intervention.technician_id) if intervention.technician_id is not None else None
+    admin_author = getattr(intervention, "created_by_admin", None)
     device = intervention.device  # relation confirmée dans models/intervention.py
     diagnosis = db.query(Diagnosis).filter(Diagnosis.intervention_id == intervention_id).first()
     actions = sorted(intervention.actions, key=lambda a: a.sequence_order)
 
     return {
         "intervention_id": intervention_id,
-        "technician_name": getattr(technician, "full_name", None) or "technicien inconnu",
+        "technician_name": "Admin" if admin_author else getattr(technician, "full_name", None) or "technicien inconnu",
+        "origin": "admin" if admin_author else "technician",
         # `or` en cascade : un attribut présent mais NULL ne doit jamais s'afficher "None".
         "device_label": getattr(device, "site_name", None) or getattr(device, "serial_number", None) or "appareil non identifié",
-        "opened_at": intervention.opened_at,
+        "opened_at": None if admin_author else intervention.opened_at,
         "matched_symptom_text": matched_symptom_text,
         "matched_intervention_symptom_id": matched_intervention_symptom_id,
         "matched_symptoms": matched_symptoms or [],

@@ -1,0 +1,16 @@
+{
+  "catalog_number": 38,
+  "code": "52",
+  "label": "Cassette 2 : trop de mauvais billets",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 52 : trop de mauvais billets dans la cassette 2.\nVérifier le contenu de la cassette 2. Si la panne persiste malgré l'intervention, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "family": "5x",
+    "cassette": 2,
+    "component": "Cassette 2",
+    "kind": "error"
+  }
+}

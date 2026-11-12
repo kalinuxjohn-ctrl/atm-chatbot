@@ -107,6 +107,42 @@ class PhotoSentToClaudeTests(unittest.TestCase):
 
 
 class PhotoInOrchestratorTests(unittest.TestCase):
+    def test_detected_photo_code_uses_only_the_saved_meaning_and_one_llm_call(self):
+        from app.schemas.message_understanding_schema import UnderstoodMessage
+        from app.models.fault import ErrorCode
+        understood = UnderstoodMessage(
+            intent="diagnostic", error_code_text="01", photo_text="01",
+            photo_meaning="Signification inventee",
+        )
+        record = ErrorCode(
+            error_code_id=1001, catalog_number=1, code="01", device_type="gab",
+            reply="Consigne documentee", documentation={},
+        )
+        context = {"device_type": "gab", "last_search": {"query": "ancienne panne", "results": [{"position": 1}]}}
+        with (
+            patch.object(orchestrator.conversation_service, "get_or_create_conversation",
+                         return_value=MagicMock(conversation_id=15)),
+            patch.object(orchestrator.context_service, "get_context", return_value=context),
+            patch.object(orchestrator.context_service, "save_context"),
+            patch.object(orchestrator.conversation_service, "save_message"),
+            patch.object(orchestrator.conversation_service, "mark_conversation_active"),
+            patch.object(orchestrator, "_load_history", return_value=[]),
+            patch.object(orchestrator, "_describe_last_search", return_value=None),
+            patch.object(orchestrator.message_understanding_service, "understand_message", return_value=understood) as understand,
+            patch.object(orchestrator.error_code_service, "find_exact_error_code", return_value=record),
+            patch.object(orchestrator.llm_service, "generate_chat_reply") as second_call,
+            enabled(True),
+        ):
+            result = orchestrator.handle_chat_message(MagicMock(), 15, 4, "", "gab", photo=PHOTO)
+        understand.assert_called_once()
+        second_call.assert_not_called()
+        self.assertIn("01", result["reply"])
+        self.assertTrue(result["reply"].endswith("Consigne documentee"))
+        self.assertNotIn("Signification inventee", result["reply"])
+        self.assertEqual(result["error_code_id"], 1001)
+        self.assertFalse(result["intervention_add_available"])
+        self.assertNotIn("last_search", context)
+
     def run_turn(self, *, valid, photo):
         understood = UnderstoodMessage(intent="diagnostic", photo_text="CARD READER FAULT", photo_meaning="Lecteur en défaut.")
         with (

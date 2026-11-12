@@ -1,9 +1,9 @@
 /* ==========================================================================
-   THÈME VISUEL COMMUN -- vert néon, clair par défaut, sombre au choix
+   THÈME VISUEL COMMUN -- blanc et accents marron, sombre au choix
    --------------------------------------------------------------------------
    Chargé EN DERNIER sur toutes les pages. Inspiré de docs/visuel_frontend.png :
    cadre arrondi, onglets en pilule, rail d'icônes, cartes vitrées, accent
-   vert néon.
+   marron.
 
    Le mode sombre s'active avec <html data-theme="dark"> (interrupteur
    soleil | lune ajouté par js/components/themeToggle.js, choix mémorisé).
@@ -27,39 +27,39 @@
   color-scheme: light;
   --font: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
 
-  --bg: #eef3ef;
+  --bg: #f5f6f7;
   --frame: rgba(255, 255, 255, 0.72);
-  --frame-border: rgba(20, 60, 35, 0.1);
+  --frame-border: rgba(31, 35, 40, 0.1);
   --bg-raised: #ffffff;
   --surface: #ffffff;
-  --surface-2: #f5f9f6;
-  --border: rgba(20, 60, 35, 0.1);
-  --border-strong: rgba(20, 60, 35, 0.18);
-  --soft-fill: rgba(20, 60, 35, 0.04);
-  --soft-fill-hover: rgba(20, 60, 35, 0.08);
+  --surface-2: #f7f8f9;
+  --border: rgba(31, 35, 40, 0.1);
+  --border-strong: rgba(31, 35, 40, 0.18);
+  --soft-fill: rgba(31, 35, 40, 0.04);
+  --soft-fill-hover: rgba(31, 35, 40, 0.08);
   --glass: rgba(255, 255, 255, 0.8);
-  --panel: linear-gradient(180deg, #ffffff, #f8fbf9);
-  --card-glow: rgba(34, 197, 94, 0.08);
+  --panel: linear-gradient(180deg, #ffffff, #f8f9fa);
+  --card-glow: rgba(31, 35, 40, 0.02);
 
-  --text: #0d1f14;
-  --text-soft: #26392d;
-  --text-muted: #5a6d61;
-  --text-faint: #8a9a90;
-  --accent-text: #15803d;
+  --text: #202428;
+  --text-soft: #41474d;
+  --text-muted: #5e656d;
+  --text-faint: #69717a;
+  --accent-text: #41474d;
 
-  --teal: #22c55e;
-  --teal-strong: #16a34a;
-  --accent-fill: rgba(34, 197, 94, 0.12);
-  --accent-border: rgba(22, 163, 74, 0.45);
-  --gradient: linear-gradient(135deg, #a3e635 0%, #4ade80 45%, #22c55e 100%);
-  --on-accent: #052e14;
-  --gradient-text: linear-gradient(90deg, #15803d, #0d9488);
-  --title-gradient: linear-gradient(90deg, #0d1f14 0%, #166534 100%);
-  --glow: 0 10px 28px -10px rgba(34, 197, 94, 0.6);
+  --teal: #805333;
+  --teal-strong: #805333;
+  --accent-fill: rgba(128, 83, 51, 0.06);
+  --accent-border: rgba(128, 83, 51, 0.28);
+  --gradient: linear-gradient(135deg, #805333 0%, #70452d 45%, #603b25 100%);
+  --on-accent: #fff8f0;
+  --gradient-text: linear-gradient(90deg, #202428, #41474d);
+  --title-gradient: linear-gradient(90deg, #202428, #41474d);
+  --glow: 0 8px 20px -12px rgba(128, 83, 51, 0.25);
 
-  --user-bubble-bg: #dcfce7;
-  --user-bubble-border: rgba(22, 163, 74, 0.25);
-  --user-bubble-text: #0d2a17;
+  --user-bubble-bg: #ffffff;
+  --user-bubble-border: rgba(31, 35, 40, 0.1);
+  --user-bubble-text: #202428;
 
   --amber: #b45309;
   --amber-fill: rgba(245, 158, 11, 0.1);
@@ -71,14 +71,14 @@
   --green-fill: rgba(34, 197, 94, 0.1);
   --green-border: rgba(22, 163, 74, 0.3);
 
-  --shadow-card: 0 12px 30px -20px rgba(13, 40, 22, 0.35);
-  --shadow-pop: 0 30px 60px -24px rgba(13, 40, 22, 0.35);
-  --backdrop: rgba(13, 31, 20, 0.4);
+  --shadow-card: 0 12px 30px -20px rgba(20, 24, 28, 0.35);
+  --shadow-pop: 0 30px 60px -24px rgba(20, 24, 28, 0.35);
+  --backdrop: rgba(20, 24, 28, 0.4);
 
-  --blob-1: rgba(74, 222, 128, 0.22);
-  --blob-2: rgba(163, 230, 53, 0.16);
-  --blob-3: rgba(34, 197, 94, 0.14);
-  --background-veil-rgb: 238 243 239;
+  --blob-1: rgba(211, 166, 121, 0.22);
+  --blob-2: rgba(196, 147, 101, 0.16);
+  --blob-3: rgba(128, 83, 51, 0.14);
+  --background-veil-rgb: 243 236 229;
   --background-photo-size: auto min(100vh, 1000px);
 
   /* Anciens jetons des autres feuilles, redirigés vers la palette active. */
@@ -107,36 +107,39 @@
 :root[data-theme="dark"] .atm-chatbot-page {
   color-scheme: dark;
 
-  --bg: #040805;
-  --frame: rgba(7, 12, 9, 0.82);
-  --frame-border: rgba(190, 242, 200, 0.12);
-  --bg-raised: #0b120e;
-  --surface: #0c1410;
-  --surface-2: #111b15;
-  --border: rgba(190, 242, 200, 0.1);
-  --border-strong: rgba(190, 242, 200, 0.18);
-  --soft-fill: rgba(190, 242, 200, 0.05);
-  --soft-fill-hover: rgba(190, 242, 200, 0.1);
-  --glass: rgba(10, 16, 12, 0.72);
-  --panel: linear-gradient(180deg, rgba(20, 30, 24, 0.92), rgba(12, 20, 16, 0.92));
-  --card-glow: rgba(74, 222, 128, 0.1);
+  --bg: #111315;
+  --frame: rgba(24, 27, 30, 0.82);
+  --frame-border: rgba(240, 242, 245, 0.12);
+  --bg-raised: #181b1e;
+  --surface: #1b1e21;
+  --surface-2: #25292d;
+  --border: rgba(240, 242, 245, 0.1);
+  --border-strong: rgba(240, 242, 245, 0.18);
+  --soft-fill: rgba(240, 242, 245, 0.05);
+  --soft-fill-hover: rgba(240, 242, 245, 0.1);
+  --glass: rgba(24, 27, 30, 0.72);
+  --panel: linear-gradient(180deg, rgba(37, 41, 45, 0.92), rgba(27, 30, 33, 0.92));
+  --card-glow: rgba(240, 242, 245, 0.02);
 
-  --text: #ecf5ef;
-  --text-soft: #c7d6cc;
-  --text-muted: #94a69a;
-  --text-faint: #66786c;
-  --accent-text: #86efac;
+  --text: #f3f4f5;
+  --text-soft: #d3d7dc;
+  --text-muted: #b0b7bf;
+  --text-faint: #a0a8b1;
+  --accent-text: #d3d7dc;
 
-  --teal: #4ade80;
-  --accent-fill: rgba(74, 222, 128, 0.12);
-  --accent-border: rgba(74, 222, 128, 0.45);
-  --gradient-text: linear-gradient(90deg, #d9f99d, #4ade80);
-  --title-gradient: linear-gradient(90deg, #ffffff 0%, #e2fbe9 50%, #86efac 100%);
-  --glow: 0 0 30px -6px rgba(74, 222, 128, 0.6);
+  --teal: #d3a679;
+  --teal-strong: #d3a679;
+  --accent-fill: rgba(211, 166, 121, 0.08);
+  --accent-border: rgba(211, 166, 121, 0.28);
+  --gradient: linear-gradient(135deg, #edc9a2, #c49365);
+  --on-accent: #202428;
+  --gradient-text: linear-gradient(90deg, #f3f4f5, #d3d7dc);
+  --title-gradient: linear-gradient(90deg, #f3f4f5, #d3d7dc);
+  --glow: 0 8px 20px -12px rgba(211, 166, 121, 0.25);
 
-  --user-bubble-bg: rgba(74, 222, 128, 0.12);
-  --user-bubble-border: rgba(74, 222, 128, 0.3);
-  --user-bubble-text: #ecf5ef;
+  --user-bubble-bg: #25292d;
+  --user-bubble-border: rgba(240, 242, 245, 0.12);
+  --user-bubble-text: #f3f4f5;
 
   --amber: #fbbf24;
   --amber-fill: rgba(251, 191, 36, 0.1);
@@ -152,13 +155,48 @@
   --shadow-pop: 0 30px 70px -24px rgba(0, 0, 0, 0.9);
   --backdrop: rgba(0, 0, 0, 0.6);
 
-  --blob-1: rgba(74, 222, 128, 0.2);
-  --blob-2: rgba(163, 230, 53, 0.12);
-  --blob-3: rgba(34, 197, 94, 0.14);
-  --background-veil-rgb: 4 8 5;
+  --blob-1: rgba(211, 166, 121, 0.2);
+  --blob-2: rgba(196, 147, 101, 0.12);
+  --blob-3: rgba(128, 83, 51, 0.14);
+  --background-veil-rgb: 20 15 12;
 }
 
 /* ---------- 2. Base commune ---------- */
+.conversation-history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.conversation-history-item {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.conversation-history-item span {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.conversation-history-item:hover,
+.conversation-history-item:focus-visible {
+  border-color: var(--accent-border);
+  background: var(--accent-fill);
+}
+
+.conversation-history-item:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 body,
 button,
 input,
@@ -174,7 +212,7 @@ body {
 }
 
 ::selection {
-  background: rgba(74, 222, 128, 0.35);
+  background: rgba(211, 166, 121, 0.35);
 }
 
 * {
@@ -564,46 +602,38 @@ kbd {
 }
 
 /* ---------- 5. ATM-Chatbot ---------- */
-/* Reproduit docs/visuel_frontend.png : cadre à bordure épaisse sur fond vert
-   flouté, cartes transparentes bordées, rail d'icônes rondes, orbe vert. */
+/* Cadre à bordure épaisse, cartes vitrées et reflets marron. */
 :root .atm-chatbot-page {
   --sidebar-compact-width: 60px;
   --sidebar-width: 236px;
   --context-width: 330px;
 
-  --outer-background:
-    radial-gradient(800px 640px at 6% 30%, rgba(132, 204, 22, 0.28), transparent 62%),
-    radial-gradient(760px 600px at 96% 85%, rgba(34, 197, 94, 0.22), transparent 62%),
-    linear-gradient(135deg, #e3eee2 0%, #f3f7f1 50%, #e1ecdf 100%);
+  --outer-background: linear-gradient(135deg, #f5f6f7, #ffffff);
   --frame-bezel: rgba(255, 255, 255, 0.9);
   --frame-background:
-    radial-gradient(640px 560px at -4% 42%, rgba(74, 222, 128, 0.16), transparent 62%),
-    #fbfdfb;
+    radial-gradient(640px 560px at -4% 42%, rgba(240, 242, 245, 0.16), transparent 62%),
+    #ffffff;
   --card-background: rgba(255, 255, 255, 0.55);
-  --card-border: rgba(20, 60, 35, 0.12);
-  --chip-background: rgba(20, 60, 35, 0.04);
-  --chip-border: rgba(20, 60, 35, 0.12);
-  --orb-core: #f3fbf5;
-  --new-button-background: #0d1f14;
+  --card-border: rgba(31, 35, 40, 0.12);
+  --chip-background: rgba(31, 35, 40, 0.04);
+  --chip-border: rgba(31, 35, 40, 0.12);
+  --orb-core: #f8f9fa;
+  --new-button-background: #202428;
   --new-button-text: #ffffff;
 }
 
 :root[data-theme="dark"] .atm-chatbot-page {
-  --outer-background:
-    radial-gradient(820px 660px at 6% 28%, rgba(132, 204, 22, 0.45), transparent 62%),
-    radial-gradient(760px 620px at 96% 88%, rgba(74, 160, 90, 0.45), transparent 62%),
-    radial-gradient(600px 400px at 60% 0%, rgba(120, 170, 110, 0.3), transparent 70%),
-    linear-gradient(135deg, #24412a 0%, #101d14 50%, #2c4a30 100%);
+  --outer-background: linear-gradient(135deg, #25292d, #111315);
   --frame-bezel: rgba(255, 255, 255, 0.16);
   --frame-background:
-    radial-gradient(620px 560px at -6% 44%, rgba(74, 222, 128, 0.26), transparent 62%),
-    radial-gradient(420px 320px at 22% 100%, rgba(163, 230, 53, 0.08), transparent 70%),
-    #040705;
+    radial-gradient(620px 560px at -6% 44%, rgba(240, 242, 245, 0.06), transparent 62%),
+    radial-gradient(420px 320px at 22% 100%, rgba(240, 242, 245, 0.04), transparent 70%),
+    #111315;
   --card-background: rgba(255, 255, 255, 0.015);
   --card-border: rgba(255, 255, 255, 0.1);
   --chip-background: rgba(255, 255, 255, 0.04);
   --chip-border: rgba(255, 255, 255, 0.1);
-  --orb-core: #051209;
+  --orb-core: #21140c;
   --new-button-background: #000000;
   --new-button-text: #ffffff;
 }
@@ -653,7 +683,7 @@ kbd {
   border: 2px solid var(--teal);
   border-radius: 13px;
   background: transparent;
-  box-shadow: 0 0 18px -4px rgba(74, 222, 128, 0.6);
+  box-shadow: 0 0 18px -4px rgba(211, 166, 121, 0.6);
 }
 
 .topbar-logo img {
@@ -737,7 +767,7 @@ kbd {
 
 .sidebar-brand-avatar {
   border-color: var(--surface);
-  background: linear-gradient(160deg, #e9f9ee, #d3efdc);
+  background: linear-gradient(160deg, #ffffff, #e8ebee);
   box-shadow: 0 0 0 2px var(--accent-border);
 }
 
@@ -855,7 +885,7 @@ kbd {
   .app-shell[data-sidebar="collapsed"] .sidebar-link.is-active {
     border-color: var(--teal);
     background: var(--accent-fill);
-    box-shadow: 0 0 16px -4px rgba(74, 222, 128, 0.7);
+    box-shadow: 0 0 16px -4px rgba(211, 166, 121, 0.7);
     color: var(--accent-text);
   }
 
@@ -892,7 +922,7 @@ kbd {
   border: 1px solid var(--accent-border);
   border-radius: 999px;
   background: var(--chip-background);
-  box-shadow: 0 0 20px -8px rgba(74, 222, 128, 0.6);
+  box-shadow: 0 0 20px -8px rgba(211, 166, 121, 0.6);
 }
 
 .toolbar-avatar {
@@ -903,7 +933,7 @@ kbd {
 
 .toolbar-avatar,
 .atm-chatbot-page .atm-chatbot-avatar-slot {
-  background: linear-gradient(160deg, #e9f9ee, #d3efdc);
+  background: linear-gradient(160deg, #ffffff, #e8ebee);
 }
 
 .atm-chatbot-page .assistant-identity strong {
@@ -950,7 +980,7 @@ kbd {
 
 .atm-chatbot-page .pill-button-primary:hover {
   background: var(--accent-fill);
-  box-shadow: 0 0 18px -6px rgba(74, 222, 128, 0.7);
+  box-shadow: 0 0 18px -6px rgba(211, 166, 121, 0.7);
 }
 
 .pill-button-warning,
@@ -1003,6 +1033,20 @@ kbd {
 .message-listen-button:hover {
   border-color: var(--accent-border);
   background: var(--accent-fill);
+}
+
+.streaming-message .streaming-message-bubble > :last-child::after {
+  content: "";
+  display: inline-block;
+  height: 1em;
+  margin-left: 3px;
+  border-left: 2px solid currentColor;
+  vertical-align: -0.12em;
+}
+
+.stream-interrupted-notice {
+  color: var(--text-muted);
+  font-size: 0.8rem;
 }
 
 .atm-chatbot-page .friendly-error {
@@ -1065,11 +1109,11 @@ kbd {
 }
 
 .reactor-scene {
-  --reactor-bright: #bcff7a;
-  --reactor-color: #5cff30;
-  --reactor-rgb: 83, 255, 39;
-  --reactor-metal: #245b17;
-  --reactor-hub: #06200c;
+  --reactor-bright: #f5d5ad;
+  --reactor-color: #c49365;
+  --reactor-rgb: 196, 147, 101;
+  --reactor-metal: #805333;
+  --reactor-hub: #202428;
   position: relative;
   display: grid;
   width: 100%;
@@ -1482,7 +1526,7 @@ kbd {
   padding: 0;
   border-radius: 50%;
   background: var(--gradient);
-  box-shadow: 0 0 22px -4px rgba(74, 222, 128, 0.75);
+  box-shadow: 0 0 22px -4px rgba(211, 166, 121, 0.75);
   color: var(--on-accent);
 }
 
@@ -1498,7 +1542,7 @@ kbd {
 }
 
 .send-bubble {
-  background: rgba(74, 222, 128, 0.55);
+  background: rgba(211, 166, 121, 0.55);
 }
 
 .dictation-status {
@@ -1727,58 +1771,55 @@ kbd {
 .voice-dialog {
   background:
     radial-gradient(1200px 700px at 50% 38%, color-mix(in srgb, var(--state-color) 22%, transparent), transparent 60%),
-    radial-gradient(900px 600px at 85% 110%, rgba(74, 222, 128, 0.16), transparent 60%),
-    linear-gradient(180deg, #030604 0%, #07100a 55%, #040805 100%);
+    radial-gradient(900px 600px at 85% 110%, rgba(211, 166, 121, 0.16), transparent 60%),
+    linear-gradient(180deg, #111315 0%, #1b1e21 55%, #111315 100%);
 }
 
 .voice-dialog::backdrop {
-  background: #040805;
+  background: #111315;
 }
 
 /* ----- Brillance et reflets ----- */
 /* Effet « verre » de la maquette : fond en verre cannelé (bandes verticales),
    bordure du cadre éclairée, halo de lumière dans le coin haut gauche qui
-   déborde en voile jaune-vert sur les cartes, liserés lumineux sur les
+   déborde en voile caramel sur les cartes, liserés lumineux sur les
    cartes et les boutons. Tout passe par les jetons ci-dessous. */
 :root .atm-chatbot-page {
   /* Bandes verticales : chaque colonne passe du clair au sombre. */
   --flutes: repeating-linear-gradient(90deg,
     rgba(255, 255, 255, 0.34) 0,
     rgba(255, 255, 255, 0.06) 46px,
-    rgba(20, 60, 35, 0.05) 96px,
-    rgba(20, 60, 35, 0.09) 104px);
+    rgba(31, 35, 40, 0.05) 96px,
+    rgba(31, 35, 40, 0.09) 104px);
   --bezel: linear-gradient(160deg,
     rgba(255, 255, 255, 1) 0%,
-    rgba(214, 233, 216, 0.95) 35%,
-    rgba(196, 220, 199, 0.95) 70%,
+    rgba(235, 237, 239, 0.95) 35%,
+    rgba(218, 222, 226, 0.95) 70%,
     rgba(255, 255, 255, 1) 100%);
   --bezel-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 0 0 1px rgba(20, 60, 35, 0.08),
-    0 50px 110px -40px rgba(13, 40, 22, 0.45);
-  --light-leak:
-    radial-gradient(420px 360px at 0% 0%, rgba(134, 239, 172, 0.32), transparent 70%),
-    radial-gradient(380px 460px at 22% 40%, rgba(190, 220, 60, 0.22), transparent 70%),
-    radial-gradient(520px 380px at 50% 100%, rgba(45, 212, 191, 0.1), transparent 70%);
+    0 0 0 1px rgba(31, 35, 40, 0.08),
+    0 50px 110px -40px rgba(20, 24, 28, 0.45);
+  --light-leak: none;
   --card-edge: linear-gradient(150deg,
-    rgba(34, 197, 94, 0.55) 0%,
-    rgba(20, 60, 35, 0.1) 35%,
-    rgba(20, 60, 35, 0.08) 70%,
-    rgba(132, 204, 22, 0.35) 100%);
+    rgba(128, 83, 51, 0.55) 0%,
+    rgba(31, 35, 40, 0.1) 35%,
+    rgba(31, 35, 40, 0.08) 70%,
+    rgba(196, 147, 101, 0.35) 100%);
   --rim-light: rgba(255, 255, 255, 0.95);
-  --rim-shade: rgba(13, 40, 22, 0.12);
+  --rim-shade: rgba(20, 24, 28, 0.12);
   --chip-gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.5));
-  --button-gloss: radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 1), rgba(240, 247, 242, 0.8) 60%);
-  --row-edge: rgba(101, 163, 13, 0.22);
+  --button-gloss: radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 1), rgba(247, 248, 249, 0.8) 60%);
+  --row-edge: rgba(128, 83, 51, 0.22);
   --row-background: rgba(255, 255, 255, 0.6);
 
   /* Relief des bords : arête éclairée en haut à gauche, arête dans l'ombre
      en bas à droite, lueur intérieure (épaisseur du verre), ombre portée. */
   --edge-light: rgba(255, 255, 255, 1);
-  --edge-dark: rgba(20, 60, 35, 0.12);
-  --edge-glow: rgba(34, 197, 94, 0.07);
-  --edge-drop: rgba(13, 40, 22, 0.2);
-  --bezel-seam: rgba(20, 60, 35, 0.18);
+  --edge-dark: rgba(31, 35, 40, 0.12);
+  --edge-glow: rgba(128, 83, 51, 0.07);
+  --edge-drop: rgba(20, 24, 28, 0.2);
+  --bezel-seam: rgba(31, 35, 40, 0.18);
   --bezel-shine: rgba(255, 255, 255, 1);
 }
 
@@ -1789,39 +1830,34 @@ kbd {
     rgba(0, 0, 0, 0.1) 96px,
     rgba(0, 0, 0, 0.18) 104px);
   --bezel: linear-gradient(160deg,
-    rgba(220, 242, 228, 0.78) 0%,
-    rgba(160, 196, 170, 0.5) 30%,
-    rgba(120, 160, 130, 0.42) 70%,
-    rgba(196, 232, 206, 0.66) 100%);
+    rgba(235, 237, 239, 0.78) 0%,
+    rgba(178, 184, 190, 0.5) 30%,
+    rgba(138, 145, 152, 0.42) 70%,
+    rgba(240, 242, 245, 0.66) 100%);
   --bezel-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.35),
     inset 0 0 0 1px rgba(255, 255, 255, 0.04),
     0 0 0 1px rgba(0, 0, 0, 0.35),
     0 50px 110px -40px rgba(0, 0, 0, 0.85);
-  --light-leak:
-    radial-gradient(300px 280px at 0% 0%, rgba(190, 235, 215, 0.5), transparent 70%),
-    radial-gradient(220px 360px at 9% 20%, rgba(150, 215, 190, 0.42), transparent 70%),
-    radial-gradient(340px 440px at 20% 40%, rgba(165, 185, 45, 0.48), transparent 70%),
-    radial-gradient(520px 360px at 46% 92%, rgba(70, 150, 120, 0.22), transparent 70%),
-    radial-gradient(420px 380px at 82% 26%, rgba(110, 160, 80, 0.2), transparent 70%);
+  --light-leak: none;
   --card-edge: linear-gradient(150deg,
-    rgba(134, 239, 172, 0.42) 0%,
+    rgba(237, 201, 162, 0.42) 0%,
     rgba(255, 255, 255, 0.08) 30%,
     rgba(255, 255, 255, 0.05) 65%,
-    rgba(163, 230, 53, 0.3) 100%);
+    rgba(196, 147, 101, 0.3) 100%);
   --rim-light: rgba(255, 255, 255, 0.14);
   --rim-shade: rgba(0, 0, 0, 0.6);
   --chip-gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01));
-  --button-gloss: radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.12), rgba(12, 18, 14, 0.95) 62%);
-  --row-edge: rgba(163, 230, 53, 0.2);
-  --row-background: rgba(2, 6, 4, 0.55);
+  --button-gloss: radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.12), rgba(24, 27, 30, 0.95) 62%);
+  --row-edge: rgba(196, 147, 101, 0.2);
+  --row-background: rgba(20, 15, 12, 0.55);
 
-  --edge-light: rgba(225, 255, 235, 0.2);
+  --edge-light: rgba(245, 246, 248, 0.2);
   --edge-dark: rgba(0, 0, 0, 0.65);
-  --edge-glow: rgba(170, 230, 190, 0.08);
+  --edge-glow: rgba(240, 242, 245, 0.08);
   --edge-drop: rgba(0, 0, 0, 0.8);
   --bezel-seam: rgba(0, 0, 0, 0.85);
-  --bezel-shine: rgba(235, 255, 240, 0.6);
+  --bezel-shine: rgba(248, 249, 250, 0.6);
 }
 
 /* Ombres du relief, partagées par toutes les zones. */
@@ -1844,7 +1880,7 @@ kbd {
     0 10px 18px -10px var(--edge-drop);
 }
 
-/* Fond : verre cannelé posé sur les nappes de vert. */
+/* Fond : verre cannelé posé sur les nuances de marron. */
 .atm-chatbot-page {
   background: var(--flutes), var(--outer-background);
   background-attachment: fixed;
@@ -1918,20 +1954,20 @@ kbd {
   position: relative;
   border-color: transparent;
   background:
-    radial-gradient(420px 200px at 35% 100%, rgba(45, 212, 191, 0.1), transparent 70%),
-    radial-gradient(300px 160px at 95% 0%, rgba(163, 230, 53, 0.07), transparent 70%),
+    radial-gradient(420px 200px at 35% 100%, rgba(196, 147, 101, 0.1), transparent 70%),
+    radial-gradient(300px 160px at 95% 0%, rgba(196, 147, 101, 0.07), transparent 70%),
     var(--chip-background);
   box-shadow: var(--glass-3d);
 }
 
 /* Panneau de contexte : il défile, donc liseré par ombres internes. */
 .context-panel {
-  border-color: rgba(163, 230, 53, 0.16);
+  border-color: rgba(196, 147, 101, 0.16);
   background:
-    radial-gradient(260px 220px at 0% 0%, rgba(140, 210, 185, 0.45), transparent 70%),
-    radial-gradient(280px 200px at 45% 30%, rgba(160, 185, 45, 0.36), transparent 70%),
+    radial-gradient(260px 220px at 0% 0%, rgba(211, 166, 121, 0.45), transparent 70%),
+    radial-gradient(280px 200px at 45% 30%, rgba(196, 147, 101, 0.36), transparent 70%),
     var(--card-background);
-  box-shadow: var(--glass-3d), inset 2px 0 0 -1px rgba(134, 239, 172, 0.12);
+  box-shadow: var(--glass-3d), inset 2px 0 0 -1px rgba(237, 201, 162, 0.12);
 }
 
 /* Lignes du panneau : séparation discrète, sans effet de bulle. */
@@ -1955,19 +1991,19 @@ kbd {
 }
 
 .atm-chatbot-page .assistant-identity {
-  box-shadow: var(--glass-3d-small), 0 0 20px -8px rgba(74, 222, 128, 0.6);
+  box-shadow: var(--glass-3d-small), 0 0 20px -8px rgba(211, 166, 121, 0.6);
 }
 
 /* Onglet actif : anneau vert plus vif en bas, comme un néon reflété. */
 .topbar-tab.is-active {
-  border-color: rgba(74, 222, 128, 0.22) rgba(74, 222, 128, 0.45) var(--teal) rgba(74, 222, 128, 0.45);
-  background: var(--chip-gloss), rgba(74, 222, 128, 0.06);
-  box-shadow: inset 0 1px 0 var(--rim-light), 0 6px 16px -8px rgba(74, 222, 128, 0.55);
+  border-color: rgba(211, 166, 121, 0.22) rgba(211, 166, 121, 0.45) var(--teal) rgba(211, 166, 121, 0.45);
+  background: var(--chip-gloss), rgba(211, 166, 121, 0.06);
+  box-shadow: inset 0 1px 0 var(--rim-light), 0 6px 16px -8px rgba(211, 166, 121, 0.55);
 }
 
 .topbar-logo {
-  background: radial-gradient(circle at 30% 25%, rgba(190, 242, 100, 0.25), transparent 65%);
-  box-shadow: 0 0 18px -4px rgba(74, 222, 128, 0.7), inset 0 0 10px -2px rgba(190, 242, 100, 0.5);
+  background: radial-gradient(circle at 30% 25%, rgba(237, 201, 162, 0.25), transparent 65%);
+  box-shadow: 0 0 18px -4px rgba(211, 166, 121, 0.7), inset 0 0 10px -2px rgba(237, 201, 162, 0.5);
 }
 
 /* Boutons ronds : petites sphères brillantes, liseré coloré en bas à droite. */
@@ -1997,7 +2033,7 @@ kbd {
 
 @media (min-width: 720px) {
   .app-shell[data-sidebar="collapsed"] .sidebar-link {
-    --rim: rgba(74, 222, 128, 0.55);
+    --rim: rgba(211, 166, 121, 0.55);
     border-color: var(--rim-light) var(--rim) var(--rim) var(--rim-light);
     background:
       radial-gradient(circle at 60% 90%, color-mix(in srgb, var(--rim) 35%, transparent), transparent 70%),
@@ -2008,10 +2044,10 @@ kbd {
   }
 
   /* Une teinte de liseré par bouton, comme sur la maquette. */
-  .app-shell[data-sidebar="collapsed"] .sidebar-link[data-sidebar-label="ATM-Chatbot"] { --rim: rgba(190, 200, 60, 0.55); }
+  .app-shell[data-sidebar="collapsed"] .sidebar-link[data-sidebar-label="ATM-Chatbot"] { --rim: rgba(205, 166, 119, 0.55); }
   .app-shell[data-sidebar="collapsed"] .sidebar-link[data-sidebar-label="Diagnostic"] { --rim: rgba(167, 139, 250, 0.5); }
   .app-shell[data-sidebar="collapsed"] .sidebar-link[data-sidebar-label="Nouvelle conversation"] { --rim: rgba(96, 165, 250, 0.5); }
-  .app-shell[data-sidebar="collapsed"] .sidebar-link[data-sidebar-label="Chat vocal"] { --rim: rgba(45, 212, 191, 0.5); }
+  .app-shell[data-sidebar="collapsed"] .sidebar-link[data-sidebar-label="Chat vocal"] { --rim: rgba(196, 147, 101, 0.5); }
   .app-shell[data-sidebar="collapsed"] .sidebar-link[data-sidebar-label="Paramètres"] { --rim: rgba(192, 132, 252, 0.5); }
   .app-shell[data-sidebar="collapsed"] .sidebar-logout { --rim: rgba(248, 113, 113, 0.5); }
 
@@ -2019,25 +2055,26 @@ kbd {
     border-color: var(--teal);
     box-shadow:
       inset 0 1px 0 var(--rim-light),
-      inset 0 0 12px -4px rgba(74, 222, 128, 0.7),
-      0 0 16px -4px rgba(74, 222, 128, 0.7);
+      inset 0 0 12px -4px rgba(211, 166, 121, 0.7),
+      0 0 16px -4px rgba(211, 166, 121, 0.7);
   }
 }
 
-/* Envoi : sphère néon avec reflet blanc. */
+/* Envoi : sphère marron avec reflet blanc. */
 .atm-chatbot-page .send-button {
   background:
     radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.55), transparent 45%),
-    linear-gradient(135deg, #d9f99d 0%, #4ade80 50%, #14b8a6 100%);
+    var(--gradient);
+  color: var(--on-accent);
   box-shadow:
-    inset 0 -3px 8px -2px rgba(6, 78, 59, 0.45),
-    0 0 22px -4px rgba(74, 222, 128, 0.75);
+    inset 0 -3px 8px -2px rgba(20, 24, 28, 0.45),
+    0 0 22px -4px rgba(211, 166, 121, 0.75);
 }
 
 .atm-chatbot-page .send-button:disabled {
   background:
     radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.55), transparent 45%),
-    linear-gradient(135deg, #d9f99d 0%, #4ade80 50%, #14b8a6 100%);
+    var(--gradient);
 }
 
 /* ----- Vitres et bulles ----- */
@@ -2049,24 +2086,24 @@ kbd {
   --sidebar-compact-width: 70px;
 
   --pane-fill: linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.42) 45%, rgba(255, 255, 255, 0.62));
-  --pane-border: rgba(20, 60, 35, 0.1);
+  --pane-border: rgba(31, 35, 40, 0.1);
   --popover-fill: rgba(255, 255, 255, 0.96);
   --bubble-fill:
     radial-gradient(circle at 32% 26%, #ffffff 0 2px, rgba(255, 255, 255, 0.9) 4px, transparent 11px),
-    radial-gradient(120% 120% at 30% 20%, rgba(255, 255, 255, 0.95), rgba(240, 248, 243, 0.7) 55%, rgba(220, 238, 226, 0.75));
+    radial-gradient(120% 120% at 30% 20%, rgba(255, 255, 255, 0.95), rgba(247, 248, 249, 0.7) 55%, rgba(232, 235, 238, 0.75));
   --sphere-3d:
     inset 0 0 0 1px rgba(255, 255, 255, 0.9),
-    inset 0 -10px 14px -8px rgba(20, 60, 35, 0.14),
+    inset 0 -10px 14px -8px rgba(31, 35, 40, 0.14),
     inset 0 8px 12px -8px #ffffff,
-    0 10px 18px -10px rgba(13, 40, 22, 0.28);
-  --user-glass: linear-gradient(135deg, rgba(74, 222, 128, 0.32), rgba(187, 247, 208, 0.45));
+    0 10px 18px -10px rgba(20, 24, 28, 0.28);
+  --user-glass: var(--user-bubble-bg);
   --button-gloss: var(--bubble-fill);
 }
 
 :root[data-theme="dark"] .atm-chatbot-page {
   --pane-fill: linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.015) 45%, rgba(255, 255, 255, 0.04));
   --pane-border: rgba(255, 255, 255, 0.08);
-  --popover-fill: rgba(9, 16, 12, 0.95);
+  --popover-fill: rgba(24, 27, 30, 0.95);
   --bubble-fill:
     radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.6) 0 1.5px, rgba(255, 255, 255, 0.16) 4px, transparent 10px),
     radial-gradient(120% 120% at 30% 20%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.03) 45%, rgba(255, 255, 255, 0.07));
@@ -2075,7 +2112,7 @@ kbd {
     inset 0 -10px 14px -8px rgba(0, 0, 0, 0.65),
     inset 0 8px 12px -8px rgba(255, 255, 255, 0.28),
     0 10px 18px -10px rgba(0, 0, 0, 0.85);
-  --user-glass: linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(74, 222, 128, 0.05));
+  --user-glass: var(--user-bubble-bg);
   --button-gloss: var(--bubble-fill);
 }
 
@@ -2094,8 +2131,7 @@ kbd {
 
 .context-panel {
   background:
-    radial-gradient(260px 220px at 0% 0%, rgba(140, 210, 185, 0.45), transparent 70%),
-    radial-gradient(280px 200px at 45% 30%, rgba(160, 185, 45, 0.36), transparent 70%),
+    radial-gradient(260px 220px at 0% 0%, var(--card-glow), transparent 70%),
     var(--pane-fill);
 }
 
@@ -2119,7 +2155,7 @@ kbd {
 /* La zone de saisie : une vitre, ses boutons sont des bulles. */
 .atm-chatbot-page .message-composer {
   background:
-    radial-gradient(420px 200px at 35% 100%, rgba(45, 212, 191, 0.1), transparent 70%),
+    radial-gradient(420px 200px at 35% 100%, var(--card-glow), transparent 70%),
     var(--pane-fill);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
   backdrop-filter: blur(12px) saturate(140%);
@@ -2145,13 +2181,13 @@ kbd {
   border-radius: 14px;
   background: linear-gradient(145deg, var(--accent-fill), var(--bubble-fill));
   color: var(--accent-text);
-  box-shadow: inset 0 1px 0 rgba(180, 255, 195, 0.18), 0 3px 12px rgba(24, 130, 76, 0.12);
+  box-shadow: inset 0 1px 0 rgba(237, 201, 162, 0.18), 0 3px 12px rgba(128, 83, 51, 0.12);
   transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
 .atm-chatbot-page :is(.sidebar-collapse-button, .panel-toggle-button, #context-close-button):hover {
   border-color: var(--accent-text);
-  box-shadow: 0 0 0 3px var(--accent-fill), 0 4px 16px rgba(24, 130, 76, 0.2);
+  box-shadow: 0 0 0 3px var(--accent-fill), 0 4px 16px rgba(128, 83, 51, 0.2);
   transform: translateY(-1px);
 }
 
@@ -2244,7 +2280,7 @@ kbd {
   width: 100%;
   height: 100%;
   border-radius: 11px;
-  background: linear-gradient(160deg, #e9f9ee, #c9ecd5);
+  background: linear-gradient(160deg, #ffffff, #e8ebee);
   box-shadow: none;
 }
 
@@ -2302,11 +2338,11 @@ kbd {
 }
 
 @keyframes bubble-land {
-  0% { box-shadow: var(--glass-3d-small), 0 0 0 0 rgba(74, 222, 128, 0.55); }
+  0% { box-shadow: var(--glass-3d-small), 0 0 0 0 rgba(211, 166, 121, 0.55); }
   18% { transform: scale(1.035); }
   45% { transform: scale(0.99); }
   70% { transform: none; }
-  100% { box-shadow: var(--glass-3d-small), 0 0 0 14px rgba(74, 222, 128, 0); }
+  100% { box-shadow: var(--glass-3d-small), 0 0 0 14px rgba(211, 166, 121, 0); }
 }
 
 @keyframes glass-rise {
@@ -2329,7 +2365,7 @@ kbd {
 }
 
 .message-ghost .message-bubble {
-  box-shadow: var(--glass-3d-small), 0 0 26px -6px rgba(74, 222, 128, 0.7);
+  box-shadow: var(--glass-3d-small), 0 0 26px -6px rgba(211, 166, 121, 0.7);
 }
 
 /* ----- Menus « Pannes fréquentes » / « Codes d'erreur » ----- */
@@ -2361,7 +2397,7 @@ kbd {
 .suggestion-trigger:hover:not(:disabled),
 .suggestion-dropdown.is-open .suggestion-trigger {
   border-color: var(--accent-border);
-  box-shadow: var(--glass-3d-small), 0 0 18px -6px rgba(74, 222, 128, 0.6);
+  box-shadow: var(--glass-3d-small), 0 0 18px -6px rgba(211, 166, 121, 0.6);
   color: var(--text);
 }
 
@@ -2439,6 +2475,77 @@ kbd {
 
 .suggestion-popover[hidden] {
   display: none;
+}
+
+.error-code-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--pane-border);
+  border-radius: 22px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 28%);
+}
+
+.error-code-dialog::backdrop {
+  background: rgb(20 16 12 / 36%);
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+}
+
+.error-code-dialog .suggestion-popover {
+  position: static;
+  display: flex;
+  width: 100%;
+  max-height: min(640px, calc(100dvh - 48px));
+  flex-direction: column;
+  padding: 16px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.error-code-dialog .suggestion-popover-header,
+.error-code-dialog .suggestion-filter {
+  flex-shrink: 0;
+}
+
+.error-code-dialog .suggestion-list {
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.error-code-dialog .suggestion-option {
+  min-height: 48px;
+  flex-shrink: 0;
+}
+
+.error-code-dialog-close {
+  display: none;
+}
+
+.error-code-dialog .error-code-dialog-close {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  place-items: center;
+  margin-left: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--soft-fill);
+  color: var(--text);
+  cursor: pointer;
+}
+
+body:has(.error-code-dialog[open]) {
+  overflow: hidden;
 }
 
 @keyframes popover-in {
@@ -2599,9 +2706,9 @@ kbd {
 }
 
 /* ----- Envoi : l'avion en papier de la maquette ----- */
-/* L'icône est foncée (style.css colore le dernier span du bouton en clair). */
+/* Le contraste de l'icône suit la palette active. */
 .atm-chatbot-page .send-button span:last-child {
-  color: #03200d;
+  color: var(--on-accent);
 }
 
 .atm-chatbot-page .send-button .icon {
@@ -2700,7 +2807,7 @@ kbd {
   }
 }
 
-/* Mode clair du chatbot : mêmes jetons verts que la navigation principale. */
+/* Mode clair : surfaces blanches, texte neutre et accents ponctuels. */
 :root:not([data-theme="dark"]) .atm-chatbot-page {
   --card-border: var(--border);
   --pane-border: var(--border);
@@ -3396,70 +3503,70 @@ kbd {
   }
 }
 
-/* Thème optionnel GAB : vert profond, surfaces ivoire et détails dorés. */
+/* Thème optionnel GAB : surfaces blanches et accents marron discrets. */
 :root[data-theme="gab"],
 :root[data-theme="gab"] .atm-chatbot-page {
   color-scheme: light;
-  --background-veil-rgb: 32 61 47;
-  --bg: #203d2f;
-  --frame: rgba(255, 253, 246, 0.92);
-  --frame-border: rgba(72, 97, 65, 0.2);
-  --bg-raised: #fffdf6;
-  --surface: #fffdf6;
-  --surface-2: #f2f1e6;
-  --border: rgba(35, 69, 51, 0.16);
-  --border-strong: rgba(35, 69, 51, 0.28);
-  --soft-fill: rgba(35, 69, 51, 0.05);
-  --soft-fill-hover: rgba(35, 69, 51, 0.09);
-  --glass: rgba(255, 253, 246, 0.92);
-  --panel: linear-gradient(180deg, #fffdf6, #f3f1e6);
-  --text: #17382b;
-  --text-soft: #315042;
-  --text-muted: #617268;
-  --text-faint: #708076;
-  --teal: #d9aa3f;
-  --teal-strong: #9c7017;
-  --accent-text: #795510;
-  --accent-fill: rgba(213, 170, 58, 0.15);
-  --accent-border: rgba(176, 132, 32, 0.5);
-  --gradient: linear-gradient(135deg, #f4d478, #d9aa3f);
-  --gradient-text: linear-gradient(90deg, #17382b, #795510);
-  --title-gradient: linear-gradient(90deg, #17382b, #315042);
-  --on-accent: #243b25;
-  --glow: 0 8px 24px -14px rgba(221, 179, 76, 0.45);
-  --user-bubble-bg: #e7eddc;
-  --user-bubble-border: rgba(80, 115, 60, 0.2);
-  --user-bubble-text: #17382b;
-  --outer-background: linear-gradient(135deg, #375748, #142e21);
-  --frame-background: rgba(255, 253, 246, 0.78);
-  --card-background: rgba(255, 253, 246, 0.94);
-  --card-border: rgba(35, 69, 51, 0.16);
-  --chip-background: rgba(213, 170, 58, 0.08);
-  --chip-border: rgba(176, 132, 32, 0.3);
+  --background-veil-rgb: 56 37 25;
+  --bg: #f5f6f7;
+  --frame: rgba(255, 255, 255, 0.92);
+  --frame-border: rgba(31, 35, 40, 0.2);
+  --bg-raised: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f7f8f9;
+  --border: rgba(31, 35, 40, 0.16);
+  --border-strong: rgba(31, 35, 40, 0.28);
+  --soft-fill: rgba(31, 35, 40, 0.05);
+  --soft-fill-hover: rgba(31, 35, 40, 0.09);
+  --glass: rgba(255, 255, 255, 0.92);
+  --panel: linear-gradient(180deg, #ffffff, #f8f9fa);
+  --text: #202428;
+  --text-soft: #41474d;
+  --text-muted: #5e656d;
+  --text-faint: #69717a;
+  --teal: #603b25;
+  --teal-strong: #805333;
+  --accent-text: #41474d;
+  --accent-fill: rgba(128, 83, 51, 0.06);
+  --accent-border: rgba(128, 83, 51, 0.28);
+  --gradient: linear-gradient(135deg, #805333, #603b25);
+  --gradient-text: linear-gradient(90deg, #202428, #41474d);
+  --title-gradient: linear-gradient(90deg, #202428, #41474d);
+  --on-accent: #fff8f0;
+  --glow: 0 8px 20px -12px rgba(128, 83, 51, 0.25);
+  --user-bubble-bg: #ffffff;
+  --user-bubble-border: rgba(31, 35, 40, 0.1);
+  --user-bubble-text: #202428;
+  --outer-background: linear-gradient(135deg, #f5f6f7, #ffffff);
+  --frame-background: rgba(255, 255, 255, 0.78);
+  --card-background: rgba(255, 255, 255, 0.94);
+  --card-border: rgba(31, 35, 40, 0.16);
+  --chip-background: rgba(255, 255, 255, 0.9);
+  --chip-border: rgba(31, 35, 40, 0.12);
   --flutes: none;
   --light-leak: none;
-  --bezel: linear-gradient(160deg, #f6efdc, #dfddc4);
-  --card-edge: linear-gradient(135deg, #d9c68b, #c6d1bb);
-  --row-background: #fffdf6;
-  --row-edge: rgba(176, 132, 32, 0.2);
+  --bezel: linear-gradient(160deg, #ffffff, #e5e7eb);
+  --card-edge: linear-gradient(135deg, #e5e7eb, #ffffff);
+  --row-background: #ffffff;
+  --row-edge: rgba(31, 35, 40, 0.12);
 }
 :root[data-theme="gab"][data-embedded] .atm-chatbot-page,
 :root[data-theme="gab"][data-embedded] .app-frame { background: transparent; }
-:root[data-theme="gab"] .atm-chatbot-page .workspace { background: rgba(255, 253, 246, 0.22); }
+:root[data-theme="gab"] .atm-chatbot-page .workspace { background: rgba(255, 255, 255, 0.22); }
 :root[data-theme="gab"] .atm-chatbot-page .workspace-header { border-color: var(--border); }
-:root[data-theme="gab"] .atm-chatbot-page .composer-shell { background: #fffdf6; }
+:root[data-theme="gab"] .atm-chatbot-page .composer-shell { background: #ffffff; }
 :root[data-theme="gab"] .atm-chatbot-page .chat-card::before,
 :root[data-theme="gab"] .atm-chatbot-page .chat-card::after { display: none; }
 
 :root[data-theme="gab"] {
-  --dropdown-background: rgba(39, 47, 39, 0.9);
-  --dropdown-text: #f3f0e4;
-  --dropdown-border: rgba(244, 238, 217, 0.32);
-  --dropdown-hover: rgba(246, 224, 169, 0.13);
+  --dropdown-background: rgba(255, 255, 255, 0.96);
+  --dropdown-text: #41474d;
+  --dropdown-border: rgba(31, 35, 40, 0.14);
+  --dropdown-hover: rgba(128, 83, 51, 0.06);
 }
 :root[data-theme="gab"] :is(.device-trigger, .suggestion-trigger, select) {
   color: var(--dropdown-text);
-  background: rgba(67, 72, 64, 0.85);
+  background: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--dropdown-border);
   border-radius: 12px;
   box-shadow: none;
@@ -3481,11 +3588,11 @@ kbd {
   color: var(--dropdown-text);
   background: transparent;
 }
-:root[data-theme="gab"] :is(.device-option, .suggestion-option):is(:hover, .is-active, [aria-selected="true"]) { background: var(--dropdown-hover); color: #f3d27b; }
+:root[data-theme="gab"] :is(.device-option, .suggestion-option):is(:hover, .is-active, [aria-selected="true"]) { background: var(--dropdown-hover); color: var(--dropdown-text); }
 :root[data-theme="gab"] :is(.device-option-text small, .device-trigger-text small, .device-trigger-text strong, .suggestion-popover-title strong, .suggestion-popover-title small) { color: inherit; }
 :root[data-theme="gab"] .suggestion-option::before { display: none; }
-:root[data-theme="gab"] :is(.suggestion-trigger-icon, .suggestion-popover-icon, .device-trigger-icon, .device-option-icon) { color: #f3d27b; background: var(--dropdown-hover); }
-:root[data-theme="gab"] select option { background: #30382f; color: var(--dropdown-text); }
+:root[data-theme="gab"] :is(.suggestion-trigger-icon, .suggestion-popover-icon, .device-trigger-icon, .device-option-icon) { color: var(--teal-strong); background: var(--dropdown-hover); }
+:root[data-theme="gab"] select option { background: #ffffff; color: var(--dropdown-text); }
 @supports (appearance: base-select) {
   :root[data-theme="gab"] select,
   :root[data-theme="gab"] select::picker(select) { appearance: base-select; }
@@ -3509,6 +3616,6 @@ kbd {
     white-space: normal;
     background: transparent;
   }
-  :root[data-theme="gab"] select option:is(:hover, :focus, :checked) { background: var(--dropdown-hover); color: #f3d27b; }
+  :root[data-theme="gab"] select option:is(:hover, :focus, :checked) { background: var(--dropdown-hover); color: var(--dropdown-text); }
   :root[data-theme="gab"] select::picker-icon { color: var(--dropdown-text); }
 }

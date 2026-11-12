@@ -68,7 +68,8 @@ def develop_case(
         f"{llm_service.device_type_instruction(device_type)}"
         f"Le technicien cherchait une solution à ce problème : « {problem_text or 'non précisé'} ».\n"
         f"Il demande maintenant plus de détails sur le Cas {stored_result.get('position')} : « {technician_question} ».\n\n"
-        "Voici TOUT ce que la base de données contient sur ce cas (intervention réelle d'un technicien) :\n"
+        "Voici TOUT ce que la base de données contient sur ce cas. Respecte son origine : "
+        "un ajout admin ne doit pas être présenté comme la visite d'un technicien :\n"
         f"{_format_dossier(dossier)}\n\n"
         "Développe ce cas pour répondre à sa question : ce qui a été observé, ce qui a été essayé dans "
         "l'ordre et avec quel résultat, ce qui a finalement réglé le problème et pourquoi, "
@@ -128,9 +129,10 @@ def build_case_dossier(db: Session, stored_result: dict, device_type: str | None
 
     return {
         "technician_name": case["technician_name"],
+        "origin": case.get("origin", "technician"),
         "ticket_reference": intervention.ticket_reference,
-        "opened_at": intervention.opened_at,
-        "closed_at": intervention.closed_at,
+        "opened_at": None if case.get("origin") == "admin" else intervention.opened_at,
+        "closed_at": None if case.get("origin") == "admin" else intervention.closed_at,
         "final_outcome_status": intervention.final_outcome_status,
         "summary_text": intervention.summary_text,
         "device": {
@@ -204,7 +206,8 @@ def _format_dossier(dossier: dict) -> str:
         device["address"],
     ]
     lines = [
-        f"- Technicien : {dossier['technician_name']}",
+        "- Origine : admin (ajout direct, sans technicien attribué)"
+        if dossier.get("origin") == "admin" else f"- Technicien : {dossier['technician_name']}",
         f"- Appareil : {', '.join(part for part in device_parts if part) or 'non identifié'}",
         f"- Ticket : {dossier['ticket_reference'] or 'non renseigné'}",
         f"- Début : {_format_date(dossier['opened_at'])} ; fin : {_format_date(dossier['closed_at'])}",

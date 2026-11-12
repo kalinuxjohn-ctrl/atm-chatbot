@@ -72,9 +72,9 @@ Le retour arrière doit accompagner le retour au code de `app-in-prod`.
 Arrêter les applications, démarrer seulement `db`, puis, **depuis WSL** :
 
 ```bash
-docker compose -p atm-chatbot -f docker-compose.yml -f docker-compose.main-app.yml -f docker-compose.local.yml stop
-docker compose -p atm-chatbot -f docker-compose.yml -f docker-compose.main-app.yml -f docker-compose.local.yml up -d --no-deps db
-docker compose -p atm-chatbot -f docker-compose.yml -f docker-compose.main-app.yml -f docker-compose.local.yml exec -T db psql -U postgres -d atm_chatbot -v ON_ERROR_STOP=1 < db/rollback/0019_table_names_french.sql
+docker compose -p atm-chatbot -f compose.backend.yaml -f docker-compose.main-app.yml -f docker-compose.local.yml stop
+docker compose -p atm-chatbot -f compose.backend.yaml -f docker-compose.main-app.yml -f docker-compose.local.yml up -d --no-deps db
+docker compose -p atm-chatbot -f compose.backend.yaml -f docker-compose.main-app.yml -f docker-compose.local.yml exec -T db psql -U postgres -d atm_chatbot -v ON_ERROR_STOP=1 < db/rollback/0019_table_names_french.sql
 ```
 
 Le rollback transactionnel restaure les noms et retire uniquement l'enregistrement

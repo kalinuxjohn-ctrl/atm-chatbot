@@ -47,20 +47,27 @@ Ouvrez <http://localhost:5173>. Le backend reste accessible sur <http://localhos
 > automatiquement une page déjà ouverte.
 > L’ATM-Chatbot se trouve sur <http://localhost:5173/atm-chatbot.html>, après connexion depuis l’accueil.
 
-Le conteneur frontend relaie `/api/*` vers `http://host.docker.internal:8000`, c’est-à-dire le port hôte publié par le service `web` du Compose backend. Le navigateur appelle le frontend seulement ; l’adresse du backend reste côté serveur.
+Le conteneur frontend relaie `/api/*` vers `http://host.docker.internal:8000`, c’est-à-dire le port hôte publié par le service `chatbot-backend` du Compose backend. Le navigateur appelle le frontend seulement ; l’adresse du backend reste côté serveur.
 
 Correspondance des chemins dans le proxy (`server.py`) :
 
 | Appel du navigateur | Route backend |
 | --- | --- |
-| `/api/chat`, `/api/chat/search-symptom` | identiques (le routeur FastAPI est déjà préfixé par `/api`) |
+| `/api/chat`, `/api/chat/stream`, `/api/chat/search-symptom` | identiques (le routeur FastAPI est déjà préfixé par `/api`) |
 | `/api/error_code/...`, `/api/usual_problem/...` | identiques |
 | `/api/intervention_add/...`, `/api/admin/...` | identiques |
 | `/api/health`, `/api/catalog/...`, `/api/interventions/...` | `/api` retiré : `/health`, `/catalog/...`, `/interventions/...` |
 
-Chaque appel a Claude dispose de 120 s. Une reponse peut necessiter plusieurs
-appels : le proxy et la passerelle attendent jusqu'a 300 s, et le navigateur
-jusqu'a 305 s (marge pour recevoir une erreur du proxy).
+Le chat écrit affiche progressivement les morceaux de rédaction via un flux
+NDJSON, relayé sans tampon par le proxy. Les actions et l'historique attendent
+la réponse finale validée ; une coupure signale clairement le texte incomplet.
+Les réponses locales et le mode vocal restent en un seul bloc.
+
+Sonnet 5.5 a un budget de génération de 45 s, également utilisé pour l'attente
+des en-têtes HTTP et l'inactivité réseau (voir le README racine).
+Une réponse peut nécessiter plusieurs appels :
+le proxy et la passerelle attendent jusqu'à 300 s, et le navigateur
+jusqu'à 305 s (marge pour recevoir une erreur du proxy).
 Le delai du proxy est configurable avec `PROXY_TIMEOUT_SECONDS`.
 
 Si le conteneur existait avant l'ajout du volume, appliquez une seule fois

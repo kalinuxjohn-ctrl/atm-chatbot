@@ -3,12 +3,13 @@ Coordination du endpoint POST /api/chat.
 
 ORCHESTRE seulement : text_validation_service (nettoyage et validation
 locale, AVANT tout appel au LLM : le bruit ne coûte aucun jeton),
+greeting_service (réponses locales aux salutations et présentations exactes),
 message_understanding_service (un appel LLM : comprendre ET répondre hors
 diagnostic), technical_reference_resolver_service (résoudre le texte en IDs
 réels), context_service (mémoire de la conversation), case_retrieval_service/
 retrieval_service (recherche en base), llm_service (synthèse d'un diagnostic).
 
-Partage des rôles : le LLM gère tout ce qui est langage (comprendre, détailler
+Partage des rôles : hors formules locales exactes, le LLM gère le langage (comprendre, détailler
 un résultat, répondre aux questions), avec toute la conversation sous les yeux ;
 la base gère les données (historique des interventions, statistiques).
 Seul un diagnostic déclenche une recherche en base.
@@ -16,10 +17,13 @@ Seul un diagnostic déclenche une recherche en base.
 
 from __future__ import annotations
 
+from typing import Callable
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.errors import ReferenceNotFoundError
 from app.core.tracing import trace
+from app.models.fault import ErrorCode
 from app.schemas.message_understanding_schema import UnderstoodMessage
 from app.schemas.photo_schema import PhotoAttachment
 from app.services import (
@@ -28,6 +32,8 @@ from app.services import (
     context_service,
     conversation_memory_service,
     conversation_service,
+    error_code_service,
+    greeting_service,
     llm_service,
     message_understanding_service,
     photo_ocr_service,
@@ -58,7 +64,16 @@ def handle_chat_message(
     message: str,
     device_type: str | None = None,
     photo: PhotoAttachment | None = None,
+    on_reply_delta: Callable[[str], None] | None = None,
 ) -> dict:
+    has_streamed = False
+
+    def emit_delta(text: str) -> None:
+        nonlocal has_streamed
+        if on_reply_delta is not None:
+            on_reply_delta(text)
+            has_streamed = has_streamed or bool(text)
+
     conversation = conversation_service.get_or_create_conversation(db, conversation_id, technician_id)
     context = context_service.get_context(db, conversation.conversation_id)
     trace(
@@ -69,6 +84,9 @@ def handle_chat_message(
     )
 
     if device_type is not None:
+        if context.get("device_type") and context["device_type"] != device_type:
+            for key in ("error_code", "error_code_id", "error_code_reference"):
+                context.pop(key, None)
         context["device_type"] = device_type  # choix de l'interface : prime sur ce que dit le message
 
     # None si aucune photo n'est jointe ou si la fonctionnalité est désactivée.
@@ -86,15 +104,26 @@ def handle_chat_message(
     # c'est la photo qui porte l'information.
     can_understand = validation.valid or photo is not None
     technician_text = validation.cleaned_text if validation.valid else photo_ocr_service.PHOTO_ONLY_MESSAGE
-    # Lu AVANT d'enregistrer le message courant : il est envoyé à part au LLM.
-    history = _load_history(db, conversation.conversation_id, context) if can_understand else []
+    local_reply = greeting_service.get_reply(technician_text) if validation.valid and photo is None else None
 
     # Comparé après le routage : record_last_search remplace l'objet, donc une
     # identité différente = une nouvelle recherche a eu lieu pendant CE message.
     search_before = context.get("last_search")
+    detected_error_code = None
+    detected_error_code_id = None
 
     # La compréhension appelle déjà le LLM : la validation doit la précéder.
-    if can_understand:
+    if local_reply is not None:
+        conversation_service.save_message(db, conversation.conversation_id, "user", technician_text)
+        reply = local_reply
+        trace(
+            "ROUTING", "Réponse locale, sans appel LLM ni recherche",
+            conversation_id=conversation.conversation_id,
+            intent="greeting",
+        )
+    elif can_understand:
+        # Lu avant d'enregistrer le message courant, uniquement si le LLM est nécessaire.
+        history = _load_history(db, conversation.conversation_id, context)
         understood = message_understanding_service.understand_message(
             technician_text,
             device_type=context.get("device_type"),
@@ -105,22 +134,38 @@ def handle_chat_message(
         # Enregistré après la compréhension : avec une photo, le texte lu
         # dessus est gardé avec le message (la photo, elle, ne l'est pas).
         technician_text = photo_ocr_service.add_reading_to_message(technician_text, photo, understood)
-        conversation_service.save_message(db, conversation.conversation_id, "user", technician_text)
+        user_message = conversation_service.save_message(db, conversation.conversation_id, "user", technician_text)
         trace(
             "ROUTING",
             "Orientation du message selon son intention",
             conversation_id=conversation.conversation_id,
             intent=understood.intent,
         )
-        reply = _route_message(db, context, technician_text, understood)
-        reply = photo_ocr_service.add_reading_to_reply(reply, photo, understood)
+        with llm_service.stream_reply(emit_delta if on_reply_delta is not None else None):
+            reply = _route_message(db, context, technician_text, understood)
+        if isinstance(understood.error_code_text, str) and understood.error_code_text.strip():
+            detected_error_code = understood.error_code_text.strip()
+            detected_error_code_id = context.get("error_code_id")
+            user_message.detected_error_code = detected_error_code
+            user_message.error_code_id = detected_error_code_id
+        # Pour un code, la consigne est exclusivement celle du catalogue :
+        # on garde la lecture de la photo, pas une signification inventée par le LLM.
+        photo_reading = understood.model_copy(update={"photo_meaning": None}) if detected_error_code else understood
+        reply = photo_ocr_service.add_reading_to_reply(reply, photo, photo_reading)
     else:
         conversation_service.save_message(db, conversation.conversation_id, "user", validation.cleaned_text)
         reply = REFORMULATION_REPLY
 
-    conversation_service.save_message(db, conversation.conversation_id, "assistant", reply)
+    if on_reply_delta is not None and not has_streamed:
+        emit_delta(reply)
+    assistant_message = conversation_service.save_message(db, conversation.conversation_id, "assistant", reply)
+    if detected_error_code:
+        assistant_message.detected_error_code = detected_error_code
+        assistant_message.error_code_id = detected_error_code_id
     context_service.save_context(db, conversation.conversation_id, context)
     conversation_service.mark_conversation_active(conversation)
+    if on_reply_delta is not None:
+        emit_delta("")  # Une déconnexion doit encore annuler l'écriture avant le commit.
     db.commit()
     trace(
         "RESPONSE",
@@ -129,7 +174,7 @@ def handle_chat_message(
     )
 
     search_after = context.get("last_search")
-    new_search = search_after is not search_before
+    new_search = search_after is not None and search_after is not search_before
     new_search_with_results = new_search and bool((search_after or {}).get("results"))
     # Le LLM peut aussi écarter tous les candidats : reconnaître les formules
     # imposées par les prompts, pas seulement une liste SQL vide.
@@ -145,13 +190,74 @@ def handle_chat_message(
     return {
         "conversation_id": conversation.conversation_id,
         "reply": reply,
+        "detected_error_code": detected_error_code,
+        "error_code_id": detected_error_code_id,
         "solution_proposal_available": new_search_with_results and not intervention_add_available,
         "intervention_add_available": intervention_add_available,
         "intervention_add_problem": search_after.get("query") if intervention_add_available else None,
     }
 
 
+def _record_error_code_context(context: dict, code: str, record: ErrorCode | None) -> None:
+    for key in ("error_code_id", "error_code_reference", "last_search", "selected_result"):
+        context.pop(key, None)
+    context["error_code"] = code
+    context["intent"] = "error_code"
+    if record is not None:
+        context["error_code_id"] = record.error_code_id
+        context["error_code_reference"] = {
+            "catalog_number": record.catalog_number, "code": record.code,
+            "reply": record.reply, "documentation": record.documentation,
+        }
+
+
+def handle_error_code_selection(
+    db: Session, conversation_id: int | None, technician_id: int, device_type: str, error_code_id: int,
+) -> dict:
+    record = error_code_service.get_error_code_reply(db, error_code_id)
+    if record.device_type != device_type:
+        raise ReferenceNotFoundError("Ce code n'est pas disponible pour cet équipement.")
+    conversation = conversation_service.get_or_create_conversation(db, conversation_id, technician_id)
+    context = context_service.get_context(db, conversation.conversation_id)
+    context["device_type"] = device_type
+    _record_error_code_context(context, record.code, record)
+    for role, content in (("user", f"Code erreur {record.code}"), ("assistant", record.reply)):
+        saved = conversation_service.save_message(db, conversation.conversation_id, role, content)
+        saved.detected_error_code = record.code
+        saved.error_code_id = record.error_code_id
+    context_service.save_context(db, conversation.conversation_id, context)
+    conversation_service.mark_conversation_active(conversation)
+    db.commit()
+    return {
+        "conversation_id": conversation.conversation_id, "reply": record.reply,
+        "detected_error_code": record.code, "error_code_id": record.error_code_id,
+    }
+
+
 def _route_message(db: Session, context: dict, message: str, understood: UnderstoodMessage) -> str:
+    if isinstance(understood.error_code_text, str) and understood.error_code_text.strip():
+        code = understood.error_code_text.strip()
+        device_type = context.get("device_type")
+        if not device_type:
+            device_type = technical_reference_resolver_service.resolve_technical_references(
+                db, understood.device_type_text, None, None,
+            ).get("device_type")
+        if device_type:
+            context["device_type"] = device_type
+        record = error_code_service.find_exact_error_code(db, code, device_type)
+        trace(
+            "REFERENCES", "Code détecté recherché dans le catalogue",
+            found=record is not None, has_reply=bool(record and record.reply),
+        )
+        _record_error_code_context(context, code, record)
+        if record is not None and record.reply:
+            return record.reply
+        return (
+            f"Aucune consigne enregistrée pour le code « {code} »"
+            f"{f' sur {device_type.upper()}' if device_type else ''}. "
+            "Vérifie le code affiché et le type d’appareil, ou décris les symptômes pour rechercher une intervention."
+        )
+
     if understood.intent == "diagnostic":
         return _handle_symptom_search(db, context, understood, message)
 
@@ -192,10 +298,17 @@ def _load_history(db: Session, conversation_id: int, context: dict) -> list[dict
 def _describe_last_search(db: Session, context: dict) -> str | None:
     """
     Détail, lu en base, des résultats de la dernière recherche : c'est ce que
-    le LLM utilise pour répondre à « détaille le cas 2 ». None sans recherche.
+    le LLM utilise pour répondre à « détaille le cas 2 », plus la dernière
+    consigne de code connue. None sans recherche ni référence de code.
     """
     last_search = context.get("last_search") or {}
     descriptions = []
+    reference = context.get("error_code_reference")
+    if reference and reference.get("reply"):
+        descriptions.append(
+            f"Référence du catalogue pour le code {reference['code']} "
+            f"(n° {reference['catalog_number']}, pas une intervention réalisée) :\n{reference['reply']}"
+        )
     for resultat in last_search.get("results") or []:
         kind = resultat.get("kind") or _infer_legacy_kind(resultat)
         if kind == "case":
@@ -212,6 +325,8 @@ def _describe_last_search(db: Session, context: dict) -> str | None:
             descriptions.append(_format_stat_result(resultat))
     if not descriptions:
         return None
+    if not last_search:
+        return "\n".join(descriptions)
     query = last_search.get("query") or "non précisé"
     symptoms_txt = _format_query_symptoms(last_search.get("symptoms"))
     return "\n".join([f"Problème recherché : « {query} »", *([symptoms_txt] if symptoms_txt else []), *descriptions])
@@ -220,6 +335,8 @@ def _describe_last_search(db: Session, context: dict) -> str | None:
 def _handle_symptom_search(
     db: Session, context: dict, understood: UnderstoodMessage, message: str | None = None
 ) -> str:
+    for key in ("error_code", "error_code_id", "error_code_reference"):
+        context.pop(key, None)
     # Repli sur le message brut : un LLM qui classe en "diagnostic" sans
     # remplir la reformulation ne doit pas lancer une recherche à vide.
     search_text = (understood.reformulated_problem_text or "").strip() or (message or "").strip()
@@ -415,6 +532,7 @@ def _summarize_cases(
         "le lien avec le problème et les éventuelles limites. Conserve leurs numéros d'origine "
         "(par exemple Cas 2 reste Cas 2 si Cas 1 est écarté). "
         "N'invente AUCUNE information historique absente des cas fournis. "
+        "Respecte l'origine indiquée : un ajout d'origine admin ne provient pas d'une visite de technicien. "
         "Tu peux présenter une piste indirecte dans une section **Pistes indirectes de l'historique**, "
         "uniquement si les détails fournis établissent un lien de composant ou de fonction précis ; "
         "explique les différences de symptômes et ne la présente pas comme une correspondance directe. "
@@ -466,8 +584,9 @@ def _format_case(case: dict, index: int | None = None) -> str:
         for a in validated_additions
     )
     prefixe = f"Cas {index}" if index is not None else "Cas"
+    author = "origine admin, ajout direct" if case.get("origin") == "admin" else case["technician_name"]
     return (
-        f"{prefixe} ({case['technician_name']}, {case['device_label']}{date_txt}) : {_format_matched_symptoms(case)}, "
+        f"{prefixe} ({author}, {case['device_label']}{date_txt}) : {_format_matched_symptoms(case)}, "
         f"actions tentées : {actions_txt}, résultat : {case.get('final_outcome_status') or 'non renseigné'}{fiabilite}."
         f"{diagnostic_txt}{additions_txt}"
     )

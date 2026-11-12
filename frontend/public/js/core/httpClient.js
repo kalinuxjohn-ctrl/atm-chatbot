@@ -1,6 +1,6 @@
 /**
  * SEUL endroit de l'application qui appelle fetch().
- * Les services API passent tous par postJson() / getJson() : gestion du
+ * Les services API passent par les méthodes JSON ou postJsonStream() : gestion du
  * délai, des erreurs réseau et du JSON invalide écrite une seule fois.
  */
 
@@ -38,7 +38,7 @@ export function deleteJson(path, options = {}) {
   return requestJson("DELETE", path, options);
 }
 
-async function requestJson(method, path, { body, headers = {}, timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
+async function fetchResponse(method, path, { body, headers = {}, timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
   let response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
@@ -56,7 +56,14 @@ async function requestJson(method, path, { body, headers = {}, timeoutMs = REQUE
     console.error(`Requête ${path} impossible.`, error);
     throw new ApiRequestError("La requête n’a pas pu aboutir.", { kind: isTimeout ? "timeout" : "network" });
   }
+  return response;
+}
 
+async function requestJson(method, path, options = {}) {
+  return readJsonResponse(await fetchResponse(method, path, options), path);
+}
+
+async function readJsonResponse(response, path) {
   let payload;
   try {
     payload = await response.json();
@@ -75,6 +82,50 @@ async function requestJson(method, path, { body, headers = {}, timeoutMs = REQUE
   }
 
   return payload;
+}
+
+export async function postJsonStream(path, body, onEvent, options = {}) {
+  const response = await fetchResponse("POST", path, {
+    ...options, body, headers: { Accept: "application/x-ndjson", ...options.headers },
+  });
+  if (!response.ok) await readJsonResponse(response, path);
+  if (!response.body || !response.headers.get("Content-Type")?.startsWith("application/x-ndjson")) {
+    console.error(`Réponse ${path} : flux absent ou de type invalide.`);
+    throw new ApiRequestError("Flux de réponse invalide.", { kind: "invalid-response" });
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let pending = "";
+  const dispatch = (line) => {
+    if (line.trim()) onEvent(JSON.parse(line));
+  };
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      pending += decoder.decode(value, { stream: true });
+      let boundary;
+      while ((boundary = pending.indexOf("\n")) !== -1) {
+        dispatch(pending.slice(0, boundary));
+        pending = pending.slice(boundary + 1);
+      }
+    }
+    dispatch(pending + decoder.decode());
+  } catch (error) {
+    console.error(`Flux ${path} interrompu.`, error);
+    if (error instanceof ApiRequestError) throw error;
+    const timeout = error?.name === "TimeoutError" || error?.name === "AbortError";
+    throw new ApiRequestError("Le flux de réponse a été interrompu.", {
+      kind: timeout ? "timeout" : error instanceof SyntaxError ? "invalid-json" : "network",
+    });
+  } finally {
+    try {
+      await reader.cancel();
+    } catch (error) {
+      console.warn(`Fermeture du flux ${path} impossible.`, error);
+    }
+    reader.releaseLock();
+  }
 }
 
 /**

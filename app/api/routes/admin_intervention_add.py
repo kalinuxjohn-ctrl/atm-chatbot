@@ -3,6 +3,7 @@ Routes d'administration des demandes d'ajout d'intervention, protégées par la 
 ADMIN_API_KEY (en-tête X-Admin-Key) :
 
     GET  /api/admin/intervention_add?status=      liste
+    POST /api/admin/intervention_add             ajout direct, identité admin authentifiée
     GET  /api/admin/intervention_add/{id}         détail (contenu actuel + envoi d'origine)
     GET  /api/admin/intervention_add/{id}/preview ce que l'approbation écrira, table par table
     PUT  /api/admin/intervention_add/{id}         corriger le contenu avant décision
@@ -12,15 +13,18 @@ ADMIN_API_KEY (en-tête X-Admin-Key) :
 Aucune logique métier ici : tout est délégué à intervention_add_service.py.
 """
 
+import re
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Header, Query
 from sqlalchemy.orm import Session
 
 from app.api.routes.admin import require_admin
 from app.core.database import get_db
+from app.core.errors import AccessDeniedError
 from app.schemas.intervention_add_schema import (
     InsertionPreview,
+    AdminInterventionCreate,
     InterventionAddOut,
     InterventionAddApproval,
     InterventionAddApprovalResult,
@@ -28,6 +32,7 @@ from app.schemas.intervention_add_schema import (
     InterventionAddRejection,
 )
 from app.services import intervention_add_service as service
+from app.services.intervention_add_service import WrittenRows
 
 router = APIRouter(
     prefix="/api/admin/intervention_add",
@@ -38,6 +43,33 @@ router = APIRouter(
 
 def _out(db: Session, intervention_add) -> InterventionAddOut:
     return InterventionAddOut(**service.describe_intervention_add(db, intervention_add))
+
+
+def _creation_result(db: Session, intervention_add, plan: InsertionPreview, written: WrittenRows) -> InterventionAddApprovalResult:
+    return InterventionAddApprovalResult(
+        intervention_add=_out(db, intervention_add),
+        written=plan,
+        created_intervention_id=written.intervention_id,
+        created_device_id=written.device_id if written.created_device else None,
+        created_device_model_id=plan.device.model_id if written.created_model else None,
+        created_intervention_symptom_ids=written.intervention_symptom_ids,
+        created_intervention_action_ids=written.intervention_action_ids,
+        created_diagnosis_id=written.diagnosis_id,
+    )
+
+
+@router.post("", response_model=InterventionAddApprovalResult, status_code=201)
+def ajouter_directement(
+    payload: AdminInterventionCreate,
+    db: Session = Depends(get_db),
+    x_authenticated_admin_username: Optional[str] = Header(None),
+) -> InterventionAddApprovalResult:
+    if not x_authenticated_admin_username or not re.fullmatch(r"[a-zA-Z0-9_.-]{3,30}", x_authenticated_admin_username):
+        raise AccessDeniedError("Identité de l'administrateur connecté manquante ou invalide.")
+    intervention_add, plan, written = service.create_admin_intervention(
+        db, payload, x_authenticated_admin_username,
+    )
+    return _creation_result(db, intervention_add, plan, written)
 
 
 @router.get("", response_model=list[InterventionAddOut])
@@ -66,16 +98,7 @@ def corriger_ajout(intervention_add_id: int, payload: InterventionAddEdit, db: S
 @router.post("/{intervention_add_id}/approve", response_model=InterventionAddApprovalResult)
 def approuver_ajout(intervention_add_id: int, payload: InterventionAddApproval, db: Session = Depends(get_db)) -> InterventionAddApprovalResult:
     intervention_add, written_plan, written = service.approve_intervention_add(db, intervention_add_id, payload)
-    return InterventionAddApprovalResult(
-        intervention_add=_out(db, intervention_add),
-        written=written_plan,
-        created_intervention_id=written.intervention_id,
-        created_device_id=written.device_id if written.created_device else None,
-        created_device_model_id=written_plan.device.model_id if written.created_model else None,
-        created_intervention_symptom_ids=written.intervention_symptom_ids,
-        created_intervention_action_ids=written.intervention_action_ids,
-        created_diagnosis_id=written.diagnosis_id,
-    )
+    return _creation_result(db, intervention_add, written_plan, written)
 
 
 @router.post("/{intervention_add_id}/reject", response_model=InterventionAddOut)

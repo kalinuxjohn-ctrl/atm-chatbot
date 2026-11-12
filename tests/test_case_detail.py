@@ -97,6 +97,17 @@ class CaseDossierTests(unittest.TestCase):
         with patch.object(case_detail_service.case_retrieval_service, "build_case", return_value=None):
             self.assertIsNone(case_detail_service.build_case_dossier(MagicMock(), STORED_RESULT))
 
+    def test_admin_case_has_no_invented_technician_or_visit_date(self):
+        admin_case = {**SUMMARY_CASE, "technician_name": "Admin", "origin": "admin"}
+        with patch.object(case_detail_service.case_retrieval_service, "build_case", return_value=admin_case):
+            dossier = case_detail_service.build_case_dossier(fake_db(None), STORED_RESULT, "gab")
+        self.assertIsNone(dossier["opened_at"])
+        self.assertIsNone(dossier["closed_at"])
+        formatted = case_detail_service._format_dossier(dossier)
+        self.assertIn("Origine : admin", formatted)
+        self.assertNotIn("Technicien : Admin", formatted)
+        self.assertNotIn("10/09/2026", formatted)
+
 
 class DevelopCaseTests(unittest.TestCase):
     def develop(self, root_cause):

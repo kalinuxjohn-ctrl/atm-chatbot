@@ -1,0 +1,16 @@
+{
+  "catalog_number": 46,
+  "code": "64",
+  "label": "Cassette 4 défectueuse",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 64 : cassette 4 défectueuse.\nRemplacer la cassette 4 par une nouvelle cassette initialisée.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "family": "6x",
+    "cassette": 4,
+    "component": "Cassette 4",
+    "kind": "error"
+  }
+}

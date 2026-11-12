@@ -11,9 +11,9 @@ la même solution -- exactement le scénario que le schéma doit préserver :
   résolue par le remplacement d'un capteur -- une solution différente,
   enregistrée séparément, sans rien écraser du cas d'Alan.
 
-Contient aussi quelques codes d'erreur et pannes de démo (migration 0007) --
+Contient aussi quelques pannes de démo (migration 0007) --
 indépendants du catalogue symptôme/action, aucun embedding nécessaire pour
-ces deux tables (recherche texte classique, voir error_code_service.py).
+ces données. Les codes réels sont chargés séparément depuis db/code_erreurs.
 
 Les embeddings des 6 symptômes ci-dessus sont calculés et écrits en base à
 la fin de ce script (voir EMBEDDING_BACKFILL) : sans ça, la recherche par
@@ -108,7 +108,7 @@ SEED_STATEMENTS = [
     ON CONFLICT (action_id) DO NOTHING;
     """,
 
-    # --- Codes d'erreur / pannes (migration 0007) -- référentiel
+    # --- Pannes (migration 0007) -- référentiel
     # indépendant, recherche texte classique uniquement, aucun embedding.
     # Choisis pour correspondre au même scénario "lecteur de carte"
     # qu'Alan et Bob, par cohérence avec le reste de la démo. ---
@@ -117,13 +117,6 @@ SEED_STATEMENTS = [
         (1, 'P001', 'Lecteur de carte bloqué'),
         (2, 'P002', 'Distributeur de billets en défaut')
     ON CONFLICT (fault_id) DO NOTHING;
-    """,
-    """
-    INSERT INTO code_erreur (error_code_id, code, description, fault_id) VALUES
-        (1, 'E42', 'Capteur de rétention de carte ne répond pas', 1),
-        (2, 'E43', 'Moteur du lecteur de carte bloqué', 1),
-        (3, 'E67', 'Distributeur de billets : bourrage détecté', 2)
-    ON CONFLICT (error_code_id) DO NOTHING;
     """,
 
     # --- Intervention d'Alan (3001) : résolue par réinitialisation ---
@@ -201,33 +194,6 @@ SEED_STATEMENTS = [
 # EXEMPLES de démo : à relire et adapter avec les procédures réelles.
 # Requêtes paramétrées (voir run_seed) : les apostrophes du texte n'ont pas
 # à être échappées à la main.
-ERROR_CODE_REPLIES = [
-    (1, "gab", [
-        "Code E42 : le capteur de rétention de carte ne répond pas (panne P001 – lecteur de carte bloqué).",
-        "1. Mettez le GAB hors service et récupérez la carte retenue si elle est encore dans le lecteur.",
-        "2. Vérifiez que le connecteur du capteur de rétention est bien branché sur la carte du lecteur.",
-        "3. Nettoyez le capteur (poussière, débris de carte) puis redémarrez le lecteur.",
-        "4. Si E42 réapparaît, remplacez le capteur de rétention.",
-        "Si le problème persiste, décrivez-moi ce que vous observez pour chercher des interventions similaires.",
-    ]),
-    (2, "gab", [
-        "Code E43 : le moteur du lecteur de carte est bloqué (panne P001 – lecteur de carte bloqué).",
-        "1. Mettez le GAB hors service puis ouvrez le module lecteur de carte.",
-        "2. Retirez tout objet coincé dans le chemin de la carte (carte, ticket, corps étranger).",
-        "3. Vérifiez que les rouleaux tournent librement à la main, puis réinitialisez le lecteur.",
-        "4. Si le moteur reste bloqué, remplacez le module lecteur de carte.",
-        "Si le problème persiste, décrivez-moi ce que vous observez pour chercher des interventions similaires.",
-    ]),
-    (3, "gab", [
-        "Code E67 : bourrage détecté dans le distributeur de billets (panne P002 – distributeur de billets en défaut).",
-        "1. Mettez le GAB hors service et ouvrez le coffre selon la procédure de sécurité.",
-        "2. Retirez les billets coincés dans le chemin de transport et dans la zone de présentation.",
-        "3. Contrôlez l'état des cassettes (billets froissés ou mal rangés) et remettez-les en place.",
-        "4. Lancez un test de distribution avant de remettre le GAB en service.",
-        "Si le problème persiste, décrivez-moi ce que vous observez pour chercher des interventions similaires.",
-    ]),
-]
-
 _FOLLOW_UP = "Si le problème persiste, décrivez-moi ce que vous observez pour chercher des interventions similaires."
 
 USUAL_PROBLEMS = [
@@ -318,7 +284,6 @@ SEQUENCE_RESETS = [
     "SELECT setval('symptom_symptom_id_seq', (SELECT MAX(symptom_id) FROM symptome));",
     "SELECT setval('action_action_id_seq', (SELECT MAX(action_id) FROM action));",
     "SELECT setval('fault_fault_id_seq', (SELECT MAX(fault_id) FROM panne));",
-    "SELECT setval('error_code_error_code_id_seq', (SELECT MAX(error_code_id) FROM code_erreur));",
     "SELECT setval('usual_problem_usual_problem_id_seq', (SELECT MAX(usual_problem_id) FROM panne_frequente));",
     "SELECT setval('intervention_intervention_id_seq', (SELECT MAX(intervention_id) FROM intervention));",
     "SELECT setval('intervention_symptom_intervention_symptom_id_seq', "
@@ -364,13 +329,6 @@ def run_seed() -> None:
             with connection.cursor() as cursor:
                 for statement in SEED_STATEMENTS:
                     cursor.execute(statement)
-                # Ne remplit que les codes encore sans réponse : une réponse
-                # modifiée depuis par un administrateur n'est pas écrasée.
-                cursor.executemany(
-                    "UPDATE code_erreur SET device_type = %s, reply = %s "
-                    "WHERE error_code_id = %s AND reply IS NULL",
-                    [(device_type, "\n".join(reply), error_code_id) for error_code_id, device_type, reply in ERROR_CODE_REPLIES],
-                )
                 cursor.executemany(
                     "INSERT INTO panne_frequente (usual_problem_id, device_type, display_order, label, reply) "
                     "VALUES (%s, %s, %s, %s, %s) ON CONFLICT (usual_problem_id) DO NOTHING",

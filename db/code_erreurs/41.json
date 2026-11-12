@@ -1,0 +1,16 @@
+{
+  "catalog_number": 41,
+  "code": "55",
+  "label": "Cassette 5 : trop de mauvais billets",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 55 : trop de mauvais billets dans la cassette 5.\nVérifier le contenu de la cassette 5. Si la panne persiste malgré l'intervention, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "family": "5x",
+    "cassette": 5,
+    "component": "Cassette 5",
+    "kind": "error"
+  }
+}

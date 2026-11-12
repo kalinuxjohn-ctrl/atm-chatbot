@@ -8,6 +8,17 @@ import { findSafeLoginRedirectPath, requestJson } from "/shared/js/apiClient.js"
 
 const loginForm = document.querySelector("[data-login-form]");
 const formError = document.querySelector("[data-form-error]");
+const passwordToggle = document.querySelector("[data-password-toggle]");
+
+function setPasswordVisible(visible) {
+  loginForm.elements.password.type = visible ? "text" : "password";
+  passwordToggle.setAttribute("aria-pressed", String(visible));
+  passwordToggle.setAttribute("aria-label", visible ? "Masquer le mot de passe" : "Afficher le mot de passe");
+}
+
+passwordToggle.addEventListener("click", () => {
+  setPasswordVisible(loginForm.elements.password.type === "password");
+});
 
 function showError(message) {
   formError.textContent = message;
@@ -24,6 +35,7 @@ loginForm.addEventListener("submit", async (submitEvent) => {
     return;
   }
   const submitButton = loginForm.querySelector("[type=submit]");
+  setPasswordVisible(false);
   submitButton.disabled = true;
   try {
     const { user } = await requestJson("/api/auth/login", { method: "POST", body: { username, password } });

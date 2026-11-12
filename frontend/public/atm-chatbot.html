@@ -230,6 +230,22 @@
       </form>
     </dialog>
 
+    <dialog class="app-dialog conversation-history-dialog" id="conversation-history-dialog" aria-labelledby="conversation-history-title">
+      <div class="dialog-form">
+        <header class="dialog-header">
+          <h2 id="conversation-history-title">Vos conversations</h2>
+          <p>Retrouvez les échanges enregistrés en base et sélectionnez une conversation pour la reprendre.</p>
+        </header>
+        <p data-history-status role="status"></p>
+        <div class="conversation-history-list" data-history-list></div>
+        <footer class="dialog-actions">
+          <button class="button button-secondary" type="button" data-history-retry hidden>Réessayer</button>
+          <button class="button button-secondary" type="button" data-history-more hidden>Voir plus</button>
+          <button class="button button-primary" type="button" data-history-close>Fermer</button>
+        </footer>
+      </div>
+    </dialog>
+
     <!-- ========== Paramètres (settingsPanel.js, enregistrés dans le navigateur) ========== -->
     <dialog class="app-dialog settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
       <form class="dialog-form" method="dialog">

@@ -15,7 +15,8 @@ class InterventionAdd(Base):
     __tablename__ = "ajout_intervention"
 
     intervention_add_id = Column(Integer, primary_key=True)
-    technician_id = Column(Integer, ForeignKey("technicien.technician_id"), nullable=False)
+    technician_id = Column(Integer, ForeignKey("technicien.technician_id"), nullable=True)
+    created_by_admin = Column(Text)
     conversation_id = Column(Integer, ForeignKey("conversation.conversation_id"))
 
     # Forme des deux JSON : ReviewedInterventionContent (app/schemas/intervention_add_schema.py).

@@ -1,0 +1,16 @@
+{
+  "catalog_number": 44,
+  "code": "62",
+  "label": "Cassette 2 défectueuse",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 62 : cassette 2 défectueuse.\nRemplacer la cassette 2 par une nouvelle cassette initialisée.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "family": "6x",
+    "cassette": 2,
+    "component": "Cassette 2",
+    "kind": "error"
+  }
+}

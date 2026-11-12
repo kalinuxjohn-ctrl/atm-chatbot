@@ -18,8 +18,9 @@ HEADERS = {"X-Admin-Key": ADMIN_KEY}
 
 
 @pytest.fixture(autouse=True)
-def cle_admin_et_nettoyage(monkeypatch):
+def cle_admin_et_nettoyage(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "admin_api_key", ADMIN_KEY)
+    monkeypatch.setattr(settings, "error_code_documents_dir", str(tmp_path))
     yield
     db = SessionLocal()
     db.execute(text("DELETE FROM code_erreur WHERE code LIKE 'ZADM%'"))

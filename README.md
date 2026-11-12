@@ -5,13 +5,18 @@
 Avec `.env` déjà configuré, depuis la racine du dépôt :
 
 ```bash
-docker compose up --build
+docker compose up
 ```
 
-Pour lancer en arrière-plan : `docker compose up -d --build`.
+Pour reconstruire après une modification : `docker compose up --build`.
+Pour lancer en arrière-plan : `docker compose up -d` (ou `up -d --build`).
 Pour voir les services et les ports : `docker compose ps`.
+Les contrôles automatiques `/health` réussis ne sont pas affichés dans les logs
+du frontend, de l'API et du gateway. Les erreurs et les autres requêtes restent visibles.
 [`compose.yaml`](compose.yaml), chargé automatiquement par Docker, regroupe les
 trois configurations existantes avec le même projet et les mêmes volumes.
+Le fichier du backend s'appelle `compose.backend.yaml` pour éviter l'avertissement
+de plusieurs fichiers de configuration par défaut.
 
 Le nom public est defini par `APP_NAME=atm-chatbot` dans `.env`. Il est applique
 au build aux titres, textes, logos SVG et a la navigation de toutes les pages
@@ -23,12 +28,50 @@ inchanges pour conserver les sessions et les donnees.
 
 Les tables sont renommées automatiquement par la migration 0019 au démarrage,
 sans supprimer les données. Voir les [noms français et le retour arrière](docs/tables-en-francais.md).
+Le bouton œil sur la page de connexion affiche ou masque le mot de passe
+uniquement dans le navigateur ; il est masqué à nouveau lors de l'envoi.
 Les comptes existants restent inchangés. L'application utilise par défaut 8080,
-l'API 8000 et PostgreSQL 5432 ; `ps` affiche les ports réellement publiés.
-L'image Python de base est construite automatiquement avant `web` et `init-db`,
+l'API 8000 et PostgreSQL 5433 ; `ps` affiche les ports réellement publiés.
+`DB_PORT` permet de changer le port PostgreSQL publié sans modifier son port interne.
+L'image Python de base est construite automatiquement avant `chatbot-backend` et `init-db`,
 meme sur une nouvelle installation Docker. Le service auxiliaire `python-base`
 termine immediatement avec le code 0 ; il n'ouvre aucun port.
+Les embeddings sont calculés par l'API Voyage, et Claude/Gemini sont appelés
+par HTTP : aucune dépendance PyTorch, CUDA, sentence-transformers ni modèle
+Hugging Face local n'est installée. Les reconstructions ne téléchargent plus
+ces bibliothèques. Les anciens caches locaux ne sont plus montés ni utilisés ;
+ils ne sont pas supprimés automatiquement.
 Les lanceurs ci-dessous sont facultatifs, pas nécessaires à ces commandes.
+
+### Rôle de chaque conteneur
+
+| Service Compose | Rôle | Port local par défaut |
+|---|---|---|
+| `main-app-gateway` | Entrée de l'application : sert les pages, vérifie les sessions et relaie les requêtes vers chaque module. | 8080 |
+| `chatbot-frontend` | Interface du chat ; relaie ses appels API en conservant l'identité vérifiée par le gateway. | Aucun (5173 interne) |
+| `chatbot-backend` | API FastAPI : conversations et historique, compréhension Claude/Gemini, codes d'erreur en DB, recherche via Voyage et administration du chatbot. | 8000 |
+| `main-app-auth` | Connexion, sessions, mots de passe hachés, comptes et rôles. | Aucun (3000 interne) |
+| `main-app-map` | Points de la carte, tuiles et calcul d'itinéraires via OpenRouteService. | Aucun (3000 interne) |
+| `main-app-messaging` | Messagerie entre techniciens et pièces jointes persistées dans le volume d'uploads. | Aucun (3000 interne) |
+| `main-app-calls` | Signalisation WebSocket des appels WebRTC ; l'audio ne passe pas par ce service. | Aucun (3000 interne) |
+| `db` | PostgreSQL avec pgvector : comptes, conversations, interventions, codes et vecteurs. Données conservées dans `pgdata`. | 5433 (5432 interne) |
+| `init-db` | Job ponctuel : migrations manquantes et import des JSON de codes. Le lancement local désactive les données de démonstration. | Aucun |
+| `main-app-database-setup` | Job ponctuel : configure l'accès SQL du rôle dédié `main_app_user`. Ne crée pas les comptes utilisateurs. | Aucun |
+| `python-base` | Construit l'image Python commune ; le conteneur auxiliaire termine normalement avec le code 0. | Aucun |
+
+Claude, Gemini, Voyage et OpenRouteService sont des API externes, pas des conteneurs locaux.
+Les jobs ponctuels peuvent apparaître `Exited (0)` : ce n'est pas une panne.
+`docker compose up` ne crée pas le premier administrateur ; utiliser le lanceur
+ou la commande de création interactive ci-dessous sur une installation neuve.
+
+L'ancien service `web` s'appelle désormais `chatbot-backend`. Son alias réseau
+`chatbot-api` est conservé pour les relais du frontend et du gateway.
+Après une mise à jour de `CLAUDE_API_KEY` dans `.env` :
+
+```bash
+docker compose up -d --no-deps --force-recreate chatbot-backend
+docker compose logs -f chatbot-backend
+```
 
 Pour redemarrer sans changement des images, `docker compose up -d` suffit :
 `--build` n'est utile qu'apres une modification. Le contexte du build Python
@@ -36,6 +79,87 @@ est limite a `app`, `db` et aux dependances par `.dockerignore`, sans les caches
 Python ni les fichiers locaux. Sous WSL, un depot dans `/mnt/f` reste sur le
 disque Windows ; pour de meilleures performances de lecture, preferer un
 depot dans le systeme de fichiers Linux (par exemple `~/projets/atm-chatbot`).
+
+### Réponses instantanées aux messages simples
+
+Le service [`greeting_service.py`](app/services/greeting_service.py) répond
+localement aux messages entiers suivants, sans appel Claude/Gemini, sans
+préparation ou résumé de l'historique et sans recherche :
+
+| Type | Messages |
+|---|---|
+| Salutation | `bonjour`, `salut`, `bonsoir`, `hello`, `coucou`, `slt` |
+| Présentation | `qui es-tu`, `qui es tu`, `qui est tu` |
+| Services | `quels sont tes services`, `que peux-tu faire`, `que peux tu faire` |
+
+Les questions de présentation et de services acceptent aussi une variante
+avec `?`, avec ou sans espace avant. Seuls le nettoyage habituel du texte
+(espaces, caractères invisibles) et la casse sont normalisés : aucun mot
+supplémentaire ni ponctuation non listée n'est supprimé. Ainsi, `BONJOUR`
+répond localement, mais `bonjour le GAB est en panne` et `bonjour!` suivent
+le traitement LLM habituel. Une photo acceptée passe toujours par ce traitement.
+Les messages locaux sont enregistrés dans la conversation comme les autres,
+sans effacer le contexte du diagnostic précédent.
+
+La trace `Réponse locale, sans appel LLM ni recherche` confirme ce chemin.
+Le temps total dépend encore des accès à la base et du réseau local.
+Pour les autres messages, `Appel Claude terminé | elapsed_ms=...` mesure
+l'appel HTTP complet (réseau et traitement fournisseur), pas uniquement
+la génération. Un `cache_read_tokens=0` avec `cache_write_tokens>0` indique
+la création du cache, pas une réutilisation ; ces traces ne permettent pas
+de distinguer le temps réseau, l'attente fournisseur et la génération.
+
+### Latence de Claude Sonnet 5.5
+
+Sonnet 5.5 active par défaut la réflexion adaptative à effort élevé, même
+sans champ `thinking`. La compréhension d'un message peut ne pas réfléchir,
+alors que la synthèse des cas déclenche une réflexion plus longue. Le budget
+de sortie est partagé entre réflexion et réponse.
+
+Par défaut, `CLAUDE_FAST_CHAT=true` fixe `output_config.effort=low` et
+`thinking.type=between_tools` pour les synthèses textuelles Sonnet 5.5 uniquement.
+La compréhension en JSON contraint garde les réglages d'origine : la
+combinaison du mode rapide et du schéma a provoqué des attentes sans réponse
+HTTP pendant les essais, contrairement à chacun de ces usages séparés.
+Le chatbot n'envoie
+pas d'outils à Claude : ce mode supprime donc la réflexion préalable. Le JSON
+contraint, le cache, les règles de pertinence et de provenance restent en place.
+Ce réglage privilégie la latence, avec un compromis possible sur la qualité
+du raisonnement ; `CLAUDE_FAST_CHAT=false` rétablit le mode adaptatif.
+Les autres modèles et Gemini ne sont pas modifiés.
+Voir les [recommandations Anthropic pour le chat](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-sonnet-5-5).
+
+Sonnet 5.5 utilise aussi le streaming SSE **entre le backend et Claude** :
+les événements maintiennent la connexion active et le backend reconstitue
+la réponse complète. Le chat écrit utilise `POST /api/chat/stream` :
+les morceaux de rédaction finale sont relayés immédiatement au navigateur
+et affichés progressivement, sans animation artificielle après génération.
+Le JSON interne de compréhension n'est jamais affiché. Les réponses locales,
+du catalogue ou déjà rédigées dans ce JSON arrivent en un seul morceau.
+Le mode vocal et l'ancienne route `POST /api/chat` restent inchangés.
+
+Le flux NDJSON contient `delta` (texte provisoire), `ping`, puis `done`
+(réponse canonique après enregistrement) ou `error` (statut et message sûr).
+Les boutons d'écoute et de contribution n'apparaissent qu'après réussite.
+Une coupure conserve le texte visible avec la mention « texte incomplet »
+et propose un nouvel essai ; aucune réponse partielle n'est sauvegardée comme
+réussie. Le proxy relaie chaque ligne sans tampon et désactive la mise en
+tampon Nginx avec `X-Accel-Buffering: no`.
+Le délai de connexion est de 5 secondes. L'attente des en-têtes HTTP et
+l'inactivité réseau peuvent durer jusqu'au budget de génération de 45 secondes :
+une réponse démarrant après 15 secondes n'est plus coupée prématurément.
+Le budget de génération est vérifié à chaque ligne reçue
+(une lecture inactive peut ajouter au plus son délai réseau).
+Les événements de maintien de connexion ne prolongent pas ce budget.
+
+Les traces `Connexion Claude établie` et `Premier texte Claude reçu`
+distinguent l'attente de la connexion de celle du début du texte.
+`Appel Claude démarré` indique le mode effectif avant l'attente,
+et `Appel Claude terminé` indique sa durée et son statut. Les erreurs restent explicites (503),
+sans nouvelle tentative automatique payante, réponse partielle présentée
+comme complète ni changement de fournisseur.
+Une modification de ce réglage dans `.env` demande de recréer le backend :
+`docker compose up -d --no-deps --force-recreate chatbot-backend`.
 
 ## Carte et interface du chatbot
 
@@ -82,7 +206,7 @@ Depuis WSL : `bash start.sh`.
 Le lanceur construit les images, applique les migrations manquantes, démarre tous
 les modules et attend leur disponibilité. Il affiche ensuite les liens exacts et
 les ports : application, connexion, administration, chatbot, API et PostgreSQL.
-Les ports par défaut sont **8080**, **8000** et **5432**, accessibles uniquement
+Les ports par défaut sont **8080**, **8000** et **5433**, accessibles uniquement
 depuis cette machine. Les autres services restent sur le réseau Docker interne.
 
 - Le fichier `.env` existant est conservé ; seuls les paramètres locaux manquants
@@ -125,7 +249,7 @@ cela supprimerait la base et les pièces jointes.
 Création interactive d'un administrateur supplémentaire depuis WSL :
 
 ```bash
-docker compose -p atm-chatbot -f docker-compose.yml -f docker-compose.main-app.yml -f docker-compose.local.yml exec main-app-auth node src/jobs/createAdmin.js
+docker compose -p atm-chatbot -f compose.backend.yaml -f docker-compose.main-app.yml -f docker-compose.local.yml exec main-app-auth node src/jobs/createAdmin.js
 ```
 
 La préparation d'un vrai déploiement HTTPS/Linux reste une étape ultérieure.
@@ -175,7 +299,7 @@ prompts, réponses LLM brutes, secrets ou données personnelles à `trace()`.
    Configuration du modele : une seule affectation, par exemple
    `CLAUDE_MODEL=claude-sonnet-5-5`, jamais
    `CLAUDE_MODEL=CLAUDE_MODEL=...` (desormais rejete au demarrage).
-   Une modification de `.env` exige `docker compose up -d --no-deps web`.
+   Une modification de `.env` exige `docker compose up -d --no-deps --force-recreate chatbot-backend`.
    Une API payante ne garantit pas une reponse instantanee : nombre de tokens
    generes, raisonnement, charge et reseau interviennent ; le cache accelere
    la lecture du prefixe, pas la generation de la reponse.

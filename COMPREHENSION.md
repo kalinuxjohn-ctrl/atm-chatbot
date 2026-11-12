@@ -23,10 +23,10 @@ Un technicien décrit une panne de **GAB** (distributeur de billets) ou de
 | Brique | Choix | Où |
 | --- | --- | --- |
 | API | Python + FastAPI | `app/main.py` |
-| Base de données | PostgreSQL 16 + extension **pgvector** | `docker-compose.yml` (service `db`) |
+| Base de données | PostgreSQL 16 + extension **pgvector** | `compose.backend.yaml` (service `db`) |
 | Embeddings (texte → vecteur) | **Voyage AI** (`voyage-3-large`, API), **1024 dimensions** | `app/services/embeddings_service.py` |
 | LLM | **Claude par défaut**, Gemini disponible | `app/services/llm_service.py` |
-| Déploiement | Docker Compose : `db` → `init-db` → `web` (+ `frontend/docker-compose.yml`) | `docker-compose.yml` |
+| Déploiement | Docker Compose : `db` → `init-db` → `chatbot-backend` (+ `frontend/docker-compose.yml`) | `compose.backend.yaml` |
 
 Le backend et la base sont auto-hébergés ; le LLM (Claude ou Gemini) et les
 embeddings (Voyage AI) sont des **API externes avec clé** (fichier `.env`).
@@ -451,8 +451,8 @@ Documentation interactive : <http://localhost:8000/docs>.
 ## 12. Lancer et observer
 
 ```powershell
-docker compose up -d        # db → init-db (migrations + seed + stats) → web:8000
-docker compose logs -f web  # suivre les traces
+docker compose up -d        # db → init-db (migrations + import codes) → chatbot-backend:8000
+docker compose logs -f chatbot-backend  # suivre les traces
 ```
 
 Chaque étape importante écrit une ligne `[TRACE][CATÉGORIE]` (`app/core/tracing.py`).

@@ -31,6 +31,7 @@ from app.models.intervention_add import InterventionAdd
 from app.models.technician import Technician
 from app.schemas.intervention_add_schema import (
     InsertionPreview,
+    AdminInterventionCreate,
     InterventionAddRequest,
     PlannedAction,
     PlannedDevice,
@@ -140,11 +141,13 @@ def get_intervention_add(db: Session, intervention_add_id: int, lock: bool = Fal
 
 def describe_intervention_add(db: Session, intervention_add: InterventionAdd) -> dict:
     """La demande + des libellés lisibles (technicien, appareil) pour l'écran admin."""
-    technician = db.get(Technician, intervention_add.technician_id)
+    technician = db.get(Technician, intervention_add.technician_id) if intervention_add.technician_id is not None else None
     return {
         "intervention_add_id": intervention_add.intervention_add_id,
         "status": intervention_add.status,
         "technician_id": intervention_add.technician_id,
+        "origin": "admin" if intervention_add.created_by_admin else "technician",
+        "created_by_admin": intervention_add.created_by_admin,
         "technician_name": getattr(technician, "full_name", None),
         "conversation_id": intervention_add.conversation_id,
         "device_label": _device_label((intervention_add.content or {}).get("device") or {}),
@@ -159,6 +162,43 @@ def describe_intervention_add(db: Session, intervention_add: InterventionAdd) ->
         "content": intervention_add.content,
         "submitted_content": intervention_add.submitted_content,
     }
+
+
+def create_admin_intervention(
+    db: Session, content: AdminInterventionCreate, admin_username: str,
+) -> tuple[InterventionAdd, InsertionPreview, WrittenRows]:
+    stored = content.model_dump(mode="json")
+    intervention_add = InterventionAdd(
+        technician_id=None,
+        created_by_admin=admin_username,
+        conversation_id=None,
+        submitted_content=stored,
+        content=stored,
+        created_at=datetime.now(timezone.utc),
+        intervention_add_id=0,
+    )
+    # Embeddings et rattachements avant toute ecriture ; aucune demande en attente.
+    plan = build_insertion_plan(db, intervention_add)
+    try:
+        written = _write_plan(db, plan)
+        intervention_add.intervention_add_id = None
+        intervention_add.created_intervention_id = written.intervention_id
+        _mark_reviewed(intervention_add, "approved", admin_username, None)
+        db.add(intervention_add)
+        db.flush()
+        plan.preview.intervention_add_id = intervention_add.intervention_add_id
+        stats_service.recompute_stats(db, commit=False)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    trace(
+        "INTERVENTION_ADD", "Intervention ajoutee directement par un administrateur",
+        intervention_add_id=intervention_add.intervention_add_id,
+        intervention_id=written.intervention_id,
+        origin="admin",
+    )
+    return intervention_add, plan.preview, written
 
 
 def update_intervention_add(db: Session, intervention_add_id: int, edit: InterventionAddEdit) -> InterventionAdd:
@@ -244,8 +284,10 @@ def _mark_reviewed(intervention_add: InterventionAdd, status: str, reviewed_by: 
 def build_insertion_plan(db: Session, intervention_add: InterventionAdd) -> InsertionPlan:
     content = ReviewedInterventionContent.model_validate(intervention_add.content)
     device = _check_references(db, content)
-    if db.get(Technician, intervention_add.technician_id) is None:
+    if intervention_add.technician_id is not None and db.get(Technician, intervention_add.technician_id) is None:
         raise ReferenceNotFoundError(f"Technicien {intervention_add.technician_id} introuvable.")
+    if intervention_add.technician_id is None and not intervention_add.created_by_admin:
+        raise InvalidReferenceError("L'intervention doit avoir un auteur.")
 
     symptoms, symptom_vectors = _plan_symptoms(db, content, device.device_type)
     actions = _plan_actions(db, content)
@@ -261,6 +303,7 @@ def build_insertion_plan(db: Session, intervention_add: InterventionAdd) -> Inse
         intervention=PlannedIntervention(
             device_id=device.device_id,
             technician_id=intervention_add.technician_id,
+            created_by_admin=intervention_add.created_by_admin,
             ticket_reference=content.ticket_reference,
             opened_at=content.opened_at or intervention_add.created_at or datetime.now(timezone.utc),
             closed_at=content.closed_at,
@@ -491,6 +534,10 @@ def _plan_device(db: Session, content: ReviewedInterventionContent) -> PlannedDe
     model_id = _find_model_id(db, device.model_id, device.model_name)
     existing = _find_existing_device(db, device, model_id)
     if existing is not None:
+        if device.device_type and device.device_type != existing.device_type:
+            raise InvalidReferenceError(
+                f"L'appareil {existing.device_id} est un {existing.device_type.upper()}, pas un {device.device_type.upper()}."
+            )
         return PlannedDevice(**_existing_device_values(db, existing), is_new=False)
 
     model = db.get(DeviceModel, model_id) if model_id is not None else None

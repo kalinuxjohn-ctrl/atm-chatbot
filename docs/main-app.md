@@ -13,7 +13,7 @@ Elle tourne en **Node.js + Express**. Son code est dans `main-app/`, séparé du
 
 ## Paramètres et notifications web
 
-- **Paramètres** (engrenage sous **Appels**) ouvre un panneau global depuis chaque page, sans recharger le chatbot ni perdre sa conversation. Le sous-menu ATM-Chatbot conserve seulement Conversation et Nouvelle conversation. Le sous-titre « Application des techniciens » n'est plus affiché sous la salutation.
+- **Paramètres** (engrenage sous **Appels**) ouvre un panneau global depuis chaque page, sans recharger le chatbot ni perdre sa conversation. Le sous-menu **ATM-Chatbot** du groupe Fonctionnalités contient **Nouvelle conversation** et **Voir les conversations**. Le sous-titre « Application des techniciens » n'est plus affiché sous la salutation.
 - Une seule fenêtre défilante aligne **Apparence**, **Notifications** et tous les paramètres **Chat** d'origine (avatar, voix, conversation), sans accordéons. Le titre et le bouton Fermer restent visibles pendant le défilement. Le formulaire et le contrôleur du frontend sont réutilisés, sans seconde fenêtre ni navigation. Les choix sont enregistrés immédiatement sur cet appareil et synchronisés avec le chatbot ouvert, sans perdre son brouillon. L'ancien lien `/atm-chatbot/#settings` ouvre aussi cette fenêtre.
 - Le test de voix appelle les routes authentifiées `/atm-chatbot/app/tts` depuis toute page. La CSP autorise les médias du même site et les URL `blob:` nécessaires à leur lecture, sans élargir les origines de scripts.
 - Le **badge Messagerie** reste visible dans le rail réduit. Une carte avec une icône de message, un titre, le nombre de non-lus et un accès à la conversation annonce les arrivées. La notification système utilise également une icône de messagerie. Le polling global interroge `GET /api/messaging/notifications` toutes les 10 secondes, sans récupérer de contenu de message. Le premier état n'annonce pas les anciens messages, et les messages envoyés par soi-même sont exclus.
@@ -23,15 +23,63 @@ Elle tourne en **Node.js + Express**. Son code est dans `main-app/`, séparé du
 
 **Limite actuelle : application web ouverte uniquement.** Le navigateur peut ralentir ou suspendre un onglet caché. Il n'y a ni service worker push, ni notification garantie après fermeture du site, ni intégration Android native. Des notifications Android réellement en arrière-plan, de type WhatsApp, nécessiteront un projet distinct (push, enregistrement des appareils, application/service worker et gestion de livraison) ; cette version ne les prétend pas disponibles.
 
+### Historique ATM-Chatbot
+
+**Voir les conversations** ouvre l'historique PostgreSQL du compte connecté, par pages de 30, de la conversation la plus récente à la plus ancienne. Sélectionner une conversation restaure tous ses messages enregistrés, son appareil GAB/TPE et son contexte serveur ; la question suivante poursuit le même échange. La simple consultation n'appelle pas le modèle et ne modifie pas le contexte. **Nouvelle conversation** vide seulement l'échange actif, sans supprimer les anciens.
+
+Les routes `GET /api/chat/conversations` et `GET /api/chat/conversations/{id}` utilisent l'identité authentifiée transmise par le gateway et filtrent le propriétaire. Une conversation absente ou appartenant à un autre compte renvoie le même 404. Le cache d'onglet est également isolé par technicien ; l'ancien cache non identifié n'est pas réattribué à un compte.
+
+L'historique restitue ce qui a été enregistré par l'API : les photos originales et les échanges purement locaux (réponses rapides, confirmations de formulaire) ne sont pas conservés en base et ne peuvent pas être reconstruits.
+
 ## Navigation d'administration
 
-Pour les administrateurs, **Administration** est le premier groupe de la barre principale, avant les outils des techniciens. Son menu déroulant contient Comptes, Propositions, Ajouts d'intervention, Codes d'erreur et Pannes fréquentes. La page `/admin/` n'a plus de seconde barre latérale ; les compteurs et la rubrique active figurent dans ce sous-menu. Les liens `/admin/#<rubrique>` et l'historique du navigateur restent utilisables. Les autres rôles ne voient pas ce groupe et les protections serveur restent inchangées.
+### Codes d'erreur réels et fichiers JSON
+
+Le dossier `db/code_erreurs` contient un fichier `<catalog_number>.json` par code, avec un numéro de catalogue entier indépendant de la clé primaire SQL, code **texte** (pour conserver `01`), libellé, équipement, réponse et documentation : module, composant, source/page, famille et cassette éventuelles. Aucun ID SQL n'est stocké dans ces JSON. Le premier corpus contient **68 codes/messages CMD-V4 (142, 153)** issus de `CMD V4_ET_MAJ.pdf` (pages 5 à 11), dont les 36 valeurs concrètes `31` à `36`, `41` à `46`, …, `81` à `86`, ainsi que les messages contrôleur B0/C0 prescrivant le SAV. Aucun joker n'est recherché ou interprété par le chatbot. Les états normaux et les fonctions de test/RESET/firmware ne sont pas importés comme des erreurs.
+
+Le document vise le **module CMD-V4**, pas un modèle unique de GAB. CINEO C2550 / ProCash 8050 sont cités dans la consigne du code 09 seulement. Le corpus ne suppose pas de compatibilité avec tous les GAB. Les mesures sont reformulées sans inventer d'intervention réussie ; les procédures externes absentes et les formulations ambiguës restent signalées.
+
+Après les migrations `0021_error_code_documents.sql` et `0022_error_code_numbers_and_messages.sql`, chargement depuis la racine :
+
+```powershell
+python -m scripts.load_error_codes
+```
+
+Avec le déploiement Docker local :
+
+```powershell
+wsl -d Ubuntu -- docker compose -f compose.yaml exec -T chatbot-backend python -m scripts.load_error_codes
+```
+
+L'option `--replace-demo` retire **uniquement** les anciennes entrées connues E42/E43/E67 (ID 1/2/3, libellé et panne d'origine vérifiés). Une référence par une proposition, une entrée modifiée ou un conflit fait échouer la transaction sans suppression partielle. Ni les pannes liées, ni les pannes fréquentes, ni les interventions ne sont supprimées. Les seeds ne recréent plus ces codes fictifs.
+
+L'import valide tous les fichiers et retrouve les lignes par `catalog_number` ; il peut être rejoué sans changer leurs ID. PostgreSQL attribue seul `error_code_id` via sa séquence. La migration conserve les ID existants et leurs références. Pour un ajout admin, seul le numéro de catalogue est calculé par `MAX(catalog_number) + 1`. Import et administration partagent un verrou de table pour éviter les collisions concurrentes des numéros/fichiers. Les suppressions ne renumérotent pas les autres entrées ; un ID SQL peut avoir des trous et ne sert jamais de compteur.
+
+L'administration écrit atomiquement le JSON **avant** le commit SQL. Une erreur disque bloque l'enregistrement ; un échec SQL restaure le JSON précédent. Modification et suppression suivent le même mécanisme. Les métadonnées source sont modifiables dans le formulaire, et celles non affichées (famille, cassette, notes) sont conservées. Les fichiers sont montés depuis l'hôte dans `chatbot-backend` et `init-db`, donc survivent aux recréations des conteneurs. Une coupure brutale entre les deux écritures n'est pas une transaction distribuée : vérifier le JSON concerné puis relancer l'import pour réconcilier la base.
+
+Dans le chat, Claude renseigne `error_code_text` dans son JSON de compréhension, y compris pour un code lu sur une photo. Le backend cherche une correspondance exacte (casse ignorée, zéros initiaux conservés) pour l'équipement choisi et renvoie la réponse enregistrée **sans second appel à Claude, embedding ni recherche d'interventions**. Sans consigne, il le dit explicitement au lieu d'inventer une procédure. Le code détecté et sa clé étrangère éventuelle sont enregistrés avec les deux messages ; la référence et sa consigne entrent dans le contexte envoyé aux échanges suivants. Un nouveau code inconnu efface l'ancienne référence, et un nouveau diagnostic sans code quitte ce contexte.
+
+Le choix manuel passe par `POST /api/chat/error-code` : même persistance et même contexte, mais **aucun appel à Claude**. L'historique restauré conserve ces références. Sur téléphone (largeur du chat ≤ 760 px), le bouton ouvre un dialogue modal central, filtrable et défilant, avec fermeture accessible et arrière-plan flouté ; le menu des pannes fréquentes reste inchangé. Sur grand écran, le menu déroulant est conservé.
+
+Pour les administrateurs, **Administration** est le premier groupe de la barre principale, avant les outils des techniciens. Ses liens directs sont Comptes, Propositions, Ajouts d'intervention, Codes d'erreur et Pannes fréquentes, sans menu déroulant. La page `/admin/` n'a plus de seconde barre latérale ; les compteurs et la rubrique active figurent dans le groupe Administration. Les liens `/admin/#<rubrique>` et l'historique du navigateur restent utilisables. Les autres rôles ne voient pas ce groupe et les protections serveur restent inchangées.
+
+### Ajouter directement une intervention
+
+Dans **Administration → Ajouts d'intervention**, le bouton **+ Ajouter** ouvre la saisie directe : type GAB/TPE, modèle/site/numéro de série facultatifs, **1 à 20 symptômes** et **1 à 30 actions** avec résultat, état final et diagnostic facultatif. Chaque action peut viser tous les symptômes ou un symptôme précis. Une intervention résolue doit avoir au moins une solution confirmée ayant réglé le problème.
+
+L'enregistrement est immédiatement approuvé avec **origine admin** et le compte connecté comme auteur ; il n'attribue ni technicien ni conversation et ne demande aucune date de visite. La date technique de création n'est pas présentée au chatbot comme une date de visite. Les symptômes sont indexés, les catalogues enrichis et les statistiques recalculées dans la même transaction : un échec annule l'écriture complète et le formulaire conserve la saisie. Les demandes des techniciens gardent leur circuit habituel de validation.
+
+La migration `0020_admin_interventions.sql` permet cette provenance distincte et impose sa cohérence en base. Le navigateur appelle `POST /api/atm-chatbot-admin/intervention_add` ; le gateway contrôle la session admin, injecte la clé serveur et **remplace** l'en-tête `X-Authenticated-Admin-Username` par l'identité authentifiée. La route backend `POST /api/admin/intervention_add` refuse une identité manquante/invalide, une provenance fournie dans le JSON ou des dates de visite non nulles.
 
 ## Thème GAB et orientation mobile
 
-Dans **Paramètres → Apparence**, **GAB · Vert & Or** ajoute une ambiance vert profond et dorée, des cartes ivoire et une illustration originale de distributeur en arrière-plan. **Clair** et **Sombre** restent disponibles ; le choix est mémorisé et synchronisé avec le chatbot sans le recharger. Aucun menu ni fonctionnalité n'est remplacé.
+Les dimensions de navigation se règlent dans les variables `--sidebar-*` de `main-app/gateway/html/shared/css/base.css` : libellés de 17 px environ, icônes de 22 px, espacement de 12 px entre options et séparation accrue avant Réduire/Déconnexion. Le rail réduit garde des espacements compacts et les longues listes restent défilables.
 
-La sidebar GAB est translucide ; **Réduire le menu** est en bas, au-dessus de la déconnexion. Les sous-menus, les listes du chatbot et les sélecteurs utilisent une surface sombre vitrée et des options bordées. Les sélecteurs restent natifs pour conserver clavier, groupes de voix et accessibilité : leur liste utilise `appearance: base-select` sur les navigateurs compatibles, sinon le sélecteur système reste disponible.
+La marge intérieure supérieure du rail est de 30 px (`--sidebar-padding-top`). Son fond vitré utilise un dégradé diagonal marron léger distinct des cartes blanches, adapté au mode sombre avec `--sidebar-background`. La déconnexion est orange dans tous les thèmes (`--sidebar-logout-color`), sans changer les couleurs des erreurs ni sa confirmation.
+
+L'application et le chatbot gardent une base **blanche avec des textes gris neutres**. Le marron remplace le vert uniquement sur les accents : boutons principaux, sélection, icônes et bordures de focus discrètes. Les cartes, bulles de conversation et champs restent blancs, sans teinte sépia ; le mode sombre utilise des gris neutres. La photo de fond et les surfaces vitrées sont conservées. Les modes **Clair**, **Sombre** et **GAB · Marron & Crème** restent disponibles ; le choix est mémorisé et synchronisé avec le chatbot sans le recharger. Le mode GAB conserve son identifiant `gab` pour préserver les préférences existantes. Les erreurs et la déconnexion restent rouges, les confirmations restent vertes et les catégories de la carte gardent leurs couleurs fonctionnelles.
+
+La sidebar GAB est translucide ; **Réduire le menu** est en bas, au-dessus de la déconnexion. Le sous-menu du chatbot utilise une surface claire vitrée en thème clair/GAB et neutre sombre en thème sombre. En rail réduit, il s'ouvre au-dessus du défilement dans un panneau natif, fermable avec Échap ou un clic extérieur. Les sélecteurs restent natifs pour conserver clavier, groupes de voix et accessibilité : leur liste utilise `appearance: base-select` sur les navigateurs compatibles, sinon le sélecteur système reste disponible.
 
 L'image est dans `main-app/gateway/html/shared/images/gab-background.svg`. Pour la remplacer, gardez ce nom ou changez uniquement l'URL `--page-background-image` du bloc `[data-theme="gab"]` dans `main-app/gateway/html/shared/css/base.css` (JPEG/PNG acceptés). Reconstruisez ensuite `main-app-gateway`.
 
@@ -43,10 +91,10 @@ Sur mobile en **portrait**, le rail d'icônes est vertical à gauche. En **paysa
 
 ```bash
 # Tout lancer (chatbot + main app). Le fichier du chatbot reste inchangé.
-docker compose -f docker-compose.yml -f docker-compose.main-app.yml up -d --build
+docker compose -f compose.backend.yaml -f docker-compose.main-app.yml up -d --build
 
 # Premier administrateur (saisie interactive, mot de passe masqué)
-docker compose -f docker-compose.yml -f docker-compose.main-app.yml exec main-app-auth node src/jobs/createAdmin.js
+docker compose -f compose.backend.yaml -f docker-compose.main-app.yml exec main-app-auth node src/jobs/createAdmin.js
 ```
 
 L'app s'ouvre sur `http://localhost:8080` (variable `MAIN_APP_GATEWAY_PORT`).
@@ -58,7 +106,7 @@ Apres une modification Node, lancer `docker compose build main-app-auth`, puis
 `docker compose up -d --no-deps --no-build <service>` pour le service concerne.
 Le lancement global `docker compose up -d --build` reste une seule commande.
 
-| Action | Commande (préfixe : `docker compose -f docker-compose.yml -f docker-compose.main-app.yml`) |
+| Action | Commande (préfixe : `docker compose -f compose.backend.yaml -f docker-compose.main-app.yml`) |
 |---|---|
 | Arrêter / relancer | `stop <service>` · `start <service>` · `restart <service>` |
 | Reconstruire Node après une modification | `build main-app-auth`, puis `up -d --no-deps --no-build <service>` |
@@ -97,7 +145,7 @@ Les deux applications n'ont **aucun code commun**. Elles sont reliées par trois
 3. **L'administration de l’ATM-Chatbot** (rubriques de `/admin/`) : le gateway relaie `/api/atm-chatbot-admin/<chemin>` vers `/api/admin/<chemin>` de l'API du chatbot :
    - `auth_request` interroge d'abord `GET /api/auth/internal/administrator-check` (conteneur auth) : 204 pour un admin connecté, sinon 401/403 renvoyés tels quels au navigateur ;
    - le gateway ajoute lui-même l'en-tête `X-Admin-Key` (valeur de `ADMIN_API_KEY`, passée au gateway sous le nom `MAIN_APP_CHATBOT_ADMIN_API_KEY`) : la clé n'arrive jamais dans le navigateur, et celle qu'un client enverrait est écrasée ;
-   - pour cela, le service `web` du chatbot rejoint `main-app-network` sous l'alias `chatbot-api` (dans `docker-compose.main-app.yml`). Le gateway ne voit toujours pas la base ;
+   - pour cela, le service `chatbot-backend` du chatbot rejoint `main-app-network` sous l'alias `chatbot-api` (dans `docker-compose.main-app.yml`). Le gateway ne voit toujours pas la base ;
    - la clé et le secret sont écrits au démarrage dans `/tmp/atm-chatbot-settings.conf` à partir de `gateway/templates/atm-chatbot-settings.conf.template` (mécanisme `envsubst` de l'image nginx).
 
 Si le chatbot est arrêté, l'onglet ATM-Chatbot affiche « service indisponible » et les rubriques ATM-Chatbot de l'administration affichent « ATM-Chatbot momentanément indisponible » ; le reste de l'Espace techniciens fonctionne normalement.
@@ -105,7 +153,7 @@ Si le chatbot est arrêté, l'onglet ATM-Chatbot affiche « service indisponible
 | Élément | Chatbot | Main app |
 |---|---|---|
 | Code | `app/`, `frontend/` | `main-app/` (son propre `.gitignore`, `.dockerignore`, ESLint) |
-| Conteneurs | `docker-compose.yml` (inchangé) | `docker-compose.main-app.yml` (nouveau fichier) |
+| Conteneurs | `compose.backend.yaml` (inchangé) | `docker-compose.main-app.yml` (nouveau fichier) |
 | Tables | schéma `public` | schéma `main_app` |
 | Migrations | `0001` à `0013` | `0014` à `0018`, dans le même dossier et appliquées par le **même mécanisme** (`init-db`) |
 | Rôle SQL | `postgres` | `main_app_user` (droits restreints) |
@@ -440,6 +488,16 @@ Jest + Supertest (et un vrai client `ws`) couvrent :
 - **Messages vocaux** : les conteneurs WebM et MP4 servent aussi à la vidéo. Ils sont acceptés comme **audio** (c'est ce que produit `MediaRecorder`), servis en `audio/...` et lus par un lecteur audio, qui n'affiche aucune image. Les métadonnées des fichiers audio ne sont pas nettoyées (seules les images sont ré-encodées).
 - **Polling** : un message arrive en 3 s au plus. Il n'y a pas de notification quand l'onglet est fermé.
 - **Cache des tuiles** : en mémoire, perdu au redémarrage de `main-app-map`.
-- **Port 5432** : la base du chatbot publie déjà ce port (`docker-compose.yml`, inchangé). L'accès direct à la base depuis l'hôte n'est donc pas bloqué par la main app. Les conteneurs de la main app, eux, ne publient aucun port, sauf le gateway.
+- **Port 5432** : la base du chatbot publie déjà ce port (`compose.backend.yaml`, inchangé). L'accès direct à la base depuis l'hôte n'est donc pas bloqué par la main app. Les conteneurs de la main app, eux, ne publient aucun port, sauf le gateway.
 - **`docker compose up <service>`** relance aussi `init-db`, qui rejoue le seed du chatbot (idempotent). Pour l'éviter, utiliser `--no-deps`.
 - **HTTPS** : le gateway écoute en HTTP. En production, le placer derrière un reverse proxy TLS. HSTS n'a d'effet qu'en HTTPS, et le micro comme la géolocalisation l'exigent.
+## Navigation latérale
+
+Les administrateurs disposent de deux groupes de liens directs : Administration
+(comptes, propositions, interventions, codes d'erreur, pannes fréquentes) et
+Fonctionnalités. Les autres rôles ne voient que les fonctionnalités.
+Le chatbot et la nouvelle conversation sont accessibles sans menu déroulant.
+Le bouton de réduction conserve la même icône, animée par rotation ; le mode
+réduit rapproche les boutons du bas avec `--sidebar-compact-footer-gap`
+dans `gateway/html/shared/css/base.css`. Les liens restent accessibles par
+défilement sur les petits écrans et portent un libellé accessible en mode réduit.

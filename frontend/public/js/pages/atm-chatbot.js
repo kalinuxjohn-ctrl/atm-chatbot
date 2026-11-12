@@ -22,11 +22,12 @@ import { createSolutionProposalDialog } from "../components/solutionProposalDial
 import { createVoiceMode } from "../components/voiceMode.js";
 import { getFriendlyErrorMessage } from "../core/httpClient.js";
 import { createConversationService } from "../services/conversationService.js";
-import { getErrorCodeReply, listKnownErrorCodes } from "../services/api/errorCodeApi.js";
+import { listKnownErrorCodes } from "../services/api/errorCodeApi.js";
 import { isPhotoOcrEnabled } from "../services/api/photoApi.js";
 import { getUsualProblemReply, listUsualProblems } from "../services/api/usualProblemApi.js";
 import { getPreferences, onPreferencesChange } from "../services/preferencesService.js";
 import { requireSession } from "../services/sessionService.js";
+import { createConversationHistory } from "../components/conversationHistory.js";
 import {
   isSpeechSynthesisSupported,
   speak,
@@ -71,6 +72,7 @@ async function initAtmChatbot({ technicianId, displayName }) {
   /* ---------- Services et composants ---------- */
   const conversation = createConversationService({ technicianId });
   let requestInProgress = false;
+  let streamingReply = null;
   // Entrées des menus de suggestions, lues par le backend pour l'équipement sélectionné.
   let suggestionLists = { usualProblems: [], errorCodes: [] };
 
@@ -145,6 +147,27 @@ async function initAtmChatbot({ technicianId, displayName }) {
   });
 
   const settingsPanel = createSettingsPanel({ dialog: $("#settings-dialog") });
+  const history = createConversationHistory({
+    dialog: $("#conversation-history-dialog"),
+    technicianId,
+    onResume: async (conversationId) => {
+      if (requestInProgress) throw new Error("Une réponse est encore en cours.");
+      dictation.cancel();
+      stopReading();
+      voiceMode.close();
+      setBusy(true);
+      try {
+        await conversation.open(conversationId);
+        elements.input.value = "";
+        photoAttachment.clear();
+        resizeInput();
+        devicePicker.setValue(conversation.deviceType);
+        void loadSuggestions();
+      } finally {
+        setBusy(false);
+      }
+    },
+  });
 
   /* ---------- Identité du technicien ---------- */
   elements.technicianName.textContent = displayName;
@@ -211,7 +234,7 @@ async function initAtmChatbot({ technicianId, displayName }) {
   }
 
   /**
-   * Envoie un message par le flux existant (conversationService -> POST /api/chat).
+   * Envoie un message via conversationService (flux progressif pour le chat écrit).
    * Ne lève jamais : renvoie { reply } ou { error } pour que le mode vocal puisse réagir.
    * @param {{ channel?: "text"|"voice", silent?: boolean, readReply?: boolean, photo?: object|null }} options
    *        silent = message déjà affiché (bouton "Réessayer") ; photo = photo jointe (chat écrit)
@@ -225,13 +248,27 @@ async function initAtmChatbot({ technicianId, displayName }) {
     try {
       // ask() affiche tout de suite le message du technicien : les points
       // "l’ATM-Chatbot réfléchit" sont ajoutés APRÈS, donc en dessous de lui.
-      const pendingAnswer = conversation.ask(text, { channel, silent, photo });
+      const pendingAnswer = conversation.ask(text, {
+        channel, silent, photo,
+        onDelta: channel === "text" ? (delta) => {
+          removeTyping();
+          streamingReply ??= chatView.beginStreamingReply({ channel });
+          streamingReply.appendDelta(delta);
+          setStatus("L’ATM-Chatbot rédige sa réponse…", "processing");
+        } : null,
+      });
       removeTyping = chatView.showTyping();
       ({ text: reply } = await pendingAnswer);
     } catch (caught) {
       error = caught;
+      const interrupted = streamingReply;
+      interrupted?.interrupt();
+      streamingReply = null;
       // « Réessayer » renvoie la même photo.
-      chatView.showError(getFriendlyErrorMessage(caught), () => void submitMessage(text, { channel, silent: true, readReply, photo }));
+      chatView.showError(getFriendlyErrorMessage(caught), () => {
+        interrupted?.remove();
+        void submitMessage(text, { channel, silent: true, readReply, photo });
+      });
     } finally {
       removeTyping();
       setBusy(false);
@@ -276,8 +313,9 @@ async function initAtmChatbot({ technicianId, displayName }) {
         errorCodes: suggestionLists.errorCodes,
         onPickErrorCode: (errorCode) =>
           void answerWithSavedReply(
-            errorCode.label ? `Code erreur ${errorCode.code} : ${errorCode.label}` : `Code erreur ${errorCode.code}`,
-            () => getErrorCodeReply(errorCode.id),
+            `Code erreur ${errorCode.code}`,
+            () => conversation.selectErrorCode(errorCode.id),
+            { stored: true },
           ),
       }),
     );
@@ -292,12 +330,10 @@ async function initAtmChatbot({ technicianId, displayName }) {
   }
 
   /**
-   * Suggestion choisie (panne fréquente ou code d'erreur) : la réponse
-   * enregistrée est lue en base par le backend, SANS IA. L'échange s'affiche
-   * dans le fil mais n'entre pas dans l'historique de la conversation côté
-   * backend (comme avant pour les codes d'erreur).
+   * Réponse enregistrée, sans IA. Les codes passent par la conversation
+   * persistante ; les pannes fréquentes restent des échanges locaux.
    */
-  async function answerWithSavedReply(userText, fetchReply) {
+  async function answerWithSavedReply(userText, fetchReply, { stored = false } = {}) {
     if (requestInProgress) return;
     dictation.cancel();
     stopReading();
@@ -307,13 +343,13 @@ async function initAtmChatbot({ technicianId, displayName }) {
     try {
       reply = await fetchReply();
     } catch (caught) {
-      chatView.showError(getFriendlyErrorMessage(caught), () => void answerWithSavedReply(userText, fetchReply));
+      chatView.showError(getFriendlyErrorMessage(caught), () => void answerWithSavedReply(userText, fetchReply, { stored }));
       return;
     } finally {
       removeTyping();
       setBusy(false);
     }
-    conversation.addLocalExchange(userText, reply);
+    if (!stored) conversation.addLocalExchange(userText, reply);
     if (getPreferences().autoRead) void readAloud(reply);
   }
 
@@ -375,11 +411,20 @@ async function initAtmChatbot({ technicianId, displayName }) {
   // Tous les messages (écrits OU vocaux) arrivent par cet abonnement.
   conversation.subscribe((event) => {
     if (event.type === "message") {
-      chatView.appendMessage(event.message);
+      if (event.message.role === "assistant" && streamingReply) {
+        streamingReply.complete(event.message);
+        streamingReply = null;
+      } else {
+        chatView.appendMessage(event.message);
+      }
     }
     if (event.type === "reset") {
       chatView.reset();
       elements.input.focus();
+    }
+    if (event.type === "restored") {
+      chatView.reset();
+      event.state.messages.forEach((message) => chatView.appendMessage(message, { animate: false }));
     }
   });
   onPreferencesChange(applyPreferences);
@@ -398,6 +443,7 @@ async function initAtmChatbot({ technicianId, displayName }) {
       if (event.data?.type !== "atm-chatbot:command") return;
       if (event.data.action === "settings") settingsPanel.open();
       if (event.data.action === "new-conversation") startNewConversation();
+      if (event.data.action === "conversations" && !requestInProgress) history.open();
     });
     window.parent.postMessage({ type: "atm-chatbot:ready" }, window.location.origin);
   }

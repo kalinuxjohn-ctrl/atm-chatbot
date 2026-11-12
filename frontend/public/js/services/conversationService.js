@@ -10,8 +10,8 @@
  */
 
 import { formatTime } from "../utils/dom.js";
-import { sendMessage } from "./api/chatApi.js";
-import { clearConversation, loadConversation, saveConversation } from "./api/conversationApi.js";
+import { selectErrorCode, sendMessage } from "./api/chatApi.js";
+import { clearConversation, loadConversation, readConversation, saveConversation } from "./api/conversationApi.js";
 import { processVoiceConversation } from "./api/voiceApi.js";
 
 const DEVICE_TYPES = ["gab", "tpe"]; // alignés sur l'ENUM device_type du backend
@@ -21,21 +21,29 @@ export function createConversationService({ technicianId }) {
   const listeners = new Set();
 
   const emit = (event) => listeners.forEach((listener) => listener(event));
-  const persist = () => saveConversation(state);
+  const persist = () => saveConversation(state, technicianId);
 
   /** extra : ex. { canProposeSolution: true } quand la réponse contient des solutions. */
   function addMessage(role, text, channel, extra = {}) {
     const message = { role, text, channel, time: formatTime(), ...extra };
-    state.messages.push(message);
-    persist();
+    const next = { ...state, messages: [...state.messages, message] };
+    saveConversation(next, technicianId);
+    state = next;
     emit({ type: "message", message });
     return message;
   }
 
   return {
     async restore() {
-      state = await loadConversation();
+      state = await loadConversation(technicianId);
       return state;
+    },
+
+    async open(conversationId) {
+      const restored = await readConversation(conversationId, technicianId);
+      await saveConversation(restored, technicianId);
+      state = restored;
+      emit({ type: "restored", state });
     },
 
     get deviceType() {
@@ -60,11 +68,12 @@ export function createConversationService({ technicianId }) {
     /**
      * Envoie le texte du technicien et renvoie la réponse.
      * @param {"text"|"voice"} channel origine du message (affichée dans le chat)
-     * @param {{ silent?: boolean, photo?: {media_type: string, data_base64: string}|null }} options
+     * @param {{ channel?: "text"|"voice", silent?: boolean, photo?: {media_type: string, data_base64: string}|null, onDelta?: ((text: string) => void)|null }} options
      *        silent = le message utilisateur est déjà affiché (nouvel essai) ;
-     *        photo = photo jointe (chat écrit seulement), jamais conservée dans l'historique local
+     *        photo = photo jointe (chat écrit seulement), jamais conservée dans l'historique local ;
+     *        onDelta = morceaux provisoires, sans sauvegarde avant la réponse finale
      */
-    async ask(text, { channel = "text", silent = false, photo = null } = {}) {
+    async ask(text, { channel = "text", silent = false, photo = null, onDelta = null } = {}) {
       // Seule une mention de la photo est affichée et gardée (sessionStorage trop petit pour l'image).
       const shownText = photo ? [text, "📷 Photo jointe"].filter(Boolean).join("\n") : text;
       if (!silent) addMessage("user", shownText, channel);
@@ -73,7 +82,7 @@ export function createConversationService({ technicianId }) {
       const result =
         channel === "voice"
           ? await processVoiceConversation({ ...request, transcript: text })
-          : await sendMessage({ ...request, message: text, photo }).then(({ conversationId, reply, ...availability }) => ({
+          : await sendMessage({ ...request, message: text, photo, onDelta }).then(({ conversationId, reply, ...availability }) => ({
               conversationId,
               text: reply,
               ...availability,
@@ -84,13 +93,25 @@ export function createConversationService({ technicianId }) {
         canProposeSolution: result.solutionProposalAvailable === true,
         canAddIntervention: result.interventionAddAvailable === true,
         interventionProblem: result.interventionAddProblem ?? null,
+        detectedErrorCode: result.detectedErrorCode ?? null,
+        errorCodeId: result.errorCodeId ?? null,
       });
       return result;
     },
 
+    async selectErrorCode(errorCodeId) {
+      const result = await selectErrorCode({
+        errorCodeId, technicianId, conversationId: state.conversationId, deviceType: state.deviceType,
+      });
+      state.conversationId = result.conversationId;
+      const reference = { detectedErrorCode: result.detectedErrorCode, errorCodeId: result.errorCodeId };
+      addMessage("user", `Code erreur ${result.detectedErrorCode}`, "text", reference);
+      addMessage("assistant", result.reply, "text", reference);
+      return result.reply;
+    },
+
     /**
-     * Ajoute un échange dont la réponse est DÉJÀ connue côté frontend (ex. code
-     * d'erreur fréquent) : affiché et sauvegardé comme les autres messages, mais
+     * Ajoute un échange local (ex. panne fréquente) : affiché et sauvegardé, mais
      * sans aucun appel au backend -- le backend ne voit donc pas cet échange.
      */
     addLocalExchange(userText, replyText) {
@@ -121,7 +142,7 @@ export function createConversationService({ technicianId }) {
 
     async reset() {
       state = { conversationId: null, deviceType: state.deviceType, messages: [] };
-      await clearConversation();
+      await clearConversation(technicianId);
       emit({ type: "reset" });
     },
 

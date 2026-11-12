@@ -1,24 +1,21 @@
 /**
  * API de l'historique d'une conversation.
  *
- * ⏳ MOCK : le backend enregistre bien les messages, mais n'expose aucune
- * route pour les relire. En attendant, l'historique est conservé dans le
- * sessionStorage de l'onglet (il survit à un rechargement de page).
- *
- * TODO: remplacer loadConversation par la future route
- *       GET /chat/{conversation_id}/messages.
+ * La conversation active est gardée dans l'onglet, isolée par technicien.
+ * L'historique durable est relu en base avec contrôle du propriétaire.
  */
 
 import { STORAGE_KEYS } from "../../config.js";
+import { getJson } from "../../core/httpClient.js";
 
 const EMPTY_CONVERSATION = { conversationId: null, deviceType: "gab", messages: [] };
 
 /**
  * @returns {Promise<{conversationId: number|null, deviceType: "gab"|"tpe", messages: Array<{role: string, text: string, channel: string, time: string}>}>}
  */
-export async function loadConversation() {
+export async function loadConversation(technicianId) {
   try {
-    const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEYS.conversation) || "null");
+    const saved = JSON.parse(sessionStorage.getItem(`${STORAGE_KEYS.conversation}.${technicianId}`) || "null");
     if (saved && Array.isArray(saved.messages)) return { ...EMPTY_CONVERSATION, ...saved };
   } catch (error) {
     console.warn("Historique local illisible, il est ignoré.", error);
@@ -26,10 +23,31 @@ export async function loadConversation() {
   return { ...EMPTY_CONVERSATION, messages: [] };
 }
 
-export async function saveConversation(conversation) {
-  sessionStorage.setItem(STORAGE_KEYS.conversation, JSON.stringify(conversation));
+export function saveConversation(conversation, technicianId) {
+  sessionStorage.setItem(`${STORAGE_KEYS.conversation}.${technicianId}`, JSON.stringify(conversation));
 }
 
-export async function clearConversation() {
+export async function clearConversation(technicianId) {
+  sessionStorage.removeItem(`${STORAGE_KEYS.conversation}.${technicianId}`);
   sessionStorage.removeItem(STORAGE_KEYS.conversation);
+}
+
+export function listConversations(technicianId, offset = 0) {
+  return getJson(`/chat/conversations?technician_id=${encodeURIComponent(technicianId)}&offset=${offset}`);
+}
+
+export async function readConversation(conversationId, technicianId) {
+  const history = await getJson(`/chat/conversations/${encodeURIComponent(conversationId)}?technician_id=${encodeURIComponent(technicianId)}`);
+  return {
+    conversationId: history.conversation_id,
+    deviceType: history.device_type,
+    messages: history.messages.map((message) => ({
+      role: message.role,
+      text: message.content,
+      detectedErrorCode: message.detected_error_code ?? null,
+      errorCodeId: message.error_code_id ?? null,
+      channel: "text",
+      time: new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(new Date(message.created_at)),
+    })),
+  };
 }

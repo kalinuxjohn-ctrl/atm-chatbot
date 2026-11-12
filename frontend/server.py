@@ -13,6 +13,7 @@ import os
 import threading
 from collections import OrderedDict
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from http.client import HTTPException
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
@@ -155,6 +156,9 @@ class FrontendRequestHandler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if urlsplit(self.path).path == "/health":
+            self._send_api_response(200, {}, b'{"status":"ok"}')
+            return
         if self.path.startswith("/api/"):
             self._proxy_api_request()
             return
@@ -262,7 +266,10 @@ class FrontendRequestHandler(SimpleHTTPRequestHandler):
 
         try:
             with urlopen(api_request, timeout=PROXY_TIMEOUT_SECONDS) as api_response:
-                self._send_api_response(api_response.status, api_response.headers, api_response.read())
+                if api_response.headers.get("Content-Type", "").split(";")[0] == "application/x-ndjson":
+                    self._send_stream_response(api_response)
+                else:
+                    self._send_api_response(api_response.status, api_response.headers, api_response.read())
         except HTTPError as error:
             self._send_api_response(error.code, error.headers, error.read())
         except (TimeoutError, URLError) as error:
@@ -277,6 +284,32 @@ class FrontendRequestHandler(SimpleHTTPRequestHandler):
                 f"API inaccessible à {API_BASE_URL}. Vérifiez que le backend est démarré.",
             )
 
+    def _send_stream_response(self, response):
+        self.send_response(response.status)
+        self.send_header("Content-Type", "application/x-ndjson; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Accel-Buffering", "no")
+        self.send_header("Connection", "close")
+        self.close_connection = True
+        self.end_headers()
+        try:
+            while True:
+                line = response.readline()
+                if not line:
+                    break
+                self.wfile.write(line)
+                self.wfile.flush()
+        except (BrokenPipeError, ConnectionResetError):
+            self.log_message("Flux du chat fermé par le client.")
+        except (TimeoutError, URLError, HTTPException) as error:
+            self.log_error("Flux du backend interrompu : %s", type(error).__name__)
+            event = {"type": "error", "status": 502, "detail": "La réponse a été interrompue. Réessayez."}
+            try:
+                self.wfile.write((json.dumps(event) + "\n").encode("utf-8"))
+                self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError):
+                self.log_message("Flux du chat fermé par le client.")
+
     def _send_api_response(self, status_code, headers, response_body):
         self.send_response(status_code)
         self.send_header(
@@ -287,6 +320,11 @@ class FrontendRequestHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         if self.command != "HEAD":
             self.wfile.write(response_body)
+
+    def log_request(self, code="-", size="-"):
+        if urlsplit(self.path).path == "/health" and str(code) == "200":
+            return
+        super().log_request(code, size)
 
     def log_message(self, format_string, *args):
         print(f"[frontend] {self.address_string()} - {format_string % args}")

@@ -44,6 +44,20 @@ Elle est indépendante du chatbot de diagnostic : elle partage seulement sa base
 | Tests | Jest, Supertest |
 | Déploiement | Docker Compose |
 
+### Personnaliser l'interface
+
+Le menu **ATM-Chatbot** de la barre latérale affiche ses deux actions en cascade,
+dans des cartes arrondies superposées. En mode réduit et sur mobile, ces actions
+s'ouvrent dans un panneau flottant. L'animation respecte la préférence de
+réduction des mouvements du navigateur.
+
+L'icône des onglets du navigateur est commune à toutes les pages. Pour la
+changer, remplacer [`favicon.svg`](../../main-app/gateway/html/shared/images/favicon.svg)
+par votre image SVG en conservant ce nom. Pour utiliser un PNG, modifier aussi
+le `href` et le `type` des liens `rel="icon"` dans les pages HTML
+(`image/png` à la place de `image/svg+xml`). Recharger la page ; si l'ancienne
+icône reste affichée, vider le cache du navigateur.
+
 ## 3. Architecture générale
 
 Chaque module tourne dans son propre conteneur. Une passerelle nginx est le seul point d'entrée.
@@ -108,10 +122,10 @@ de production. Les commandes manuelles ci-dessous restent disponibles.
 
 ```bash
 # Lancer le chatbot et l'Espace techniciens
-docker compose -f docker-compose.yml -f docker-compose.main-app.yml up -d --build
+docker compose -f compose.backend.yaml -f docker-compose.main-app.yml up -d --build
 
 # Créer le premier administrateur (saisie interactive)
-docker compose -f docker-compose.yml -f docker-compose.main-app.yml exec main-app-auth node src/jobs/createAdmin.js
+docker compose -f compose.backend.yaml -f docker-compose.main-app.yml exec main-app-auth node src/jobs/createAdmin.js
 ```
 
 L'application est disponible sur <http://localhost:8080>.
@@ -131,7 +145,7 @@ Toute requête sans session agit alors en tant que ce compte. Cette option est r
 
 ### Commandes utiles
 
-Préfixe : `docker compose -f docker-compose.yml -f docker-compose.main-app.yml`
+Préfixe : `docker compose -f compose.backend.yaml -f docker-compose.main-app.yml`
 
 | Action | Commande |
 |---|---|

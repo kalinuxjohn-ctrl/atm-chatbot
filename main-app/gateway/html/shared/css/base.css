@@ -1,7 +1,7 @@
 /*
  * Styles communs à toutes les pages de la main app (servis par le gateway).
  *
- * Même identité que le chatbot (frontend/public/css/theme.css) : accent vert,
+ * Même identité que le chatbot (frontend/public/css/theme.css) : accent marron,
  * cartes vitrées, navigation en rail. Clair par défaut, sombre au choix
  * (<html data-theme="dark">, posé par applySavedTheme.js avant l'affichage).
  * Toutes les couleurs passent par les jetons de la section 1 : pour retoucher
@@ -33,30 +33,32 @@
   color-scheme: light;
   --font-family: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
 
-  --color-page-background: #eef3ef;
+  --color-page-background: #f5f6f7;
   --color-surface: #ffffff;
   --color-surface-glass: rgb(255 255 255 / 78%);
   --color-content-glass: rgb(255 255 255 / 94%);
   --color-navigation-glass: rgb(255 255 255 / 88%);
+  --sidebar-background: linear-gradient(135deg, rgb(251 247 242 / 96%) 0%, rgb(235 220 204 / 94%) 38%, rgb(248 241 232 / 96%) 64%, rgb(229 211 191 / 94%) 100%);
+  --sidebar-logout-color: #b45309;
   --dropdown-background: rgb(43 39 36 / 84%);
   --dropdown-text: #f5f3f0;
   --dropdown-border: rgb(255 255 255 / 28%);
   --dropdown-hover: rgb(255 255 255 / 13%);
-  --color-surface-muted: #f3f7f4;
-  --color-surface-hover: rgb(20 60 35 / 6%);
-  --color-text: #0d1f14;
-  --color-text-soft: #26392d;
-  --color-text-muted: #46594d;
-  --color-border: rgb(20 60 35 / 10%);
-  --color-border-strong: rgb(20 60 35 / 20%);
+  --color-surface-muted: #f7f8f9;
+  --color-surface-hover: rgb(31 35 40 / 5%);
+  --color-text: #202428;
+  --color-text-soft: #41474d;
+  --color-text-muted: #5e656d;
+  --color-border: rgb(31 35 40 / 10%);
+  --color-border-strong: rgb(31 35 40 / 20%);
 
-  --color-accent: #16a34a;
-  --color-accent-strong: #11632f;
-  --color-accent-fill: rgb(34 197 94 / 12%);
-  --color-accent-border: rgb(22 163 74 / 45%);
-  --color-accent-text: #052e14;
-  --gradient-accent: linear-gradient(135deg, #a3e635 0%, #4ade80 45%, #22c55e 100%);
-  --glow-accent: 0 10px 28px -10px rgb(34 197 94 / 60%);
+  --color-accent: #805333;
+  --color-accent-strong: #41474d;
+  --color-accent-fill: rgb(128 83 51 / 6%);
+  --color-accent-border: rgb(128 83 51 / 28%);
+  --color-accent-text: #fff8f0;
+  --gradient-accent: linear-gradient(135deg, #805333 0%, #70452d 45%, #603b25 100%);
+  --glow-accent: 0 8px 20px -12px rgb(128 83 51 / 25%);
 
   --color-danger: #b91c1c;
   --color-danger-fill: rgb(239 68 68 / 9%);
@@ -65,25 +67,29 @@
   --color-warning: #b45309;
   --color-warning-fill: rgb(245 158 11 / 12%);
   --color-warning-border: rgb(217 119 6 / 35%);
-  --color-own-message: #dcfce7;
-  --color-own-message-border: rgb(22 163 74 / 25%);
+  --color-own-message: #ffffff;
+  --color-own-message-border: rgb(31 35 40 / 10%);
 
   --radius-small: 10px;
   --radius: 16px;
   --radius-large: 22px;
-  --shadow-card: 0 12px 30px -20px rgb(13 40 22 / 35%);
-  --shadow-pop: 0 30px 60px -24px rgb(13 40 22 / 40%);
+  --shadow-card: 0 12px 30px -20px rgb(20 24 28 / 25%);
+  --shadow-pop: 0 30px 60px -24px rgb(20 24 28 / 30%);
 
   --sidebar-width: 244px;
   --sidebar-compact-width: 76px;
+  --sidebar-padding-top: 30px;
   /* Espacements de navigation : ajuster ici pour toutes les pages. */
   --sidebar-section-gap: 18px;
-  --sidebar-item-gap: 8px;
-  --sidebar-item-height: 48px;
+  --sidebar-item-gap: 12px;
+  --sidebar-item-height: 50px;
+  --sidebar-label-size: 1.067rem;
+  --sidebar-option-icon-size: 22px;
   --sidebar-icon-gap: 12px;
-  --sidebar-footer-gap: clamp(48px, 10vh, 100px);
+  --sidebar-footer-gap: clamp(72px, 13vh, 130px);
   --sidebar-footer-item-gap: 20px;
   --sidebar-footer-padding-top: 24px;
+  --sidebar-compact-footer-gap: 32px;
   --dropdown-motion-duration: 280ms;
   --mobile-tab-bar-height: 64px;
   --mobile-header-height: 60px;
@@ -100,24 +106,28 @@
 /* Sombre : choisi par l'utilisateur, ou réglage du système quand aucun choix n'est mémorisé. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --color-page-background: #040805;
-  --color-surface: #0c1410;
-  --color-surface-glass: rgb(10 16 12 / 78%);
-  --color-content-glass: rgb(10 16 12 / 96%);
-  --color-navigation-glass: rgb(10 16 12 / 92%);
-  --color-surface-muted: #111b15;
-  --color-surface-hover: rgb(190 242 200 / 8%);
-  --color-text: #ecf5ef;
-  --color-text-soft: #c7d6cc;
-  --color-text-muted: #b0c1b6;
-  --color-border: rgb(190 242 200 / 10%);
-  --color-border-strong: rgb(190 242 200 / 20%);
+  --color-page-background: #111315;
+  --color-surface: #1b1e21;
+  --color-surface-glass: rgb(24 27 30 / 78%);
+  --color-content-glass: rgb(24 27 30 / 96%);
+  --color-navigation-glass: rgb(24 27 30 / 92%);
+  --sidebar-background: linear-gradient(135deg, rgb(37 32 28 / 97%) 0%, rgb(55 43 34 / 96%) 38%, rgb(35 31 28 / 97%) 64%, rgb(60 46 35 / 96%) 100%);
+  --sidebar-logout-color: #fb923c;
+  --color-surface-muted: #25292d;
+  --color-surface-hover: rgb(240 242 245 / 8%);
+  --color-text: #f3f4f5;
+  --color-text-soft: #d3d7dc;
+  --color-text-muted: #b0b7bf;
+  --color-border: rgb(240 242 245 / 12%);
+  --color-border-strong: rgb(240 242 245 / 22%);
 
-  --color-accent: #4ade80;
-  --color-accent-strong: #86efac;
-  --color-accent-fill: rgb(74 222 128 / 12%);
-  --color-accent-border: rgb(74 222 128 / 45%);
-  --glow-accent: 0 0 30px -6px rgb(74 222 128 / 60%);
+  --color-accent: #d3a679;
+  --color-accent-strong: #d3d7dc;
+  --color-accent-fill: rgb(211 166 121 / 8%);
+  --color-accent-border: rgb(211 166 121 / 28%);
+  --color-accent-text: #202428;
+  --gradient-accent: linear-gradient(135deg, #edc9a2, #c49365);
+  --glow-accent: 0 8px 20px -12px rgb(211 166 121 / 25%);
 
   --color-danger: #f87171;
   --color-danger-fill: rgb(239 68 68 / 12%);
@@ -126,8 +136,8 @@
   --color-warning: #fbbf24;
   --color-warning-fill: rgb(245 158 11 / 12%);
   --color-warning-border: rgb(251 191 36 / 30%);
-  --color-own-message: rgb(74 222 128 / 14%);
-  --color-own-message-border: rgb(74 222 128 / 25%);
+  --color-own-message: #25292d;
+  --color-own-message-border: rgb(240 242 245 / 12%);
 
   --page-background-image: url("/shared/images/technicienne-maintenance-atm-tpe.png");
 
@@ -137,52 +147,52 @@
 
 :root[data-theme="gab"] {
   color-scheme: light;
-  --color-page-background: #1c342a;
-  --color-surface: #fffdf6;
-  --color-surface-glass: rgb(255 253 246 / 94%);
-  --color-content-glass: rgb(255 253 246 / 96%);
-  --color-navigation-glass: rgb(15 31 23 / 92%);
-  --color-surface-muted: #f0f1e8;
-  --color-surface-hover: rgb(32 68 51 / 7%);
-  --color-text: #17382b;
-  --color-text-soft: #315042;
-  --color-text-muted: #465e51;
-  --color-border: rgb(35 69 51 / 14%);
-  --color-border-strong: rgb(35 69 51 / 26%);
-  --color-accent: #9c7017;
-  --color-accent-strong: #795510;
-  --color-accent-fill: rgb(213 170 58 / 15%);
-  --color-accent-border: rgb(176 132 32 / 50%);
-  --color-accent-text: #243b25;
-  --gradient-accent: linear-gradient(135deg, #f4d478, #d9aa3f);
-  --glow-accent: 0 8px 24px -14px rgb(221 179 76 / 55%);
-  --color-own-message: #e7eddc;
-  --color-own-message-border: rgb(80 115 60 / 20%);
+  --color-page-background: #f5f6f7;
+  --color-surface: #ffffff;
+  --color-surface-glass: rgb(255 255 255 / 94%);
+  --color-content-glass: rgb(255 255 255 / 96%);
+  --color-navigation-glass: rgb(255 255 255 / 92%);
+  --color-surface-muted: #f7f8f9;
+  --color-surface-hover: rgb(31 35 40 / 5%);
+  --color-text: #202428;
+  --color-text-soft: #41474d;
+  --color-text-muted: #5e656d;
+  --color-border: rgb(31 35 40 / 10%);
+  --color-border-strong: rgb(31 35 40 / 20%);
+  --color-accent: #805333;
+  --color-accent-strong: #41474d;
+  --color-accent-fill: rgb(128 83 51 / 6%);
+  --color-accent-border: rgb(128 83 51 / 28%);
+  --color-accent-text: #fff8f0;
+  --gradient-accent: linear-gradient(135deg, #805333, #603b25);
+  --glow-accent: 0 8px 20px -12px rgb(128 83 51 / 25%);
+  --color-own-message: #ffffff;
+  --color-own-message-border: rgb(31 35 40 / 10%);
   --radius-large: 16px;
-  --shadow-card: 0 14px 32px -20px rgb(0 12 6 / 55%);
-  --shadow-pop: 0 28px 70px -20px rgb(0 12 6 / 70%);
+  --shadow-card: 0 14px 32px -20px rgb(20 24 28 / 25%);
+  --shadow-pop: 0 28px 70px -20px rgb(20 24 28 / 30%);
   --page-background-image: url("/shared/images/technicienne-maintenance-atm-tpe.png");
 }
 :root[data-theme="gab"] .app-sidebar {
   background: transparent;
-  color: #e7eee4;
-  border-color: rgb(232 227 197 / 15%);
-  box-shadow: 0 18px 40px -20px rgb(0 12 6 / 70%);
+  color: var(--color-text);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-card);
 }
-:root[data-theme="gab"] .app-sidebar :is(.app-sidebar-brand, .app-navigation-link, .app-sidebar-user-text, .button-secondary, .icon-button) { color: #e7eee4; }
-:root[data-theme="gab"] .app-sidebar :is(.button-secondary, .icon-button) { background: rgb(231 238 228 / 7%); border-color: rgb(231 238 228 / 16%); }
-:root[data-theme="gab"] .app-sidebar :is(.app-sidebar-section-title, .app-sidebar-user-role, .app-sidebar-brand-text span) { color: #adbdb0; }
+:root[data-theme="gab"] .app-sidebar :is(.app-sidebar-brand, .app-navigation-link, .app-sidebar-user-text, .button-secondary, .icon-button) { color: var(--color-text-soft); }
+:root[data-theme="gab"] .app-sidebar :is(.button-secondary, .icon-button) { background: var(--color-surface); border-color: var(--color-border); }
+:root[data-theme="gab"] .app-sidebar :is(.app-sidebar-section-title, .app-sidebar-user-role, .app-sidebar-brand-text span) { color: var(--color-text-muted); }
 :root[data-theme="gab"] .app-sidebar :is(.app-navigation-link[aria-current="page"], .app-navigation-link.is-current) {
-  color: #f1ce6c;
+  color: var(--color-text);
   border-color: transparent;
-  border-left: 3px solid #e8bb48;
-  background: rgb(214 231 209 / 14%);
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-accent-fill);
 }
-:root[data-theme="gab"] .app-sidebar .app-sidebar-footer { border-color: rgb(217 231 212 / 15%); }
+:root[data-theme="gab"] .app-sidebar .app-sidebar-footer { border-color: var(--color-border); }
 :root[data-theme="gab"] .atm-chatbot-footnote { color: #fff9e7; }
 :root[data-theme="gab"] :is(.home-hero h1, .feature-link h2, .page-heading h1) { font-family: Georgia, "Times New Roman", serif; }
-:root[data-theme="gab"] :is(.home-summary-item, .feature-link) { border-top: 3px solid rgb(211 171 64 / 65%); }
-:root[data-theme="gab"] .atm-chatbot-frame-card { background: rgb(255 253 246 / 40%); }
+:root[data-theme="gab"] :is(.home-summary-item, .feature-link) { border-top: 3px solid rgb(128 83 51 / 65%); }
+:root[data-theme="gab"] .atm-chatbot-frame-card { background: rgb(255 255 255 / 40%); }
 
 /* ---------- 2. Base ---------- */
 
@@ -297,7 +307,7 @@ body.has-app-sidebar {
   flex-direction: column;
   gap: var(--sidebar-section-gap);
   width: var(--sidebar-width);
-  padding: 16px 12px;
+  padding: var(--sidebar-padding-top) 12px 16px;
   background: transparent;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-large);
@@ -310,7 +320,7 @@ body.has-app-sidebar {
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: var(--color-navigation-glass);
+  background: var(--sidebar-background);
   backdrop-filter: blur(20px) saturate(135%);
   content: "";
   pointer-events: none;
@@ -359,10 +369,15 @@ body.has-app-sidebar {
 .app-sidebar-footer .app-sidebar-logout,
 .app-sidebar-footer .app-sidebar-logout:is(:hover, :focus-visible),
 :root[data-theme="gab"] .app-sidebar-footer .app-sidebar-logout {
-  color: #dc2626;
+  color: var(--sidebar-logout-color);
 }
 
-.app-sidebar-toggle[aria-expanded="true"] .icon {
+.app-sidebar-toggle-icon {
+  flex: none;
+  transition: transform 280ms ease;
+}
+
+.app-sidebar-toggle[aria-expanded="false"] .app-sidebar-toggle-icon {
   transform: rotate(180deg);
 }
 
@@ -421,10 +436,23 @@ body.has-app-sidebar {
   gap: var(--sidebar-item-gap);
   width: 100%;
   min-height: 0;
+  scrollbar-width: thin;
 }
 
 .app-navigation > * {
   flex-shrink: 0;
+}
+
+.app-navigation-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sidebar-item-gap);
+}
+
+.app-navigation-section + .app-navigation-section {
+  margin-top: 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border-strong);
 }
 
 .app-navigation-link {
@@ -437,6 +465,7 @@ body.has-app-sidebar {
   border: 1px solid transparent;
   border-radius: 14px;
   color: var(--color-text-soft);
+  font-size: var(--sidebar-label-size);
   font-weight: 600;
   text-decoration: none;
   transition: background-color 120ms ease, color 120ms ease;
@@ -455,8 +484,9 @@ body.has-app-sidebar {
 }
 
 .app-navigation-link .icon {
-  width: 20px;
-  height: 20px;
+  width: var(--sidebar-option-icon-size);
+  height: var(--sidebar-option-icon-size);
+  flex: none;
 }
 
 .app-sidebar-footer {
@@ -524,7 +554,12 @@ body.has-app-sidebar {
   [data-sidebar-mode="collapsed"] .app-sidebar {
     align-items: center;
     width: var(--sidebar-compact-width);
-    padding: 16px 8px;
+    padding: var(--sidebar-padding-top) 8px 16px;
+    --sidebar-footer-gap: var(--sidebar-compact-footer-gap);
+    --sidebar-footer-padding-top: 16px;
+    --sidebar-footer-item-gap: 12px;
+    --sidebar-item-height: 46px;
+    --sidebar-item-gap: 6px;
   }
 
   [data-sidebar-mode="collapsed"] :is(.app-sidebar-brand-text, .app-navigation-link-label, .app-sidebar-section-title, .app-sidebar-user-text, .button-label, .app-chatbot-chevron) {
@@ -598,7 +633,9 @@ body.has-app-sidebar {
 
   .app-sidebar-footer {
     flex-direction: row;
+    flex: none;
     align-items: center;
+    width: auto;
     padding: 0;
     margin-top: 0;
     border: 0;
@@ -614,12 +651,29 @@ body.has-app-sidebar {
     bottom: 0;
     left: 0;
     flex-direction: row;
-    justify-content: space-around;
+    justify-content: flex-start;
+    overflow-x: auto;
     gap: 0;
     height: calc(var(--mobile-tab-bar-height) + env(safe-area-inset-bottom));
     padding: 6px 4px env(safe-area-inset-bottom);
     background: var(--color-navigation-glass);
     border-top: 1px solid var(--color-border);
+  }
+
+  .app-navigation-section {
+    flex-direction: row;
+    gap: 2px;
+  }
+
+  .app-navigation-section + .app-navigation-section {
+    margin: 0 0 0 8px;
+    padding: 0 0 0 8px;
+    border-top: 0;
+    border-left: 1px solid var(--color-border-strong);
+  }
+
+  .app-navigation .app-navigation-link-label {
+    display: none;
   }
 
   .app-navigation-link {
@@ -631,6 +685,7 @@ body.has-app-sidebar {
     border: 0;
     border-radius: 12px;
     font-size: 0.7rem;
+    min-width: 48px;
   }
 
   .app-navigation-link[aria-current="page"] {
@@ -1362,13 +1417,13 @@ textarea {
 .app-chatbot-subnavigation {
   display: grid;
   gap: 0;
-  margin-top: 6px;
-  padding: 6px;
+  margin-top: 8px;
+  padding: 7px;
   color: var(--dropdown-text);
   border: 1px solid var(--dropdown-border);
   border-radius: 14px;
   background: var(--dropdown-background);
-  box-shadow: 0 12px 28px rgb(0 0 0 / 24%), 0 0 12px rgb(255 255 255 / 14%);
+  box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / 8%);
   backdrop-filter: blur(22px);
 }
 
@@ -1388,6 +1443,7 @@ textarea {
 .app-chatbot-chevron {
   margin-left: auto;
   flex: none;
+  transform: rotate(90deg);
   transition: transform var(--dropdown-motion-duration) ease;
 }
 
@@ -1432,7 +1488,7 @@ textarea {
 }
 
 .app-chatbot-menu[open] .app-chatbot-chevron {
-  transform: rotate(90deg);
+  transform: rotate(-90deg);
 }
 
 .app-chatbot-menu[open] > summary {
@@ -1444,31 +1500,62 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 38px;
-  padding: 8px 10px;
+  min-height: 44px;
+  padding: 10px;
   border: 1px solid var(--dropdown-border);
   border-radius: 10px;
+  background: rgb(255 255 255 / 3%);
   color: var(--dropdown-text);
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 500;
   text-decoration: none;
   transition: background-color 150ms ease, border-color 150ms ease;
 }
 
-.app-chatbot-action .icon { width: 16px; height: 16px; opacity: 0.72; }
+.app-chatbot-action .icon { width: 18px; height: 18px; flex: none; opacity: 0.72; }
+body .app-chatbot-action .app-navigation-link-label { display: inline; }
+
+body .app-chatbot-subnavigation:popover-open {
+  position: fixed;
+  inset: auto;
+  top: var(--chatbot-menu-top);
+  left: var(--chatbot-menu-left);
+  width: min(230px, calc(100vw - 16px));
+  max-height: calc(100dvh - var(--chatbot-menu-top) - 8px);
+  margin: 0;
+  overflow-y: auto;
+  display: grid;
+  justify-content: stretch;
+}
 
 .app-chatbot-action + .app-chatbot-action {
   margin-top: -5px;
-  padding-top: 13px;
-  border-top-color: transparent;
+}
+
+.app-chatbot-menu[open] .app-chatbot-action {
+  animation: chatbot-action-cascade var(--dropdown-motion-duration) ease both;
+}
+
+.app-chatbot-menu[open] .app-chatbot-action:nth-child(2) {
+  animation-delay: calc(var(--dropdown-motion-duration) / 4);
+}
+
+@keyframes chatbot-action-cascade {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .app-chatbot-action:hover,
 .app-chatbot-action:focus-visible,
 .app-chatbot-action[aria-current="page"] {
-  border-color: rgb(255 255 255 / 55%);
+  border-color: var(--dropdown-text);
   background: var(--dropdown-hover);
-  color: #ffffff;
+  color: var(--dropdown-text);
+}
+
+.app-chatbot-action:focus-visible {
+  outline: 2px solid var(--dropdown-text);
+  outline-offset: -3px;
 }
 
 .app-administration-action {
@@ -1486,11 +1573,20 @@ textarea {
   font-size: 0.72rem;
   font-weight: 700;
 }
+[data-sidebar-mode="collapsed"] .app-administration-counter {
+  position: absolute;
+  top: 0;
+  right: 0;
+  max-width: 32px;
+  overflow: hidden;
+  font-size: 0.6rem;
+}
 .app-administration-counter.is-pending {
   background: var(--color-warning-fill);
   color: var(--color-warning);
 }
 
+.app-navigation-link[aria-disabled="true"],
 .app-chatbot-action[aria-disabled="true"] {
   opacity: 0.5;
   cursor: wait;
@@ -1500,7 +1596,7 @@ textarea {
   [data-sidebar-mode="collapsed"] .app-chatbot-menu[open]::details-content {
     overflow: visible;
   }
-  [data-sidebar-mode="expanded"] .app-navigation {
+  .app-navigation {
     min-height: 0;
     overflow-y: auto;
   }
@@ -1564,10 +1660,15 @@ textarea {
     bottom: 6px;
     left: 6px;
     width: 64px;
-    padding: 12px 6px;
+    padding: var(--sidebar-padding-top) 6px 12px;
     gap: 12px;
+    --sidebar-footer-gap: var(--sidebar-compact-footer-gap);
     align-items: center;
     backdrop-filter: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .app-sidebar-toggle-icon { transition: none; }
   }
   .app-sidebar-toggle,
   :is(.app-sidebar-brand-text, .app-navigation-link-label, .app-sidebar-section-title, .app-sidebar-user-text, .button-label, .app-chatbot-chevron) { display: none; }
@@ -1600,7 +1701,7 @@ textarea {
 }
 
 @media (max-height: 600px) and (orientation: landscape) {
-  :root[data-theme="gab"] .app-navigation { background: #18372a; border-color: rgb(232 227 197 / 15%); }
+  :root[data-theme="gab"] .app-navigation { background: #ffffff; border-color: var(--color-border); }
 }
 
 select {

@@ -7,7 +7,9 @@ from unittest.mock import MagicMock, patch
 from app.api.routes import chat as chat_routes
 from app.schemas.chat_schema import SymptomSearchRequest
 from app.schemas.message_understanding_schema import UnderstoodMessage
+from app.schemas.photo_schema import PhotoAttachment
 from app.services import chat_orchestrator_service as orchestrator
+from app.services.greeting_service import get_reply
 from app.services.text_validation_service import (
     REFORMULATION_REPLY,
     clean_message,
@@ -121,11 +123,46 @@ class OrchestratorValidationTests(unittest.TestCase):
             "llm": patch.object(orchestrator.llm_service, "generate_reply"),
             "summarize": patch.object(orchestrator.llm_service, "summarize_solutions"),
             "search": patch.object(orchestrator.case_retrieval_service, "find_similar_cases"),
+            "describe_search": patch.object(orchestrator, "_describe_last_search", return_value=None),
+            "chat_llm": patch.object(orchestrator.llm_service, "generate_chat_reply"),
         }
         self.mocks = {}
         for name, patcher in patches.items():
             self.mocks[name] = patcher.start()
             self.addCleanup(patcher.stop)
+
+    def test_stream_exposes_only_the_final_reply_and_commits_after_emission(self):
+        deltas = []
+
+        def understand(*args, **kwargs):
+            self.assertIsNone(orchestrator.llm_service._reply_delta_callback.get())
+            return UnderstoodMessage(intent="conversation", reply="reply")
+
+        def route(*args):
+            callback = orchestrator.llm_service._reply_delta_callback.get()
+            callback("pre")
+            callback("view")
+            return "reply"
+
+        def emit(text):
+            self.db.commit.assert_not_called()
+            deltas.append(text)
+
+        self.mocks["understand"].side_effect = understand
+        self.mocks["route"].side_effect = route
+        result = orchestrator.handle_chat_message(self.db, 7, 1, "VPN KO", on_reply_delta=emit)
+        self.assertEqual(deltas, ["pre", "view", ""])
+        self.assertEqual(result["reply"], "reply")
+        self.mocks["save_message"].assert_any_call(self.db, 7, "assistant", "reply")
+        self.db.commit.assert_called_once()
+        self.assertIsNone(orchestrator.llm_service._reply_delta_callback.get())
+
+    def test_local_greeting_is_emitted_without_understanding(self):
+        deltas = []
+        result = orchestrator.handle_chat_message(self.db, 7, 1, "bonjour", on_reply_delta=deltas.append)
+        self.assertEqual(deltas, [result["reply"], ""])
+        self.mocks["understand"].assert_not_called()
+        self.db.commit.assert_called_once()
 
     def test_rejected_messages_skip_all_llm_and_search_calls(self):
         for text in (*NOISE_MESSAGES, "\u200b"):
@@ -136,6 +173,8 @@ class OrchestratorValidationTests(unittest.TestCase):
                     {
                         "conversation_id": 7,
                         "reply": REFORMULATION_REPLY,
+                        "detected_error_code": None,
+                        "error_code_id": None,
                         "solution_proposal_available": False,
                         "intervention_add_available": False,
                         "intervention_add_problem": None,
@@ -166,6 +205,55 @@ class OrchestratorValidationTests(unittest.TestCase):
         self.mocks["save_message"].assert_any_call(self.db, 7, "assistant", "reply")
         self.mocks["save_context"].assert_called_once_with(self.db, 7, self.context)
         self.db.commit.assert_called_once()
+
+    def test_exact_greetings_skip_expensive_work_and_preserve_the_conversation(self):
+        for text in ("  BONJOUR  ", "salut", "qui est tu", "Qui es-tu ?", "quels sont tes services"):
+            with self.subTest(text=text):
+                result = orchestrator.handle_chat_message(self.db, 7, 1, text)
+                self.assertEqual(result, {
+                    "conversation_id": 7,
+                    "reply": get_reply(text),
+                    "detected_error_code": None,
+                    "error_code_id": None,
+                    "solution_proposal_available": False,
+                    "intervention_add_available": False,
+                    "intervention_add_problem": None,
+                })
+                self.assertTrue(result["reply"])
+                self.mocks["save_message"].assert_any_call(self.db, 7, "user", clean_message(text))
+                self.mocks["save_message"].assert_any_call(self.db, 7, "assistant", result["reply"])
+        for name in ("history", "describe_search", "understand", "route", "llm", "chat_llm", "summarize", "search"):
+            self.mocks[name].assert_not_called()
+        self.assertEqual(self.context, {"device_type": "gab", "last_search": {"results": [{"position": 1}]}})
+        self.assertEqual(self.mocks["save_message"].call_count, 10)
+        self.assertEqual(self.mocks["save_context"].call_count, 5)
+        self.assertEqual(self.mocks["active"].call_count, 5)
+        self.assertEqual(self.db.commit.call_count, 5)
+
+    def test_messages_containing_greetings_still_reach_understanding(self):
+        for text in (
+            "bonjour le GAB ne démarre plus",
+            "salut\ncode erreur 01",
+            "qui es-tu pour me conseiller cette réparation ?",
+            "quels sont tes services pour un TPE en panne",
+            "rebonjour", "bonjour!", "bonjour bonjour",
+        ):
+            with self.subTest(text=text):
+                self.assertIsNone(get_reply(text))
+                result = orchestrator.handle_chat_message(self.db, 7, 1, text)
+                self.assertEqual(result["reply"], "reply")
+        self.assertEqual(self.mocks["understand"].call_count, 7)
+        self.assertEqual(self.mocks["history"].call_count, 7)
+        self.assertEqual(self.mocks["describe_search"].call_count, 7)
+
+    def test_greeting_with_an_accepted_photo_still_reaches_understanding(self):
+        photo = PhotoAttachment(media_type="image/jpeg", data_base64="aW1hZ2U=")
+        with patch.object(orchestrator.photo_ocr_service, "accept_photo", return_value=photo):
+            orchestrator.handle_chat_message(self.db, 7, 1, "bonjour", photo=photo)
+        self.mocks["understand"].assert_called_once()
+        self.assertIs(self.mocks["understand"].call_args.kwargs["photo"], photo)
+        self.mocks["history"].assert_called_once()
+        self.mocks["route"].assert_called_once()
 
 
 class DirectSearchValidationTests(unittest.TestCase):

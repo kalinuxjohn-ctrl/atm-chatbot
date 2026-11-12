@@ -1,0 +1,14 @@
+{
+  "catalog_number": 10,
+  "code": "14",
+  "label": "Configuration minimale du CMD-V4 manquante",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 14 : configuration minimale manquante.\nInstaller les cassettes et les déclarer : au moins une cassette de rejet/retrait et une cassette de distribution sont nécessaires.\nSi le défaut persiste, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 7,
+    "component": "Cassettes de rejet/retrait et de distribution",
+    "kind": "error"
+  }
+}

@@ -16,9 +16,9 @@ client = TestClient(app)
 
 def _inserer_donnees_test(db):
     db.execute(text("""
-        INSERT INTO code_erreur (error_code_id, code, description, device_type, reply) VALUES
-            (9101, 'ZT1', 'Code TPE test', 'tpe', 'Ligne 1\nLigne 2'),
-            (9102, 'ZT2', 'Code TPE sans réponse', 'tpe', NULL)
+        INSERT INTO code_erreur (error_code_id, catalog_number, code, description, device_type, reply) VALUES
+            (9101, 9101, 'ZT1', 'Code TPE test', 'tpe', 'Ligne 1\nLigne 2'),
+            (9102, 9102, 'ZT2', 'Code TPE sans réponse', 'tpe', NULL)
         ON CONFLICT DO NOTHING
     """))
     db.execute(text("""

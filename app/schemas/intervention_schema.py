@@ -47,7 +47,8 @@ class SymptomOut(BaseModel):
 class InterventionOut(BaseModel):
     intervention_id: int
     device_id: int
-    technician_id: int
+    technician_id: Optional[int] = None
+    created_by_admin: Optional[str] = None
     ticket_reference: Optional[str] = None
     opened_at: datetime
     final_outcome_status: Optional[str] = None

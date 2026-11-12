@@ -89,6 +89,7 @@ export const solutionProposalApi = {
 };
 
 export const interventionAddApi = {
+  create: (content) => requestAtmChatbotAdmin("/intervention_add", { method: "POST", body: content }),
   list: (status) => requestAtmChatbotAdmin(`/intervention_add?status=${encodeURIComponent(status)}`),
   /** Ce que l'approbation écrira, table par table (rien n'est écrit). */
   preview: (interventionAddId) => requestAtmChatbotAdmin(`/intervention_add/${encodeURIComponent(interventionAddId)}/preview`),

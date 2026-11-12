@@ -1,0 +1,14 @@
+{
+  "catalog_number": 19,
+  "code": "23",
+  "label": "Aiguillage circulaire défectueux ou bloqué",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 23 : aiguillage circulaire SM2/SM3 défectueux ou bloqué.\nSi le module ne peut pas être extrait, effectuer un RESET avec le capteur de fonction ; si 23 persiste, contacter le SAV.\nS'il peut être extrait, contrôler le parcours des billets dans les transports collecteur et de distribution, puis remettre le module en position de fonctionnement et attendre son état prêt. Sinon, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 8,
+    "component": "SM2, SM3",
+    "kind": "error"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "catalog_number": 8,
+  "code": "12",
+  "label": "Sectionneur de protection ouvert",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 12 : sectionneur de protection ouvert.\nFaire coulisser le CMD-V4 pour le remettre en position de fonctionnement.\nSi le défaut persiste, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 6,
+    "component": "SW2 / sectionneur de protection",
+    "kind": "error"
+  }
+}

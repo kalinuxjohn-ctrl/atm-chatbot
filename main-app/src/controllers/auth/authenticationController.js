@@ -87,6 +87,7 @@ export async function readCurrentUser(request, response) {
 
 /** Réponse au contrôle auth_request du gateway : la session (et le rôle admin) ont déjà été vérifiés par les middlewares. */
 export function confirmAdministratorSession(request, response) {
+  response.set("X-Authenticated-Admin-Username", request.user.username);
   response.status(204).end();
 }
 

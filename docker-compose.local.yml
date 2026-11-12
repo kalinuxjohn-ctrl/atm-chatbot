@@ -3,16 +3,15 @@ services:
   db:
     container_name: !reset null
     ports: !override
-      - "127.0.0.1:${DB_PORT:-5432}:5432"
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
 
   init-db:
     container_name: !reset null
     environment:
       SEED_DEMO_DATA: "false"
 
-  web:
+  chatbot-backend:
     container_name: !reset null
-    gpus: !reset []
     ports: !override
       - "127.0.0.1:${CHATBOT_API_PORT:-8000}:8000"
     healthcheck:

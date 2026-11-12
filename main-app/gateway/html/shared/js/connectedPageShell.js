@@ -26,14 +26,13 @@ import { startMessageNotifications } from "./messageNotifications.js";
 
 const NAVIGATION_LINKS = [
   { label: "Accueil", path: "/", iconName: "home" },
-  { label: "ATM-Chatbot", path: "/atm-chatbot/", iconName: "bot" },
+  { label: "ATM-Chatbot", path: "/atm-chatbot/", iconName: "bot", submenu: true },
   { label: "Carte", path: "/map/", iconName: "map" },
   { label: "Messagerie", path: "/messaging/", iconName: "message" },
   { label: "Appels", path: "/calls/", iconName: "phone" },
   { label: "Paramètres", path: "#app-settings", iconName: "settings" },
 ];
 // Visible seulement pour le rôle admin : comptes + validation et réponses de l’ATM-Chatbot.
-const ADMINISTRATION_LINK = { label: "Administration", path: "/admin/", iconName: "shield" };
 const ADMINISTRATION_SECTIONS = [
   { name: "comptes", label: "Comptes", iconName: "users" },
   { name: "propositions", label: "Propositions", iconName: "lightbulb", pending: true },
@@ -55,46 +54,29 @@ function readSidebarMode() {
 }
 
 document.body.dataset.sidebarMode = readSidebarMode();
-let chatbotMenuOpen = false;
-let administrationMenuOpen = window.location.pathname.startsWith("/admin/")
-  && !window.matchMedia("(max-width: 720px), (max-height: 600px) and (orientation: landscape)").matches;
+function createNavigationSection(label) {
+  const section = createElementWithText("div", "app-navigation-section");
+  section.setAttribute("role", "group");
+  section.setAttribute("aria-label", label);
+  section.append(createElementWithText("p", "app-sidebar-section-title", label));
+  return section;
+}
 
-function createAdministrationMenu() {
-  const menu = createElementWithText("details", "app-chatbot-menu app-administration-menu");
-  menu.open = administrationMenuOpen;
-  const summary = createElementWithText("summary", "app-navigation-link");
-  summary.title = ADMINISTRATION_LINK.label;
-  if (isCurrentPage(ADMINISTRATION_LINK.path)) summary.classList.add("is-current");
-  summary.append(createIcon("shield"), createElementWithText("span", "app-navigation-link-label", "Administration"),
-    createIcon("chevronRight", "icon app-chatbot-chevron"));
-  const submenu = createElementWithText("div", "app-chatbot-subnavigation app-administration-subnavigation");
+function createAdministrationSection() {
+  const group = createNavigationSection("Administration");
   for (const section of ADMINISTRATION_SECTIONS) {
-    const link = createElementWithText("a", "app-chatbot-action app-administration-action");
-    link.href = `/admin/#${section.name}`;
-    link.dataset.sectionLink = section.name;
-    link.addEventListener("click", () => {
-      if (window.matchMedia("(max-width: 720px), (max-height: 600px) and (orientation: landscape)").matches) {
-        menu.open = false;
-        summary.focus();
-      }
+    const link = createNavigationLink({
+      label: section.label, path: `/admin/#${section.name}`, iconName: section.iconName,
     });
-    link.append(createIcon(section.iconName), createElementWithText("span", "app-administration-label", section.label));
+    link.dataset.sectionLink = section.name;
     const counter = createElementWithText("span", "app-administration-counter");
     counter.dataset.sectionCounter = section.name;
     counter.hidden = true;
     if (section.pending) counter.classList.add("is-pending");
     link.append(counter);
-    submenu.append(link);
+    group.append(link);
   }
-  menu.append(summary, submenu);
-  menu.addEventListener("toggle", () => { administrationMenuOpen = menu.open; });
-  menu.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      menu.open = false;
-      summary.focus();
-    }
-  });
-  return menu;
+  return group;
 }
 
 async function loadCurrentUser() {
@@ -115,16 +97,26 @@ function describeRole(role) {
 }
 
 function isCurrentPage(path) {
+  if (path.includes("#")) {
+    const [pathname, hash] = path.split("#");
+    const currentHash = window.location.hash.slice(1)
+      || (pathname === "/admin/" ? "propositions" : "");
+    return window.location.pathname === pathname && currentHash === hash;
+  }
   if (path === "/") {
     return window.location.pathname === "/";
   }
-  return window.location.pathname.startsWith(path.replace(/[^/]+\.html$/, ""));
+  return window.location.pathname.startsWith(path.replace(/[^/]+\.html$/, ""))
+    && window.location.hash !== "#new-conversation";
 }
 
 function createNavigationLink({ label, path, iconName }) {
   const link = createElementWithText("a", "app-navigation-link");
   link.href = path;
   link.title = label; // libellé visible au survol quand le rail n'affiche que les icônes
+  link.setAttribute("aria-label", label);
+  if (path === "/atm-chatbot/#new-conversation") link.dataset.chatbotAction = "new-conversation";
+  if (path === "/atm-chatbot/#conversations") link.dataset.chatbotAction = "conversations";
   if (path === "#app-settings") {
     link.addEventListener("click", (event) => {
       event.preventDefault();
@@ -136,6 +128,60 @@ function createNavigationLink({ label, path, iconName }) {
   }
   link.append(createIcon(iconName), createElementWithText("span", "app-navigation-link-label", label));
   return link;
+}
+
+function createChatbotMenu() {
+  const menu = createElementWithText("details", "app-chatbot-menu");
+  menu.open = document.body.dataset.sidebarMode === "expanded"
+    && !window.matchMedia("(max-width: 720px), (max-height: 600px) and (orientation: landscape)").matches
+    && window.location.pathname.startsWith("/atm-chatbot/");
+  const summary = createElementWithText("summary", "app-navigation-link");
+  summary.title = "ATM-Chatbot";
+  summary.setAttribute("aria-label", "ATM-Chatbot");
+  summary.append(createIcon("bot"), createElementWithText("span", "app-navigation-link-label", "ATM-Chatbot"),
+    createIcon("chevronRight", "icon app-chatbot-chevron"));
+  const subnavigation = createElementWithText("div", "app-chatbot-subnavigation");
+  for (const item of [
+    { label: "Nouvelle conversation", path: "/atm-chatbot/#new-conversation", iconName: "plus" },
+    { label: "Voir les conversations", path: "/atm-chatbot/#conversations", iconName: "history" },
+  ]) {
+    const link = createNavigationLink(item);
+    link.className = "app-chatbot-action";
+    subnavigation.append(link);
+  }
+  summary.addEventListener("click", (event) => {
+    const compact = document.body.dataset.sidebarMode === "collapsed"
+      || window.matchMedia("(max-width: 720px), (max-height: 600px) and (orientation: landscape)").matches;
+    if (!compact || typeof subnavigation.showPopover !== "function") return;
+    event.preventDefault();
+    if (subnavigation.matches(":popover-open")) {
+      subnavigation.hidePopover();
+      return;
+    }
+    menu.open = true;
+    subnavigation.setAttribute("popover", "auto");
+    const bounds = summary.getBoundingClientRect();
+    const width = Math.min(230, window.innerWidth - 16);
+    const left = Math.min(bounds.right + 12, window.innerWidth - width - 8);
+    const top = Math.max(8, Math.min(bounds.top, window.innerHeight - 140));
+    subnavigation.style.setProperty("--chatbot-menu-left", `${Math.max(8, left)}px`);
+    subnavigation.style.setProperty("--chatbot-menu-top", `${top}px`);
+    subnavigation.showPopover();
+    const controller = new AbortController();
+    const close = () => subnavigation.hidePopover();
+    window.addEventListener("resize", close, { signal: controller.signal, once: true });
+    subnavigation.addEventListener("toggle", (toggleEvent) => {
+      if (toggleEvent.newState !== "closed") return;
+      controller.abort();
+      menu.open = false;
+      subnavigation.removeAttribute("popover");
+    }, { signal: controller.signal });
+  });
+  subnavigation.addEventListener("click", (event) => {
+    if (event.target.closest("a") && subnavigation.matches(":popover-open")) subnavigation.hidePopover();
+  });
+  menu.append(summary, subnavigation);
+  return menu;
 }
 
 // --- Thème clair / sombre ------------------------------------------------------
@@ -160,16 +206,23 @@ function createSidebarToggleButton() {
   const toggleButton = createElementWithText("button", "icon-button app-sidebar-toggle app-sidebar-footer-button");
   toggleButton.type = "button";
   toggleButton.setAttribute("aria-controls", "main-app-navigation");
+  const toggleIcon = createIcon("collapseSidebar", "icon app-sidebar-toggle-icon");
+  const toggleLabel = createElementWithText("span", "button-label");
+  toggleButton.append(toggleIcon, toggleLabel);
   const refreshButton = () => {
     const expanded = document.body.dataset.sidebarMode === "expanded";
     toggleButton.setAttribute("aria-label", expanded ? "Rétracter la barre latérale" : "Déployer la barre latérale");
     toggleButton.setAttribute("aria-expanded", String(expanded));
     toggleButton.title = toggleButton.getAttribute("aria-label");
-    toggleButton.replaceChildren(createIcon("chevronRight"),
-      createElementWithText("span", "button-label", expanded ? "Réduire le menu" : "Déployer le menu"));
+    toggleLabel.textContent = expanded ? "Réduire le menu" : "Déployer le menu";
   };
   toggleButton.addEventListener("click", () => {
     const mode = document.body.dataset.sidebarMode === "expanded" ? "collapsed" : "expanded";
+    for (const menu of document.querySelectorAll(".app-chatbot-menu")) {
+      const panel = menu.querySelector(".app-chatbot-subnavigation");
+      if (panel?.matches(":popover-open")) panel.hidePopover();
+      menu.open = false;
+    }
     document.body.dataset.sidebarMode = mode;
     try {
       window.localStorage.setItem(SIDEBAR_STORAGE_KEY, mode);
@@ -212,46 +265,13 @@ function renderPageShell(headerElement, currentUser, { isLoadingUser = false } =
   navigation.id = "main-app-navigation";
   navigation.setAttribute("aria-label", "Navigation principale");
   if (currentUser?.role === "admin") {
-    navigation.append(createElementWithText("p", "app-sidebar-section-title", "Gestion"), createAdministrationMenu());
+    navigation.append(createAdministrationSection());
   }
-  navigation.append(createElementWithText("p", "app-sidebar-section-title", "Espace de travail"));
+  const appSection = createNavigationSection("Fonctionnalités");
   for (const item of NAVIGATION_LINKS) {
-    if (item.path === "/atm-chatbot/") {
-      const dropdown = createElementWithText("details", "app-chatbot-menu");
-      dropdown.open = chatbotMenuOpen;
-      const summary = createElementWithText("summary", "app-navigation-link");
-      summary.title = "Menu ATM-Chatbot";
-      if (isCurrentPage(item.path)) summary.classList.add("is-current");
-      summary.append(createIcon("bot"), createElementWithText("span", "app-navigation-link-label", item.label), createIcon("chevronRight", "icon app-chatbot-chevron"));
-      dropdown.append(summary);
-      dropdown.addEventListener("toggle", () => { chatbotMenuOpen = dropdown.open; });
-      dropdown.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
-          dropdown.open = false;
-          summary.focus();
-        }
-      });
-      const subnavigation = createElementWithText("div", "app-chatbot-subnavigation");
-      for (const [action, label, iconName] of [
-        ["conversation", "Conversation", "message"],
-        ["new-conversation", "Nouvelle conversation", "plus"],
-      ]) {
-        const link = createElementWithText("a", "app-chatbot-action");
-        link.append(createIcon(iconName), createElementWithText("span", "", label));
-        link.href = action === "conversation" ? "/atm-chatbot/" : `/atm-chatbot/#${action}`;
-        link.dataset.chatbotAction = action;
-        link.addEventListener("click", () => {
-          chatbotMenuOpen = false;
-          dropdown.open = false;
-        });
-        subnavigation.append(link);
-      }
-      dropdown.append(subnavigation);
-      navigation.append(dropdown);
-    } else {
-      navigation.append(createNavigationLink(item));
-    }
+    appSection.append(item.submenu ? createChatbotMenu() : createNavigationLink(item));
   }
+  navigation.append(appSection);
 
   const footer = createElementWithText("div", "app-sidebar-footer");
   footer.append(createSidebarToggleButton());
@@ -302,6 +322,12 @@ export const currentUserPromise = loadCurrentUser();
 
 replaceIconPlaceholders();
 const pageShellHeader = document.querySelector("[data-page-shell]");
+window.addEventListener("hashchange", () => {
+  for (const link of pageShellHeader?.querySelectorAll(".app-navigation a:not([aria-haspopup])") ?? []) {
+    if (isCurrentPage(link.getAttribute("href"))) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  }
+});
 if (pageShellHeader) {
   renderPageShell(pageShellHeader, null, { isLoadingUser: true });
 }

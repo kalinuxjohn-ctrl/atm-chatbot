@@ -1,0 +1,15 @@
+{
+  "catalog_number": 15,
+  "code": "19",
+  "label": "Transport par pince défectueux ou bloqué",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 19 : transport par pince défectueux ou bloqué.\nContrôler le parcours des billets dans le transport de distribution selon la procédure correspondante.\nRemettre le CMD-V4 en position de fonctionnement dans le coffre et attendre qu'il soit prêt. Si 19 persiste, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 7,
+    "component": "Pince / transport de distribution",
+    "kind": "error",
+    "notes": "Renvoi à « Contrôle des parcours de billets », non détaillé dans cet extrait."
+  }
+}

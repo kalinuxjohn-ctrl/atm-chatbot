@@ -26,7 +26,7 @@ export function createAppSettings({ applyTheme }) {
   const themeLabel = createElementWithText("label", "app-settings-field", "Thème");
   const theme = document.createElement("select");
   theme.setAttribute("aria-label", "Thème de l’application");
-  for (const [value, label] of [["light", "Clair"], ["dark", "Sombre"], ["gab", "GAB · Vert & Or"]]) {
+  for (const [value, label] of [["light", "Clair"], ["dark", "Sombre"], ["gab", "GAB · Marron & Crème"]]) {
     const option = createElementWithText("option", "", label);
     option.value = value;
     theme.append(option);

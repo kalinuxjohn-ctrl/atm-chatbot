@@ -1,0 +1,16 @@
+{
+  "catalog_number": 48,
+  "code": "66",
+  "label": "Cassette 6 défectueuse",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 66 : cassette 6 défectueuse.\nRemplacer la cassette 6 par une nouvelle cassette initialisée.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "family": "6x",
+    "cassette": 6,
+    "component": "Cassette 6",
+    "kind": "error"
+  }
+}

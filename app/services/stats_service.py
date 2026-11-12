@@ -9,7 +9,7 @@ from app.core.errors import StateConflictError
 from app.core.tracing import trace
 
 
-def recompute_stats(db) -> int:
+def recompute_stats(db, *, commit: bool = True) -> int:
     """Rebuild the aggregate stats used for case ranking."""
     db.execute(
         text(
@@ -53,7 +53,8 @@ def recompute_stats(db) -> int:
             """
         )
     )
-    db.commit()
+    if commit:
+        db.commit()
     row_count = db.execute(text("SELECT COUNT(*) FROM statistiques_resultats_symptome_action")).scalar()
     return int(row_count or 0)
 

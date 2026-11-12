@@ -439,7 +439,7 @@ class ChatFlagTests(unittest.TestCase):
             patch.object(orchestrator.context_service, "save_context"),
             patch.object(orchestrator.conversation_service, "mark_conversation_active"),
             patch.object(orchestrator.message_understanding_service, "understand_message",
-                         return_value=SimpleNamespace(intent="diagnostic")),
+                         return_value=SimpleNamespace(intent="diagnostic", error_code_text=None)),
         ]
         for patcher in patches:
             patcher.start()

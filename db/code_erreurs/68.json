@@ -1,0 +1,15 @@
+{
+  "catalog_number": 68,
+  "code": "C0",
+  "label": "Contrôleur : contrôle (compare)",
+  "device_type": "gab",
+  "reply": "CMD-V4 — affichage C0 : message du contrôleur « compare », associé au contrôle du contrôleur.\nLe document prescrit de contacter le SAV ; aucune procédure de contrôle détaillée n'est fournie ici.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 5,
+    "component": "Contrôleur CMD",
+    "kind": "error",
+    "notes": "Message d'état du contrôleur nécessitant le SAV, distinct des codes de sélection des fonctions de test."
+  }
+}

@@ -3,7 +3,7 @@
 # ============================================================================
 # Se lance AVEC le fichier du chatbot, qui reste inchangé :
 #
-#   docker compose -f docker-compose.yml -f docker-compose.main-app.yml up -d --build
+#   docker compose -f compose.backend.yaml -f docker-compose.main-app.yml up -d --build
 #
 # Liens avec le chatbot (aucun code commun) :
 #   - la base PostgreSQL (service `db`), dans un schéma séparé ;
@@ -13,7 +13,7 @@
 #     secret ATM_CHATBOT_GATEWAY_SHARED_SECRET (l'API refuse alors tout autre appel) ;
 #   - l'administration de l’ATM-Chatbot : le gateway relaie /api/atm-chatbot-admin/ vers
 #     l'API admin du chatbot, pour les seuls administrateurs connectés.
-#   L'API du chatbot (service `web`) rejoint le réseau du gateway (plus bas).
+#   L'API du chatbot (service `chatbot-backend`) rejoint le réseau du gateway (plus bas).
 #
 # Chaque fonctionnalité a son conteneur, arrêtable et redémarrable seul :
 #   main-app-gateway    nginx, SEUL port publié de la main app
@@ -181,7 +181,7 @@ services:
       # transmise avec les requêtes /atm-chatbot/app/ vient du gateway.
       MAIN_APP_ATM_CHATBOT_GATEWAY_SHARED_SECRET: ${ATM_CHATBOT_GATEWAY_SHARED_SECRET:?ATM_CHATBOT_GATEWAY_SHARED_SECRET manquant dans .env}
     # Pas sur le réseau du chatbot : le gateway ne voit pas la base. Il joint
-    # le chatbot uniquement parce que `web` et `chatbot-frontend` sont sur main-app-network.
+    # le chatbot uniquement parce que `chatbot-backend` et `chatbot-frontend` sont sur main-app-network.
     networks:
       - main-app-network
     healthcheck:
@@ -214,13 +214,13 @@ services:
     networks:
       - main-app-network
     depends_on:
-      - web
+      - chatbot-backend
 
-  # Service du chatbot (docker-compose.yml), complété ici :
+  # Service du chatbot (compose.backend.yaml), complété ici :
   # - il rejoint le réseau du gateway sous le nom `chatbot-api` ;
   # - il n'accepte plus que les requêtes relayées par le gateway (secret partagé),
   #   avec le technicien de la session (app/core/gateway_identity.py).
-  web:
+  chatbot-backend:
     environment:
       ATM_CHATBOT_GATEWAY_SHARED_SECRET: ${ATM_CHATBOT_GATEWAY_SHARED_SECRET:?ATM_CHATBOT_GATEWAY_SHARED_SECRET manquant dans .env}
     networks:

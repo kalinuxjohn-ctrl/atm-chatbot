@@ -4,6 +4,8 @@
 !app/**
 !db/
 !db/**
+!scripts/
+!scripts/**
 !requirements.txt
 !Dockerfile
 !Dockerfile.init

@@ -91,6 +91,50 @@
   font-size: 0.92rem;
 }
 
+.admin-intervention-form,
+.admin-intervention-group,
+.admin-intervention-rows,
+.admin-intervention-row {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.admin-intervention-group,
+.admin-intervention-row {
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-small);
+}
+
+.admin-intervention-group legend,
+.admin-intervention-row legend {
+  padding: 0 6px;
+  font-weight: 700;
+}
+
+.admin-intervention-row {
+  background: var(--color-surface-muted);
+}
+
+.admin-intervention-row > button,
+.admin-intervention-group > button {
+  justify-self: start;
+}
+
+.admin-intervention-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.admin-intervention-checkbox input {
+  width: auto;
+  flex: none;
+}
+
 .segmented-control {
   display: inline-flex;
   flex-wrap: wrap;

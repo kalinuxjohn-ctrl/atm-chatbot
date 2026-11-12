@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 COMPOSE = [
     "docker", "compose", "--project-name", "atm-chatbot",
     "--env-file", str(ROOT / ".env"),
-    "-f", str(ROOT / "docker-compose.yml"),
+    "-f", str(ROOT / "compose.backend.yaml"),
     "-f", str(ROOT / "docker-compose.main-app.yml"),
     "-f", str(ROOT / "docker-compose.local.yml"),
 ]
@@ -123,10 +123,10 @@ def start(*, rebuild_base=False):
     if rebuild_base:
         run(COMPOSE + ["build", "--no-cache", "python-base"])
     # All four Node services and the database job use the same image.
-    run(COMPOSE + ["build", "web", "init-db", "chatbot-frontend", "main-app-auth", "main-app-gateway"])
+    run(COMPOSE + ["build", "chatbot-backend", "init-db", "chatbot-frontend", "main-app-auth", "main-app-gateway"])
     run(COMPOSE + ["up", "-d", "--no-build", "--wait", "--wait-timeout", "180"])
     gateway_port = published_port("main-app-gateway", 8080)
-    api_port = published_port("web", 8000)
+    api_port = published_port("chatbot-backend", 8000)
     database_port = published_port("db", 5432)
     origin = f"http://localhost:{gateway_port}"
     check_http(f"{origin}/health")

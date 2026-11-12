@@ -24,8 +24,9 @@ export async function login(credentials) {
 }
 
 export async function logout() {
+  const session = getSession();
   localStorage.removeItem(STORAGE_KEYS.session);
-  await clearConversation();
+  await clearConversation(session?.technicianId);
 }
 
 /** Page protégée : renvoie vers l'accueil (dialogue de connexion ouvert) sans session. */

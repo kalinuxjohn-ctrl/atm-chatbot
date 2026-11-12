@@ -66,6 +66,16 @@ export async function mockErrorCodeReplyResponse({ errorCodeId }) {
   return { id: errorCodeId, reply: MOCK_SAVED_REPLY };
 }
 
+export async function mockErrorCodeSelectionResponse({ errorCodeId, conversationId, deviceType }) {
+  const record = MOCK_ERROR_CODES.find((item) => item.id === errorCodeId && item.deviceType === deviceType);
+  if (!record) throw new Error("Code indisponible dans le catalogue de démonstration.");
+  await simulateLatency(100, 300);
+  return {
+    conversation_id: conversationId ?? nextMockConversationId++,
+    reply: MOCK_SAVED_REPLY, detected_error_code: record.code, error_code_id: record.id,
+  };
+}
+
 /** Même format que GET /usual_problem?device_type=... */
 export async function mockUsualProblemsResponse({ deviceType }) {
   await simulateLatency(100, 300);

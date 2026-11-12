@@ -15,6 +15,7 @@ from app.core.errors import ReferenceNotFoundError, StateConflictError
 from app.core.tracing import trace
 from app.models.fault import ErrorCode
 from app.schemas.error_code_schema import ErrorCodeAdminIn
+from app.services import error_code_document_service as documents
 
 
 def search_error_codes(db: Session, query: str) -> list[ErrorCode]:
@@ -64,6 +65,13 @@ def get_error_code_reply(db: Session, error_code_id: int) -> ErrorCode:
     return error_code
 
 
+def find_exact_error_code(db: Session, code: str, device_type: str | None) -> ErrorCode | None:
+    query = db.query(ErrorCode).filter(func.upper(ErrorCode.code) == code.strip().upper())
+    if device_type:
+        query = query.filter(ErrorCode.device_type == device_type)
+    return query.first()
+
+
 # ---------- Administration (/api/admin/error_code) ----------
 
 def list_all_error_codes(db: Session) -> list[ErrorCode]:
@@ -72,11 +80,14 @@ def list_all_error_codes(db: Session) -> list[ErrorCode]:
 
 
 def create_error_code(db: Session, payload: ErrorCodeAdminIn) -> ErrorCode:
+    documents.lock_catalog(db)
     _ensure_code_available(db, payload.code)
-    error_code = ErrorCode()
+    next_number = (db.query(func.max(ErrorCode.catalog_number)).scalar() or 0) + 1
+    error_code = ErrorCode(catalog_number=next_number)
     _apply(error_code, payload)
     db.add(error_code)
-    db.commit()
+    with documents.persist_document(documents.describe_record(error_code), create=True):
+        db.commit()
     db.refresh(error_code)
     trace("ADMIN", "Code d'erreur créé", error_code_id=error_code.error_code_id)
     return error_code
@@ -84,21 +95,26 @@ def create_error_code(db: Session, payload: ErrorCodeAdminIn) -> ErrorCode:
 
 def update_error_code(db: Session, error_code_id: int, payload: ErrorCodeAdminIn) -> ErrorCode:
     """Modifie code, libellé, équipement et réponse. La panne rattachée (fault) n'est pas touchée."""
+    documents.lock_catalog(db)
     error_code = _get_or_404(db, error_code_id)
     _ensure_code_available(db, payload.code, ignored_id=error_code_id)
     _apply(error_code, payload)
-    db.commit()
+    with documents.persist_document(documents.describe_record(error_code)):
+        db.commit()
     db.refresh(error_code)
     trace("ADMIN", "Code d'erreur modifié", error_code_id=error_code_id)
     return error_code
 
 
 def delete_error_code(db: Session, error_code_id: int) -> None:
+    documents.lock_catalog(db)
     error_code = _get_or_404(db, error_code_id)
     code = error_code.code  # lu avant le commit : après un rollback, l'objet est expiré
+    document = documents.describe_record(error_code)
     db.delete(error_code)
     try:
-        db.commit()
+        with documents.persist_document(document, delete=True):
+            db.commit()
     except IntegrityError as error:
         # Référencé par une proposition de solution (solution_proposal.error_code_id).
         db.rollback()
@@ -130,3 +146,5 @@ def _apply(error_code: ErrorCode, payload: ErrorCodeAdminIn) -> None:
     error_code.description = payload.label
     error_code.device_type = payload.device_type
     error_code.reply = payload.reply
+    if "documentation" in payload.model_fields_set or error_code.documentation is None:
+        error_code.documentation = payload.documentation.model_dump(mode="json")

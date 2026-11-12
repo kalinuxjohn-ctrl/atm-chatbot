@@ -4,6 +4,8 @@ claires par les gestionnaires enregistrés dans app/main.py -- les services
 restent ainsi indépendants de FastAPI.
 """
 
+SERVICE_INDISPONIBLE_MESSAGE = "Le service de réponse est momentanément indisponible. Réessayez dans quelques instants."
+
 
 class ReferenceNotFoundError(LookupError):
     """Un identifiant fourni par le client (device_id, action_id...) n'existe pas en base -> HTTP 404."""

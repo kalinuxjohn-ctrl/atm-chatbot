@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY app ./app
 COPY db ./db
+COPY scripts ./scripts
 
 EXPOSE 8000
 

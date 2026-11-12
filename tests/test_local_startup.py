@@ -10,6 +10,24 @@ from scripts import start
 
 
 class LocalStartupTests(unittest.TestCase):
+    def test_default_compose_uses_one_entrypoint_without_local_ml_dependencies(self):
+        root = Path(__file__).resolve().parents[1]
+        self.assertFalse((root / "docker-compose.yml").exists())
+        self.assertIn("compose.backend.yaml", (root / "compose.yaml").read_text(encoding="utf-8"))
+        backend = (root / "compose.backend.yaml").read_text(encoding="utf-8")
+        base = (root / "Dockerfile.base").read_text(encoding="utf-8")
+        requirements = (root / "requirements.txt").read_text(encoding="utf-8")
+        for removed in ("torch", "sentence-transformers", "huggingface", "HF_HOME"):
+            self.assertNotIn(removed, base + requirements + backend)
+        self.assertNotIn("gpus:", backend)
+        for filename in ("compose.backend.yaml", "docker-compose.main-app.yml", "docker-compose.local.yml"):
+            content = (root / filename).read_text(encoding="utf-8")
+            self.assertIn("  chatbot-backend:\n", content)
+            self.assertNotIn("  web:\n", content)
+        self.assertIn("image: atm-chatbot-backend:latest", backend)
+        self.assertIn("- chatbot-api", (root / "docker-compose.main-app.yml").read_text(encoding="utf-8"))
+        self.assertIn('"-f", str(ROOT / "compose.backend.yaml")', (root / "scripts/start.py").read_text(encoding="utf-8"))
+
     def test_shared_node_image_has_only_one_build_owner(self):
         compose = (Path(__file__).resolve().parents[1] / "docker-compose.main-app.yml").read_text(encoding="utf-8")
         common = compose.split("x-main-app-node-service: &main-app-node-service", 1)[1].split(
@@ -35,7 +53,7 @@ class LocalStartupTests(unittest.TestCase):
                 start.start(rebuild_base=rebuild_base)
                 commands = [call.args[0] for call in run.call_args_list]
                 self.assertIn(start.COMPOSE + [
-                    "build", "web", "init-db", "chatbot-frontend", "main-app-auth", "main-app-gateway",
+                    "build", "chatbot-backend", "init-db", "chatbot-frontend", "main-app-auth", "main-app-gateway",
                 ], commands)
                 self.assertEqual(
                     start.COMPOSE + ["build", "--no-cache", "python-base"] in commands,
@@ -46,10 +64,10 @@ class LocalStartupTests(unittest.TestCase):
     def test_status_does_not_acquire_startup_lock(self):
         with patch.object(start.sys, "argv", ["start.py", "status"]):
             with patch.object(start, "run") as run, patch.object(start.fcntl, "flock") as lock:
-                run.return_value.stdout = "db\nweb\nmain-app-auth\n"
+                run.return_value.stdout = "db\nchatbot-backend\nmain-app-auth\n"
                 start.main()
                 lock.assert_not_called()
-                self.assertEqual(run.call_args.args[0], start.COMPOSE + ["ps", "-a", "db", "web", "main-app-auth"])
+                self.assertEqual(run.call_args.args[0], start.COMPOSE + ["ps", "-a", "db", "chatbot-backend", "main-app-auth"])
 
     def test_existing_configuration_is_not_replaced(self):
         configured = {

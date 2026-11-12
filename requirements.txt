@@ -6,4 +6,3 @@ pydantic-settings
 python-dotenv
 # requests est utilisé pour les appels aux API externes.
 requests
-sentence-transformers

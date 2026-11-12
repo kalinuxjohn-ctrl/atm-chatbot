@@ -1,0 +1,13 @@
+{
+  "catalog_number": 1,
+  "code": "01",
+  "label": "Logiciel défectueux",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 01 : défaut logiciel.\nÉteindre l'appareil puis le remettre en marche.\nSi la panne persiste malgré l'intervention, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 6,
+    "kind": "error"
+  }
+}

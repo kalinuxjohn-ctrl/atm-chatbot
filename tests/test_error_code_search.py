@@ -16,8 +16,8 @@ client = TestClient(app)
 def _inserer_donnees_test(db):
     db.execute(text("INSERT INTO panne (fault_id, code, name) VALUES (9001, 'P001', 'Surchauffe moteur') ON CONFLICT DO NOTHING"))
     db.execute(text("""
-        INSERT INTO code_erreur (error_code_id, code, description, fault_id)
-        VALUES (9001, 'E42', 'Code test', 9001)
+        INSERT INTO code_erreur (error_code_id, catalog_number, code, description, fault_id)
+        VALUES (9001, 9001, 'E42', 'Code test', 9001)
         ON CONFLICT DO NOTHING
     """))
     db.commit()

@@ -37,6 +37,7 @@ ICONS_USED_BY_THE_APP = {
     "settings": "settings",
     "shield": "shield-check",
     "logout": "log-out",
+    "collapseSidebar": "chevron-first",
     "sun": "sun",
     "moon": "moon",
     "wrench": "wrench",

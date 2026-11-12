@@ -72,7 +72,7 @@ class UnderstoodMessage(BaseModel):
         constrain(schema)
         return schema
 
-    @field_validator("photo_text", "photo_meaning", mode="before")
+    @field_validator("photo_text", "photo_meaning", "error_code_text", mode="before")
     @classmethod
     def _empty_text_to_none(cls, value):
         """Une chaîne vide ou faite d'espaces vaut « rien lu »."""
@@ -111,6 +111,6 @@ class UnderstoodMessage(BaseModel):
     @model_validator(mode="after")
     def _reply_required_outside_diagnostic(self):
         # Sans réponse, le technicien n'aurait rien : réponse inexploitable (-> 503).
-        if self.intent == "conversation" and not (self.reply or "").strip():
+        if self.intent == "conversation" and not self.error_code_text and not (self.reply or "").strip():
             raise ValueError("Réponse absente pour un message hors diagnostic.")
         return self

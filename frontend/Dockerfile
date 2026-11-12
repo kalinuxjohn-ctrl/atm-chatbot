@@ -25,6 +25,6 @@ EXPOSE 5173
 
 # Vérifie que le serveur web répond depuis le conteneur.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD python -c "from urllib.request import urlopen; urlopen('http://127.0.0.1:5173/', timeout=2)"
+    CMD python -c "from urllib.request import urlopen; urlopen('http://127.0.0.1:5173/health', timeout=2)"
 
 CMD ["python", "server.py"]
