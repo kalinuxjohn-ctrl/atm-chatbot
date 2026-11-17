@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Carte | Espace techniciens</title>
+    <link rel="icon" type="image/svg+xml" href="/shared/images/favicon.svg">
+    <script src="/shared/js/applySavedTheme.js"></script>
+    <link rel="stylesheet" href="/shared/css/base.css">
+    <link rel="stylesheet" href="/map/vendor/leaflet/leaflet.css">
+    <link rel="stylesheet" href="/map/vendor/maplibre-gl/maplibre-gl.css">
+    <link rel="stylesheet" href="/map/css/map.css">
+    <!-- Librairies servies en local (pas de CDN) : Leaflet crée la variable globale L. -->
+    <script src="/map/vendor/leaflet/leaflet.js"></script>
+    <script type="module" src="/shared/js/connectedPageShell.js"></script>
+    <script type="module" src="/map/js/mapPage.js"></script>
+  </head>
+  <body class="map-page">
+    <header data-page-shell></header>
+    <main class="map-frame">
+      <div class="map-canvas" data-map-canvas aria-label="Carte des points partagés"></div>
+
+      <!-- Barre flottante : actions, puis filtres par catégorie (qui servent aussi de légende). -->
+      <div class="map-toolbar">
+        <div class="map-toolbar-actions">
+          <button class="button button-secondary button-small" type="button" data-locate-me>
+            <span data-icon="locate"></span><span>Ma position</span>
+          </button>
+          <button class="button button-secondary button-small" type="button" data-show-nearby>
+            <span data-icon="radar"></span><span>Points proches</span>
+          </button>
+        </div>
+        <div class="map-category-filters" role="radiogroup" aria-label="Filtrer par catégorie" data-category-filters></div>
+      </div>
+
+      <p class="map-hint" data-map-hint><span data-icon="plus"></span>Cliquez sur la carte pour ajouter un lieu</p>
+      <p class="form-error map-status" data-map-status role="status" hidden></p>
+
+      <aside class="card map-side-panel" data-point-form-panel hidden>
+        <form data-point-form novalidate>
+          <div class="card-header">
+            <h2 data-point-form-title>Nouveau lieu</h2>
+            <button class="icon-button" type="button" data-cancel-point-form aria-label="Fermer"><span data-icon="close"></span></button>
+          </div>
+          <label class="form-field">Titre
+            <input name="title" required maxlength="120" placeholder="Ex. GAB agence centre-ville">
+          </label>
+          <label class="form-field">Catégorie
+            <select name="category"></select>
+          </label>
+          <label class="form-field">Description
+            <textarea name="description" rows="4" maxlength="2000" placeholder="Accès, horaires, code, contact…"></textarea>
+          </label>
+          <p class="map-form-coordinates" data-point-form-coordinates></p>
+          <p class="form-error" data-point-form-error role="alert" hidden></p>
+          <div class="map-form-actions">
+            <button class="button" type="submit">Enregistrer</button>
+            <button class="button button-secondary" type="button" data-cancel-point-form>Annuler</button>
+          </div>
+        </form>
+      </aside>
+
+      <aside class="card map-side-panel" data-nearby-panel hidden>
+        <div class="card-header">
+          <h2>Points proches</h2>
+          <button class="icon-button" type="button" data-close-nearby aria-label="Fermer"><span data-icon="close"></span></button>
+        </div>
+        <p class="muted" data-nearby-summary></p>
+        <ol class="nearby-point-list" data-nearby-list></ol>
+      </aside>
+
+      <aside class="card map-side-panel" data-route-panel hidden>
+        <div class="card-header">
+          <h2>Itinéraire</h2>
+          <button class="icon-button" type="button" data-close-route aria-label="Fermer l’itinéraire"><span data-icon="close"></span></button>
+        </div>
+        <p><strong data-route-destination></strong></p>
+        <p class="muted" data-route-departure></p>
+        <div class="map-form-actions">
+          <button class="button button-secondary button-small" type="button" data-route-locate>Ma position</button>
+          <button class="button button-secondary button-small" type="button" data-route-pick-start>Départ sur la carte</button>
+        </div>
+        <form data-route-form>
+          <label class="form-field">Déplacement
+            <select name="mode">
+              <option value="walking">À pied</option>
+              <option value="cycling">Vélo</option>
+              <option value="motorcycle">Moto (profil voiture)</option>
+              <option value="driving" selected>Voiture</option>
+            </select>
+          </label>
+          <label class="form-field">Priorité
+            <select name="preference">
+              <option value="shortest">Distance la plus courte</option>
+              <option value="fastest">Temps le plus court</option>
+            </select>
+          </label>
+          <div class="map-form-actions">
+            <button class="button" type="submit">Tracer l’itinéraire</button>
+            <button class="button button-secondary" type="button" data-clear-route>Effacer</button>
+          </div>
+        </form>
+        <p data-route-summary role="status"></p>
+        <p class="form-error" data-route-status role="status" hidden></p>
+      </aside>
+    </main>
+  </body>
+</html>

@@ -1,166 +1,394 @@
 """
-Générateur d'embeddings (vectorisation de texte) pour la recherche sémantique.
+Générateur d'embeddings pour la recherche sémantique.
 
-Comment ça marche, en une phrase : un modèle de réseau de neurones
-(SentenceTransformer) lit une phrase et la transforme en une liste de
-nombres (un vecteur) telle que deux phrases proches en sens ont des vecteurs
-proches géométriquement. C'est CE modèle qui fait tout le travail de
-compréhension du langage -- retrieval_service.py ne fait ensuite qu'une
-comparaison mathématique (cosinus) entre vecteurs, aucune compréhension du
-texte ne s'y passe.
+Le modèle d'embedding transforme un texte en vecteur numérique.
+La recherche sémantique compare ensuite ces vecteurs avec pgvector.
 
-Le choix du modèle a donc un impact DIRECT sur la qualité de toute la
-recherche par symptôme, indépendamment du reste du code :
-- Un modèle entraîné sur la mauvaise langue rapprochera des phrases qui ne
-  se ressemblent pas vraiment (et inversement), quelle que soit la qualité
-  du SQL autour. Les techniciens écrivant en français, on utilise ici
-  **Solon-embeddings-large-0.1** (OrdalieTech), un modèle spécialisé
-  français : à ce jour l'un des meilleurs modèles d'embeddings open-source
-  pour le français (meilleur score que CamemBERT-large ou même
-  cohere/embed-multilingual-v3 sur les benchmarks français publiés par
-  l'auteur), avec une fenêtre de contexte de 512 tokens (~350-400 mots),
-  plus large que la plupart des alternatives -- utile si un technicien
-  décrit un symptôme en plusieurs phrases plutôt qu'en une ligne. Modèle
-  volumineux (560M paramètres, ~2.2 Go) : raisonnable en développement sur
-  une machine puissante, à réévaluer si le déploiement prod tourne sur du
-  matériel plus modeste (voir `embedding_model_name` dans
-  app/core/config.py, modifiable sans toucher au code).
-- Le modèle est mis en cache après le premier chargement (voir
-  _get_encoder ci-dessous) : le charger à chaque appel rechargerait tous
-  ses poids depuis le disque à chaque recherche, ce qui serait beaucoup
-  trop lent pour un usage interactif.
-- Solon suit la convention "asymétrique" utilisée par de nombreux modèles
-  d'embeddings récents (famille E5) : le texte de RECHERCHE doit être
-  préfixé par "query : " pour de meilleures performances, alors que les
-  textes déjà enregistrés (les symptômes stockés en base) n'ont besoin
-  d'aucun préfixe. C'est pour ça que `generate_embedding` prend un
-  paramètre `is_query` -- retrieval_service.py l'active pour le texte tapé
-  par le technicien, intervention_service.py et le seed ne l'activent pas
-  pour les textes qu'ils enregistrent.
-
-Ce fichier :
-- Utilise ce modèle s'il est disponible (installé + poids téléchargeables).
-- Génère automatiquement un vecteur "de secours" (sans réseau de neurones,
-  juste un hash du texte) si l'IA plante ou est absente -- pour que le
-  reste de l'application continue de fonctionner en dégradé plutôt que de
-  planter.
-- Harmonise la taille du vecteur pour la base de données (utile surtout
-  pour le fallback ; avec Solon la taille correspond déjà nativement).
+Structuré en interface (EmbeddingProvider) + implémentation (VoyageProvider),
+même principe que LLMProvider dans claude_service.py : un futur changement de
+fournisseur se fait en ajoutant une classe ici, sans toucher à
+retrieval_service.py, case_retrieval_service.py ou seed_demo_data.py -- ils
+n'appellent jamais un provider directement, seulement generate_embedding()
+(ou generate_embeddings_batch() pour plusieurs textes d'un coup), dont les
+signatures ne changent pas.
 """
 
-import hashlib
+from __future__ import annotations
+
 import math
 import re
+import time
+from abc import ABC, abstractmethod
 from functools import lru_cache
+from time import perf_counter
 from typing import Sequence
 
+import requests
+
 from app.core.config import settings
-
-# Modèle par défaut si aucun n'est précisé en configuration (voir
-# app/core/config.py, `embedding_model_name`) : Solon, spécialisé français
-# -- voir l'explication en tête de fichier sur pourquoi ce choix.
-DEFAULT_MODEL_NAME = "OrdalieTech/Solon-embeddings-large-0.1"
-
-# Préfixe recommandé par Solon (convention de type E5) pour le texte de
-# RECHERCHE uniquement -- jamais pour les textes déjà enregistrés en base.
-QUERY_PREFIX = "query : "
+from app.core.errors import ExternalServiceUnavailableError, InvalidReferenceError
+from app.core.tracing import trace
 
 
-def _clean_text(raw_text: str | None) -> str:
-    if raw_text is None:
+DEFAULT_VOYAGE_MODEL_NAME = "voyage-3-large"
+
+# Palier gratuit Voyage sans moyen de paiement = 3 requêtes/minute (vérifié
+# dans la doc Voyage). Sur un 429, on attend puis on réessaie plutôt que
+# d'abandonner tout de suite -- utile pour le seed (plusieurs textes à la
+# suite) comme en usage réel (deux recherches rapprochées).
+_MAX_RETRIES_ON_RATE_LIMIT = 3
+_RETRY_WAIT_SECONDS = 22  # un peu plus que 60s/3RPM, marge de sécurité
+# Erreurs serveur passagères (5xx) : on réessaie aussi, mais sans attendre
+# aussi longtemps qu'après un 429.
+_RETRY_WAIT_SECONDS_ON_SERVER_ERROR = 2
+
+# Nombre de vecteurs de RECHERCHE gardés en mémoire : une même phrase est
+# souvent vectorisée plusieurs fois au cours d'une seule requête
+# (cas similaires puis repli sur les stats, rattachement au catalogue...),
+# et chaque appel compte dans le quota Voyage.
+_QUERY_CACHE_SIZE = 256
+
+
+class EmbeddingUnavailableError(ExternalServiceUnavailableError):
+    """
+    Impossible d'obtenir un embedding (réseau, clé, quota...). Hérite de
+    RuntimeError (via ExternalServiceUnavailableError) : les appelants qui
+    attrapaient déjà RuntimeError continuent de fonctionner.
+    """
+
+
+def _clean_text(input_text: str | None) -> str:
+    """Nettoie et normalise un texte avant sa vectorisation."""
+    if input_text is None:
         return ""
-    return re.sub(r"\s+", " ", raw_text).strip()
+    return re.sub(r"\s+", " ", input_text).strip()
 
 
-def _fit_size(vector: Sequence[float], target_size: int) -> list[float]:
-    if len(vector) == target_size:
-        return list(vector)
-    if len(vector) < target_size:
-        padded = list(vector) + [0.0] * (target_size - len(vector))
-        return padded
-    return list(vector[:target_size])
+class EmbeddingProvider(ABC):
+    """Interface commune à tout fournisseur d'embedding."""
+
+    @abstractmethod
+    def embed(self, cleaned_text: str, is_query: bool) -> list[float]:
+        """Renvoie le vecteur d'embedding d'un seul texte."""
+
+    def embed_batch(self, cleaned_texts: list[str], is_query: bool) -> list[list[float]]:
+        """
+        Plusieurs textes en un coup. Par défaut, un appel par texte (marche
+        pour n'importe quel provider sans effort) -- les providers qui
+        supportent un vrai appel groupé (Voyage) redéfinissent cette
+        méthode pour économiser des requêtes, ce qui compte énormément sur
+        un palier à 3 requêtes/minute.
+        """
+        return [self.embed(text, is_query) for text in cleaned_texts]
 
 
-def _fallback_embedding(raw_text: str | None, vector_size: int) -> list[float]:
-    cleaned = _clean_text(raw_text)
-    tokens = re.findall(r"[a-z0-9]+", cleaned.lower())
-    if not tokens:
-        return [0.0] * vector_size
-
-    values = [0.0] * vector_size
-    for index, token in enumerate(tokens):
-        digest = hashlib.sha256(token.encode("utf-8")).digest()
-        weight = (int.from_bytes(digest[:8], "big") / float(2 ** 64 - 1)) * 2.0 - 1.0
-        slot = (index * 17 + len(token)) % vector_size
-        values[slot] += weight
-
-    norm = math.sqrt(sum(value * value for value in values))
-    if norm == 0:
-        return [0.0] * vector_size
-    return [value / norm for value in values]
-
-
-@lru_cache(maxsize=4)
-def _get_encoder(model_name: str):
+class VoyageProvider(EmbeddingProvider):
     """
-    Charge le modèle de réseau de neurones UNE SEULE FOIS par nom de modèle,
-    puis réutilise l'instance déjà chargée en mémoire pour tous les appels
-    suivants (@lru_cache). Sans ce cache, chaque recherche de symptôme
-    rechargerait les poids depuis le disque, ce qui serait beaucoup trop
-    lent pour un usage interactif.
-
-    Utilise le GPU (CUDA) s'il est détecté par torch -- pertinent ici avec
-    de la VRAM disponible, sinon bascule automatiquement sur le CPU.
+    Appelle l'API Voyage AI (fournisseur d'embeddings recommandé par
+    Anthropic). output_dimension doit être une des valeurs supportées par
+    le modèle choisi (256/512/1024/2048 pour voyage-3-large) -- doit
+    correspondre à settings.embedding_dimensions / la colonne pgvector.
     """
-    from sentence_transformers import SentenceTransformer
 
-    try:
-        import torch
+    _ENDPOINT = "https://api.voyageai.com/v1/embeddings"
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    except ImportError:
-        device = "cpu"
+    def __init__(self, api_key: str, model_name: str, output_dimension: int, timeout: int = 30):
+        self.api_key = api_key
+        self.model_name = model_name
+        self.output_dimension = output_dimension
+        self.timeout = timeout
 
-    return SentenceTransformer(model_name, device=device)
+    def embed(self, cleaned_text: str, is_query: bool) -> list[float]:
+        return self._request_embeddings([cleaned_text], is_query)[0]
+
+    def embed_batch(self, cleaned_texts: list[str], is_query: bool) -> list[list[float]]:
+        return self._request_embeddings(cleaned_texts, is_query)
+
+    def _request_embeddings(self, texts: list[str], is_query: bool) -> list[list[float]]:
+        if not self.api_key:
+            raise EmbeddingUnavailableError("Aucune clé API Voyage configurée (VOYAGE_API_KEY).")
+
+        for tentative in range(1, _MAX_RETRIES_ON_RATE_LIMIT + 1):
+            try:
+                response = requests.post(
+                    self._ENDPOINT,
+                    headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+                    json={
+                        "input": texts,
+                        "model": self.model_name,
+                        "input_type": "query" if is_query else "document",
+                        "output_dimension": self.output_dimension,
+                    },
+                    timeout=self.timeout,
+                )
+            except requests.Timeout as erreur:
+                raise EmbeddingUnavailableError(f"Voyage n'a pas répondu dans le délai imparti ({self.timeout}s).") from erreur
+            except requests.ConnectionError as erreur:
+                raise EmbeddingUnavailableError("Impossible de joindre l'API Voyage -- vérifiez la connexion réseau.") from erreur
+            except requests.RequestException as erreur:
+                raise EmbeddingUnavailableError(f"Erreur réseau lors de l'appel Voyage ({type(erreur).__name__}).") from erreur
+
+            if response.status_code == 429:
+                if tentative == _MAX_RETRIES_ON_RATE_LIMIT:
+                    raise EmbeddingUnavailableError(
+                        f"Limite de requêtes Voyage atteinte, {_MAX_RETRIES_ON_RATE_LIMIT} tentatives épuisées."
+                    )
+                trace(
+                    "EMBEDDING",
+                    "Limite Voyage atteinte, nouvelle tentative après attente",
+                    attempt=tentative,
+                    wait_seconds=_RETRY_WAIT_SECONDS,
+                )
+                time.sleep(_RETRY_WAIT_SECONDS)
+                continue
+
+            if response.status_code >= 500 and tentative < _MAX_RETRIES_ON_RATE_LIMIT:
+                trace(
+                    "EMBEDDING",
+                    "Erreur serveur Voyage, nouvelle tentative",
+                    attempt=tentative,
+                    status_code=response.status_code,
+                )
+                time.sleep(_RETRY_WAIT_SECONDS_ON_SERVER_ERROR)
+                continue
+
+            if response.status_code in (401, 403):
+                raise EmbeddingUnavailableError("Clé API Voyage invalide ou expirée.")
+            try:
+                response.raise_for_status()
+            except requests.HTTPError as erreur:
+                raise EmbeddingUnavailableError(f"Voyage a répondu avec une erreur ({response.status_code}).") from erreur
+
+            try:
+                payload = response.json()
+                # L'API renvoie les résultats dans "index" croissant --
+                # trié explicitement pour garantir le même ordre que `texts`,
+                # plutôt que de supposer que la réponse arrive déjà triée.
+                ordered = sorted(payload["data"], key=lambda item: item["index"])
+                if [item["index"] for item in ordered] != list(range(len(texts))):
+                    raise ValueError("Indices d'embeddings absents ou dupliqués.")
+                vectors = [item["embedding"] for item in ordered]
+                for vector in vectors:
+                    _validate_dimensions(vector, self.output_dimension)
+            except (ValueError, KeyError, IndexError, TypeError, OverflowError) as erreur:
+                raise EmbeddingUnavailableError(
+                    f"Voyage a renvoyé des embeddings inexploitables ({type(erreur).__name__}) : {erreur}"
+                ) from erreur
+            if len(vectors) != len(texts):
+                raise EmbeddingUnavailableError(
+                    f"Voyage a renvoyé {len(vectors)} embedding(s) pour {len(texts)} texte(s) envoyé(s)."
+                )
+            return vectors
+
+        raise EmbeddingUnavailableError("Échec inattendu de l'appel Voyage.")
+
+
+def _resolve_provider(model_name_override: str | None) -> tuple[EmbeddingProvider, str]:
+    """
+    Point d'extension unique : brancher un nouveau fournisseur d'embedding
+    plus tard se fait ici (ajouter une classe + une branche), jamais en
+    modifiant generate_embedding()/generate_embeddings_batch() ou leurs
+    appelants.
+    """
+    provider_name = settings.embedding_provider
+
+    if provider_name != "voyage":
+        raise RuntimeError(
+            f"Fournisseur d'embedding inconnu ou plus supporté : '{provider_name}'. "
+            f"Seule valeur valide : 'voyage'."
+        )
+
+    selected_model = model_name_override or settings.voyage_model or DEFAULT_VOYAGE_MODEL_NAME
+    return (
+        VoyageProvider(
+            api_key=settings.voyage_api_key,
+            model_name=selected_model,
+            output_dimension=settings.embedding_dimensions,
+        ),
+        selected_model,
+    )
+
+
+def _validate_dimensions(vector: Sequence[float], expected_dimensions: int) -> None:
+    """
+    Vérifie la dimension et les valeurs du vecteur reçu.
+
+    Un embedding ne doit pas être complété ou tronqué artificiellement :
+    une différence de dimension indique une incompatibilité de configuration.
+    """
+    if not isinstance(vector, (list, tuple)):
+        raise ValueError("L'embedding reçu n'est pas une liste de nombres.")
+    actual_dimensions = len(vector)
+
+    if actual_dimensions != expected_dimensions:
+        trace(
+            "ERROR",
+            "Dimension d'embedding incompatible",
+            expected_dimensions=expected_dimensions,
+            actual_dimensions=actual_dimensions,
+        )
+        raise ValueError(
+            "Dimension d'embedding incompatible : "
+            f"le modèle produit {actual_dimensions} dimensions, "
+            f"mais {expected_dimensions} sont configurées."
+        )
+    if not vector or any(
+        isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)
+        for value in vector
+    ):
+        raise ValueError("L'embedding reçu contient des valeurs non numériques ou non finies.")
+    if not any(vector):
+        raise ValueError("Le fournisseur a renvoyé un embedding nul inexploitable.")
 
 
 def generate_embedding(
-    raw_text: str | None,
+    input_text: str | None,
     model_name: str | None = None,
     dimensions: int | None = None,
     is_query: bool = False,
 ) -> list[float]:
     """
-    Return a deterministic vector for the text, with a model fallback when needed.
+    Génère un embedding normalisé pour un texte, via le fournisseur actif
+    (settings.embedding_provider).
 
-    is_query=True : à utiliser uniquement pour le texte tapé par le
-    technicien au moment de la recherche (voir QUERY_PREFIX ci-dessus).
-    Laisser à False pour tout texte qu'on enregistre en base (symptôme
-    stocké dans une intervention) -- ce sont des "passages", pas des
-    "queries", au sens de Solon.
+    Pour plusieurs textes à la suite (ex. le seed de démonstration),
+    préférer generate_embeddings_batch() : un seul appel réseau au lieu
+    d'un par texte, ce qui compte énormément sur un palier gratuit limité
+    en requêtes par minute.
     """
-    vector_size = dimensions or settings.embedding_dimensions or 1024
-    cleaned = _clean_text(raw_text)
-    if not cleaned:
-        return [0.0] * vector_size
+    vector_dimensions = dimensions or settings.embedding_dimensions or 1024
+    cleaned_text = _clean_text(input_text)
 
-    if is_query:
-        cleaned = f"{QUERY_PREFIX}{cleaned}"
+    trace(
+        "PROCESSING",
+        "Texte préparé pour l'embedding",
+        input_length=len(input_text) if input_text is not None else 0,
+        cleaned_length=len(cleaned_text),
+    )
 
+    if not cleaned_text:
+        raise InvalidReferenceError("Un texte non vide est requis pour générer un embedding.")
+
+    selected_model = model_name or settings.voyage_model or DEFAULT_VOYAGE_MODEL_NAME
+
+    trace(
+        "EMBEDDING",
+        "Génération de l'embedding démarrée",
+        provider=settings.embedding_provider,
+        model=selected_model,
+        is_query=is_query,
+    )
+
+    started_at = perf_counter()
     try:
-        chosen_model = model_name or settings.embedding_model_name or DEFAULT_MODEL_NAME
-        encoder = _get_encoder(chosen_model)
-        # normalize_embeddings=True : le modèle renvoie directement un
-        # vecteur de norme 1, cohérent avec _fallback_embedding ci-dessus
-        # et avec l'opérateur de similarité cosinus (<=>) utilisé côté
-        # pgvector dans retrieval_service.py.
-        vector = encoder.encode(cleaned, normalize_embeddings=True)
-        return _fit_size(vector.tolist(), vector_size)
-    except Exception:
-        # L'application est conçue pour fonctionner sans service
-        # d'embeddings externe/neuronal si besoin (modèle absent, erreur de
-        # chargement, pas de réseau pour le télécharger la première fois...).
-        return _fallback_embedding(cleaned, vector_size)
+        if is_query:
+            # Copie : l'appelant ne doit jamais pouvoir modifier le vecteur gardé en cache.
+            vector = list(_cached_query_embedding(cleaned_text, model_name))
+        else:
+            provider, _ = _resolve_provider(model_name)
+            vector = provider.embed(cleaned_text, is_query)
+        _validate_dimensions(vector, vector_dimensions)
+    except (RuntimeError, ValueError, TypeError, OverflowError) as error:
+        trace(
+            "ERROR",
+            "Échec de la génération de l'embedding",
+            provider=settings.embedding_provider,
+            model=selected_model,
+            duration_ms=round((perf_counter() - started_at) * 1000, 2),
+            error_type=type(error).__name__,
+        )
+        raise EmbeddingUnavailableError(
+            f"Impossible de générer l'embedding avec le modèle '{selected_model}' : {error}"
+        ) from error
+
+    trace(
+        "EMBEDDING",
+        "Embedding généré",
+        dimensions=len(vector),
+        provider=settings.embedding_provider,
+        model=selected_model,
+        duration_ms=round((perf_counter() - started_at) * 1000, 2),
+    )
+
+    return vector
 
 
+def generate_embeddings_batch(
+    input_texts: list[str],
+    model_name: str | None = None,
+    dimensions: int | None = None,
+    is_query: bool = False,
+) -> list[list[float]]:
+    """
+    Même chose que generate_embedding(), mais pour plusieurs textes en UN
+    SEUL appel réseau (quand le provider le permet -- voir
+    EmbeddingProvider.embed_batch). Pensé pour le seed de démonstration et
+    tout futur traitement par lot, pas pour une recherche technicien
+    unitaire (qui reste generate_embedding()).
+    """
+    vector_dimensions = dimensions or settings.embedding_dimensions or 1024
+    cleaned_texts = [_clean_text(text) for text in input_texts]
+    if not cleaned_texts:
+        return []
+
+    if not all(cleaned_texts):
+        raise InvalidReferenceError("Chaque texte du lot doit être non vide pour générer des embeddings.")
+
+    selected_model = model_name or settings.voyage_model or DEFAULT_VOYAGE_MODEL_NAME
+    trace(
+        "EMBEDDING",
+        "Génération groupée d'embeddings démarrée",
+        provider=settings.embedding_provider,
+        model=selected_model,
+        text_count=len(cleaned_texts),
+        is_query=is_query,
+    )
+
+    started_at = perf_counter()
+    try:
+        provider, selected_model = _resolve_provider(model_name)
+        vectors = provider.embed_batch(cleaned_texts, is_query)
+        if len(vectors) != len(cleaned_texts):
+            raise ValueError("Le nombre d'embeddings reçus ne correspond pas au nombre de textes.")
+        for vector in vectors:
+            _validate_dimensions(vector, vector_dimensions)
+    except (RuntimeError, ValueError, TypeError, OverflowError) as error:
+        trace(
+            "ERROR",
+            "Échec de la génération groupée d'embeddings",
+            provider=settings.embedding_provider,
+            model=selected_model,
+            duration_ms=round((perf_counter() - started_at) * 1000, 2),
+            error_type=type(error).__name__,
+        )
+        raise EmbeddingUnavailableError(
+            f"Impossible de générer les embeddings avec le modèle '{selected_model}' : {error}"
+        ) from error
+
+    trace(
+        "EMBEDDING",
+        "Embeddings groupés générés",
+        text_count=len(vectors),
+        provider=settings.embedding_provider,
+        model=selected_model,
+        duration_ms=round((perf_counter() - started_at) * 1000, 2),
+    )
+
+    return vectors
+
+
+@lru_cache(maxsize=_QUERY_CACHE_SIZE)
+def _cached_query_embedding(cleaned_text: str, model_name: str | None) -> tuple[float, ...]:
+    """
+    Vecteur de recherche mis en cache (tuple immuable). Une exception n'est
+    jamais mise en cache par lru_cache : un échec réseau sera bien retenté
+    au prochain appel.
+    """
+    provider, _ = _resolve_provider(model_name)
+    vector = provider.embed(cleaned_text, True)
+    _validate_dimensions(vector, settings.embedding_dimensions)
+    return tuple(vector)
+
+
+# Alias conservé pour les appels existants.
 embed_text = generate_embedding

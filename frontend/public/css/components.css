@@ -1,0 +1,331 @@
+.response-intro p {
+  margin: 0;
+}
+
+.message-bubble .response-intro + .identified-heading {
+  margin-top: 13px;
+}
+
+.chat-panel[aria-busy="true"] .send-button {
+  opacity: 0.55;
+}
+
+.message-bubble .solution-card + .solution-card {
+  margin-top: 7px;
+}
+
+.action-id-note {
+  display: block;
+  margin-top: 5px;
+  color: #798899;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.error-retry {
+  margin-top: 3px;
+}
+
+/* ==========================================================================
+   Composants partagés par plusieurs pages (accueil, ATM-Chatbot)
+   ========================================================================== */
+
+/* ---------- Bouton d'en-tête (variante <button> du lien .header-action) ---------- */
+.header-action-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ---------- Avatars SVG (components/avatar.js) ----------
+   data-state="speaking" fait bouger la bouche ; les yeux clignent en continu. */
+.avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.avatar svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Avatar défini par une image (champ `image` dans avatar.js) : remplit son cadre rond. */
+.avatar .avatar-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar .avatar-eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: avatar-blink 4.5s infinite;
+}
+
+.avatar .avatar-mouth {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 150ms ease;
+}
+
+.avatar[data-state="speaking"] .avatar-mouth {
+  animation: avatar-talk 700ms ease-in-out infinite alternate;
+}
+
+.avatar[data-state="listening"] .avatar-mouth {
+  transform: scale(0.8, 1.6);
+}
+
+.avatar-thinking-arm {
+  opacity: 0;
+  transform-origin: 87px 108px;
+  transform: rotate(65deg) translateY(12px);
+}
+
+.avatar[data-state="thinking"] .avatar-thinking-arm {
+  animation: avatar-think-hand 6s ease-in-out infinite;
+}
+
+.avatar[data-state="thinking"] .avatar-head {
+  transform-origin: 60px 76px;
+  animation: avatar-think-head 6s ease-in-out infinite;
+}
+
+.avatar[data-state="thinking"] .avatar-eyes {
+  animation: avatar-think-eyes 6s ease-in-out infinite;
+}
+
+.avatar[data-state="thinking"] .avatar-image {
+  animation: avatar-think-head 6s ease-in-out infinite;
+}
+
+@keyframes avatar-think-hand {
+  0%, 12%, 90%, 100% { opacity: 0; transform: rotate(65deg) translateY(12px); }
+  22% { opacity: 1; transform: rotate(0deg); }
+  35%, 65% { opacity: 1; transform: rotate(-5deg); }
+  78% { opacity: 1; transform: rotate(0deg); }
+}
+
+@keyframes avatar-think-head {
+  0%, 15%, 85%, 100% { transform: rotate(0deg) translateY(0); }
+  35%, 65% { transform: rotate(-8deg) translateY(-2px); }
+}
+
+@keyframes avatar-think-eyes {
+  0%, 20%, 80%, 100% { transform: translate(0, 0); }
+  35%, 65% { transform: translate(1.5px, -2.5px); }
+  72% { transform: scaleY(0.1); }
+}
+
+.avatar[data-state="error"] :is(.avatar-head, .avatar-image) {
+  transform-origin: 60px 76px;
+  animation: avatar-error-head 2.8s ease-in-out both;
+}
+
+.avatar[data-state="error"] :is(.avatar-brow-left, .avatar-brow-right) {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: avatar-error-brow 2.8s ease-in-out both;
+}
+
+.avatar[data-state="error"] .avatar-brow-right {
+  animation-name: avatar-error-brow-right;
+}
+
+.avatar[data-state="error"] .avatar-mouth {
+  animation: avatar-error-mouth 2.8s ease-in-out both;
+}
+
+@keyframes avatar-error-head {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  22% { transform: translate(0, 3px) rotate(0deg); }
+  38%, 62% { transform: translate(-2px, 3px) rotate(-6deg); }
+  50%, 74% { transform: translate(2px, 3px) rotate(6deg); }
+}
+
+@keyframes avatar-error-brow {
+  0%, 100% { transform: rotate(0deg); }
+  22%, 74% { transform: rotate(-18deg); }
+}
+
+@keyframes avatar-error-brow-right {
+  0%, 100% { transform: rotate(0deg); }
+  22%, 74% { transform: rotate(18deg); }
+}
+
+@keyframes avatar-error-mouth {
+  0%, 100% { transform: scale(1); }
+  22%, 74% { transform: scale(0.65, 1.4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatar[data-state="error"] :is(.avatar-head, .avatar-image, .avatar-brow-left, .avatar-brow-right, .avatar-mouth) {
+    animation: none !important;
+  }
+
+  .avatar[data-state="thinking"] :is(.avatar-head, .avatar-eyes, .avatar-thinking-arm, .avatar-image) {
+    animation: none !important;
+  }
+
+  .avatar[data-state="thinking"] .avatar-thinking-arm {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes avatar-blink {
+  0%, 94%, 100% { transform: scaleY(1); }
+  97% { transform: scaleY(0.1); }
+}
+
+@keyframes avatar-talk {
+  from { transform: scale(1, 1); }
+  to { transform: scale(0.96, 1.5); }
+}
+
+.message-markdown :is(h3, h4, h5, h6) {
+  margin: 1em 0 0.45em;
+  color: inherit;
+  font-size: 1.05em;
+  line-height: 1.4;
+}
+
+.message-markdown strong {
+  font-weight: 750;
+}
+
+.message-markdown :is(ul, ol) {
+  margin: 0.6em 0;
+  padding-left: 1.5em;
+}
+
+.message-markdown li + li {
+  margin-top: 0.4em;
+}
+
+.message-markdown code {
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+  background: var(--soft-fill, rgba(100, 120, 150, 0.1));
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}
+
+.message-markdown pre {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.message-markdown > :first-child {
+  margin-top: 0;
+}
+
+/* ---------- Boîtes de dialogue (<dialog>) ---------- */
+.app-dialog {
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100vh - 40px);
+  padding: 0;
+  border: 1px solid #dfe6ec;
+  border-radius: 13px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 24px 60px rgba(16, 36, 58, 0.22);
+}
+
+.app-dialog[open] {
+  animation: dialog-in 220ms ease-out;
+}
+
+.app-dialog::backdrop {
+  background: rgba(16, 36, 58, 0.42);
+  backdrop-filter: blur(3px);
+}
+
+.dialog-form {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+}
+
+.dialog-header h2 {
+  margin: 0 0 6px;
+  color: var(--navy);
+  font-size: 19px;
+  letter-spacing: -0.4px;
+}
+
+.dialog-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- Champs de formulaire ---------- */
+.field {
+  display: grid;
+  gap: 6px;
+  color: #4b5b6e;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.field em {
+  color: var(--faint);
+  font-style: normal;
+  font-weight: 400;
+}
+
+.field small {
+  color: var(--faint);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.field input,
+.field select {
+  height: 40px;
+  padding: 0 11px;
+  border: 1px solid #d6e0e8;
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: #85b8b4;
+  outline: 3px solid rgba(22, 139, 135, 0.15);
+}
+
+.form-error {
+  margin: 0;
+  padding: 9px 11px;
+  border: 1px solid #efd3d3;
+  border-radius: 6px;
+  background: #fdf5f5;
+  color: var(--danger);
+  font-size: 11px;
+}

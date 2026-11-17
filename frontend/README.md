@@ -1,0 +1,269 @@
+# ATM Assistant
+
+Frontend vanilla HTML, CSS et JavaScript pour l’API FastAPI existante.
+
+Dans l'application integree, l'accueil est celui de la main app. Le chat
+n'affiche plus de barre laterale ni de panneau de contexte : Conversation,
+Nouvelle conversation est dans le menu deroulant du chatbot
+de la navigation principale retractable. Parametres est sous Appels :
+La meme fenetre defilante aligne Apparence, Notifications
+et les parametres Chat d'origine (avatar, voix et conversation), sans accordeons.
+Les preferences sont synchronisees avec le chat sans recharger la conversation.
+Le theme optionnel GAB (vert profond et or) est synchronise comme Clair et Sombre.
+Le technicien est affiche en haut, pres du Chat vocal. Les acces
+Diagnostic et Ajouter une intervention ont ete retires de cette page.
+En mode autonome, Nouvelle conversation et Parametres restent accessibles
+en haut de la conversation.
+
+Dans la pile complete lancee depuis la racine avec `docker compose up --build`,
+le nom affiche est construit depuis `APP_NAME=atm-chatbot` dans le `.env` racine.
+Un changement de nom demande un rebuild. Les chemins `/atm-chatbot/` restent fixes.
+Le mode de developpement autonome ci-dessous monte les sources `public` :
+ce montage remplace les fichiers de l'image, donc leurs textes restent ceux
+des sources, sans personnalisation du build.
+
+## Démarrage avec Docker
+
+Depuis la racine du projet, démarrez d’abord le backend et sa base de données :
+
+```powershell
+docker compose up -d
+```
+
+Puis, dans le dossier `frontend`, construisez et démarrez le frontend :
+
+```powershell
+cd frontend
+docker compose up --build -d
+```
+
+Ouvrez <http://localhost:5173>. Le backend reste accessible sur <http://localhost:8000>.
+
+> Le dossier local `public` est monté dans le conteneur en lecture seule.
+> Après une modification HTML, CSS, JavaScript ou d'image dans ce dossier,
+> enregistrez puis rafraîchissez la page : aucun redémarrage ni rebuild n'est
+> nécessaire. Le serveur envoie `Cache-Control: no-cache` : le navigateur
+> revérifie les fichiers à chaque chargement. Cela ne recharge pas
+> automatiquement une page déjà ouverte.
+> L’ATM-Chatbot se trouve sur <http://localhost:5173/atm-chatbot.html>, après connexion depuis l’accueil.
+
+Le conteneur frontend relaie `/api/*` vers `http://host.docker.internal:8000`, c’est-à-dire le port hôte publié par le service `chatbot-backend` du Compose backend. Le navigateur appelle le frontend seulement ; l’adresse du backend reste côté serveur.
+
+Correspondance des chemins dans le proxy (`server.py`) :
+
+| Appel du navigateur | Route backend |
+| --- | --- |
+| `/api/chat`, `/api/chat/stream`, `/api/chat/search-symptom` | identiques (le routeur FastAPI est déjà préfixé par `/api`) |
+| `/api/error_code/...`, `/api/usual_problem/...` | identiques |
+| `/api/intervention_add/...`, `/api/admin/...` | identiques |
+| `/api/health`, `/api/catalog/...`, `/api/interventions/...` | `/api` retiré : `/health`, `/catalog/...`, `/interventions/...` |
+
+Le chat écrit affiche progressivement les morceaux de rédaction via un flux
+NDJSON, relayé sans tampon par le proxy. Les actions et l'historique attendent
+la réponse finale validée ; une coupure signale clairement le texte incomplet.
+Les réponses locales et le mode vocal restent en un seul bloc.
+
+Sonnet 5.5 a un budget de génération de 45 s, également utilisé pour l'attente
+des en-têtes HTTP et l'inactivité réseau (voir le README racine).
+Une réponse peut nécessiter plusieurs appels :
+le proxy et la passerelle attendent jusqu'à 300 s, et le navigateur
+jusqu'à 305 s (marge pour recevoir une erreur du proxy).
+Le delai du proxy est configurable avec `PROXY_TIMEOUT_SECONDS`.
+
+Si le conteneur existait avant l'ajout du volume, appliquez une seule fois
+la nouvelle configuration depuis le dossier `frontend` :
+
+```powershell
+docker compose up -d --no-deps --force-recreate frontend
+```
+
+Les changements dans `public` seront ensuite visibles au rafraîchissement.
+Les fichiers `server.py`, `requirements.txt` et `Dockerfile` restent copiés
+dans l'image : après leur modification, reconstruisez le frontend :
+
+```powershell
+docker compose up --build -d
+```
+
+Pour consulter son état et ses journaux :
+
+```powershell
+docker compose ps
+docker compose logs -f frontend
+```
+
+Pour arrêter le frontend sans toucher aux conteneurs du backend :
+
+```powershell
+docker compose down
+```
+
+## Démarrage local sans Docker
+
+Vous pouvez aussi lancer le frontend directement avec Python :
+
+```powershell
+pip install -r requirements.txt   # voix françaises de l’ATM-Chatbot (edge-tts), facultatif
+python server.py
+```
+
+Dans ce mode, il utilise par défaut `http://127.0.0.1:8000` comme adresse de l’API. Pour changer l’adresse, définissez `API_BASE_URL` avant de lancer le serveur.
+
+## Pages
+
+L'accueil présente un titre à gauche, une photo fondue dans le fond à droite,
+deux cartes d'équipement (bleue pour le GAB, orange pour le TPE) et les services.
+Les cartes ouvrent `/diagnostic.html?device_type=gab` ou
+`/diagnostic.html?device_type=tpe` : le type est présélectionné, sans lancer de
+recherche. Toute autre valeur conserve la sélection par défaut.
+Les visuels sont extraits de l'image fournie pour le design : conseillère
+avec téléphone, guichet bleu et terminal orange. La mise en page s'adapte aux petits écrans et aux thèmes
+clair/sombre. La connexion à l’ATM-Chatbot reste accessible depuis l'accueil.
+
+Les images d'accueil sont stockées localement dans `public/assets/images/` :
+`conseillere-maintenance-telephone.png`, `guichet-automatique-bleu.png` et
+`terminal-paiement-orange.png`. Le fond blanc extérieur a été détouré pour
+intégrer les visuels à la page. Le fichier fourni reste intact ; aucun
+hébergement d'images externe n'est utilisé. Il s'agit de visuels d'illustration,
+pas de photos d'un membre de l'équipe ou d'un matériel installé.
+
+L’ATM-Chatbot utilise les mêmes accents verts que la navigation principale,
+avec des surfaces claires ou sombres selon le thème choisi dans les paramètres.
+Il n'a ni navigation latérale interne ni panneau de contexte.
+Pendant l'attente d'une réponse, les trois points restent affichés et l'avatar SVG
+anime une pose de réflexion (main au menton, tête inclinée et regard vers le haut).
+Les avatars personnalisés sous forme d'image s'inclinent uniquement. En mode
+mouvements réduits, la pose reste fixe.
+Les paramètres proposent trois avatars : technicienne, technicien et robot.
+Le robot utilise les mêmes animations de réflexion, parole et erreur et son
+choix est mémorisé comme celui des avatars humains.
+Lors d'une erreur, l'avatar baisse la tête, fronce les sourcils et fait un petit
+mouvement de désaccord, puis revient au repos après une seule séquence de 2,8 s.
+Les images personnalisées bougent sans modification du visage. Cette animation
+est désactivée en mode mouvements réduits ; le message et « Réessayer » restent accessibles.
+Les réponses du chatbot affichent un sous-ensemble Markdown : gras, italique,
+titres, listes et code. Le texte utilisateur reste littéral ; le HTML et les
+liens renvoyés par le modèle ne sont jamais exécutés ni rendus comme liens actifs.
+Les entrées des suggestions sont des lignes de texte sans icône de conversation
+répétée ; les codes d'erreur restent identifiables par leur code.
+De petits cercles décorent les choix des menus et
+se remplissent sur l'entrée active, en suivant les couleurs du thème.
+
+### Proposer une intervention
+
+Le bouton « Ajouter une intervention » du menu gauche (bleu sur fond nuit en
+mode clair, ambré en mode sombre ; icône de fiche,
+distincte du `+` de « Nouvelle conversation ») ouvre un formulaire indépendant.
+Une offre « Proposer une intervention » apparaît aussi sous une nouvelle recherche
+sans résultat pertinent : le premier symptôme est alors prérempli avec le problème
+recherché et la proposition conserve le lien à la conversation.
+
+Le formulaire envoie un objet `device` avec le type GAB/TPE prérempli depuis
+la sélection de l’ATM-Chatbot et modifiable, le modèle, le numéro de série,
+l'identifiant facultatif, le site et l'adresse. Le backend seul résout
+l'appareil et son rattachement ; aucun appel de recherche ni contrôle métier
+n'est effectué par le formulaire. Les erreurs de validation du backend sont
+affichées sans effacer les champs. Le formulaire recueille aussi le ticket,
+les dates locales, plusieurs symptômes
+et leur gravité, les actions dans l'ordre avec leur résultat et le symptôme visé,
+la solution confirmée, le bilan, la cause, la pièce en cause (texte libre,
+`diagnosis.root_cause_component_text` ; elle demande une cause) et le résumé. Il appelle
+`POST /api/intervention_add` : la confirmation affiche un numéro de proposition
+**en attente**, jamais une intervention déjà publiée. Les erreurs sont affichées
+sans effacer la saisie ; un double envoi est bloqué.
+
+Les indicateurs `intervention_add_available` et `intervention_add_problem` de
+`POST /api/chat` pilotent cette offre (chat écrit et vocal). Ils sont mémorisés
+avec le message lors d'un rechargement. Le mode `?mock=1` simule l'envoi sans
+écrire en base ; sa troisième réponse simule l'absence de cas.
+L'administration de ces ajouts utilise les routes `/api/admin/intervention_add`
+documentées dans le README racine ; ce formulaire est l'interface technicien.
+
+| Page | Rôle |
+| --- | --- |
+| `index.html` | Site vitrine bleu : photographie professionnelle, présentation des atouts, étapes et accès à l’ATM-Chatbot. Les trois boutons d’accès conservent la connexion ou la reprise de session. Thèmes clair/sombre et mouvements réduits pris en charge. |
+| `atm-chatbot.html` | ATM-Chatbot : engrenage animé avec clé de mécanicien et anneaux tournant en 3D autour du centre (bleus en mode clair, verts en mode sombre), à l'ouverture d'une conversation (sans animation en mode mouvements réduits), sidebar rétractable, chat écrit, dictée, Chat vocal immersif, panneau de contexte, paramètres. |
+| `diagnostic.html` | Recherche directe dans l’historique des symptômes. |
+| `flow-presentation.html` | Présentation animée du flux de connexion simulée et de traitement d’un message. |
+| `admin.html` | Administration (clé `ADMIN_API_KEY`) : propositions des techniciens, codes d’erreur et pannes fréquentes de l’ATM-Chatbot. |
+
+## Structure
+
+```text
+public/
+├── assets/               IMAGES modifiables (logo, fonds d'écran, avatars) -- mode d'emploi : assets/README.md
+├── css/
+│   ├── assets.css        chemins des images de fond : le SEUL endroit où les changer
+│   ├── style.css         base commune (en-tête, chat, boutons)
+│   ├── components.css    avatars, boîtes de dialogue, champs
+│   ├── home.css          vitrine d’accueil, responsive et transition de connexion
+│   ├── atm-chatbot.css       page ATM-Chatbot complète (palette bleue, sidebar, chat, Chat vocal, paramètres, responsive)
+│   └── responsive.css    petits écrans des pages Accueil / Diagnostic + prefers-reduced-motion
+└── js/
+    ├── config.js                     constantes (URL API, langue, mode démo)
+    ├── core/httpClient.js            SEUL endroit qui appelle fetch
+    ├── services/
+    │   ├── api/                      un fichier par domaine (chat, voix, auth, historique…)
+    │   │   └── mocks.js              réponses simulées
+    │   ├── speech/                   reconnaissance vocale, synthèse vocale, niveau du micro
+    │   ├── conversationService.js    fil de conversation partagé texte + voix
+    │   ├── preferencesService.js     paramètres (localStorage)
+    │   └── sessionService.js         technicien connecté
+    ├── components/
+    │   ├── avatar.js                 avatars humains de l’ATM-Chatbot (SVG)
+    │   ├── icons.js                  icônes SVG (data-icon="…")
+    │   ├── sidebar.js                menu rétractable (large / icônes / tiroir mobile)
+    │   ├── contextPanel.js           panneau "Contexte" (colonne ou tiroir)
+    │   ├── chatView.js               affichage des messages
+    │   ├── devicePicker.js           sélecteur GAB / TPE
+    │   ├── suggestions.js            menus « Pannes fréquentes » et « Codes d'erreur connus » (données et réponses lues par le backend, sans IA)
+    │   ├── composerDictation.js      micro de la zone de saisie (dictée)
+    │   ├── composerPhoto.js          bouton 📷 : photo réduite, aperçu, jointe au prochain message
+    │   ├── voiceMode.js              Chat vocal immersif
+    │   ├── settingsPanel.js          paramètres (avatar, voix française, options)
+    │   └── diagnosticView.js
+    ├── pages/                        un point d’entrée par page HTML
+    └── utils/dom.js
+```
+
+Règle : les **pages** assemblent, les **components** affichent, les **services** contiennent la logique, et seuls les fichiers `services/api/` parlent au backend.
+
+## API utilisées
+
+| Fonction | Statut | Route |
+| --- | --- | --- |
+| Envoyer un message (chat + voix), photo facultative | **Réelle** | `POST /api/chat` |
+| Bouton photo affiché ou non | **Réelle** | `GET /api/chat/photo-ocr` |
+| Recherche de symptômes (Diagnostic) | **Réelle** | `POST /api/chat/search-symptom` |
+| Connexion | Simulée | à venir : `POST /auth/login` |
+| Historique d’une conversation | Simulé (sessionStorage) | à venir : `GET /chat/{id}/messages` |
+| Réponse audio | Simulée (synthèse du navigateur) | à venir : route audio éventuelle |
+
+Les points de branchement futurs sont marqués `TODO` dans `public/js/services/api/`.
+
+`POST /api/chat` exige un `technician_id` existant en base (seed de démo : 7 ou 8).
+
+## Photo de l’appareil
+
+Le bouton 📷 de la zone de saisie ouvre l’appareil photo du téléphone (sur PC : choix d’un fichier). La photo est réduite dans le navigateur (1568 px max, JPEG), affichée en aperçu, puis envoyée avec le prochain message, éventuellement sans texte. L’ATM-Chatbot en lit le texte affiché (code ou message d’erreur) et l’utilise pour le diagnostic.
+
+- Le bouton n’apparaît que si le backend répond `enabled: true` à `GET /api/chat/photo-ocr` : `PHOTO_OCR_ENABLED=true` et `LLM_PROVIDER=claude`. Il est toujours caché en mode démo.
+- Seule la mention « 📷 Photo jointe » est gardée dans l’historique de l’onglet, pas l’image. « Réessayer » renvoie la même photo.
+
+## Mode démo
+
+Ajoutez `?mock=1` à l’adresse pour utiliser des réponses simulées sans backend, et `?mock=0` pour revenir au backend réel. Le choix est conservé pour l’onglet en cours.
+
+## Fonctions vocales
+
+Le backend ne reçoit que du texte (`POST /api/chat`, comme le chat écrit). La reconnaissance vocale se fait dans le navigateur (Chrome ou Edge recommandés) ; la **voix de l’ATM-Chatbot** est générée par le serveur frontend (`server.py`, routes `GET /tts/voices` et `POST /tts`, paquet `edge-tts`, connexion Internet requise).
+
+- **Micro de la zone de saisie** : dicte le texte dans le champ, sans l’envoyer. États affichés : « Autorisation du micro… », « Écoute en cours… », « Traitement… », « Erreur microphone : … ».
+- **Chat vocal** : écran plein, comme un appel ; la messagerie est masquée. Conversation entièrement à la voix : on parle naturellement, le message part tout seul après ~1,3 s de silence, la réponse est lue, puis le micro se rouvre automatiquement. Toucher la bulle envoie tout de suite (pendant l’écoute) ou interrompt l’ATM-Chatbot (pendant la lecture). C’est la **même** conversation : les échanges apparaissent dans le chat à la fermeture.
+- **Voix** : uniquement des voix **françaises**. Par défaut, voix naturelles du serveur (Denise / Henri, et d’autres voix fr-FR, fr-BE, fr-CA, fr-CH), identiques dans tous les navigateurs. Si le serveur de synthèse est injoignable, l’ATM-Chatbot se rabat automatiquement sur les voix françaises du navigateur (jamais une voix anglaise).
+- **Texte lu** : la lecture automatique, le bouton Ecouter et le chat vocal lisent le texte affiche, sans les marqueurs Markdown (`**`, `***`, etc.). La mise en forme visuelle reste conservee.
+- **Erreur « réseau » de la reconnaissance vocale** : Chrome et Edge envoient l’audio à leur propre service de transcription. Si ce service est injoignable, par exemple dans le navigateur intégré de VS Code, Brave, Opera, un réseau filtré ou un VPN, le navigateur renvoie l’erreur `network` même si Internet fonctionne. L’ATM-Chatbot l’explique, propose la reconnaissance hors ligne lorsque Chrome la prend en charge, ainsi qu’une saisie au clavier ou la dictée Windows (⊞ + H).
+
+## Diagnostic
+
+Le diagnostic appelle uniquement `POST /chat/search-symptom` avec `raw_text` et `device_type` (`gab` ou `tpe`). Les cartes utilisent les textes et statistiques effectivement fournis par l’API. Si un libellé d’action manque, l’interface affiche l’identifiant disponible et indique que le texte n’a pas été fourni ; elle n’invente pas de solution.

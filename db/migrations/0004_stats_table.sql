@@ -7,7 +7,7 @@ BEGIN;
 -- un taux de réussite différent sur GAB et sur TPE (mécaniques différentes),
 -- donc une seule ligne "tous appareils confondus" mélangerait les deux et
 -- fausserait le classement affiché au technicien.
-CREATE TABLE symptom_action_outcome_stats (
+CREATE TABLE IF NOT EXISTS symptom_action_outcome_stats (
     symptom_id      INTEGER NOT NULL REFERENCES symptom(symptom_id),
     action_id       INTEGER NOT NULL REFERENCES action(action_id),
     device_type     device_type NOT NULL,

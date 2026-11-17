@@ -1,0 +1,15 @@
+{
+  "catalog_number": 5,
+  "code": "09",
+  "label": "Commutateur de verrouillage ouvert",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 09 : le module n'est pas verrouillé dans sa position de fonctionnement.\nSur le CINEO C2550 / ProCash 8050 cité dans cette consigne, faire coulisser le CMD-V4 jusqu'à la butée avec sa poignée de verrouillage ; vérifier son enclenchement audible.\nSi 09 persiste, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 6,
+    "component": "SW3 / verrouillage",
+    "kind": "error",
+    "notes": "CINEO C2550 et ProCash 8050 sont cités pour cette manipulation ; le document ne limite pas tous les codes à ces modèles."
+  }
+}

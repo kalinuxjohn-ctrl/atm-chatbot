@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <!--
+    Fond de la page d'accueil : un robot assistant de maintenance (casque-micro,
+    clé à molette, écran de diagnostic) sur fond de circuits et de bulles de
+    discussion. Le robot est placé à droite pour laisser le texte lisible à gauche.
+    Remplaçable par n'importe quelle image : voir assets/README.md.
+  -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071322"/>
+      <stop offset="0.6" stop-color="#0b2136"/>
+      <stop offset="1" stop-color="#08343a"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="1730" cy="560" r="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2bd1c1" stop-opacity="0.32"/>
+      <stop offset="0.55" stop-color="#1f6fd1" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#1f6fd1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-left" cx="0.1" cy="0.15" r="0.45">
+      <stop offset="0" stop-color="#2f6fd6" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#2f6fd6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a4d73"/>
+      <stop offset="1" stop-color="#15304d"/>
+    </linearGradient>
+    <linearGradient id="metal-light" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d8e6f3"/>
+      <stop offset="1" stop-color="#9fb6cc"/>
+    </linearGradient>
+    <radialGradient id="eye" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0" stop-color="#c9fff8"/>
+      <stop offset="0.5" stop-color="#4fe0d1"/>
+      <stop offset="1" stop-color="#1fa99d"/>
+    </radialGradient>
+    <radialGradient id="eye-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#4fe0d1" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#4fe0d1" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="36" height="36" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#7fe3d7" opacity="0.12"/>
+    </pattern>
+    <linearGradient id="bottom-fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#071322" stop-opacity="0"/>
+      <stop offset="1" stop-color="#071322" stop-opacity="0.85"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fond -->
+  <rect width="1920" height="1080" fill="url(#sky)"/>
+  <rect width="1920" height="1080" fill="url(#dots)"/>
+  <rect width="1920" height="1080" fill="url(#glow-left)"/>
+  <rect width="1920" height="1080" fill="url(#halo)"/>
+
+  <!-- Pistes de circuit (côté gauche, très discrètes) -->
+  <g fill="none" stroke="#3fd0c2" stroke-opacity="0.16" stroke-width="2">
+    <path d="M0 180 H220 L270 230 H520"/>
+    <path d="M0 260 H140 L190 310 H380 L420 350 H640"/>
+    <path d="M0 900 H260 L310 850 H560"/>
+    <path d="M0 980 H180 L230 1030 H700"/>
+    <path d="M820 0 V90 L870 140 V260"/>
+    <path d="M1120 1080 V980 L1170 930 H1320"/>
+  </g>
+  <g fill="#5fe3d4" fill-opacity="0.45">
+    <circle cx="520" cy="230" r="5"/><circle cx="640" cy="350" r="5"/><circle cx="560" cy="850" r="5"/>
+    <circle cx="700" cy="1030" r="5"/><circle cx="870" cy="260" r="5"/><circle cx="1320" cy="930" r="5"/>
+  </g>
+
+  <!-- Bulles de discussion flottantes (contour) -->
+  <g fill="none" stroke="#8fe9de" stroke-opacity="0.18" stroke-width="2.5">
+    <path d="M120 470 h150 a18 18 0 0 1 18 18 v54 a18 18 0 0 1 -18 18 h-96 l-24 22 v-22 h-30 a18 18 0 0 1 -18 -18 v-54 a18 18 0 0 1 18 -18 z"/>
+    <path d="M760 620 h110 a16 16 0 0 1 16 16 v44 a16 16 0 0 1 -16 16 h-26 v20 l-22 -20 h-62 a16 16 0 0 1 -16 -16 v-44 a16 16 0 0 1 16 -16 z"/>
+  </g>
+  <g fill="#8fe9de" fill-opacity="0.22">
+    <circle cx="170" cy="515" r="6"/><circle cx="195" cy="515" r="6"/><circle cx="220" cy="515" r="6"/>
+  </g>
+
+  <!-- ===================== Le robot ===================== -->
+  <!-- Bulles de conversation du robot -->
+  <g>
+    <path d="M1390 250 h180 a22 22 0 0 1 22 22 v58 a22 22 0 0 1 -22 22 h-40 l30 32 l-58 -32 h-112 a22 22 0 0 1 -22 -22 v-58 a22 22 0 0 1 22 -22 z" fill="#ffffff" fill-opacity="0.1" stroke="#8fe9de" stroke-opacity="0.45" stroke-width="2"/>
+    <circle cx="1440" cy="301" r="9" fill="#8fe9de" fill-opacity="0.8"/>
+    <circle cx="1480" cy="301" r="9" fill="#8fe9de" fill-opacity="0.6"/>
+    <circle cx="1520" cy="301" r="9" fill="#8fe9de" fill-opacity="0.4"/>
+  </g>
+
+  <!-- Antenne -->
+  <line x1="1760" y1="300" x2="1760" y2="236" stroke="#9fb6cc" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="1760" cy="226" r="34" fill="url(#eye-glow)"/>
+  <circle cx="1760" cy="226" r="15" fill="url(#eye)"/>
+
+  <!-- Casque (arceau + écouteurs) -->
+  <path d="M1606 400 C1606 228 1914 228 1914 400" fill="none" stroke="#1fa99d" stroke-width="12" stroke-linecap="round"/>
+  <rect x="1588" y="362" width="34" height="96" rx="14" fill="#10243a" stroke="#1fa99d" stroke-width="3"/>
+  <rect x="1898" y="362" width="34" height="96" rx="14" fill="#10243a" stroke="#1fa99d" stroke-width="3"/>
+
+  <!-- Tête -->
+  <rect x="1620" y="300" width="280" height="220" rx="64" fill="url(#metal)" stroke="#4fd6c7" stroke-opacity="0.45" stroke-width="3"/>
+  <rect x="1652" y="338" width="216" height="146" rx="44" fill="#06121f"/>
+  <!-- Yeux -->
+  <circle cx="1716" cy="404" r="44" fill="url(#eye-glow)"/>
+  <circle cx="1804" cy="404" r="44" fill="url(#eye-glow)"/>
+  <rect x="1698" y="378" width="36" height="52" rx="18" fill="url(#eye)"/>
+  <rect x="1786" y="378" width="36" height="52" rx="18" fill="url(#eye)"/>
+  <!-- Sourire -->
+  <path d="M1730 450 Q1760 472 1790 450" fill="none" stroke="#4fe0d1" stroke-width="6" stroke-linecap="round"/>
+  <!-- Micro du casque -->
+  <path d="M1915 452 C1912 506 1872 512 1836 506" fill="none" stroke="#1fa99d" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="1830" cy="505" r="10" fill="#10243a" stroke="#1fa99d" stroke-width="3"/>
+
+  <!-- Cou -->
+  <rect x="1726" y="518" width="68" height="40" rx="10" fill="#15304d"/>
+
+  <!-- Corps -->
+  <rect x="1598" y="552" width="324" height="330" rx="70" fill="url(#metal)" stroke="#4fd6c7" stroke-opacity="0.35" stroke-width="3"/>
+  <!-- Écran de diagnostic sur le torse -->
+  <rect x="1668" y="612" width="184" height="124" rx="18" fill="#06121f" stroke="#4fd6c7" stroke-opacity="0.6" stroke-width="2"/>
+  <rect x="1688" y="634" width="70" height="10" rx="5" fill="#4fe0d1"/>
+  <rect x="1688" y="656" width="120" height="8" rx="4" fill="#56708c"/>
+  <rect x="1688" y="674" width="96" height="8" rx="4" fill="#56708c"/>
+  <circle cx="1820" cy="700" r="18" fill="#1fa99d"/>
+  <path d="M1811 700 l7 7 l12 -14" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Boutons -->
+  <circle cx="1706" cy="780" r="12" fill="#1fa99d"/>
+  <circle cx="1746" cy="780" r="12" fill="#2f7cf6"/>
+  <circle cx="1786" cy="780" r="12" fill="#f0b453"/>
+  <rect x="1680" y="818" width="160" height="12" rx="6" fill="#0d2238"/>
+
+  <!-- Bras gauche levé, tenant une clé à molette -->
+  <path d="M1612 620 C1560 600 1530 560 1510 500" fill="none" stroke="url(#metal-light)" stroke-width="44" stroke-linecap="round"/>
+  <circle cx="1504" cy="486" r="34" fill="#d8e6f3"/>
+  <g transform="rotate(-40 1468 420)">
+    <rect x="1458" y="360" width="22" height="130" rx="10" fill="#b9c8d8"/>
+    <path d="M1469 312 a40 40 0 1 1 -0.1 0 z" fill="#b9c8d8"/>
+    <rect x="1458" y="300" width="22" height="34" fill="url(#sky)"/>
+  </g>
+
+  <!-- Bras droit le long du corps -->
+  <path d="M1910 630 C1960 680 1975 740 1970 810" fill="none" stroke="url(#metal-light)" stroke-width="44" stroke-linecap="round"/>
+  <circle cx="1968" cy="826" r="32" fill="#d8e6f3"/>
+
+  <!-- Bas de l'image assombri : la section « étapes » reste lisible -->
+  <rect y="760" width="1920" height="320" fill="url(#bottom-fade)"/>
+</svg>

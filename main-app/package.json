@@ -1,0 +1,48 @@
+{
+  "name": "atm-main-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Application des techniciens : carte partagée, messagerie et appels vocaux.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start:auth": "node src/entrypoints/auth.js",
+    "start:map": "node src/entrypoints/map.js",
+    "start:messaging": "node src/entrypoints/messaging.js",
+    "start:calls": "node src/entrypoints/calls.js",
+    "create-admin": "node src/jobs/createAdmin.js",
+    "lint": "eslint .",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
+    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit",
+    "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/integration --runInBand"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "setupFiles": [
+      "<rootDir>/tests/setupTestEnvironment.js"
+    ]
+  },
+  "dependencies": {
+    "@maplibre/maplibre-gl-leaflet": "0.1.4",
+    "argon2": "0.45.1",
+    "express": "5.3.0",
+    "file-type": "22.3.0",
+    "leaflet": "1.9.4",
+    "maplibre-gl": "6.16.0",
+    "multer": "2.5.0",
+    "pg": "8.23.1",
+    "sharp": "0.35.5",
+    "ws": "8.22.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.14.0",
+    "globals": "17.13.0",
+    "jest": "30.5.2",
+    "supertest": "7.3.1"
+  }
+}

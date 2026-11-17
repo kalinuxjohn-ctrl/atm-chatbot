@@ -1,0 +1,237 @@
+# ============================================================================
+# Main app (application des techniciens) : conteneurs AJOUTÉS au chatbot.
+# ============================================================================
+# Se lance AVEC le fichier du chatbot, qui reste inchangé :
+#
+#   docker compose -f compose.backend.yaml -f docker-compose.main-app.yml up -d --build
+#
+# Liens avec le chatbot (aucun code commun) :
+#   - la base PostgreSQL (service `db`), dans un schéma séparé ;
+#   - l’ATM-Chatbot : le gateway sert le frontend du chatbot (service
+#     `chatbot-frontend`, ci-dessous) sous /atm-chatbot/app/, aux seuls utilisateurs
+#     connectés, et transmet le technicien connecté à l'API du chatbot avec le
+#     secret ATM_CHATBOT_GATEWAY_SHARED_SECRET (l'API refuse alors tout autre appel) ;
+#   - l'administration de l’ATM-Chatbot : le gateway relaie /api/atm-chatbot-admin/ vers
+#     l'API admin du chatbot, pour les seuls administrateurs connectés.
+#   L'API du chatbot (service `chatbot-backend`) rejoint le réseau du gateway (plus bas).
+#
+# Chaque fonctionnalité a son conteneur, arrêtable et redémarrable seul :
+#   main-app-gateway    nginx, SEUL port publié de la main app
+#   main-app-auth       connexion, sessions, comptes et rôles
+#   main-app-map        points de la carte + relais des tuiles
+#   main-app-messaging  messages, images, messages vocaux (volume main-app-uploads)
+#   main-app-calls      signalisation WebSocket des appels vocaux
+# Les conteneurs applicatifs ne dépendent que de la base, jamais les uns des autres.
+# Voir docs/main-app.md.
+# ============================================================================
+
+# --- Durcissement commun aux conteneurs Node -------------------------------
+x-main-app-node-service: &main-app-node-service
+  image: atm-main-app:latest
+  pull_policy: never
+  restart: unless-stopped
+  # Système de fichiers en lecture seule : seul /tmp est inscriptible (en mémoire).
+  read_only: true
+  tmpfs:
+    - /tmp
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  # Aucun port publié : on ne joint ces conteneurs QUE par le gateway.
+  networks:
+    - default            # réseau du chatbot : uniquement pour joindre `db`
+    - main-app-network   # réseau du gateway
+  depends_on:
+    db:
+      condition: service_healthy
+    main-app-database-setup:
+      condition: service_completed_successfully
+  healthcheck:
+    test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+    interval: 15s
+    timeout: 5s
+    retries: 3
+    start_period: 10s
+
+# Variables communes : base (rôle dédié main_app_user, jamais l'administrateur) et session.
+x-main-app-shared-environment: &main-app-shared-environment
+  MAIN_APP_ENVIRONMENT: ${MAIN_APP_ENVIRONMENT:-production}
+  MAIN_APP_PORT: "3000"
+  MAIN_APP_DATABASE_HOST: db
+  MAIN_APP_DATABASE_PORT: "5432"
+  MAIN_APP_DATABASE_NAME: atm_chatbot
+  MAIN_APP_DATABASE_USER: main_app_user
+  MAIN_APP_DATABASE_PASSWORD: ${MAIN_APP_DATABASE_PASSWORD:?MAIN_APP_DATABASE_PASSWORD manquant dans .env}
+  MAIN_APP_COOKIE_SECURE: ${MAIN_APP_COOKIE_SECURE:-true}
+  MAIN_APP_SESSION_DURATION_HOURS: ${MAIN_APP_SESSION_DURATION_HOURS:-12}
+  MAIN_APP_DEVELOPMENT_AUTO_LOGIN_USERNAME: ${MAIN_APP_DEVELOPMENT_AUTO_LOGIN_USERNAME:-}
+
+services:
+
+  # Job ponctuel : donne son mot de passe au rôle main_app_user (créé par la
+  # migration 0014, appliquée par init-db du chatbot). Seul à recevoir le
+  # compte d'administration de la base. Voir src/jobs/configureDatabaseRole.js.
+  main-app-database-setup:
+    <<: *main-app-node-service
+    container_name: main-app-database-setup
+    restart: "no"
+    command: ["node", "src/jobs/configureDatabaseRole.js"]
+    networks:
+      - default
+    environment:
+      MAIN_APP_SERVICE_NAME: main-app-database-setup
+      MAIN_APP_DATABASE_ADMIN_URL: ${DATABASE_URL}
+      MAIN_APP_DATABASE_PASSWORD: ${MAIN_APP_DATABASE_PASSWORD:?MAIN_APP_DATABASE_PASSWORD manquant dans .env}
+    depends_on:
+      db:
+        condition: service_healthy
+      # Les migrations 0014 à 0019 sont appliquées par le mécanisme existant du chatbot.
+      init-db:
+        condition: service_completed_successfully
+    healthcheck:
+      disable: true
+
+  main-app-auth:
+    <<: *main-app-node-service
+    # Un seul export pour l'image partagee par les services Node et le job DB.
+    build:
+      context: ./main-app
+      dockerfile: Dockerfile
+      additional_contexts:
+        branding: ./scripts
+      args:
+        APP_NAME: ${APP_NAME:-atm-chatbot}
+    container_name: main-app-auth
+    command: ["node", "src/entrypoints/auth.js"]
+    environment:
+      <<: *main-app-shared-environment
+      MAIN_APP_SERVICE_NAME: main-app-auth
+      MAIN_APP_ALLOW_REGISTRATION: ${MAIN_APP_ALLOW_REGISTRATION:-false}
+      MAIN_APP_LOGIN_MAX_FAILED_ATTEMPTS: ${MAIN_APP_LOGIN_MAX_FAILED_ATTEMPTS:-5}
+      MAIN_APP_LOGIN_LOCK_MINUTES: ${MAIN_APP_LOGIN_LOCK_MINUTES:-15}
+
+  main-app-map:
+    <<: *main-app-node-service
+    container_name: main-app-map
+    command: ["node", "src/entrypoints/map.js"]
+    environment:
+      <<: *main-app-shared-environment
+      MAIN_APP_SERVICE_NAME: main-app-map
+      # Obligatoire dans .env (pas de valeur par défaut ici : les accolades {z}/{x}/{y}
+      # ne peuvent pas figurer dans une valeur par défaut de docker compose).
+      MAIN_APP_MAP_TILE_URL_TEMPLATE: ${MAIN_APP_MAP_TILE_URL_TEMPLATE:?MAIN_APP_MAP_TILE_URL_TEMPLATE manquant dans .env}
+      MAIN_APP_MAP_TILE_ATTRIBUTION: ${MAIN_APP_MAP_TILE_ATTRIBUTION:-© OpenStreetMap contributors}
+      MAIN_APP_MAP_TILE_USER_AGENT: ${MAIN_APP_MAP_TILE_USER_AGENT:?MAIN_APP_MAP_TILE_USER_AGENT manquant dans .env}
+      MAIN_APP_MAP_TILE_MAX_ZOOM: ${MAIN_APP_MAP_TILE_MAX_ZOOM:-19}
+      MAIN_APP_MAP_TILE_CACHE_ENTRIES: ${MAIN_APP_MAP_TILE_CACHE_ENTRIES:-2000}
+      MAIN_APP_MAP_ROUTING_API_KEY: ${MAIN_APP_MAP_ROUTING_API_KEY:-}
+
+  main-app-messaging:
+    <<: *main-app-node-service
+    container_name: main-app-messaging
+    command: ["node", "src/entrypoints/messaging.js"]
+    environment:
+      <<: *main-app-shared-environment
+      MAIN_APP_SERVICE_NAME: main-app-messaging
+      MAIN_APP_UPLOADS_DIRECTORY: /data/uploads
+      MAIN_APP_UPLOAD_MAX_BYTES: ${MAIN_APP_UPLOAD_MAX_BYTES:-10485760}
+    # Pièces jointes : monté UNIQUEMENT ici, hors des fichiers statiques servis.
+    volumes:
+      - main-app-uploads:/data/uploads
+
+  main-app-calls:
+    <<: *main-app-node-service
+    container_name: main-app-calls
+    command: ["node", "src/entrypoints/calls.js"]
+    environment:
+      <<: *main-app-shared-environment
+      MAIN_APP_SERVICE_NAME: main-app-calls
+      MAIN_APP_PUBLIC_ORIGIN: ${MAIN_APP_PUBLIC_ORIGIN:-http://localhost:8080}
+      MAIN_APP_ICE_SERVERS: ${MAIN_APP_ICE_SERVERS:-}
+
+  main-app-gateway:
+    build:
+      context: ./main-app/gateway
+      dockerfile: Dockerfile
+      additional_contexts:
+        branding: ./scripts
+      args:
+        APP_NAME: ${APP_NAME:-atm-chatbot}
+    image: atm-main-app-gateway:latest
+    container_name: main-app-gateway
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # Seul conteneur de la main app joignable depuis l'hôte. Par défaut sur
+    # 127.0.0.1 : à ouvrir explicitement (MAIN_APP_GATEWAY_PUBLISHED_ADDRESS)
+    # derrière un reverse proxy HTTPS pour un accès depuis le terrain.
+    ports:
+      - "${MAIN_APP_GATEWAY_PUBLISHED_ADDRESS:-127.0.0.1}:${MAIN_APP_GATEWAY_PORT:-8080}:8080"
+    environment:
+      # Clé de l'API admin du chatbot : ajoutée par le gateway aux requêtes
+      # /api/atm-chatbot-admin/ des administrateurs, jamais envoyée au navigateur.
+      MAIN_APP_CHATBOT_ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      # Secret partagé avec l'API du chatbot : prouve que l'identité du technicien
+      # transmise avec les requêtes /atm-chatbot/app/ vient du gateway.
+      MAIN_APP_ATM_CHATBOT_GATEWAY_SHARED_SECRET: ${ATM_CHATBOT_GATEWAY_SHARED_SECRET:?ATM_CHATBOT_GATEWAY_SHARED_SECRET manquant dans .env}
+    # Pas sur le réseau du chatbot : le gateway ne voit pas la base. Il joint
+    # le chatbot uniquement parce que `chatbot-backend` et `chatbot-frontend` sont sur main-app-network.
+    networks:
+      - main-app-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # Frontend du chatbot (dossier frontend/), servi UNIQUEMENT par le gateway sous
+  # /atm-chatbot/app/ : aucun port publié. Il relaie /api/ à l'API du chatbot en gardant
+  # les en-têtes d'identité posés par le gateway (frontend/server.py).
+  chatbot-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      additional_contexts:
+        branding: ./scripts
+      args:
+        APP_NAME: ${APP_NAME:-atm-chatbot}
+    image: atm-chatbot-frontend:latest
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "5173"
+      API_BASE_URL: http://chatbot-api:8000
+    networks:
+      - main-app-network
+    depends_on:
+      - chatbot-backend
+
+  # Service du chatbot (compose.backend.yaml), complété ici :
+  # - il rejoint le réseau du gateway sous le nom `chatbot-api` ;
+  # - il n'accepte plus que les requêtes relayées par le gateway (secret partagé),
+  #   avec le technicien de la session (app/core/gateway_identity.py).
+  chatbot-backend:
+    environment:
+      ATM_CHATBOT_GATEWAY_SHARED_SECRET: ${ATM_CHATBOT_GATEWAY_SHARED_SECRET:?ATM_CHATBOT_GATEWAY_SHARED_SECRET manquant dans .env}
+    networks:
+      default: {}
+      main-app-network:
+        aliases:
+          - chatbot-api
+
+networks:
+  main-app-network:
+    name: main-app-network
+
+volumes:
+  main-app-uploads:

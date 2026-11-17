@@ -1,0 +1,16 @@
+{
+  "catalog_number": 27,
+  "code": "33",
+  "label": "Cassette 3 : trop de défauts de séparation",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 33, cassette 3 : trop de défauts pendant la séparation des billets. Des billets rétrécis, mal séparés ou des perturbations photoélectriques peuvent provoquer des rejets.\nUn premier avertissement peut être ignoré selon le document. En cas de répétition : vérifier le type, l'orientation et l'appui des billets dans la cassette 3 ; rechercher des restes de billets dans le retrait et le transport jusqu'à la pince ; contrôler les connecteurs du contrôleur CMD ; effectuer la détermination de la valeur de référence selon sa procédure.\nLes procédures détaillées citées ne sont pas incluses dans cet extrait.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 10,
+    "family": "3x",
+    "cassette": 3,
+    "component": "Cassette 3 / séparation des billets",
+    "kind": "warning"
+  }
+}

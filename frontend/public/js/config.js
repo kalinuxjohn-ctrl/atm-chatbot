@@ -1,0 +1,41 @@
+/**
+ * Configuration centrale du frontend.
+ * Toute valeur "réglable" vit ici : aucun autre fichier ne doit coder en dur
+ * une URL, une clé de stockage ou un délai.
+ */
+
+// Le serveur frontend (server.py) relaie /api/* vers le backend FastAPI.
+// Chemin RELATIF : l’ATM-Chatbot fonctionne seul (http://localhost:5173/) comme
+// derrière l'Espace techniciens (/atm-chatbot/app/).
+export const API_BASE_URL = "api";
+
+// Une réponse peut nécessiter plusieurs appels au LLM.
+// Doit rester un peu supérieur au délai du proxy (PROXY_TIMEOUT_SECONDS de server.py).
+export const REQUEST_TIMEOUT_MS = 305000;
+
+// Langue utilisée pour la reconnaissance et la synthèse vocale.
+export const SPEECH_LANG = "fr-FR";
+
+export const STORAGE_KEYS = Object.freeze({
+  preferences: "atm-chatbot.preferences", // localStorage : conservé entre les sessions
+  theme: "atm-chatbot.theme", // localStorage : "dark" ou "light" (aussi lu dans le <head> de chaque page)
+  session: "atm-chatbot.session", // localStorage : technicien connecté
+  conversation: "atm-chatbot.conversation", // sessionStorage : conversation de l'onglet
+  forceMocks: "atm-chatbot.forceMocks", // sessionStorage : mode démo
+  adminKey: "admin.key", // sessionStorage : clé de la page Propositions (onglet seulement)
+  adminReviewer: "admin.reviewer", // sessionStorage : nom qui signe les décisions
+});
+
+/**
+ * Mode démo : ajouter ?mock=1 à l'URL fait passer TOUTES les API par leurs
+ * mocks (utile sans backend). ?mock=0 le désactive. Le choix est mémorisé
+ * pour l'onglet, afin de survivre à la navigation entre les pages.
+ */
+function resolveMockMode() {
+  const flag = new URLSearchParams(window.location.search).get("mock");
+  if (flag === "1") sessionStorage.setItem(STORAGE_KEYS.forceMocks, "1");
+  if (flag === "0") sessionStorage.removeItem(STORAGE_KEYS.forceMocks);
+  return sessionStorage.getItem(STORAGE_KEYS.forceMocks) === "1";
+}
+
+export const FORCE_MOCKS = resolveMockMode();

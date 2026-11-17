@@ -8,7 +8,12 @@ Puis tester sur http://localhost:8000/docs (documentation interactive
 générée automatiquement par FastAPI).
 """
 
-from fastapi import FastAPI
+import logging
+from urllib.parse import urlsplit
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 
 # Import volontairement inutilisé directement : le simple fait d'importer
 # le package charge tous les modules de app/models/ (technician, device,
@@ -21,15 +26,113 @@ import app.models  # noqa: F401
 
 from app.api.routes.interventions import router as interventions_router
 from app.api.routes.chat import router as chat_router
+from app.api.routes.catalog import router as catalog_router
+from app.api.routes.error_code import router as error_codes_router
+from app.api.routes.admin import router as admin_router
+from app.api.routes.admin_catalog import error_code_router as admin_error_code_router
+from app.api.routes.admin_catalog import action_catalog_router as admin_action_catalog_router
+from app.api.routes.admin_catalog import device_model_router as admin_device_model_router
+from app.api.routes.admin_catalog import usual_problem_router as admin_usual_problem_router
+from app.api.routes.usual_problem import router as usual_problem_router
+from app.api.routes.intervention_add import router as intervention_add_router
+from app.api.routes.admin_intervention_add import router as admin_intervention_add_router
+from app.core.errors import (
+    AccessDeniedError,
+    ExternalServiceUnavailableError,
+    InvalidReferenceError,
+    ReferenceNotFoundError,
+    SERVICE_INDISPONIBLE_MESSAGE,
+    StateConflictError,
+)
+from app.core.gateway_identity import require_gateway_identity
+from app.core.config import settings
+from app.core.tracing import trace
+
+class HealthAccessFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args
+        return not (
+            isinstance(args, tuple) and len(args) == 5
+            and isinstance(args[2], str) and urlsplit(args[2]).path == "/health"
+            and args[4] == 200
+        )
+
+
+logging.getLogger("uvicorn.access").addFilter(HealthAccessFilter())
 
 app = FastAPI(
-    title="Device Maintenance Chatbot API",
+    title=f"{settings.app_name} API",
     description="Enregistrement et recherche des interventions de maintenance ATM/GAB.",
     version="0.1.0",
 )
 
+# Identité vérifiée par le gateway de l'Espace techniciens, si ATM_CHATBOT_GATEWAY_SHARED_SECRET est défini.
+app.middleware("http")(require_gateway_identity)
+
 app.include_router(interventions_router)
 app.include_router(chat_router)
+app.include_router(catalog_router)
+app.include_router(error_codes_router)
+app.include_router(admin_router)
+app.include_router(usual_problem_router)
+app.include_router(admin_error_code_router)
+app.include_router(admin_usual_problem_router)
+app.include_router(admin_action_catalog_router)
+app.include_router(admin_device_model_router)
+app.include_router(intervention_add_router)
+app.include_router(admin_intervention_add_router)
+
+
+# Les services lèvent des exceptions métier (app/core/errors.py) ; elles
+# sont traduites ici en codes HTTP explicites plutôt qu'en 500 opaques.
+@app.exception_handler(ReferenceNotFoundError)
+def _reference_introuvable(request: Request, error: ReferenceNotFoundError) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"detail": str(error)})
+
+
+@app.exception_handler(InvalidReferenceError)
+def _reference_invalide(request: Request, error: InvalidReferenceError) -> JSONResponse:
+    return JSONResponse(status_code=422, content={"detail": str(error)})
+
+
+@app.exception_handler(AccessDeniedError)
+def _acces_refuse(request: Request, error: AccessDeniedError) -> JSONResponse:
+    return JSONResponse(status_code=403, content={"detail": str(error)})
+
+
+@app.exception_handler(StateConflictError)
+def _etat_incompatible(request: Request, error: StateConflictError) -> JSONResponse:
+    return JSONResponse(status_code=409, content={"detail": str(error)})
+
+
+@app.exception_handler(ExternalServiceUnavailableError)
+def _service_externe_indisponible(request: Request, error: ExternalServiceUnavailableError) -> JSONResponse:
+    # Cause précise (fournisseur, code HTTP, quota...) : dans les journaux
+    # seulement. Le client reçoit un message neutre qui ne révèle pas quels
+    # services d'IA travaillent derrière le chatbot.
+    trace(
+        "ERROR",
+        "Service externe indisponible, réponse 503 envoyée",
+        endpoint=request.url.path,
+        error_type=type(error).__name__,
+        cause=str(error),
+    )
+    return JSONResponse(status_code=503, content={"detail": SERVICE_INDISPONIBLE_MESSAGE})
+
+
+@app.exception_handler(SQLAlchemyError)
+def _erreur_base_de_donnees(request: Request, error: SQLAlchemyError) -> JSONResponse:
+    # L'exception SQL brute peut contenir des paramètres et des données sensibles.
+    trace(
+        "ERROR",
+        "Échec de l'accès à PostgreSQL, réponse 503 envoyée",
+        endpoint=request.url.path,
+        error_type=type(error).__name__,
+    )
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "Le service de données est momentanément indisponible. Réessayez plus tard."},
+    )
 
 
 @app.get("/health")

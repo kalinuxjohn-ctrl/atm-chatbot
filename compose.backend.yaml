@@ -1,0 +1,179 @@
+services:
+
+  python-base:
+    image: atm-python-base:latest
+    command: ["python", "-c", "pass"]
+    build:
+      context: .
+      dockerfile: Dockerfile.base
+
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: atm_db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: atm_chatbot
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d atm_chatbot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+
+  init-db:
+    build:
+      context: .
+      dockerfile: Dockerfile.init
+      additional_contexts:
+        atm-python-base: service:python-base
+
+    container_name: atm_init
+
+
+    environment:
+      PGPASSWORD: postgrespassword
+      DATABASE_URL: ${DATABASE_URL}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER}
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY}
+      VOYAGE_MODEL: ${VOYAGE_MODEL:-voyage-3-large}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1024}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+      
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    volumes:
+      - ./db/code_erreurs:/app/db/code_erreurs:ro
+      - ./db/actions:/app/db/actions:ro
+      - ./db/problemes_officiels:/app/db/problemes_officiels:ro
+      - ./db/problemes_exemples:/app/db/problemes_exemples:ro
+      - ./db/interventions_exemples:/app/db/interventions_exemples:ro
+
+    # Applique chaque migration de db/migrations/*.sql UNE SEULE FOIS,
+    # peu importe combien de fois ce conteneur redémarre -- une table
+    # schema_migrations retient ce qui a déjà tourné. Avant ce correctif,
+    # le script rejouait tout depuis zéro à chaque `docker compose up`,
+    # ce qui échouait dès que la base n'était pas totalement vide
+    # (ex: relance sans `down -v` entre deux tests).
+    #
+    # ON_ERROR_STOP=1 sur chaque appel psql : une vraie erreur SQL arrête
+    # le script net (via `set -e`), au lieu de continuer en silence sur
+    # les fichiers suivants comme c'était le cas avant.
+    #
+    # Ajouter une nouvelle migration = juste déposer le fichier dans
+    # db/migrations/ -- rien à toucher ici, la boucle la ramasse toute seule.
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+
+        psql -h db -U postgres -d atm_chatbot -v ON_ERROR_STOP=1 -c "
+          CREATE TABLE IF NOT EXISTS schema_migrations (
+            filename   TEXT PRIMARY KEY,
+            applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+          );
+        "
+
+        for fichier in db/migrations/*.sql; do
+          nom=$$(basename "$$fichier")
+          deja_applique=$$(psql -h db -U postgres -d atm_chatbot -tAc \
+            "SELECT 1 FROM schema_migrations WHERE filename = '$$nom'")
+
+          if [ "$$deja_applique" = "1" ]; then
+            echo "Migration déjà appliquée, ignorée : $$nom"
+            continue
+          fi
+
+          echo "Application de la migration : $$nom"
+          psql -h db -U postgres -d atm_chatbot -v ON_ERROR_STOP=1 -f "$$fichier"
+          psql -h db -U postgres -d atm_chatbot -v ON_ERROR_STOP=1 -c \
+            "INSERT INTO schema_migrations (filename) VALUES ('$$nom');"
+        done
+
+        # Idempotents par construction (ON CONFLICT ... DO NOTHING) --
+        # peuvent donc tourner à chaque démarrage sans souci, contrairement
+        # aux migrations ci-dessus.
+        if [ "$${SEED_DEMO_DATA}" = "true" ]; then
+          python -m db.seed.seed_demo_data
+          python -m app.jobs.recompute_stats
+        else
+          echo "Données existantes conservées : aucun seed de démonstration."
+        fi
+
+        python -m scripts.load_error_codes
+        python -m scripts.load_action_catalog
+        python -m scripts.load_official_problems
+        python -m scripts.load_example_problems
+        python -m scripts.load_intervention_examples
+
+
+  chatbot-backend:
+    image: atm-chatbot-backend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      additional_contexts:
+        atm-python-base: service:python-base
+
+    container_name: atm_chatbot_backend
+    restart: unless-stopped
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      APP_NAME: ${APP_NAME:-atm-chatbot}
+      SYMPTOM_SIMILARITY_THRESHOLD: ${SYMPTOM_SIMILARITY_THRESHOLD:-0.5}
+      LLM_PROVIDER: ${LLM_PROVIDER:-claude}
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-5-5}
+      CLAUDE_FAST_CHAT: ${CLAUDE_FAST_CHAT:-true}
+      CLAUDE_STREAMING: ${CLAUDE_STREAMING:-true}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER}
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY}
+      VOYAGE_MODEL: ${VOYAGE_MODEL:-voyage-3-large}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1024}
+      # Photos du chat (OCR par Claude) : false pour désactiver la fonctionnalité.
+      PHOTO_OCR_ENABLED: ${PHOTO_OCR_ENABLED:-true}
+
+    # Permet au conteneur de résoudre l'hôte WSL/Windows
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    depends_on:
+      init-db:
+        condition: service_completed_successfully
+
+    volumes:
+      - ./app:/app/app
+      - ./db/code_erreurs:/app/db/code_erreurs
+      - ./db/actions:/app/db/actions
+      - ./scripts:/app/scripts:ro
+
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --reload
+
+
+volumes:
+  pgdata:

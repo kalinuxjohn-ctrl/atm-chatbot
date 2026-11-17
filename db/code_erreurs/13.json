@@ -1,0 +1,14 @@
+{
+  "catalog_number": 13,
+  "code": "17",
+  "label": "Entraînement à courroie de la pince défectueux",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 17 : entraînement à courroie de la pince défectueux.\nContacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 7,
+    "component": "Entraînement de la pince",
+    "kind": "error"
+  }
+}

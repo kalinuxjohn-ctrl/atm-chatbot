@@ -1,0 +1,7 @@
+{
+  "source_key": "problem-reference-tpe-boot",
+  "device_type": "tpe",
+  "label": "Le TPE ne démarre pas",
+  "reply": "Vérifie l'indicateur de charge et le branchement du chargeur compatible. Note tout voyant ou message et laisse l'appareil suivre son cycle de démarrage. N'interromps pas une mise à jour ; si l'écran reste éteint, contacte le support monétique.",
+  "display_order": 105
+}

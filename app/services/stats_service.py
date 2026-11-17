@@ -3,21 +3,31 @@
 from __future__ import annotations
 
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+
+from app.core.errors import StateConflictError
+from app.core.tracing import trace
 
 
-def recompute_stats(db) -> int:
+def recompute_stats(db, *, commit: bool = True) -> int:
     """Rebuild the aggregate stats used for case ranking."""
     db.execute(
         text(
             """
-            DELETE FROM symptom_action_outcome_stats;
+            -- Sérialise les recalculs concurrents (ex. deux actions
+            -- enregistrées en même temps) : sans ce verrou, deux
+            -- DELETE + INSERT entrelacés violeraient la clé primaire.
+            -- Les lectures (SELECT) restent possibles pendant le recalcul.
+            LOCK TABLE statistiques_resultats_symptome_action IN EXCLUSIVE MODE;
+
+            DELETE FROM statistiques_resultats_symptome_action;
 
             -- On ajoute une jointure jusqu'à `device` (via `intervention`)
             -- pour connaître le device_type de la machine sur laquelle
             -- l'action a été tentée, et on l'inclut dans le GROUP BY : un
             -- (symptom_id, action_id) donne donc une ligne par type
             -- d'appareil, pas une ligne unique tous appareils confondus.
-            INSERT INTO symptom_action_outcome_stats
+            INSERT INTO statistiques_resultats_symptome_action
                 (symptom_id, action_id, device_type, attempts, successes, accuracy_score, last_computed_at)
             SELECT
                 isym.symptom_id,
@@ -27,14 +37,41 @@ def recompute_stats(db) -> int:
                 SUM(CASE WHEN ia.is_confirmed_solution THEN 1 ELSE 0 END) AS successes,
                 AVG(CASE WHEN ia.is_confirmed_solution THEN 1.0 ELSE 0.0 END) AS accuracy_score,
                 NOW() AS last_computed_at
-            FROM intervention_action ia
-            JOIN intervention_symptom isym ON isym.intervention_id = ia.intervention_id
+            FROM action_intervention ia
+            JOIN symptome_intervention isym ON isym.intervention_id = ia.intervention_id
+            AND (ia.targets_symptom_id IS NULL OR ia.targets_symptom_id = isym.intervention_symptom_id)
             JOIN intervention iv ON iv.intervention_id = ia.intervention_id
-            JOIN device d ON d.device_id = iv.device_id
+            JOIN appareil d ON d.device_id = iv.device_id
+            -- Indispensable : symptom_id et action_id sont NOT NULL dans
+            -- cette table (migration 0004). Une action pas encore rattachée
+            -- au catalogue (action_id NULL -- exactement le cas d'une
+            -- solution que le technicien vient d'ajouter lui-même) ferait
+            -- planter l'INSERT entier sans ce filtre, cassant le calcul
+            -- pour TOUTES les paires, pas seulement celle-ci.
+            WHERE ia.action_id IS NOT NULL AND isym.symptom_id IS NOT NULL
             GROUP BY isym.symptom_id, ia.action_id, d.device_type;
             """
         )
     )
-    db.commit()
-    row_count = db.execute(text("SELECT COUNT(*) FROM symptom_action_outcome_stats")).scalar()
+    if commit:
+        db.commit()
+    row_count = db.execute(text("SELECT COUNT(*) FROM statistiques_resultats_symptome_action")).scalar()
     return int(row_count or 0)
+
+
+def recompute_stats_safely(db) -> bool:
+    """
+    Variante pour les routes HTTP : appelée APRÈS le commit de la donnée
+    métier. Un échec est signalé explicitement en 409 : la donnée est déjà
+    enregistrée, le client ne doit pas répéter l'écriture.
+    """
+    try:
+        recompute_stats(db)
+        return True
+    except SQLAlchemyError as error:
+        db.rollback()
+        trace("ERROR", "Échec du recalcul des statistiques (donnée métier conservée)", error_type=type(error).__name__)
+        raise StateConflictError(
+            "La donnée a été enregistrée, mais le recalcul des statistiques a échoué. "
+            "Ne répétez pas l'enregistrement ; un administrateur doit relancer le recalcul."
+        ) from error

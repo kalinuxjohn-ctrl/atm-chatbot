@@ -1,0 +1,14 @@
+{
+  "catalog_number": 6,
+  "code": "10",
+  "label": "Contrôleur défectueux",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 10 : contrôleur défectueux.\nContacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 6,
+    "component": "Contrôleur CMD",
+    "kind": "error"
+  }
+}

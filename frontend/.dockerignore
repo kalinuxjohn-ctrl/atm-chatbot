@@ -1,0 +1,8 @@
+# Exclut les fichiers inutiles et les secrets de la construction Docker.
+README.md
+docker-compose.yml
+.dockerignore
+__pycache__/
+*.py[cod]
+.env
+.env.*

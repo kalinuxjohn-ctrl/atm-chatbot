@@ -1,0 +1,16 @@
+{
+  "catalog_number": 52,
+  "code": "74",
+  "label": "Cassette 4 : avertisseur PSD4 encrassé ou capteur défectueux",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 74, cassette 4 : avertisseur de retrait PSD4 encrassé ou capteur de pression défectueux.\nContacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "family": "7x",
+    "cassette": 4,
+    "component": "PSD4 / capteur de pression",
+    "kind": "warning"
+  }
+}

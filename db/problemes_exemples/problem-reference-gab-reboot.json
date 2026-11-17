@@ -1,0 +1,7 @@
+{
+  "source_key": "problem-reference-gab-reboot",
+  "device_type": "gab",
+  "label": "Le GAB redémarre de façon répétée",
+  "reply": "Note la fréquence des redémarrages et les messages qui les précèdent. Vérifie les voyants d'alimentation visibles et les événements système accessibles. N'interromps pas une mise à jour en cours ; si les redémarrages continuent, sécurise l'exploitation selon les consignes du site et contacte le support.",
+  "display_order": 107
+}

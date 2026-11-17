@@ -1,0 +1,120 @@
+"""
+Sortie de l'appel LLM de chaque message (message_understanding_service.understand_message) :
+intention, texte brut présent dans le message et, hors diagnostic, la
+réponse rédigée par le LLM. AUCUN champ ne se termine en "_id" -- le LLM ne
+manipule que du texte, une intention et un numéro de résultat affiché,
+jamais un identifiant interne. La résolution vers de vrais ID se fait uniquement
+dans technical_reference_resolver_service.py, jamais ici.
+"""
+
+from __future__ import annotations
+
+from typing import Literal, Optional
+
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+
+
+class IdentifiedSymptom(BaseModel):
+    """Un symptôme distinct cité par le technicien, numéroté à partir de 1."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    number: int
+    text: str
+
+
+class UnderstoodMessage(BaseModel):
+    # extra="ignore" : si le LLM invente un champ en plus (ex. tente de
+    # renvoyer un "model_id"), il est silencieusement ignoré plutôt que de
+    # faire planter la validation ou, pire, d'être utilisé quelque part.
+    model_config = ConfigDict(extra="ignore")
+
+    # "diagnostic" : nouvelle panne à chercher en base ; "off_topic" :
+    # demande substantielle hors GAB/TPE, refusée par le backend.
+    # "conversation" : échanges sociaux, questions dans le domaine et suivis.
+    intent: Literal["conversation", "diagnostic", "off_topic"]
+    device_type_text: Optional[str] = None
+    model_name_text: Optional[str] = None
+    error_code_text: Optional[str] = None
+    reformulated_problem_text: Optional[str] = None  # uniquement si intent == "diagnostic"
+    # Chaque symptôme distinct du message, cherché SÉPARÉMENT en base (un
+    # embedding par symptôme) : un problème à plusieurs symptômes peut ainsi
+    # recouper plusieurs symptômes d'une même intervention passée.
+    symptoms: list[IdentifiedSymptom] = []
+    # Numéro (« Cas 2 » -> 2) du résultat de la dernière recherche dont parle
+    # le technicien. Vérifié par le backend contre la dernière recherche.
+    result_position: Optional[int] = None
+    # True quand le technicien demande plus de détails sur CE résultat : le
+    # backend relit alors le dossier complet du cas en base (case_detail_service.py).
+    case_detail_requested: bool = False
+    # Réponse au technicien, rédigée par le LLM uniquement si intent == "conversation".
+    # Pour "off_topic", le backend choisit lui-même une réponse de refus.
+    reply: Optional[str] = None
+    # Seulement quand une photo est jointe (photo_ocr_service.py) : texte lu
+    # sur la photo, tel quel, et sa signification. Absents sinon.
+    photo_text: Optional[str] = None
+    photo_meaning: Optional[str] = None
+
+    @classmethod
+    def response_schema(cls) -> dict:
+        """Schéma fermé pour les sorties structurées Claude, sans valeurs par défaut."""
+        schema = cls.model_json_schema()
+
+        def constrain(node):
+            if isinstance(node, dict):
+                node.pop("default", None)
+                if node.get("type") == "object":
+                    node["additionalProperties"] = False
+                for value in node.values():
+                    constrain(value)
+            elif isinstance(node, list):
+                for value in node:
+                    constrain(value)
+
+        constrain(schema)
+        return schema
+
+    @field_validator("photo_text", "photo_meaning", "error_code_text", mode="before")
+    @classmethod
+    def _empty_text_to_none(cls, value):
+        """Une chaîne vide ou faite d'espaces vaut « rien lu »."""
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value.strip() if isinstance(value, str) else value
+
+    @field_validator("case_detail_requested", mode="before")
+    @classmethod
+    def _missing_flag_to_false(cls, value):
+        """null (clé oubliée par le LLM) vaut false : pas de détail demandé, pas de réponse rejetée."""
+        return False if value is None else value
+
+    @field_validator("symptoms", mode="before")
+    @classmethod
+    def _normalize_symptoms(cls, value):
+        """
+        Tolère null et une simple liste de textes. Écarte les vides et les
+        doublons, puis renumérote 1, 2, 3... dans l'ordre reçu : le backend ne
+        dépend pas d'une numérotation parfaite du LLM.
+        """
+        if value is None:
+            return []
+        if not isinstance(value, list):
+            raise ValueError("« symptoms » doit être une liste.")
+        texts: list[str] = []
+        for item in value:
+            raw_text = item.get("text") if isinstance(item, dict) else item
+            if not isinstance(raw_text, str):
+                continue
+            cleaned = " ".join(raw_text.split())
+            if cleaned and cleaned.casefold() not in {known.casefold() for known in texts}:
+                texts.append(cleaned)
+        return [{"number": index + 1, "text": text} for index, text in enumerate(texts)]
+
+    @model_validator(mode="after")
+    def _validate_reply_by_intent(self):
+        # Une conversation doit avoir une réponse ; un refus hors sujet est fourni par le backend.
+        if self.intent == "conversation" and not self.error_code_text and not (self.reply or "").strip():
+            raise ValueError("Réponse absente pour un message hors diagnostic.")
+        if self.intent == "off_topic" and (self.reply is not None or self.error_code_text is not None):
+            raise ValueError("Une demande hors sujet doit être refusée par le backend sans référence de code.")
+        return self

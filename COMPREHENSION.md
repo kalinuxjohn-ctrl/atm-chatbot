@@ -1,179 +1,491 @@
-# ATM Maintenance Chatbot — Fichier de compréhension du projet
+# ATM Maintenance Chatbot — Comprendre le backend en 10 minutes
 
-Ce document sert à faire comprendre le projet à une IA qui n'a jamais vu le
-code, pour qu'elle puisse reprendre le travail directement.
+Ce document explique **uniquement le backend** (FastAPI + PostgreSQL).
+Le dossier `frontend/` n'est pas décrit ici.
 
 ---
 
-## 1. Objectif
+## 1. Le projet en une phrase
 
-Un chatbot d'aide au diagnostic pour les techniciens qui interviennent sur
-des distributeurs automatiques de billets (ATM). Aujourd'hui, quand un
-technicien intervient, il note ses observations sur papier ou dans un
-outil qui n'exploite jamais l'historique des interventions passées.
+Un technicien décrit une panne de **GAB** (distributeur de billets) ou de
+**TPE** (terminal de paiement). Le backend retrouve dans la base des
+**interventions passées similaires** (recherche sémantique), puis un **LLM**
+(Claude) les reformule en français.
 
-Le but : que chaque intervention (symptômes observés, actions tentées,
-résultat de chaque action) soit enregistrée dans une base structurée, pour
-qu'ensuite, face à un nouveau problème, le technicien décrive ce qu'il voit
-et le système retrouve automatiquement des interventions passées
-similaires (recherche sémantique), puis un LLM résume ces cas réels en
-langage naturel ("sur une machine similaire, ceci a été tenté puis cela a
-résolu le problème"). Le système ne doit JAMAIS inventer une solution : il
-ne fait que retrouver et reformuler des cas réels déjà enregistrés.
+> **Règle d'or : le système n'invente jamais de solution.** Il retrouve des
+> cas réels et le LLM ne fait que les reformuler. Chaque prompt le lui
+> interdit explicitement.
 
-## 2. Architecture choisie
+---
 
-- **Backend** : Python + FastAPI.
-- **Base de données** : PostgreSQL, avec l'extension **pgvector** pour la
-  recherche sémantique plus tard — pas de base vectorielle séparée, tout
-  reste dans la même base relationnelle transactionnelle.
-- **Contrainte forte : rester 100% gratuit / auto-hébergé.** Pas de clé API
-  payante nulle part :
-  - LLM : **Ollama en local** (ex: modèle `qwen:8b`) à la place de l'API
-    Claude/Anthropic initialement envisagée.
-  - Embeddings (vecteurs) : un moteur auto-hébergé (pas encore choisi
-    précisément — Voyage AI a été écarté pour la même raison de coût).
-- **Déploiement** : Docker Compose avec 3 services :
-  - `db` : Postgres + pgvector (image `pgvector/pgvector:pg16`)
-  - `init-db` : conteneur qui s'exécute une fois, applique les migrations
-    SQL dans l'ordre puis lance le script de seed, et s'arrête
-  - `web` : l'API FastAPI elle-même (port 8000)
-- **Principe de conception central** : séparer le **catalogue normalisé**
-  (vocabulaire contrôlé et réutilisable : `symptom`, `action`) de
-  **l'enregistrement brut** (`raw_text` — ce que le technicien a écrit
-  exactement, pour telle intervention précise). Les deux se rejoignent via
-  des tables de jonction (`intervention_symptom`, `intervention_action`).
-  C'est sur `raw_text` que portera la recherche sémantique plus tard, pas
-  sur le texte normalisé.
+## 2. Les briques techniques
 
-## 3. Rôle des répertoires
+| Brique | Choix | Où |
+| --- | --- | --- |
+| API | Python + FastAPI | `app/main.py` |
+| Base de données | PostgreSQL 16 + extension **pgvector** | `compose.backend.yaml` (service `db`) |
+| Embeddings (texte → vecteur) | **Voyage AI** (`voyage-3-large`, API), **1024 dimensions** | `app/services/embeddings_service.py` |
+| LLM | Claude | `app/services/claude_service.py` |
+| Déploiement | Docker Compose : `db` → `init-db` → `chatbot-backend` (+ `frontend/docker-compose.yml`) | `compose.backend.yaml` |
 
-- **`db/migrations/`** — scripts SQL numérotés (`0001` à `0004`), un par
-  étape du schéma, appliqués dans l'ordre par `init-db`. Table par table :
-  qui/quoi/quand (0001), catalogue + jonctions (0002), pgvector (0003 —
-  pas encore appliquée dans `docker-compose.yml`), stats dérivées (0004 —
-  idem, pas encore appliquée).
-- **`db/seed/`** — script d'insertion de données de démonstration (le cas
-  Alan/Bob du design doc d'origine).
-- **`app/core/`** — tout ce qui est transverse à toute l'application :
-  configuration (variables d'environnement) et connexion à la base.
-- **`app/models/`** — la représentation SQLAlchemy des tables : une classe
-  Python = une table SQL. Ce sont des objets qui parlent à la BASE.
-- **`app/schemas/`** — les contrats de données Pydantic pour l'API : ce
-  qu'un client HTTP envoie et reçoit. Volontairement séparés des modèles
-  (une table peut avoir des colonnes qu'on ne veut jamais exposer côté
-  API, ou l'inverse).
-- **`app/services/`** — toute la logique métier (créer une intervention,
-  chercher des cas similaires, appeler le LLM...), indépendante de FastAPI
-  — testable sans lancer un serveur web.
-- **`app/api/routes/`** — les endpoints FastAPI eux-mêmes : ils reçoivent
-  la requête HTTP, appellent un service, renvoient la réponse. Pas de
-  logique métier ici, seulement du câblage HTTP.
-- **`app/jobs/`** — tâches exécutées périodiquement, en dehors du cycle
-  requête/réponse HTTP (ex: recalcul nocturne de statistiques).
-- **`tests/`** — tests automatisés.
+Le backend et la base sont auto-hébergés ; Claude et les
+embeddings (Voyage AI) sont des **API externes avec clé** (fichier `.env`).
 
-### Fichiers qui portent le même nom de base dans plusieurs répertoires
+---
 
-Ce n'est pas une redondance, chaque couche a un rôle différent pour le
-même concept métier :
+## 3. Organisation du code
 
-- `models/intervention.py` (table SQL) / `schemas/intervention_schema.py`
-  (contrat API) / `services/intervention_service.py` (logique métier) :
-  trois couches pour le même concept "intervention".
-- `api/routes/chat.py` + `schemas/chat_schema.py` : l'endpoint de
-  conversation avec le chatbot (le technicien décrit son problème, reçoit
-  une réponse) — **existe dans l'arborescence mais son contenu n'a pas
-  encore été vérifié dans cette conversation.**
-- `services/embeddings_service.py`, `services/retrieval_service.py`,
-  `services/llm_service.py` : la chaîne de traitement IA prévue à terme —
-  vectoriser le texte du technicien, chercher les cas similaires, puis
-  résumer via le LLM. **Existent dans l'arborescence mais contenu non
-  vérifié ici — probablement des squelettes correspondant à
-  l'architecture proposée au début du projet, pas forcément implémentés.**
-- `services/stats_service.py` (la logique de calcul) vs
-  `jobs/recompute_stats.py` (ce qui déclenche ce calcul périodiquement) :
-  même séparation logique métier / déclencheur que pour `main.py` vs
-  les routes.
+```text
+app/
+├── main.py            crée l'app FastAPI, branche les routes, /health
+├── core/              config (.env), connexion BDD, traces [TRACE]
+├── models/            tables SQL en classes SQLAlchemy (1 classe = 1 table)
+├── schemas/           contrats JSON de l'API (Pydantic)
+├── api/routes/        endpoints HTTP — aucun métier, ils appellent un service
+├── services/          TOUTE la logique métier
+└── jobs/              tâches hors requête HTTP (recalcul des stats)
+db/
+├── migrations/        0001 → 0013, SQL appliqué une seule fois par init-db
+└── seed/              données de démo (Alan, Bob, codes d'erreur)
+tests/                 tests unitaires (unittest), sans réseau ni base réelle
+```
 
-**⚠️ Point à vérifier avant de s'appuyer dessus** : ces fichiers (`chat.py`,
-`chat_schema.py`, `embeddings_service.py`, `llm_service.py`,
-`retrieval_service.py`, `stats_service.py`, `recompute_stats.py`,
-`tests/test_embeddings.py`, `tests/test_retrieval.py`) n'ont pas été créés
-dans cette conversation — ouvrez-les d'abord pour voir s'ils sont vides,
-des squelettes commentés, ou déjà codés, avant de continuer dessus.
+Règle : **route → service → base**. Une route ne contient jamais de logique.
 
-**⚠️ Autre point** : deux fichiers d'environnement semblent coexister,
-`env.example` et `env .example` (avec un espace, probablement un doublon
-accidentel) — à nettoyer.
+---
 
-## 4. Ce qui a déjà été fait (vérifié fonctionnel)
+## 4. Le flux principal : du message à la réponse (`POST /api/chat`)
 
-- Les 4 migrations SQL (`0001` : technician/manufacturer/atm_model/atm/
-  intervention ; `0002` : component/symptom/action + jonctions +
-  diagnosis ; `0003` : colonne `embedding` + index pgvector, écrite mais
-  **pas encore appliquée** dans `docker-compose.yml` ; `0004` : table de
-  stats dérivée, écrite mais **pas encore appliquée** non plus).
-- Le script de seed (cas Alan : résolu par réinitialisation du lecteur de
-  carte ; cas Bob : mêmes symptômes partiels, résolu différemment par
-  remplacement d'un capteur).
-- Les modèles SQLAlchemy pour `technician`, `atm` (+ manufacturer/model/
-  version), `catalog` (component/symptom/action/stats), `intervention` (+
-  intervention_symptom/intervention_action/diagnosis). **La colonne
-  `embedding` est volontairement absente du modèle `InterventionSymptom`
-  actuellement, car la migration 0003 n'est pas encore appliquée** — les
-  deux doivent avancer ensemble.
-- Le schéma Pydantic, le service et la route pour `intervention` :
-  `POST /interventions` (créer) et `GET /interventions/{id}` (lire) — les
-  deux endpoints fonctionnent, testés avec `curl` contre les données
-  seedées.
-- La config (`app/core/config.py`) adaptée pour Ollama (champ
-  `ollama_base_url`, pas de clé Anthropic ni Voyage AI requise).
-- Le `docker-compose.yml` (3 services) corrigé et fonctionnel.
+C'est le cœur du projet. Le chef d'orchestre est
+`app/services/chat_orchestrator_service.py` → `handle_chat_message()`.
 
-### Bugs rencontrés et corrigés en cours de route (utile pour ne pas les reproduire)
+```text
+Technicien
+   │  { conversation_id?, technician_id, message, device_type? (gab|tpe), photo? }
+   ▼
+1. routes/chat.py            reçoit et valide (schemas/conversation_schema.py)
+   ▼
+2. conversation_service      récupère la conversation, ou en crée une
+   ▼
+3. context_service           charge le contexte JSON de la conversation
+   │                         (+ mémorise device_type s'il est fourni)
+   ▼
+4. conversation_service      enregistre le message "user" (après l'appel de
+   │                         compréhension : avec une photo, le texte lu y est ajouté)
+   ▼
+5. _route_message()          décide QUOI faire du message (voir §5)
+   │   ├─ demande de détail ("le deuxième")  → dossier complet du cas relu en base + 2e appel LLM (§5.2)
+   │   ├─ description de symptôme             → recherche sémantique + résumé LLM
+   │   └─ autre (salut, question courte)      → réponse LLM simple
+   ▼
+6. conversation_service      enregistre la réponse "assistant"
+   ▼
+7. context_service           sauvegarde le contexte mis à jour
+   ▼
+8. db.commit()  →  { conversation_id, reply }
+```
 
-1. `DATABASE_URL` doit être `postgresql+psycopg2://...` (pas juste
-   `postgresql://...`) pour que SQLAlchemy 2.x utilise `psycopg2-binary`
-   plutôt que `psycopg` (v3, non installé).
-2. Le script de seed appelle `psycopg2.connect()` **directement** (pas via
-   SQLAlchemy) : il faut retirer le `+psycopg2` de l'URL avant de le lui
-   passer, sinon DSN invalide.
-3. `main.py` doit **explicitement importer `app.models`** (le package
-   entier, pas juste `app.models.intervention`) pour que toutes les
-   classes ORM (`Atm`, `Technician`, etc.) soient enregistrées avant que
-   SQLAlchemy essaie de résoudre les `relationship("NomDeClasse", ...)`
-   passées en chaîne de caractères — sinon erreur
-   `InvalidRequestError: ... failed to locate a name`.
-4. Un fichier modifié localement doit rester en encodage **UTF-8** —
-   un enregistrement dans un autre encodage corrompt les accents (deviennent
-   des `?`) sans empêcher le code de tourner, donc ce n'est pas toujours
-   visible immédiatement.
+Le front renvoie ensuite le `conversation_id` reçu à chaque message suivant :
+c'est ce qui relie les messages entre eux.
 
-## 5. Plan proposé pour la suite
+---
 
-Dans l'ordre logique (chaque étape s'appuie sur la précédente) :
+## 5. Comment le message est aiguillé (`_route_message`)
 
-1. **Enregistrer les actions/résultats** (`intervention_action`) — même
-   principe que les symptômes, complète la boucle d'enregistrement d'une
-   intervention (symptômes observés → actions tentées → résultat).
-2. **Normalisation** : rattacher le `raw_text` saisi par le technicien à
-   une entrée du catalogue (`symptom_id` / `action_id`), manuellement pour
-   commencer.
-3. **Choisir le moteur de vecteurs local** (ex: `sentence-transformers`
-   auto-hébergé) et appliquer la migration `0003_pgvector.sql` dans
-   `docker-compose.yml` (+ ajouter la colonne `embedding` au modèle
-   `InterventionSymptom` en même temps).
-4. **Recherche sémantique** (`retrieval_service.py`) : étant donné un
-   nouveau texte de symptôme, retrouver les interventions passées les plus
-   proches.
-5. **Résumé via Ollama** (`llm_service.py`) : présenter les cas retrouvés
-   en langage naturel, sans jamais inventer d'information hors de ce qui a
-   été retrouvé.
-6. **Job de recalcul des statistiques** (`stats_service.py` +
-   `recompute_stats.py`) : appliquer la migration `0004` et calculer
-   périodiquement le taux de succès de chaque paire (symptôme, action).
-7. *(Optionnel, plus tard)* Rendre les 4 migrations idempotentes
-   (`IF NOT EXISTS` partout, y compris les `CREATE TYPE`), pour que
-   relancer `init-db` sans repartir d'une base vide ne produise plus
-   d'erreurs bruyantes dans les logs.
+Le message validé part en **un seul appel LLM** (`message_understanding_service`)
+avec toute la conversation (mise en cache chez Claude) et le détail des résultats de
+la dernière recherche relus en base (`_describe_last_search`). Le LLM renvoie
+une intention, et sa réponse si ce n'est pas un diagnostic. Puis, dans
+`chat_orchestrator_service.py` :
+
+1. **`diagnostic`** (nouvelle panne) → `_handle_symptom_search` : recherche
+   sémantique **par symptôme** (le LLM liste et numérote chaque symptôme du
+   message dans `symptoms`), puis résumé LLM.
+2. **`conversation`** (tout le reste : « détaille le cas 2 », « ça n'a pas
+   marché », l'heure…) → la réponse du LLM est renvoyée telle quelle. Si le LLM
+   indique un résultat (`result_position`), le backend vérifie qu'il existe
+   dans la dernière recherche et le retient comme `selected_result`. Si c'est
+   une **demande de détail** sur ce cas (`case_detail_requested`), la réponse est
+   rédigée à partir du dossier complet du cas (§5.2).
+
+### 5.1 Photo jointe : lecture du texte affiché (OCR)
+
+Le technicien peut joindre une photo de l'appareil (écran du GAB, afficheur
+du TPE, ticket) avec son message, ou à la place de son message. Exemple :
+« je viens d'arriver, ça affiche seulement ça en boucle » + photo de l'écran.
+Le message seul n'apporte rien ; le texte de la photo décrit la panne.
+
+```text
+photo (réduite par le navigateur : 1568 px max, JPEG)
+   ▼
+photo_ocr_service.accept_photo()     interrupteur PHOTO_OCR_ENABLED + Claude uniquement
+   ▼
+1er appel à Claude (understand_message) : la photo est jointe au DERNIER message,
+avec une consigne de lecture (la consigne système ne change pas → cache intact)
+   ▼
+Claude renvoie le JSON habituel + "photo_text" (texte lu tel quel)
+et "photo_meaning" (sa signification). Si ce texte décrit une panne, il est
+ajouté aux "symptoms" numérotés → recherche en base INCHANGÉE (§6)
+   ▼
+réponse précédée de « 📷 Texte lu sur la photo : « … » » + signification
+```
+
+- **Tout est dans `app/services/photo_ocr_service.py`** : consigne envoyée à
+  Claude, interrupteur, ajout de la lecture au message et à la réponse. Ses
+  fonctions ne font rien sans photo ; les autres fichiers se contentent de les appeler.
+- **Désactiver** : `PHOTO_OCR_ENABLED=false` dans `.env`. Le bouton 📷 disparaît
+  (le frontend lit `GET /api/chat/photo-ocr`) et une photo reçue est ignorée.
+  La fonctionnalité photo utilise Claude.
+- **La photo n'est jamais enregistrée.** Seul le texte lu est gardé, dans le
+  message du technicien (`[Photo jointe, texte lu : « … »]`) et dans la
+  réponse : les tours suivants savent ce que montrait la photo.
+- Une photo **seule** est acceptée : un texte vide ou rejeté par
+  `text_validation_service` est remplacé par `(Photo envoyée sans message.)`.
+- Contrôles (`schemas/photo_schema.py`) : JPEG, PNG, WebP ou GIF, base64
+  valide, au plus `PHOTO_MAX_BYTES` (3,5 Mo décodés) → sinon 422.
+- Pas de texte lisible : Claude demande une photo plus nette, et la réponse
+  commence par « Aucun texte lisible sur la photo ».
+
+### 5.2 « Détaille le cas 2 » : le dossier complet du cas
+
+La recherche n'envoie au LLM qu'un **résumé court** de chaque cas (`build_case`).
+Quand le technicien demande plus de détails sur UN cas, le backend relit tout
+ce que la base sait de ce cas, et c'est ce dossier que le LLM développe.
+
+```text
+« détaille le cas 2 »
+   ▼
+1er appel (compréhension) : result_position = 2, case_detail_requested = true
+   ▼
+context.last_search.results[position 2] → intervention_id (vérifié, retenu en selected_result)
+   ▼
+case_detail_service.build_case_dossier()   relit TOUTES les tables du cas :
+   intervention (ticket, dates, bilan, summary_text) · technician
+   device → device_model → manufacturer · TOUS les intervention_symptom (+ gravité)
+   intervention_action (ordre, heure, result_description, effet, symptôme visé)
+   diagnosis (cause, confirmée ou non, PIÈCE EN CAUSE)
+   ▼
+2e appel LLM (develop_case) : « voici tout ce que la base contient sur ce cas, développe »
+   + « la base indique que la pièce en cause est X : cite-la » (ou : « non précisée, n'invente rien »)
+```
+
+- **Tout est dans `app/services/case_detail_service.py`.** La recherche par
+  symptôme n'est pas modifiée.
+- Le 2e appel n'a lieu **que** pour une demande de détail sur un cas réel. Les
+  autres questions (« ça n'a pas marché », un résultat statistique) gardent la
+  réponse du 1er appel, sans surcoût.
+- **Pièce en cause** : `diagnostic.root_cause_component_text`, en **texte libre**
+  (migration 0013), saisie dans le formulaire « Proposer une intervention ». Pas
+  de liste ni de table à remplir avant. Les anciens diagnostics qui n'avaient
+  que `root_cause_component_id` reçoivent le nom de la pièce du catalogue.
+
+---
+
+## 6. La recherche sémantique, étape par étape
+
+### 6.0 Un symptôme = une recherche
+
+Le LLM renvoie, en plus de la reformulation globale, la liste numérotée des
+symptômes du message (`UnderstoodMessage.symptoms`) :
+
+```json
+"symptoms": [
+  {"number": 1, "text": "L'écran du GAB reste noir"},
+  {"number": 2, "text": "La carte reste bloquée dans le lecteur"}
+]
+```
+
+Le schéma nettoie la liste (doublons, vides) et renumérote 1, 2, 3 ;
+l'orchestrateur en garde au plus `MAX_SYMPTOMS_PER_MESSAGE` (5). **Chaque
+symptôme a son propre embedding et sa propre recherche** : un message à
+plusieurs symptômes ne donne plus un vecteur « moyen », loin de chacun d'eux.
+Liste vide : la reformulation sert de symptôme unique (comportement d'avant).
+
+### 6.1 Embedding des symptômes
+
+`embeddings_service.generate_embedding(texte, is_query=True)` (un symptôme) ou
+`generate_embeddings_batch(textes, is_query=True)` (plusieurs symptômes, **un
+seul appel** à Voyage) :
+- nettoie le texte (espaces multiples, bords) ;
+- appelle Voyage AI avec `input_type = "query"` → vecteur de 1024 nombres ;
+- vérifie la dimension (erreur claire si le modèle ne correspond pas à la config).
+
+Les vecteurs de recherche unitaires sont gardés en cache (`lru_cache`).
+
+> Les textes **stockés** sont encodés avec `is_query=False`
+> (`input_type = "document"`) : Voyage distingue « question » et « document ».
+
+### 6.2 Recherche des symptômes proches
+
+`retrieval_service.fetch_similar_symptoms_per_symptom(db, textes, device_type)`
+lance, pour chaque symptôme, `fetch_similar_symptoms(db, texte, device_type)` :
+- requête pgvector sur `symptome_intervention.embedding` avec l'opérateur
+  `<=>` (distance cosinus), convertie en `similarity = 1 - distance` ;
+- **filtre par `device_type`** (jointure `intervention` → `appareil`) : un
+  symptôme de TPE ne sort jamais pour un GAB ;
+- **filtre par modèle** si le message en cite un (`model_name_text`) ;
+- **seuil de pertinence** `SYMPTOM_SIMILARITY_THRESHOLD` (0.5 par défaut) :
+  ce qui est en dessous est éliminé ;
+- **erreur explicite** : si pgvector échoue, annulation du savepoint puis
+  erreur HTTP 503, sans calcul Python de secours.
+
+### 6.3 Regroupement en cas réels
+
+`case_retrieval_service.find_similar_cases(..., symptoms=...)` :
+- cherche 8 symptômes enregistrés **par symptôme du technicien**, puis
+  **regroupe par intervention** (`_group_matches_by_intervention`) : pour
+  chaque intervention, la meilleure correspondance de **chaque** symptôme du
+  technicien. Une intervention peut donc recouper plusieurs symptômes ;
+- classe (`_case_rank_key`) d'abord par **nombre de symptômes recoupés**,
+  puis par **similarité moyenne**, et garde les **3 meilleures** ;
+- `build_case()` assemble pour chacune : technicien, machine, symptômes
+  recoupés (`matched_symptoms`), actions dans l'ordre, diagnostic, résultat
+  final et **fiabilité** (lue dans `statistiques_resultats_symptome_action` pour l'action
+  qui a résolu le cas). La correspondance la plus proche reste la référence
+  unique du cas (`matched_symptom_text`, `matched_intervention_symptom_id`),
+  utilisée par les propositions de solution.
+
+### 6.4 Restitution par le LLM
+
+`_summarize_cases()` met chaque cas sur une ligne (`_format_case`, qui liste
+les symptômes recoupés et le numéro du symptôme du technicien correspondant),
+construit un prompt « résume ces cas, garde l'ordre Cas 1 / Cas 2…, **n'invente
+rien** » et appelle `claude_service.generate_reply()`. Avec plusieurs symptômes, le
+prompt les liste numérotés et demande d'indiquer, pour chaque cas, ceux qu'il
+recoupe, et de signaler un symptôme recoupé par aucun cas.
+
+`claude_service` appelle Claude, choisi avec `LLM_PROVIDER=claude`. Une
+indisponibilité remonte à l'API (503 neutre), sans réponse de secours.
+
+---
+
+## 7. La gestion du contexte (pour demander plus d'aide)
+
+Fichier : `app/services/context_service.py`. Table : `contexte_conversation`
+(**une ligne JSON par conversation**).
+
+Contenu typique du contexte :
+
+```json
+{
+  "device_type": "gab",
+  "intent": "diagnostic",
+  "last_search": {
+    "query": "la carte reste bloquée et l'écran est noir",
+    "symptoms": [
+      {"number": 1, "text": "La carte reste bloquée"},
+      {"number": 2, "text": "L'écran est noir"}
+    ],
+    "results": [
+      {"position": 1, "kind": "case", "intervention_id": 3001,
+       "matched_intervention_symptom_id": 9001,
+       "matched_symptoms": [{"query_symptom_number": 1, "intervention_symptom_id": 9001, "...": "..."}]},
+      {"position": 2, "kind": "case", "intervention_id": 3045}
+    ]
+  },
+  "selected_result": {"position": 2, "kind": "case", "intervention_id": 3045}
+}
+```
+
+Comment ça marche :
+- après chaque recherche, `record_last_search()` mémorise **les cas affichés
+  avec leur numéro** (et efface l'ancienne sélection) ;
+- à chaque message, les résultats mémorisés sont **relus en base**
+  (`build_case`) et envoyés au LLM avec la mémoire de conversation : c'est lui qui
+  comprend « le **cas 2** », « le deuxième » ou « celui d'Alan » ;
+- le LLM renvoie le numéro du résultat visé ; `select_result_by_position()`
+  vérifie qu'il existe et le retient (référence d'une proposition de solution) ;
+- pour une demande de détail, ce numéro mène à l'`intervention_id`, et le
+  dossier complet de l'intervention est relu en base (§5.2) ;
+- `device_type` est mémorisé une fois et réutilisé aux tours suivants.
+
+**Limites actuelles, à connaître :**
+- les échanges des menus de suggestions (pannes fréquentes, codes d'erreur)
+  ne sont pas enregistrés côté backend : le LLM ne les voit pas ;
+- les six derniers échanges (tour technicien et réponses associées) restent intacts ;
+- les échanges anciens sont condensés par Claude à partir de 12000 caractères anciens
+  ou de `CHAT_HISTORY_MAX_MESSAGES` (100) messages non résumés avec au moins 1000
+  caractères anciens. Le résumé est persisté dans le contexte JSONB, avec le dernier
+  message couvert ; les originaux restent en base. Les tours suivants réutilisent
+  ce résumé sans nouvel appel de condensation avant le prochain seuil ;
+- le résumé doit être au moins 25 % plus court que sa source et ne pas dépasser
+  6000 caractères. Il préserve les faits techniques, corrections, actions et résultats,
+  mais une reformulation ne garantit pas chaque nuance de l'échange original ;
+- si aucun `device_type` n'a été donné (ni dans l'interface, ni dans le
+  message), aucune recherche n'est lancée : l’ATM-Chatbot demande GAB ou TPE ;
+- un `technician_id` inexistant provoque une erreur de clé étrangère (500).
+
+---
+
+## 8. Le stockage : comment une intervention entre dans la base
+
+`POST /interventions` → `intervention_service.create_intervention_with_symptoms()` :
+
+1. pour chaque symptôme saisi, calcul de l'**embedding "document"**
+   (`is_query=False`) ;
+2. **rattachement automatique au catalogue** : `find_best_catalog_match()`
+   cherche le symptôme catalogué le plus proche (même `device_type`) ; si
+   la distance ≤ `symptom_catalog_match_max_distance` (0.15, soit environ 85 %
+   de similarité), on reprend son `symptom_id`, sinon il reste `NULL` ;
+3. insertion de l'intervention + symptômes, puis écriture des vecteurs en SQL
+   direct (`store_symptom_embedding`), car la colonne `embedding` n'est pas
+   mappée dans l'ORM.
+
+`POST /interventions/{id}/actions` ajoute une action tentée (ordre
+automatique, résultat, `is_confirmed_solution`) et **recalcule les stats** si
+l'action est cataloguée.
+
+**Principe clé** : on sépare
+- le **brut** (`raw_text`), c'est-à-dire ce que le technicien a écrit, qui sert à la recherche sémantique ;
+- le **catalogue** (`symptome`, `action`), c'est-à-dire un vocabulaire contrôlé qui sert aux statistiques.
+
+---
+
+## 9. Les données de la base
+
+| Groupe | Tables | Rôle |
+| --- | --- | --- |
+| Parc | `fabricant`, `modele_appareil`, `version_modele_appareil`, `appareil` | les machines ; `appareil.device_type` = **`gab` ou `tpe` uniquement** (ENUM SQL) |
+| Personnes | `technicien` | qui intervient |
+| Interventions | `intervention`, `symptome_intervention` (+ `embedding vector(1024)`), `action_intervention`, `diagnostic` | l'historique réel |
+| Catalogue | `composant`, `symptome`, `action` | vocabulaire normalisé |
+| Statistiques | `statistiques_resultats_symptome_action` | fiabilité de chaque paire (symptôme, action) **par type d'appareil** |
+| Conversation | `conversation`, `message_conversation`, `contexte_conversation` | fil de chat + mémoire JSON |
+| Codes d'erreur | `panne`, `code_erreur` | référentiel indépendant (recherche SQL classique) ; `device_type` + `reply` = réponse enregistrée du menu de suggestions |
+| Pannes fréquentes | `panne_frequente` | menu de suggestions de l’ATM-Chatbot, réponse enregistrée par les admins (sans IA) |
+
+**Migrations** (`db/migrations/`, appliquées dans l'ordre, une seule fois,
+suivies dans `schema_migrations`) :
+`0001` parc + interventions · `0002` catalogue + jonctions + diagnostic ·
+`0003` pgvector + index HNSW · `0004` stats · `0005` action liée à un symptôme
+précis · `0006` conversations + contexte · `0007` codes d'erreur · `0008`
+embeddings Voyage (1024) · `0009` propositions de solution · `0010` action
+issue d'une proposition · `0011` menus de suggestions · `0012` ajouts
+d'intervention · `0013` pièce en cause en texte libre (`diagnostic.root_cause_component_text`).
+
+**`device_type`** : contrôlé en base (ENUM) et dans l'API par
+`app/schemas/device_type.py`. `" GAB "` et `"Tpe"` sont normalisés en
+`gab`/`tpe` ; toute autre valeur est rejetée (422).
+
+### Les statistiques
+
+`stats_service.recompute_stats()` vide puis recalcule
+`statistiques_resultats_symptome_action` : pour chaque (symptôme catalogué, action
+cataloguée, `device_type`), on compte les tentatives (`attempts`), les succès
+(`successes`) et on calcule `accuracy_score = successes / attempts`.
+Il est lancé par `init-db`, après l'ajout d'une action cataloguée, et par
+`python -m app.jobs.recompute_stats` (prévu pour un CRON).
+
+### Les données de démo (`db/seed/seed_demo_data.py`)
+
+- 2 GAB (501, 502), 2 techniciens (**7 Alan**, **8 Bob**) ;
+- **Intervention 3001 (Alan)** : carte retenue + transaction bloquée + pas
+  d'espèces → 3 actions, seule la **réinitialisation du lecteur** résout ;
+- **Intervention 3045 (Bob)** : symptômes en partie communs → résolue par le
+  **remplacement du capteur** : même panne, autre solution, rien n'est fusionné ;
+- pièce en cause : « Card reader » (3001) et « Card-retention sensor » (3045,
+  texte libre absent de la table `composant`) ;
+- codes d'erreur E42, E43, E67 ;
+- calcul des embeddings des 6 symptômes (`EMBEDDING_BACKFILL`, dont le texte
+  doit être **identique mot pour mot** à celui des `INSERT`) ;
+- idempotent (`ON CONFLICT DO NOTHING`), mais **ne met pas à jour** une ligne
+  déjà présente.
+
+---
+
+## 10. Toutes les routes
+
+| Méthode et route | Rôle | Service |
+| --- | --- | --- |
+| `POST /api/chat` | conversation complète (flux du §4), photo facultative (§5.1) | `chat_orchestrator_service` |
+| `GET /api/chat/photo-ocr` | `{ "enabled": bool }` : affiche ou cache le bouton photo | `photo_ocr_service.is_enabled` |
+| `GET /api/chat/conversations/{id}/solution-proposal-context`, `POST /api/chat/conversations/{id}/solution-proposals` | proposer une solution (voir README) | `solution_proposal_service` |
+| `POST`/`GET /api/intervention_add` | proposer une nouvelle intervention (validée par un admin) | `intervention_add_service` |
+| `/api/admin/solution-proposals`, `/api/admin/intervention_add` | validation admin (clé `X-Admin-Key`) | `solution_proposal_service`, `intervention_add_service` |
+| `POST /api/chat/search-symptom` | recherche « statistique » sans conversation : symptômes proches → actions classées par fiabilité + résumé LLM | `retrieval_service.find_ranked_solutions` + `claude_service.summarize_solutions` |
+| `POST /interventions` | créer une intervention + symptômes (embeddings + rattachement catalogue), admin | `intervention_service` |
+| `GET /interventions/{id}` | lire une intervention | `intervention_service` |
+| `POST /interventions/{id}/actions` | ajouter une action tentée | `intervention_service` |
+| `GET /catalog/actions/similar` | actions du catalogue proches d'un texte (avant d'en créer une) | `catalog_service` |
+| `POST /catalog/actions/resolve` | créer une action au catalogue ou fusionner (`new` / `merge`) + recalcul des stats | `catalog_service` |
+| `GET /api/error_code/search` | recherche de code d'erreur (SQL `ILIKE`, sans IA) | `error_code_service` |
+| `GET /api/error_code?device_type=…`, `GET /api/error_code/{id}/solution` | menu « Codes d'erreur connus » : liste et réponse enregistrée (sans IA) | `error_code_service` |
+| `GET /api/usual_problem?device_type=…`, `GET /api/usual_problem/{id}/solution` | menu « Pannes fréquentes » : liste et réponse enregistrée (sans IA) | `usual_problem_service` |
+| `GET`/`POST /api/admin/error_code`, `PUT`/`DELETE /api/admin/error_code/{id}` | administration des codes d'erreur (clé `X-Admin-Key`) | `error_code_service` |
+| `GET`/`POST /api/admin/usual_problem`, `PUT`/`DELETE /api/admin/usual_problem/{id}` | administration des pannes fréquentes (clé `X-Admin-Key`) | `usual_problem_service` |
+| `GET /health` | l'API répond-elle ? | `main.py` |
+
+Documentation interactive : <http://localhost:8000/docs>.
+
+**Deux recherches complémentaires, à ne pas confondre :**
+- `find_similar_cases` (dans `/chat`) répond à la question « **montre-moi des cas réels** », chacun raconté ;
+- `find_ranked_solutions` (dans `/api/chat/search-symptom`, et en repli dans `/api/chat`) répond à « **qu'est-ce qui marche le mieux statistiquement** ».
+
+---
+
+## 11. Configuration (`app/core/config.py`, lue depuis `.env`)
+
+| Variable | Défaut | Rôle |
+| --- | --- | --- |
+| `DATABASE_URL` | `postgresql+psycopg2://…/atm_chatbot` | connexion BDD |
+| `EMBEDDING_PROVIDER` / `VOYAGE_API_KEY` / `VOYAGE_MODEL` / `EMBEDDING_DIMENSIONS` | `voyage` / clé vide / `voyage-3-large` / 1024 | embeddings |
+| `LLM_PROVIDER` | `claude` | fournisseur LLM |
+| `CLAUDE_API_KEY` / `CLAUDE_MODEL` | clé vide / `claude-sonnet-5-5` | API Claude |
+| `CLAUDE_STREAMING` | `true` | réception progressive des réponses Claude |
+| `SYMPTOM_SIMILARITY_THRESHOLD` | 0.5 | seuil de pertinence de la recherche |
+| `SYMPTOM_CATALOG_MATCH_MAX_DISTANCE` | 0.15 | seuil de rattachement automatique au catalogue |
+| `ACTION_CATALOG_MATCH_MAX_DISTANCE` | 0.15 | réutilisation d'une action du catalogue à l'approbation |
+| `MAX_SYMPTOMS_PER_MESSAGE` | 5 | symptômes d'un message cherchés séparément |
+| `CHAT_HISTORY_MAX_MESSAGES` | 100 | seuil de condensation des messages non résumés (six derniers échanges conservés) |
+| `PHOTO_OCR_ENABLED` | `true` | photos du chat lues par Claude (§5.1) ; `false` = fonctionnalité coupée |
+| `PHOTO_MAX_BYTES` | 3 500 000 | taille maximale d'une photo, une fois décodée |
+| `ADMIN_API_KEY` | vide (admin désactivé) | clé des routes `/api/admin` |
+
+`Settings` ignore les variables inconnues (`extra="ignore"`) : le fichier
+`.env` peut être partagé avec Docker Compose.
+
+---
+
+## 12. Lancer et observer
+
+```powershell
+docker compose up -d        # db → init-db (migrations + import codes) → chatbot-backend:8000
+docker compose logs -f chatbot-backend  # suivre les traces
+```
+
+Chaque étape importante écrit une ligne `[TRACE][CATÉGORIE]` (`app/core/tracing.py`).
+Les catégories utilisées sont REQUEST, CONTEXT, PROCESSING, SEARCH, EMBEDDING,
+LLM, PHOTO, RESPONSE et ERROR. Les traces PHOTO ne contiennent ni l'image
+ni le texte lu : seulement le format, la taille et « texte trouvé oui/non ». Suivre ces lignes permet de voir tout le trajet d'un
+message, de la requête à la réponse.
+
+Le backend doit accéder à l'API du fournisseur choisi et recevoir sa clé
+via `.env` (`CLAUDE_API_KEY`).
+
+---
+
+## 13. Pièges déjà rencontrés (ne pas les reproduire)
+
+1. `DATABASE_URL` doit commencer par `postgresql+psycopg2://` (SQLAlchemy 2.x).
+2. Le seed utilise `psycopg2` directement : il retire `+psycopg2` de l'URL.
+3. `main.py` doit importer `app.models` (le package entier), sinon les
+   `relationship("…")` ne trouvent pas leurs classes.
+4. Après un échec pgvector, il faut faire un **`db.rollback()`**, sinon toute
+   requête suivante échoue (`InFailedSqlTransaction`).
+5. Garder les fichiers en **UTF-8**, sinon les accents sont corrompus sans
+   message d'erreur visible.
+6. Un texte du seed modifié dans les `INSERT` doit aussi l'être dans
+   `EMBEDDING_BACKFILL`.
+
+---
+
+## 14. Pistes d'amélioration
+
+- Relier les relances sans ordinal (« pourquoi ? ») au dernier cas affiché,
+  via `selected_result` ou les derniers messages.
+- Renvoyer 404/422 au lieu de 500 pour un `technician_id` inconnu.
+- Ajouter une route de lecture de l'historique (`GET /chat/{id}/messages`)
+  et une vraie authentification.
+- `build_case` lit des champs `device` de façon défensive (`getattr`) : à
+  simplifier maintenant que le modèle `Device` est connu.
+- Nettoyer les clés `.env` refusées par `Settings`.

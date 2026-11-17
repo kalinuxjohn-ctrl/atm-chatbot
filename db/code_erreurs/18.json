@@ -1,0 +1,14 @@
+{
+  "catalog_number": 18,
+  "code": "22",
+  "label": "Amplificateur photoélectrique ou initialisation en défaut",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 22 : amplificateur de barrière photoélectrique défectueux ou initialisation manquée.\nDégager les parcours des billets selon la procédure de contrôle. Remettre le module en position de fonctionnement et attendre son état prêt.\nSi 22 reste affiché, effectuer un RESET avec le capteur de fonction. En cas d'échec, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 8,
+    "component": "Barrières photoélectriques / amplificateur",
+    "kind": "error"
+  }
+}

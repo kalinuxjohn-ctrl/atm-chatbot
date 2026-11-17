@@ -1,0 +1,149 @@
+"""
+Logique métier du catalogue d'actions : proposer des candidats similaires
+avant qu'un technicien n'ajoute une nouvelle action, puis appliquer sa
+décision (nouvelle entrée, ou fusion avec une entrée existante).
+"""
+
+from sqlalchemy import func, text
+from sqlalchemy.orm import Session
+
+from app.core.errors import ReferenceNotFoundError, StateConflictError
+from app.core.tracing import trace
+from app.models.catalog import Action, Component
+from app.models.intervention import InterventionAction
+from app.schemas.catalog_schema import ActionCatalogAdminCreate, ActionCatalogDocument, ResolveActionRequest
+from app.services import action_catalog_document_service as action_documents
+from app.services.embeddings_service import generate_embedding, generate_embeddings_batch
+from app.services.retrieval_service import MAX_SYMPTOM_LIMIT, cosine_similarity
+from app.services.stats_service import recompute_stats_safely
+
+
+def list_catalog_actions(db: Session) -> list[Action]:
+    """Liste les actions existantes pour l'administration et le rattachement manuel."""
+    return db.query(Action).order_by(func.lower(Action.canonical_text), Action.action_id).all()
+
+
+def create_catalog_action(db: Session, payload: ActionCatalogAdminCreate) -> Action:
+    """Ajoute une action manuellement au catalogue, en refusant les doublons exacts."""
+    canonical_text = payload.canonical_text.strip()
+    if db.get_bind().dialect.name == "postgresql":
+        db.execute(text("LOCK TABLE action IN SHARE ROW EXCLUSIVE MODE"))
+    existing_texts = {
+        action.canonical_text.strip().casefold()
+        for action in db.query(Action.canonical_text).all()
+    }
+    if canonical_text.casefold() in existing_texts:
+        raise StateConflictError("Une action identique existe déjà dans le catalogue.")
+
+    folder = action_documents.directory()
+    folder.mkdir(parents=True, exist_ok=True)
+    document = ActionCatalogDocument(
+        catalog_number=action_documents.next_catalog_number(folder),
+        canonical_text=canonical_text,
+        device_type=payload.device_type,
+    )
+    action = Action(canonical_text=canonical_text, device_type=payload.device_type)
+    try:
+        with action_documents.persist_document(document):
+            db.add(action)
+            db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    db.refresh(action)
+    trace("ADMIN", "Action ajoutée au catalogue", action_id=action.action_id)
+    return action
+
+
+def find_similar_actions(db: Session, action_text: str, limit: int = 5) -> list[dict]:
+    """
+    Compare un texte au catalogue d'actions existant, pour aider un
+    technicien à juger si sa solution est vraiment nouvelle.
+
+    Le catalogue reste petit (vocabulaire contrôlé) : on calcule les
+    embeddings à la volée à chaque appel plutôt que de les stocker en base
+    -- pas besoin d'une colonne/migration dédiée pour ça. Tout le catalogue
+    est vectorisé en UN seul appel groupé (et non un appel par action).
+    """
+    if not (action_text or "").strip():
+        return []
+    return rank_catalog_actions(db, [action_text], limit=limit)[0]
+
+
+def rank_catalog_actions(db: Session, action_texts: list[str], limit: int = 5) -> list[list[dict]]:
+    """
+    Même comparaison que find_similar_actions, pour plusieurs textes à la fois :
+    2 appels d'embedding au total (les textes, puis le catalogue), quel que soit
+    le nombre de textes. Renvoie une liste de candidats par texte, dans l'ordre.
+    """
+    limit = max(1, min(limit, MAX_SYMPTOM_LIMIT))
+    catalogue = db.execute(text("SELECT action_id, canonical_text FROM action")).mappings().all()
+    if not action_texts or not catalogue:
+        return [[] for _ in action_texts]
+
+    # Un seul texte : generate_embedding, qui met les recherches en cache.
+    vecteurs_recherche = (
+        [generate_embedding(action_texts[0], is_query=True)]
+        if len(action_texts) == 1
+        else generate_embeddings_batch(action_texts, is_query=True)
+    )
+    vecteurs_catalogue = generate_embeddings_batch([entree["canonical_text"] for entree in catalogue], is_query=False)
+
+    classements = []
+    for vecteur_recherche in vecteurs_recherche:
+        candidats = [
+            {
+                "action_id": entree["action_id"],
+                "canonical_text": entree["canonical_text"],
+                "distance": 1.0 - cosine_similarity(vecteur_recherche, vecteur_entree),
+            }
+            for entree, vecteur_entree in zip(catalogue, vecteurs_catalogue)
+        ]
+        candidats.sort(key=lambda candidat: candidat["distance"])
+        classements.append(candidats[:limit])
+    return classements
+
+
+def create_action_in_catalog(db: Session, canonical_text: str, component_id: int | None = None) -> Action:
+    """
+    Ajoute une nouvelle entrée au catalogue d'actions. N'effectue qu'un
+    flush (pas de commit) : c'est l'appelant qui valide la transaction, pour
+    qu'une erreur ultérieure ne laisse pas une action orpheline au catalogue.
+    """
+    if component_id is not None and db.get(Component, component_id) is None:
+        raise ReferenceNotFoundError(f"Composant {component_id} introuvable.")
+    nouvelle_action = Action(canonical_text=canonical_text, component_id=component_id)
+    db.add(nouvelle_action)
+    db.flush()
+    return nouvelle_action
+
+
+def resolve_action_catalog_link(db: Session, payload: ResolveActionRequest) -> InterventionAction | None:
+    """
+    Applique la décision du technicien sur une action pas encore cataloguée :
+    "new" crée une entrée catalogue, "merge" rattache à une entrée existante.
+    C'est cette étape (pas l'enregistrement initial) qui rend l'action
+    exploitable pour le classement par accuracy -- d'où le recalcul ici.
+    """
+    action_intervention = db.get(InterventionAction, payload.intervention_action_id)
+    if action_intervention is None:
+        return None
+
+    try:
+        if payload.decision == "new":
+            action_cataloguee = create_action_in_catalog(db, payload.canonical_text, payload.component_id)
+            action_intervention.action_id = action_cataloguee.action_id
+        else:
+            if db.get(Action, payload.existing_action_id) is None:
+                raise ReferenceNotFoundError(f"Action {payload.existing_action_id} introuvable dans le catalogue.")
+            action_intervention.action_id = payload.existing_action_id
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    db.refresh(action_intervention)
+    recompute_stats_safely(db)
+    db.refresh(action_intervention)
+
+    return action_intervention

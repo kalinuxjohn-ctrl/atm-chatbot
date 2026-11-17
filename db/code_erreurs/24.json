@@ -1,0 +1,14 @@
+{
+  "catalog_number": 24,
+  "code": "29",
+  "label": "Barrière de distribution dissimulée (manipulation)",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 29 : barrière photoélectrique de distribution dissimulée ; le document indique une possible manipulation.\nContrôler le parcours des billets dans le transport de distribution, puis effectuer un RESET avec le capteur de fonction.\nSi la panne persiste, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 9,
+    "component": "Barrière photoélectrique de distribution",
+    "kind": "error"
+  }
+}

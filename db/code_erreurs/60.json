@@ -1,0 +1,16 @@
+{
+  "catalog_number": 60,
+  "code": "86",
+  "label": "Cassette 6 : avertisseur de cassette vide PSE6 encrassé",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 86, cassette 6 : avertisseur de cassette vide PSE6 encrassé.\nContacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "family": "8x",
+    "cassette": 6,
+    "component": "PSE6",
+    "kind": "warning"
+  }
+}

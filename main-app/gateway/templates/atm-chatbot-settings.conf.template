@@ -1,0 +1,8 @@
+# Rempli au démarrage du conteneur par l'image nginx (envsubst), écrit dans
+# /tmp/atm-chatbot-settings.conf puis inclus dans le bloc server de nginx.conf.
+# Les valeurs viennent de docker-compose.main-app.yml (service main-app-gateway).
+#
+# atm_chatbot_admin_api_key  : clé ADMIN_API_KEY du chatbot, ajoutée aux requêtes /api/atm-chatbot-admin/
+# atm_chatbot_gateway_secret : secret ATM_CHATBOT_GATEWAY_SHARED_SECRET, ajouté aux requêtes /atm-chatbot/app/
+set $atm_chatbot_admin_api_key  "${MAIN_APP_CHATBOT_ADMIN_API_KEY}";
+set $atm_chatbot_gateway_secret "${MAIN_APP_ATM_CHATBOT_GATEWAY_SHARED_SECRET}";

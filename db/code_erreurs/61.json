@@ -1,0 +1,14 @@
+{
+  "catalog_number": 61,
+  "code": "70",
+  "label": "Station de mesure DDU non prête",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 70 : la station de mesure des billets DDU n'est pas prête.\nVérifier la présence d'un bourrage dans l'unité de retrait supérieure et le branchement des câbles. Si les erreurs continuent, prévenir le technicien de maintenance.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "component": "DDU / unité de retrait supérieure",
+    "kind": "error"
+  }
+}

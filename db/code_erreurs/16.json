@@ -1,0 +1,14 @@
+{
+  "catalog_number": 16,
+  "code": "20",
+  "label": "Aiguillage de rejet individuel défectueux ou bloqué",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 20 : défaut ou blocage de l'aiguillage de rejet individuel (MA2/1, MA2/2, SM1).\nContrôler le parcours des billets dans le transport de distribution.\nRemettre le module en position de fonctionnement dans le coffre et attendre qu'il soit prêt. Si le défaut reste présent, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 7,
+    "component": "MA2/1, MA2/2, SM1",
+    "kind": "error"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "catalog_number": 22,
+  "code": "26",
+  "label": "Entraînement de roue de chargement défectueux ou bloqué",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 26 : entraînement de roue de chargement SM9 défectueux ou bloqué.\nContrôler les transports collecteur et de distribution.\nRemettre le module en position de fonctionnement et attendre son état prêt. Si le défaut persiste, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 9,
+    "component": "SM9",
+    "kind": "error"
+  }
+}

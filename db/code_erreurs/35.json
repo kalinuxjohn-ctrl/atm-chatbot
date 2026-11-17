@@ -1,0 +1,16 @@
+{
+  "catalog_number": 35,
+  "code": "45",
+  "label": "Cassette 5 : retrait impossible ou pression incorrecte",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 45, cassette 5 : retrait de billets impossible ou pression incorrecte lors de l'installation d'une nouvelle cassette.\nVérifier la position et la qualité des billets dans la cassette 5 ainsi que la présence de billets au niveau du retrait. Remettre la cassette et contrôler le fonctionnement par un test de déliassage.\nLes procédures de préparation, de chargement et de test sont citées mais pas détaillées dans cet extrait.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "family": "4x",
+    "cassette": 5,
+    "component": "Cassette 5 / retrait des billets",
+    "kind": "error"
+  }
+}

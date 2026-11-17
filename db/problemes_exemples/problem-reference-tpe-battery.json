@@ -1,0 +1,7 @@
+{
+  "source_key": "problem-reference-tpe-battery",
+  "device_type": "tpe",
+  "label": "Le TPE portable ne tient plus la charge",
+  "reply": "Vérifie l'indicateur de batterie et l'état visible du chargeur et de son câble. Utilise uniquement un chargeur compatible indiqué par le fabricant. Si la batterie est déformée, chaude ou endommagée, cesse l'utilisation et applique la procédure du site ; ne l'ouvre pas.",
+  "display_order": 104
+}

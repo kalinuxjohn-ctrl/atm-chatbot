@@ -9,6 +9,11 @@ from app.models.technician import Technician
 from app.models.device import Manufacturer, DeviceModel, DeviceModelVersion, Device
 from app.models.catalog import Component, Symptom, Action, SymptomActionOutcomeStats
 from app.models.intervention import Intervention, InterventionSymptom, InterventionAction, Diagnosis
+from app.models.fault import Fault, ErrorCode
+from app.models.conversation import Conversation, ConversationMessage, ConversationContext
+from app.models.solution_proposal import SolutionProposal
+from app.models.intervention_add import InterventionAdd
+from app.models.usual_problem import UsualProblem
 
 __all__ = [
     "Technician",
@@ -23,5 +28,13 @@ __all__ = [
     "Intervention",
     "InterventionSymptom",
     "InterventionAction",
+    "Fault",
+    "ErrorCode",
     "Diagnosis",
+    "Conversation",
+    "ConversationMessage",
+    "ConversationContext",
+    "SolutionProposal",
+    "InterventionAdd",
+    "UsualProblem",
 ]

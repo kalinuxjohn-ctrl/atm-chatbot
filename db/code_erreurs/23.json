@@ -1,0 +1,14 @@
+{
+  "catalog_number": 23,
+  "code": "28",
+  "label": "Erreur d'obturateur",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 28 : erreur d'obturateur.\nVérifier le volet de fermeture, puis effectuer un RESET avec le capteur de fonction.\nSi la panne persiste, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 9,
+    "component": "Obturateur",
+    "kind": "error"
+  }
+}

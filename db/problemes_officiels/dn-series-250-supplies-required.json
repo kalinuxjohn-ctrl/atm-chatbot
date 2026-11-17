@@ -1,0 +1,19 @@
+{
+  "source_key": "dn-series-250-supplies-required",
+  "device_type": "gab",
+  "label": "DN Series 250 — Voyant jaune SUPPLIES REQUIRED",
+  "reply": "Le voyant jaune indique qu’un approvisionnement ou une opération de maintenance est requis. Suis les instructions du panneau opérateur ou du moniteur. Pour le remplacement du papier de l’imprimante de rapports ou d’une cassette du module de recyclage, le manuel indique que le logiciel T/SOP guide l’opération ; utilise la procédure adaptée à la configuration de l’appareil.\nSource : Diebold Nixdorf, DN Series 250 Instructions d’utilisation, réf. 01750350043 E, sections 3.2 (p. 3-14) et 3.4.2 (p. 3-19).",
+  "display_order": 51,
+  "documentation": {
+    "publisher": "Diebold Nixdorf",
+    "model_family": "DN Series 250",
+    "model_variants": ["DN Series 250A", "DN Series 250C", "DN Series 250H", "DN Series 250V"],
+    "document_title": "DN Series 250 Instructions d’utilisation",
+    "document_number": "01750350043 E",
+    "language": "French",
+    "official_portal": "https://publicdownload.dieboldnixdorf.com/",
+    "portal_object_id": "DPOBJ0000473",
+    "section": "3.2 T/SOP; 3.4.2 Codes DEL",
+    "source_page": "3-14; 3-19"
+  }
+}

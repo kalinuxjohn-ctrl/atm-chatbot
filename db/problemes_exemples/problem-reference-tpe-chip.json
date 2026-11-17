@@ -1,0 +1,7 @@
+{
+  "source_key": "problem-reference-tpe-chip",
+  "device_type": "tpe",
+  "label": "Le TPE ne lit pas les cartes à puce",
+  "reply": "Note le message affiché et vérifie si plusieurs cartes sont concernées. Examine visuellement l'entrée du lecteur ; n'y introduis aucun objet. Un nettoyage ne doit être réalisé que selon la procédure du fabricant. Si le défaut persiste, relève le journal et contacte le support monétique.",
+  "display_order": 100
+}

@@ -1,0 +1,7 @@
+{
+  "source_key": "problem-reference-gab-printer-paper",
+  "device_type": "gab",
+  "label": "Le GAB n'imprime plus les reçus",
+  "reply": "Vérifie le message affiché et l'état du rouleau de papier. Si le papier est épuisé ou mal positionné, remplace-le selon la procédure du modèle, puis lance une impression autorisée. Si l'imprimante reste en défaut, relève le message et transmets-le au support.\nCas général : la procédure peut varier selon le modèle. Respecte les consignes du site.",
+  "display_order": 100
+}

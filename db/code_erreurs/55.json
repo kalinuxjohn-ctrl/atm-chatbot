@@ -1,0 +1,16 @@
+{
+  "catalog_number": 55,
+  "code": "81",
+  "label": "Cassette 1 : avertisseur de cassette vide PSE1 encrassé",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 81, cassette 1 : avertisseur de cassette vide PSE1 encrassé.\nContacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "family": "8x",
+    "cassette": 1,
+    "component": "PSE1",
+    "kind": "warning"
+  }
+}

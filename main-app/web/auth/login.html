@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Connexion | Espace techniciens</title>
+    <link rel="icon" type="image/svg+xml" href="/shared/images/favicon.svg">
+    <script src="/shared/js/applySavedTheme.js"></script>
+    <link rel="stylesheet" href="/shared/css/base.css">
+    <link rel="stylesheet" href="/auth/css/auth.css">
+    <script type="module" src="/auth/js/authenticationPageIcons.js"></script>
+    <script type="module" src="/auth/js/loginPage.js"></script>
+  </head>
+  <body class="login-page">
+    <main class="authentication-layout">
+      <section class="authentication-brand-panel" aria-hidden="true">
+        <span class="authentication-brand-logo"><span data-icon="wrench"></span></span>
+        <p class="authentication-brand-name">Espace techniciens</p>
+        <p class="authentication-brand-tagline">L'outil de terrain des techniciens GAB et TPE.</p>
+        <ul class="authentication-brand-features">
+          <li><span data-icon="map"></span>Carte partagée des sites et clients</li>
+          <li><span data-icon="message"></span>Messages, photos et vocaux</li>
+          <li><span data-icon="phone"></span>Appels directs entre collègues</li>
+        </ul>
+      </section>
+
+      <form class="card authentication-card" data-login-form novalidate>
+        <p class="authentication-card-brand">Espace techniciens</p>
+        <h1>Connexion</h1>
+        <p class="muted authentication-subtitle">Heureux de vous revoir. Identifiez-vous pour continuer.</p>
+        <label class="form-field">Nom d'utilisateur
+          <input name="username" autocomplete="username" required maxlength="30" autocapitalize="none" spellcheck="false">
+        </label>
+        <div class="form-field">
+          <label for="login-password">Mot de passe</label>
+          <div class="password-input">
+            <input id="login-password" name="password" type="password" autocomplete="current-password" required maxlength="128">
+            <button class="password-toggle" type="button" data-password-toggle aria-controls="login-password" aria-label="Afficher le mot de passe" aria-pressed="false">
+              <span data-icon="eye"></span>
+            </button>
+          </div>
+        </div>
+        <p class="form-error" data-form-error role="alert" hidden></p>
+        <button class="button authentication-submit" type="submit">Se connecter</button>
+        <p class="muted authentication-footnote">Mot de passe oublié ? Demandez une réinitialisation à un administrateur.</p>
+        <p class="authentication-footnote" data-registration-link hidden>Pas encore de compte ? <a href="/auth/register.html">Créer un compte</a></p>
+      </form>
+    </main>
+  </body>
+</html>

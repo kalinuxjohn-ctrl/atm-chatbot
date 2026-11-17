@@ -1,0 +1,14 @@
+{
+  "catalog_number": 9,
+  "code": "13",
+  "label": "Blocage de l'appareil",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 13 : blocage de l'appareil.\nRetirer la liasse de billets du CMD-V4, puis remettre le blocage de l'appareil à son état initial avec le logiciel spécifique au produit, selon la procédure « Opérations de base ».\nCette procédure détaillée n'est pas fournie dans ce document.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 6,
+    "kind": "error",
+    "notes": "Renvoi à « Opérations de base », procédure non incluse dans cet extrait."
+  }
+}

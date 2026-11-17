@@ -3,11 +3,16 @@ Routes HTTP pour la partie "enregistrement des symptômes/actions" :
 - POST /interventions                 : enregistrer une nouvelle intervention + ses symptômes
 - GET  /interventions/{id}            : relire une intervention déjà enregistrée
 - POST /interventions/{id}/actions    : enregistrer une action tentée + son résultat
+
+Les deux POST écrivent DIRECTEMENT dans l'historique (visible tout de suite
+par la recherche) : ils sont réservés à l'administrateur (X-Admin-Key). Un
+technicien passe par /api/intervention_add, validé ensuite par l'admin.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.api.routes.admin import require_admin
 from app.core.database import get_db
 from app.schemas.intervention_schema import ActionInput, ActionOut, InterventionCreate, InterventionOut
 from app.services.intervention_service import (
@@ -19,7 +24,7 @@ from app.services.intervention_service import (
 router = APIRouter(prefix="/interventions", tags=["interventions"])
 
 
-@router.post("", response_model=InterventionOut, status_code=201)
+@router.post("", response_model=InterventionOut, status_code=201, dependencies=[Depends(require_admin)])
 def enregistrer_intervention(payload: InterventionCreate, db: Session = Depends(get_db)) -> InterventionOut:
     """
     Enregistre une nouvelle intervention avec ses symptômes initiaux.
@@ -42,7 +47,7 @@ def lire_intervention(intervention_id: int, db: Session = Depends(get_db)) -> In
     return intervention
 
 
-@router.post("/{intervention_id}/actions", response_model=ActionOut, status_code=201)
+@router.post("/{intervention_id}/actions", response_model=ActionOut, status_code=201, dependencies=[Depends(require_admin)])
 def enregistrer_action(
     intervention_id: int, payload: ActionInput, db: Session = Depends(get_db)
 ) -> ActionOut:

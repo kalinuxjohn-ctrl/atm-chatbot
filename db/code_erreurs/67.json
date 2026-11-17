@@ -1,0 +1,15 @@
+{
+  "catalog_number": 67,
+  "code": "B0",
+  "label": "Contrôleur : programmation (burn)",
+  "device_type": "gab",
+  "reply": "CMD-V4 — affichage B0 : message du contrôleur « burn », associé à sa programmation.\nLe document prescrit de contacter le SAV ; il ne fournit pas de procédure de programmation à effectuer soi-même.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 5,
+    "component": "Contrôleur CMD",
+    "kind": "error",
+    "notes": "Message d'état du contrôleur nécessitant le SAV. Lettre b représentée sur afficheur à sept segments ; stockée en majuscule B."
+  }
+}

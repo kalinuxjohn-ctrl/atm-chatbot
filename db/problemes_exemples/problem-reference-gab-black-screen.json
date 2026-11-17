@@ -1,0 +1,7 @@
+{
+  "source_key": "problem-reference-gab-black-screen",
+  "device_type": "gab",
+  "label": "L'écran du GAB reste noir",
+  "reply": "Vérifie si les voyants de l'appareil indiquent qu'il est sous tension et si le défaut est apparu après un redémarrage. N'ouvre pas les panneaux électriques. Note les observations et vérifie les branchements accessibles uniquement si les consignes du site l'autorisent ; sinon, transmets le cas au support.",
+  "display_order": 108
+}

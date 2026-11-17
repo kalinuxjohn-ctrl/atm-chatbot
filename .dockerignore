@@ -1,0 +1,17 @@
+# Only backend sources and base-image dependencies belong in this context.
+**
+!app/
+!app/**
+!db/
+!db/**
+!scripts/
+!scripts/**
+!requirements.txt
+!Dockerfile
+!Dockerfile.init
+!Dockerfile.base
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.env
+**/.env.*

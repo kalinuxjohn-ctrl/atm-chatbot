@@ -1,0 +1,14 @@
+{
+  "catalog_number": 3,
+  "code": "06",
+  "label": "Communication ChipCard ou puce incorrecte",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 06 : communication avec la carte à puce défaillante, ou carte à puce incorrecte insérée (référence citée : 226-0PR).\nEffectuer un RESET avec le capteur de fonction. Si 06 persiste, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 6,
+    "component": "Carte à puce / ChipCard",
+    "kind": "error"
+  }
+}

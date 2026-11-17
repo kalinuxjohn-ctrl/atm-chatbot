@@ -13,6 +13,11 @@
 -- - Les colonnes qui appartiennent AU SYSTÈME lui-même (qui a fait
 --   l'intervention, sur quel enregistrement d'équipement, quand) : ce sont
 --   nos propres données, on peut et doit rester strict dessus.
+--
+-- Idempotence : chaque instruction peut être rejouée sans erreur si elle a
+-- déjà été appliquée (utile en dev, où on relance souvent sans repartir
+-- d'une base vide). Postgres n'a pas de "CREATE TYPE IF NOT EXISTS" -- on
+-- simule avec un bloc DO qui ignore l'erreur "déjà existant".
 
 BEGIN;
 
@@ -23,16 +28,26 @@ BEGIN;
 -- déterminera quels symptômes/actions du catalogue s'appliquent), donc on ne
 -- peut pas se permettre qu'elle soit absente, même quand le reste (modèle,
 -- fabricant) ne l'est pas.
-CREATE TYPE device_type AS ENUM ('gab', 'tpe');
+DO $$ BEGIN
+    CREATE TYPE device_type AS ENUM ('gab', 'tpe');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE device_status AS ENUM ('active', 'decommissioned', 'under_repair');
-CREATE TYPE intervention_outcome AS ENUM ('resolved', 'partially_resolved', 'unresolved', 'escalated');
+DO $$ BEGIN
+    CREATE TYPE device_status AS ENUM ('active', 'decommissioned', 'under_repair');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE intervention_outcome AS ENUM ('resolved', 'partially_resolved', 'unresolved', 'escalated');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 
 -- ----------------------------------------------------------------------------
 -- 1.1 technician — les techniciens qui interviennent sur le terrain
 -- ----------------------------------------------------------------------------
-CREATE TABLE technician (
+CREATE TABLE IF NOT EXISTS technician (
     technician_id   SERIAL PRIMARY KEY,
     full_name       TEXT NOT NULL,  -- identité du technicien : appartient au système, reste obligatoire
     employee_code   TEXT,           -- matricule interne à l'entreprise cliente -- pas garanti unique/renseigné par nous
@@ -47,7 +62,7 @@ CREATE TABLE technician (
 -- 1.2 manufacturer — fabricants (Diebold, NCR, Hyosung, Ingenico...)
 -- Donnée externe : orthographe/complétude jamais garanties sur le terrain.
 -- ----------------------------------------------------------------------------
-CREATE TABLE manufacturer (
+CREATE TABLE IF NOT EXISTS manufacturer (
     manufacturer_id SERIAL PRIMARY KEY,
     name            TEXT
 );
@@ -57,7 +72,7 @@ CREATE TABLE manufacturer (
 -- 1.3 device_model — modèles d'équipement (un modèle = plusieurs unités)
 -- Renommé depuis atm_model : couvre maintenant aussi les modèles de TPE.
 -- ----------------------------------------------------------------------------
-CREATE TABLE device_model (
+CREATE TABLE IF NOT EXISTS device_model (
     model_id        SERIAL PRIMARY KEY,
     manufacturer_id INTEGER REFERENCES manufacturer(manufacturer_id),  -- nullable : fabricant pas toujours identifié
     model_name      TEXT,
@@ -71,7 +86,7 @@ CREATE TABLE device_model (
 -- Renseignée seulement quand une révision précise change vraiment le
 -- comportement (bug connu, procédure différente) -- pas systématique.
 -- ----------------------------------------------------------------------------
-CREATE TABLE device_model_version (
+CREATE TABLE IF NOT EXISTS device_model_version (
     version_id      SERIAL PRIMARY KEY,
     model_id        INTEGER REFERENCES device_model(model_id),
     version_label   TEXT,
@@ -85,7 +100,7 @@ CREATE TABLE device_model_version (
 -- Renommé depuis atm : le nom "atm" ne convenait plus puisque cette table
 -- couvre aussi les TPE, qui ne sont pas des distributeurs de billets.
 -- ----------------------------------------------------------------------------
-CREATE TABLE device (
+CREATE TABLE IF NOT EXISTS device (
     device_id       SERIAL PRIMARY KEY,
     device_type     device_type NOT NULL,  -- GAB ou TPE -- voir la remarque plus haut, seule colonne "externe" restée obligatoire
     serial_number   TEXT,                  -- pas UNIQUE/NOT NULL : saisie terrain, doublons/erreurs possibles
@@ -102,7 +117,7 @@ CREATE TABLE device (
 -- Table centrale du système : ici on reste strict, ce sont nos propres
 -- données (pas des informations déclarées sur du matériel externe).
 -- ----------------------------------------------------------------------------
-CREATE TABLE intervention (
+CREATE TABLE IF NOT EXISTS intervention (
     intervention_id     SERIAL PRIMARY KEY,
     device_id           INTEGER NOT NULL REFERENCES device(device_id),
     technician_id       INTEGER NOT NULL REFERENCES technician(technician_id),
@@ -113,8 +128,8 @@ CREATE TABLE intervention (
     summary_text        TEXT
 );
 
-CREATE INDEX idx_intervention_device_id ON intervention(device_id);
-CREATE INDEX idx_intervention_technician_id ON intervention(technician_id);
-CREATE INDEX idx_intervention_opened_at ON intervention(opened_at DESC);
+CREATE INDEX IF NOT EXISTS idx_intervention_device_id ON intervention(device_id);
+CREATE INDEX IF NOT EXISTS idx_intervention_technician_id ON intervention(technician_id);
+CREATE INDEX IF NOT EXISTS idx_intervention_opened_at ON intervention(opened_at DESC);
 
 COMMIT;

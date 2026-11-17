@@ -1,0 +1,16 @@
+{
+  "catalog_number": 59,
+  "code": "85",
+  "label": "Cassette 5 : avertisseur de cassette vide PSE5 encrassé",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 85, cassette 5 : avertisseur de cassette vide PSE5 encrassé.\nContacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "family": "8x",
+    "cassette": 5,
+    "component": "PSE5",
+    "kind": "warning"
+  }
+}

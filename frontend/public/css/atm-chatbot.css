@@ -1,0 +1,2387 @@
+/* ==========================================================================
+   Page ATM-Chatbot
+   --------------------------------------------------------------------------
+   Toutes les règles sont limitées à .atm-chatbot-page : les pages Accueil et
+   Diagnostic (style.css) ne sont pas affectées.
+
+   Plan du fichier :
+     1. Palette et typographie
+     2. Mise en page (sidebar | conversation | contexte)
+     3. Sidebar rétractable
+     4. Barre de l’ATM-Chatbot
+     5. Conversation (messages, avatars, animations)
+     6. Zone de saisie (équipement, micro, envoi, dictée)
+     7. Bulles de suggestions
+     8. Panneau de contexte
+     9. Mode Chat vocal (plein écran)
+    10. Paramètres
+    11. Responsive
+    12. Finitions visuelles (placées avant le responsive dans le fichier)
+   ========================================================================== */
+
+/* ---------- 1. Palette bleu / bleu nuit et typographie ---------- */
+.atm-chatbot-page {
+  --navy: #0f2742;
+  --navy-soft: #183a5e;
+  --accent: #1f6fd1;
+  --accent-dark: #1657a8;
+  --accent-pale: #eaf2fd;
+  --accent-soft: #d5e5fa;
+  --ink: #1b2b3d;
+  --muted: #5b6b7f;
+  --faint: #8492a3;
+  --line: #e1e8f0;
+  --canvas: #f2f6fb;
+  --danger: #b4424a;
+  --warning-bg: #fff8ea;
+  --warning-ink: #7a5a1f;
+  --radius-card: 14px;
+  --shadow-soft: 0 6px 24px rgba(15, 39, 66, 0.06);
+  --sidebar-width: 268px;
+  --sidebar-compact-width: 78px;
+  --context-width: 300px;
+
+  height: 100dvh;
+  margin: 0;
+  overflow: hidden;
+  background: var(--canvas);
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.atm-chatbot-page .icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.atm-chatbot-page [data-icon] {
+  display: inline-grid;
+  place-items: center;
+}
+
+.atm-chatbot-page :focus-visible {
+  outline: 3px solid rgba(31, 111, 209, 0.35);
+  outline-offset: 2px;
+}
+
+/* ---------- 2. Mise en page ---------- */
+.app-shell {
+  display: grid;
+  height: 100dvh;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr) 0;
+  transition: grid-template-columns 220ms ease;
+}
+
+.app-shell[data-sidebar="collapsed"] {
+  grid-template-columns: var(--sidebar-compact-width) minmax(0, 1fr) 0;
+}
+
+.workspace {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.sidebar-backdrop,
+.context-backdrop {
+  display: none;
+}
+
+/* ---------- 3. Sidebar ---------- */
+.app-sidebar {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 16px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 16px 14px;
+  background: linear-gradient(180deg, #0f2742 0%, #132f50 100%);
+  color: #dbe6f3;
+}
+
+.sidebar-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-brand {
+  display: flex;
+  min-width: 0;
+  gap: 11px;
+  align-items: center;
+  color: #fff;
+  text-decoration: none;
+}
+
+/* Avatar humain de l’ATM-Chatbot (même personnage que dans les messages). */
+.sidebar-brand-avatar {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  background: linear-gradient(160deg, #eaf2fd, #cfe0f5);
+  box-shadow: 0 0 0 3px rgba(79, 155, 255, 0.25);
+}
+
+.sidebar-brand-text {
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.sidebar-brand-text strong {
+  color: #7fb4ff;
+}
+
+.sidebar-collapse-button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #dbe6f3;
+  cursor: pointer;
+}
+
+.sidebar-collapse-button:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.sidebar-greeting {
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-greeting-title {
+  margin: 0 0 4px;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.sidebar-greeting-text {
+  margin: 0;
+  color: #a9bdd4;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sidebar-navigation {
+  display: grid;
+  gap: 4px;
+}
+
+.sidebar-section-title {
+  margin: 10px 10px 4px;
+  color: #7f97b3;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sidebar-link {
+  display: flex;
+  width: 100%;
+  min-height: 46px;
+  gap: 12px;
+  align-items: center;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #cfdcec;
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 550;
+  text-align: left;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.sidebar-link.is-active {
+  background: rgba(79, 155, 255, 0.2);
+  box-shadow: inset 3px 0 0 #4f9bff;
+  color: #fff;
+}
+
+.sidebar-link:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.sidebar-footer {
+  display: grid;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.technician-card {
+  display: flex;
+  min-width: 0;
+  gap: 11px;
+  align-items: center;
+  padding: 6px 8px;
+}
+
+html[data-embedded] .technician-card {
+  display: none;
+}
+
+.atm-chatbot-page .speech-stop-button {
+  width: auto;
+  padding: 8px 12px;
+  margin: 4px 0 10px;
+}
+
+.atm-chatbot-page .speech-stop-button > span:last-child {
+  display: inline;
+}
+
+.technician-avatar {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: #2b4f78;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.technician-card-text {
+  display: grid;
+  min-width: 0;
+}
+
+.technician-card-text strong {
+  overflow: hidden;
+  color: #fff;
+  font-size: 14.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.technician-card-text small {
+  color: #93a9c2;
+  font-size: 12.5px;
+}
+
+.sidebar-logout:hover {
+  background: rgba(228, 102, 110, 0.16);
+  color: #ffd4d7;
+}
+
+/* Sidebar réduite : uniquement les icônes (libellés en infobulle). */
+.app-shell[data-sidebar="collapsed"] .app-sidebar {
+  padding-inline: 10px;
+}
+
+.app-shell[data-sidebar="collapsed"] .sidebar-header {
+  flex-direction: column;
+}
+
+.app-shell[data-sidebar="collapsed"] :is(.sidebar-brand-text, .sidebar-greeting, .sidebar-section-title, .sidebar-link-label, .technician-card-text) {
+  display: none;
+}
+
+.app-shell[data-sidebar="collapsed"] .sidebar-link,
+.app-shell[data-sidebar="collapsed"] .technician-card {
+  justify-content: center;
+  padding: 0;
+}
+
+.app-shell[data-sidebar="collapsed"] .sidebar-navigation {
+  padding-top: 8px;
+}
+
+/* ---------- 4. Barre de l’ATM-Chatbot ---------- */
+.workspace-header {
+  display: flex;
+  min-height: 70px;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 22px;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+}
+
+.mobile-menu-button {
+  display: none !important;
+}
+
+.atm-chatbot-page .assistant-identity {
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 12px;
+}
+
+.toolbar-avatar {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 50%;
+  background: linear-gradient(160deg, #eaf2fd, #cfe0f5);
+}
+
+.atm-chatbot-page .assistant-identity-text {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.atm-chatbot-page .assistant-identity strong {
+  color: var(--navy);
+  font-size: 17px;
+}
+
+.atm-chatbot-page .assistant-identity small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.atm-chatbot-page .assistant-identity small i {
+  background: #2fa36b;
+}
+
+.workspace-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+  color: var(--navy);
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  border-color: #b9cfe9;
+  background: var(--accent-pale);
+}
+
+.icon-button[aria-expanded="true"] {
+  border-color: var(--accent);
+  background: var(--accent-pale);
+  color: var(--accent-dark);
+}
+
+.pill-button {
+  display: inline-flex;
+  min-height: 44px;
+  gap: 8px;
+  align-items: center;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--navy);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.pill-button-primary {
+  border-color: transparent;
+  background: var(--accent);
+  box-shadow: 0 6px 16px rgba(31, 111, 209, 0.25);
+  color: #fff;
+}
+
+.pill-button-primary:hover {
+  background: var(--accent-dark);
+}
+
+.pill-button-warning {
+  border-color: #f0d6a8;
+  background: var(--warning-bg);
+  color: var(--warning-ink);
+}
+
+.demo-badge {
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: #fff1d6;
+  color: #85601b;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+/* ---------- 5. Conversation ---------- */
+.atm-chatbot-page .chat-panel {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.atm-chatbot-page .conversation {
+  min-height: 0;
+  max-height: none;
+  flex: 1 1 auto;
+  gap: 22px;
+  padding: 26px max(22px, calc((100% - 860px) / 2));
+  background: transparent;
+}
+
+.atm-chatbot-page .message {
+  max-width: min(100%, 760px);
+  gap: 12px;
+}
+
+.atm-chatbot-page .atm-chatbot-avatar-slot {
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: linear-gradient(160deg, #eaf2fd, #cfe0f5);
+}
+
+.atm-chatbot-page .message-author {
+  gap: 8px;
+  margin: 2px 0 8px;
+  color: var(--navy-soft);
+  font-size: 13.5px;
+}
+
+.atm-chatbot-page .message-author time {
+  color: var(--faint);
+  font-size: 12px;
+}
+
+.message-author-icon {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+.atm-chatbot-page .message-bubble {
+  padding: 14px 17px;
+  border-color: var(--line);
+  border-radius: 4px 16px 16px 16px;
+  background: #fff;
+  box-shadow: var(--shadow-soft);
+  color: #2a3b4f;
+  font-size: 15.5px;
+  line-height: 1.65;
+}
+
+.atm-chatbot-page .message-bubble p + p {
+  margin-top: 8px;
+}
+
+.atm-chatbot-page .user-message .message-bubble {
+  border-color: transparent;
+  border-radius: 16px 4px 16px 16px;
+  background: linear-gradient(135deg, #1f6fd1, #1859ad);
+  box-shadow: 0 6px 18px rgba(31, 111, 209, 0.22);
+  color: #fff;
+}
+
+.atm-chatbot-page .voice-exchange .message-bubble {
+  border-left: 3px solid #4f9bff;
+}
+
+.welcome-extras:empty {
+  display: none;
+}
+
+.welcome-extras {
+  margin-top: 12px;
+}
+
+.message-listen-button {
+  display: inline-flex;
+  min-height: 34px;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--accent-dark);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.message-listen-button .icon {
+  width: 17px;
+  height: 17px;
+}
+
+.message-listen-button:hover {
+  border-color: #b9cfe9;
+  background: var(--accent-pale);
+}
+
+.atm-chatbot-page .friendly-error {
+  border-color: #f1d2d5;
+  background: #fff6f7;
+  color: #6c3a40;
+  font-size: 14.5px;
+}
+
+.atm-chatbot-page .friendly-error strong {
+  color: var(--danger);
+  font-size: 15px;
+}
+
+.atm-chatbot-page .retry-button {
+  display: inline-flex;
+  min-height: 40px;
+  gap: 7px;
+  align-items: center;
+  border-radius: 9px;
+  font-size: 14px;
+}
+
+.atm-chatbot-page .typing-indicator {
+  padding: 15px 17px;
+  border-radius: 4px 16px 16px 16px;
+}
+
+.atm-chatbot-page .typing-indicator span {
+  width: 7px;
+  height: 7px;
+  background: #6f9fd8;
+}
+
+/* Arrivée des messages */
+.message-enter-up {
+  animation: message-up 300ms cubic-bezier(0.22, 0.8, 0.25, 1);
+}
+
+.message-enter-landing {
+  animation: message-landing 260ms ease-out;
+}
+
+.message-enter-fade {
+  animation: message-fade 320ms ease-out;
+}
+
+@keyframes message-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes message-landing {
+  from { opacity: 0.4; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes message-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- 6. Zone de saisie ---------- */
+.atm-chatbot-page .composer-area {
+  width: min(100%, 904px);
+  margin: 0 auto;
+  padding: 12px 22px 16px;
+  border-top: 0;
+  background: transparent;
+}
+
+.atm-chatbot-page .message-composer {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  padding: 10px;
+  border: 1px solid #d3deea;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(15, 39, 66, 0.08);
+}
+
+.atm-chatbot-page .message-composer:focus-within {
+  border-color: #8db6ea;
+  box-shadow: 0 0 0 4px rgba(31, 111, 209, 0.1), 0 10px 30px rgba(15, 39, 66, 0.08);
+}
+
+.atm-chatbot-page .message-composer textarea {
+  min-width: 0;
+  min-height: 52px;
+  max-height: 168px;
+  flex: 1 1 auto;
+  padding: 13px 4px;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Gros bouton micro : élément clairement identifiable. */
+.mic-button {
+  position: relative;
+  display: grid;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent-pale);
+  color: var(--accent-dark);
+  cursor: pointer;
+  transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.mic-button .icon {
+  width: 26px;
+  height: 26px;
+}
+
+.mic-button:hover {
+  background: var(--accent-soft);
+  transform: scale(1.04);
+}
+
+.mic-button.is-listening {
+  background: #d93a4a;
+  color: #fff;
+}
+
+.mic-button.is-listening::after {
+  position: absolute;
+  inset: -6px;
+  border: 2px solid rgba(217, 58, 74, 0.5);
+  border-radius: 50%;
+  animation: pulse-ring 1.3s ease-out infinite;
+  content: "";
+}
+
+.atm-chatbot-page .send-button {
+  display: inline-flex;
+  height: 52px;
+  min-width: 52px;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.atm-chatbot-page .send-button:hover:not(:disabled) {
+  background: var(--accent-dark);
+}
+
+.atm-chatbot-page .send-button:disabled {
+  background: #b9c8da;
+  cursor: not-allowed;
+}
+
+.atm-chatbot-page .send-button span:last-child {
+  font-size: inherit;
+}
+
+.send-bubble {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: rgba(31, 111, 209, 0.55);
+  pointer-events: none;
+  animation: send-bubble 600ms ease-out forwards;
+}
+
+@keyframes send-bubble {
+  to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.4); }
+}
+
+@keyframes pulse-ring {
+  from { opacity: 1; transform: scale(0.92); }
+  to { opacity: 0; transform: scale(1.3); }
+}
+
+/* Sélecteur d'équipement GAB / TPE */
+.atm-chatbot-page .device-picker {
+  position: relative;
+  display: block;
+  min-width: 0;
+  height: auto;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.device-trigger {
+  display: flex;
+  height: 52px;
+  gap: 9px;
+  align-items: center;
+  padding: 0 10px 0 7px;
+  border: 1px solid #d3deea;
+  border-radius: 14px;
+  background: #f7faff;
+  color: var(--navy);
+  cursor: pointer;
+  font: inherit;
+}
+
+.device-trigger:hover:not(:disabled),
+.device-picker.is-open .device-trigger {
+  border-color: var(--accent);
+  background: var(--accent-pale);
+}
+
+.device-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.device-trigger-icon,
+.device-option-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+}
+
+.device-trigger-icon .icon,
+.device-option-icon .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.device-trigger-text,
+.device-option-text {
+  display: grid;
+  text-align: left;
+}
+
+.device-trigger-text small {
+  color: var(--faint);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.device-trigger-text strong {
+  font-size: 16px;
+  line-height: 1.15;
+}
+
+.device-trigger-chevron {
+  width: 18px !important;
+  height: 18px !important;
+  color: var(--muted);
+  transition: transform 150ms ease;
+}
+
+.device-picker.is-open .device-trigger-chevron {
+  transform: rotate(180deg);
+}
+
+.device-menu {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  z-index: 30;
+  display: grid;
+  width: min(330px, calc(100vw - 32px));
+  gap: 4px;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(15, 39, 66, 0.16);
+  list-style: none;
+}
+
+.device-option {
+  display: flex;
+  min-height: 56px;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.device-option:hover,
+.device-option.is-active {
+  background: var(--accent-pale);
+}
+
+.device-option-text {
+  flex: 1 1 auto;
+}
+
+.device-option-text strong {
+  color: var(--navy);
+  font-size: 15.5px;
+}
+
+.device-option-text small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.device-option-check {
+  color: var(--accent);
+  visibility: hidden;
+}
+
+.device-option[aria-selected="true"] .device-option-check {
+  visibility: visible;
+}
+
+.device-option:not([aria-selected="true"]) .device-option-icon {
+  background: #e6edf6;
+  color: var(--navy-soft);
+}
+
+/* États de la dictée */
+.dictation-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 10px 4px 0;
+  color: var(--accent-dark);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dictation-status-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.dictation-status[data-state="listening"] {
+  color: #c22f3e;
+}
+
+.dictation-status[data-state="listening"] .dictation-status-dot {
+  animation: dot-pulse 1s ease-in-out infinite;
+}
+
+.dictation-status[data-state="processing"] .dictation-status-dot,
+.dictation-status[data-state="requesting-microphone"] .dictation-status-dot {
+  animation: dot-pulse 0.7s ease-in-out infinite;
+}
+
+.dictation-status[data-state="error"] {
+  padding: 9px 12px;
+  border: 1px solid #f1d2d5;
+  border-radius: 10px;
+  background: #fff6f7;
+  color: var(--danger);
+}
+
+.dictation-status[data-state="info"] {
+  color: var(--muted);
+}
+
+.dictation-status-text {
+  flex: 1 1 240px;
+}
+
+.dictation-status-action {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid currentColor;
+  border-radius: 9px;
+  background: #fff;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@keyframes dot-pulse {
+  50% { opacity: 0.3; transform: scale(0.7); }
+}
+
+.composer-meta {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 8px 6px 0;
+  color: var(--faint);
+  font-size: 12.5px;
+}
+
+.atm-chatbot-page kbd {
+  font-size: 11.5px;
+}
+
+/* ---------- 7. Menus de suggestions ---------- */
+/* Placés au-dessus de la zone de saisie : pannes fréquentes + codes d'erreur. */
+.suggestion-menus {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.suggestion-menu {
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 220px;
+  min-height: 40px;
+  padding: 0 34px 0 14px;
+  border: 1px solid #cfdef1;
+  border-radius: 12px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23657487' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+  color: var(--navy-soft);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  appearance: none;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.suggestion-menu:hover:not(:disabled) {
+  border-color: var(--accent);
+  background-color: var(--accent-pale);
+}
+
+.suggestion-menu:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.suggestion-menu:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+/* Menu des codes d'erreur connus (réponse enregistrée côté frontend) :
+   bordure ambrée, pour le distinguer des pannes fréquentes. */
+.error-code-menu {
+  border-color: #f0d7a8;
+}
+
+.error-code-menu:hover:not(:disabled) {
+  border-color: #d99a2b;
+  background-color: #fff8ea;
+}
+
+/* ---------- 8. Panneau de contexte ---------- */
+.context-panel {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  padding: 18px 16px;
+  border-left: 1px solid var(--line);
+  background: #fff;
+}
+
+.app-shell[data-context-panel="closed"] .context-panel {
+  visibility: hidden;
+}
+
+.context-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.context-panel-header h2 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 18px;
+}
+
+.context-card {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: #fbfdff;
+}
+
+.context-card h3 {
+  margin: 0 0 10px;
+  color: var(--navy);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.context-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.context-list div {
+  display: grid;
+  gap: 2px;
+}
+
+.context-list dt {
+  color: var(--faint);
+  font-size: 12.5px;
+}
+
+.context-list dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.text-button {
+  margin-top: 10px;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: var(--accent-dark);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.context-card-note p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.context-card-note p + p {
+  margin-top: 8px;
+}
+
+/* ---------- 9. Mode Chat vocal (plein écran, façon appel) ---------- */
+.voice-dialog {
+  --state-color: #5aa8ff;
+  --voice-level: 0;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background:
+    radial-gradient(1200px 700px at 50% 38%, color-mix(in srgb, var(--state-color) 22%, transparent), transparent 60%),
+    radial-gradient(900px 600px at 85% 110%, rgba(56, 189, 172, 0.18), transparent 60%),
+    linear-gradient(180deg, #071426 0%, #0b1f3a 55%, #0a1a30 100%);
+  color: #eaf2ff;
+  transition: background 600ms ease;
+}
+
+.voice-dialog[open] {
+  display: block;
+  animation: voice-open 320ms cubic-bezier(0.22, 0.8, 0.25, 1);
+}
+
+/* Fond opaque : la messagerie est entièrement masquée pendant l'appel. */
+.voice-dialog::backdrop {
+  background: #071426;
+}
+
+.voice-dialog:is([data-state="listening"], [data-state="hearing"]) { --state-color: #4f9dff; }
+.voice-dialog:is([data-state="processing"], [data-state="thinking"], [data-state="requesting"]) { --state-color: #a78bfa; }
+.voice-dialog[data-state="speaking"] { --state-color: #34d1bf; }
+.voice-dialog[data-state="error"] { --state-color: #f87183; }
+.voice-dialog:is([data-state="muted"], [data-state="idle"]) { --state-color: #7b8ba3; }
+
+@keyframes voice-open {
+  from { opacity: 0; transform: scale(1.03); }
+  to { opacity: 1; transform: none; }
+}
+
+.voice-screen {
+  display: grid;
+  height: 100%;
+  grid-template-rows: auto 1fr auto auto;
+  padding: max(18px, env(safe-area-inset-top)) 22px max(18px, env(safe-area-inset-bottom));
+}
+
+.voice-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.voice-brand {
+  display: grid;
+  gap: 2px;
+}
+
+.voice-brand strong {
+  font-size: 17px;
+  letter-spacing: -0.2px;
+}
+
+.voice-brand small {
+  color: rgba(234, 242, 255, 0.6);
+  font-size: 13px;
+}
+
+.voice-brand small:empty {
+  display: none;
+}
+
+.voice-icon-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.voice-icon-button:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.voice-center {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  text-align: center;
+}
+
+/* --- La bulle --- */
+.voice-orb {
+  position: relative;
+  display: grid;
+  width: min(62vw, 250px);
+  aspect-ratio: 1;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.voice-orb:disabled {
+  cursor: progress;
+}
+
+.voice-orb:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 10px;
+}
+
+.voice-orb-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--state-color) 55%, transparent) 0%, transparent 68%);
+  opacity: 0.55;
+  transform: scale(calc(1 + var(--voice-level) * 0.35));
+  transition: transform 90ms linear, background 500ms ease;
+}
+
+.voice-orb-halo + .voice-orb-halo {
+  inset: -18%;
+  opacity: 0.25;
+  transform: scale(calc(1 + var(--voice-level) * 0.6));
+}
+
+.voice-orb-core {
+  position: relative;
+  display: grid;
+  width: 74%;
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.55), transparent 42%),
+    conic-gradient(from 210deg, var(--state-color), #2563eb, #22d3c5, var(--state-color));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.18) inset,
+    0 30px 80px -20px color-mix(in srgb, var(--state-color) 70%, transparent);
+  transform: scale(calc(1 + var(--voice-level) * 0.08));
+  transition: transform 90ms linear, box-shadow 500ms ease;
+}
+
+.voice-orb-core::after {
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.92), rgba(225, 238, 255, 0.85));
+  content: "";
+}
+
+.voice-avatar {
+  position: relative;
+  z-index: 1;
+  width: 80%;
+  aspect-ratio: 1;
+  display: block;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.voice-avatar .avatar {
+  width: 100%;
+  height: 100%;
+}
+
+/* Écoute : la bulle respire doucement en attendant la voix. */
+.voice-dialog[data-state="listening"] .voice-orb-core {
+  animation: orb-breathe 2.6s ease-in-out infinite;
+}
+
+/* Réflexion : l'anneau coloré tourne. */
+.voice-dialog:is([data-state="processing"], [data-state="thinking"], [data-state="requesting"]) .voice-orb-core {
+  animation: orb-breathe 4s ease-in-out infinite;
+}
+
+.voice-dialog:is([data-state="processing"], [data-state="thinking"], [data-state="requesting"]) .voice-avatar {
+  animation: none;
+}
+
+/* L’ATM-Chatbot parle : halos qui pulsent. */
+.voice-dialog[data-state="speaking"] .voice-orb-halo {
+  animation: orb-pulse 1.4s ease-out infinite;
+}
+
+.voice-dialog[data-state="speaking"] .voice-orb-halo + .voice-orb-halo {
+  animation-delay: 0.45s;
+}
+
+.voice-dialog:is([data-state="muted"], [data-state="idle"], [data-state="error"]) .voice-orb-core {
+  filter: saturate(0.55);
+}
+
+@keyframes orb-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
+
+@keyframes orb-spin {
+  to { rotate: 360deg; }
+}
+
+@keyframes orb-pulse {
+  from { opacity: 0.3; transform: scale(1); }
+  to { opacity: 0.12; transform: scale(1.08); }
+}
+
+/* --- Statut et sous-titres --- */
+.voice-status-block {
+  display: grid;
+  gap: 6px;
+}
+
+.voice-status {
+  margin: 0;
+  font-size: clamp(20px, 3.4vw, 26px);
+  font-weight: 650;
+  letter-spacing: -0.3px;
+}
+
+.voice-dialog:is([data-state="processing"], [data-state="thinking"]) .voice-status::after {
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: dots 1.2s steps(4, end) infinite;
+  content: "";
+}
+
+@keyframes dots {
+  0% { content: ""; }
+  25% { content: "."; }
+  50% { content: ".."; }
+  75% { content: "..."; }
+}
+
+.voice-detail {
+  max-width: 520px;
+  margin: 0;
+  color: rgba(234, 242, 255, 0.72);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.voice-dialog[data-state="error"] .voice-detail {
+  color: #ffc2cb;
+}
+
+.voice-captions {
+  display: grid;
+  width: min(100%, 640px);
+  min-height: 3.2em;
+  gap: 10px;
+}
+
+.voice-caption {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.voice-caption:empty {
+  display: none;
+}
+
+.voice-caption-user {
+  color: rgba(234, 242, 255, 0.92);
+  font-style: italic;
+}
+
+.voice-caption-user::before {
+  content: "« ";
+}
+
+.voice-caption-user::after {
+  content: " »";
+}
+
+.voice-caption-atm-chatbot {
+  color: rgba(234, 242, 255, 0.62);
+}
+
+/* Pendant la réponse, seul le texte de l’ATM-Chatbot reste en avant. */
+.voice-dialog[data-state="speaking"] .voice-caption-user {
+  opacity: 0.45;
+}
+
+.voice-dialog:is([data-state="listening"], [data-state="hearing"]) .voice-caption-atm-chatbot {
+  display: none;
+}
+
+/* --- Erreurs et saisie de secours --- */
+.voice-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.voice-secondary-button {
+  display: inline-flex;
+  min-height: 42px;
+  gap: 8px;
+  align-items: center;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.voice-secondary-button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.voice-fallback {
+  display: flex;
+  width: min(100%, 520px);
+  gap: 8px;
+}
+
+.voice-fallback input {
+  min-width: 0;
+  min-height: 48px;
+  flex: 1 1 auto;
+  padding: 0 18px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+}
+
+.voice-fallback input::placeholder {
+  color: rgba(234, 242, 255, 0.5);
+}
+
+.voice-fallback button {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #0b1f3a;
+  cursor: pointer;
+}
+
+/* --- Commandes du bas --- */
+.voice-controls {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: clamp(18px, 6vw, 44px);
+  padding-top: 12px;
+}
+
+.voice-round-button {
+  display: grid;
+  min-width: 64px;
+  justify-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgba(234, 242, 255, 0.82);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.voice-round-button > [data-icon] {
+  display: grid;
+  width: 60px;
+  height: 60px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(6px);
+  transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.voice-round-button:hover:not(:disabled) > [data-icon] {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.voice-round-button:disabled {
+  cursor: default;
+  opacity: 0.38;
+}
+
+.voice-round-button[aria-pressed="true"] > [data-icon] {
+  border-color: transparent;
+  background: #fff;
+  color: #0b1f3a;
+}
+
+.voice-end-button > [data-icon] {
+  width: 68px;
+  height: 68px;
+  border-color: transparent;
+  background: linear-gradient(160deg, #f0566b, #d6304a);
+  box-shadow: 0 12px 30px -8px rgba(214, 48, 74, 0.6);
+  color: #fff;
+}
+
+.voice-end-button:hover > [data-icon] {
+  background: linear-gradient(160deg, #f36b7e, #e03a54) !important;
+}
+
+.voice-hint {
+  margin: 14px auto 0;
+  max-width: 560px;
+  color: rgba(234, 242, 255, 0.5);
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.voice-hint kbd {
+  padding: 1px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  font: inherit;
+  font-size: 11.5px;
+}
+
+@media (max-width: 719px) {
+  .voice-hint {
+    display: none;
+  }
+
+  .voice-caption {
+    font-size: 15px;
+  }
+}
+
+/* ---------- 10. Paramètres ---------- */
+.atm-chatbot-page .app-dialog {
+  border-radius: 18px;
+}
+
+.atm-chatbot-page .dialog-header h2 {
+  font-size: 22px;
+}
+
+.atm-chatbot-page .dialog-header p {
+  font-size: 14px;
+}
+
+.settings-dialog {
+  width: min(540px, calc(100% - 24px));
+}
+
+.settings-group {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.settings-group legend {
+  padding: 0 6px;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.atm-chatbot-page .field {
+  font-size: 14px;
+}
+
+.atm-chatbot-page .field select {
+  height: 46px;
+  font-size: 15px;
+}
+
+.avatar-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.avatar-choice {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 12px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.avatar-choice .avatar {
+  width: 76px;
+  height: 76px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: linear-gradient(160deg, #eaf2fd, #cfe0f5);
+}
+
+.avatar-choice input,
+.segmented input,
+.switch input {
+  position: absolute;
+  opacity: 0;
+}
+
+.avatar-choice:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-pale);
+  color: var(--accent-dark);
+}
+
+.avatar-choice:has(input:focus-visible),
+.segmented label:has(input:focus-visible) {
+  outline: 3px solid rgba(31, 111, 209, 0.35);
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.segmented label {
+  position: relative;
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d3deea;
+  border-radius: 11px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.segmented label:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-pale);
+  color: var(--accent-dark);
+}
+
+.voice-active {
+  margin: 0;
+  color: var(--navy-soft);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.switch {
+  position: relative;
+  display: flex;
+  min-height: 44px;
+  gap: 12px;
+  align-items: center;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.switch small {
+  display: block;
+  color: var(--faint);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.switch-track {
+  position: relative;
+  width: 44px;
+  height: 26px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #cad6e3;
+  transition: background-color 150ms ease;
+}
+
+.switch-track::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  content: "";
+  transition: transform 150ms ease;
+}
+
+.switch input:checked + .switch-track {
+  background: var(--accent);
+}
+
+.switch input:checked + .switch-track::after {
+  transform: translateX(18px);
+}
+
+.switch input:focus-visible + .switch-track {
+  outline: 3px solid rgba(31, 111, 209, 0.35);
+  outline-offset: 2px;
+}
+
+.settings-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.settings-warning {
+  padding: 10px 12px;
+  border: 1px solid #f0dcb4;
+  border-radius: 10px;
+  background: var(--warning-bg);
+  color: var(--warning-ink);
+}
+
+.unsupported-note {
+  display: none;
+}
+
+.is-unsupported .unsupported-note {
+  display: block;
+}
+
+.atm-chatbot-page .button {
+  min-height: 46px;
+  font-size: 15px;
+}
+
+.atm-chatbot-page .button-primary {
+  background: var(--accent);
+}
+
+.atm-chatbot-page .button-primary:hover {
+  background: var(--accent-dark);
+}
+
+/* ---------- 11 bis. Proposer une solution ---------- */
+/* Offre sous une réponse contenant des solutions (chatView.js). */
+.proposal-offer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+
+.proposal-offer-button {
+  display: inline-flex;
+  min-height: 36px;
+  gap: 7px;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px solid #ecd3ad;
+  border-radius: 999px;
+  background: #fffaf2;
+  color: #8a5a00;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.proposal-offer-button .icon {
+  width: 17px;
+  height: 17px;
+}
+
+.proposal-offer-button:hover {
+  border-color: #d99a2b;
+  background: #fff3df;
+}
+
+.proposal-offer-button.is-primary {
+  border-color: transparent;
+  background: var(--accent);
+  color: #fff;
+}
+
+.proposal-offer-button.is-primary:hover {
+  background: var(--accent-dark);
+}
+
+.proposal-offer-hint {
+  flex: 1 1 260px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+/* Fenêtre de proposition (solutionProposalDialog.js). */
+.proposal-dialog {
+  width: min(560px, calc(100% - 32px));
+}
+
+.proposal-loading {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.proposal-problem {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid #d9e5f2;
+  border-radius: 12px;
+  background: #f5f9fd;
+}
+
+.proposal-problem-details {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.proposal-problem-details dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.proposal-problem-details dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.proposal-previous summary {
+  color: var(--accent-dark);
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.proposal-previous ol {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding-left: 22px;
+  font-size: 13.5px;
+}
+
+.proposal-previous li {
+  display: grid;
+  gap: 2px;
+}
+
+.proposal-previous-solution {
+  color: var(--ink);
+}
+
+.proposal-previous-symptom {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.proposal-previous li.is-reference .proposal-previous-solution::after {
+  content: " · cas de référence";
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.proposal-fields {
+  display: grid;
+  gap: 14px;
+}
+
+.proposal-fields .field span {
+  font-size: 13px;
+}
+
+.proposal-fields textarea {
+  min-height: 78px;
+  padding: 10px 11px;
+  border: 1px solid #d6e0e8;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 400;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.proposal-fields textarea:focus {
+  border-color: #8db6ea;
+  outline: 3px solid rgba(31, 111, 209, 0.15);
+}
+
+.proposal-fields .segmented label {
+  min-height: 40px;
+  font-size: 14px;
+}
+
+.proposal-success {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid #bfe3d4;
+  border-radius: 12px;
+  background: #effaf5;
+  color: #1d5b45;
+  font-size: 14px;
+}
+
+.proposal-success strong {
+  font-size: 15px;
+}
+
+.proposal-dialog .form-error {
+  font-size: 13.5px;
+}
+
+/* ---------- 12. Finitions visuelles ----------
+   Couche d'habillage : dégradés, profondeur, accueil centré. Placée avant
+   le responsive pour que les règles mobiles gardent le dernier mot. */
+.atm-chatbot-page {
+  --accent-gradient: linear-gradient(135deg, #2f7cf6 0%, #1d5fd6 55%, #1748b8 100%);
+  --glow-accent: 0 12px 32px -10px rgba(31, 111, 209, 0.45);
+}
+
+/* Zone de conversation : image de fond claire (assets.css, --image-app-background). */
+.atm-chatbot-page .workspace {
+  background: var(--app-background);
+}
+
+/* Sidebar : reprend l'image de l'accueil sous un voile bleu nuit, pour
+   garder le même univers visuel qu'avant la connexion. */
+.app-sidebar {
+  background:
+    radial-gradient(420px 260px at 0% 0%, rgba(79, 157, 255, 0.22), transparent 70%),
+    linear-gradient(180deg, rgba(12, 33, 64, 0.9) 0%, rgba(16, 42, 77, 0.88) 60%, rgba(14, 36, 66, 0.94) 100%),
+    var(--image-home-background) 30% center / cover no-repeat,
+    #0c2140;
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-link {
+  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.sidebar-link:hover {
+  transform: translateX(2px);
+}
+
+.sidebar-link.is-active {
+  background: linear-gradient(90deg, rgba(79, 157, 255, 0.32), rgba(79, 157, 255, 0.08));
+  box-shadow: inset 3px 0 0 #6fb0ff;
+}
+
+/* Barre du haut "verre dépoli". */
+.workspace-header {
+  position: relative;
+  z-index: 2;
+  border-bottom-color: rgba(214, 226, 240, 0.7);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: saturate(160%) blur(14px);
+}
+
+.atm-chatbot-page .pill-button-primary {
+  background: var(--accent-gradient);
+  box-shadow: var(--glow-accent);
+}
+
+/* Messages */
+.atm-chatbot-page .atm-chatbot-avatar-slot {
+  box-shadow: 0 0 0 2px #fff, 0 6px 16px -6px rgba(15, 39, 66, 0.35);
+}
+
+.atm-chatbot-page .assistant-message .message-bubble {
+  border: 1px solid rgba(214, 226, 240, 0.9);
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  box-shadow: 0 1px 2px rgba(15, 39, 66, 0.04), 0 10px 28px -14px rgba(15, 39, 66, 0.18);
+}
+
+.atm-chatbot-page .user-message .message-bubble {
+  background: var(--accent-gradient);
+  box-shadow: var(--glow-accent);
+}
+
+.message-listen-button {
+  border-color: transparent;
+  background: rgba(31, 111, 209, 0.07);
+}
+
+/* Accueil : tant que la conversation est vide, le message de bienvenue est
+   centré comme une page d'accueil (avatar, titre, cas fréquents en cartes). */
+.atm-chatbot-page .conversation:has(> .welcome-message:only-child) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.conversation > .welcome-message:only-child {
+  flex-direction: column;
+  align-items: center;
+  align-self: center;
+  max-width: 720px;
+  text-align: center;
+  animation: message-fade 420ms ease-out;
+}
+
+.conversation > .welcome-message:only-child .atm-chatbot-avatar-slot {
+  width: 92px;
+  height: 92px;
+  margin-bottom: 4px;
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.9), 0 0 0 12px rgba(79, 157, 255, 0.14), 0 18px 40px -12px rgba(31, 111, 209, 0.45);
+}
+
+.conversation > .welcome-message:only-child .message-author {
+  display: none;
+}
+
+.conversation > .welcome-message:only-child .message-bubble {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.conversation > .welcome-message:only-child .message-bubble p:first-child {
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #0f2742, #1f6fd1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: clamp(24px, 3.2vw, 32px);
+  font-weight: 750;
+  letter-spacing: -0.6px;
+  line-height: 1.2;
+}
+
+/* Zone de saisie flottante */
+.atm-chatbot-page .message-composer {
+  border-color: rgba(205, 220, 238, 0.95);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 1px 2px rgba(15, 39, 66, 0.05), 0 18px 40px -18px rgba(15, 39, 66, 0.28);
+}
+
+.atm-chatbot-page .message-composer:focus-within {
+  border-color: #8db6ea;
+  box-shadow: 0 0 0 4px rgba(31, 111, 209, 0.1), 0 18px 40px -18px rgba(15, 39, 66, 0.28);
+}
+
+/* Le cadre de focus est porté par toute la zone de saisie, pas par le champ seul. */
+.atm-chatbot-page .message-composer textarea:focus,
+.atm-chatbot-page .message-composer textarea:focus-visible {
+  outline: none;
+}
+
+.atm-chatbot-page .send-button {
+  border-radius: 999px;
+  background: var(--accent-gradient);
+  box-shadow: var(--glow-accent);
+  transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+}
+
+.atm-chatbot-page .send-button:hover:not(:disabled) {
+  background: var(--accent-gradient);
+  transform: translateY(-1px);
+}
+
+.atm-chatbot-page .send-button:disabled {
+  background: #c3d1e2;
+  box-shadow: none;
+}
+
+/* Bouton "Chat vocal" dans la saisie : visible quand le champ est vide, à la
+   place du bouton d'envoi (comme les assistants vocaux grand public). */
+.composer-voice-button {
+  display: inline-flex;
+  height: 52px;
+  flex: 0 0 auto;
+  gap: 8px;
+  align-items: center;
+  padding: 0 18px 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #0f2742, #1d4f8f);
+  box-shadow: 0 10px 24px -10px rgba(15, 39, 66, 0.6);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  transition: transform 150ms ease;
+}
+
+.composer-voice-button:hover {
+  transform: translateY(-1px);
+}
+
+.composer-voice-button .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.message-composer:not(:has(textarea:placeholder-shown)) .composer-voice-button {
+  display: none;
+}
+
+.message-composer:has(textarea:placeholder-shown):has(.composer-voice-button:not([hidden])) .send-button {
+  display: none;
+}
+
+.atm-chatbot-page .mic-button {
+  background: rgba(31, 111, 209, 0.08);
+}
+
+/* Panneau de contexte */
+.atm-chatbot-page .context-card {
+  border-color: rgba(214, 226, 240, 0.9);
+  box-shadow: 0 10px 28px -18px rgba(15, 39, 66, 0.25);
+}
+
+@media (max-width: 719px) {
+  .composer-voice-button-label {
+    display: none;
+  }
+
+  .composer-voice-button {
+    width: 52px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .conversation > .welcome-message:only-child .atm-chatbot-avatar-slot {
+    width: 76px;
+    height: 76px;
+  }
+}
+
+/* ---------- 11. Responsive ---------- */
+
+/* Grand écran : le contexte est une colonne à droite. */
+@media (min-width: 1280px) {
+  .app-shell[data-context-panel="open"] {
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr) var(--context-width);
+  }
+
+  .app-shell[data-sidebar="collapsed"][data-context-panel="open"] {
+    grid-template-columns: var(--sidebar-compact-width) minmax(0, 1fr) var(--context-width);
+  }
+
+  .app-shell[data-context-panel="closed"] .context-panel {
+    display: none;
+  }
+}
+
+/* En dessous : le contexte devient un tiroir par-dessus la conversation. */
+@media (max-width: 1279px) {
+  .context-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    width: min(340px, 88vw);
+    box-shadow: -20px 0 50px rgba(15, 39, 66, 0.18);
+    transform: translateX(100%);
+    transition: transform 240ms ease, visibility 240ms;
+  }
+
+  .app-shell[data-context-panel="open"] .context-panel {
+    transform: none;
+  }
+
+  .app-shell[data-context-panel="open"] .context-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    display: block;
+    background: rgba(15, 39, 66, 0.32);
+  }
+}
+
+@media (max-width: 1099px) {
+  .keyboard-hint {
+    display: none;
+  }
+}
+
+/* Petit écran : sidebar en tiroir, conversation pleine largeur. */
+@media (max-width: 719px) {
+  .app-shell,
+  .app-shell[data-sidebar="collapsed"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 45;
+    width: min(300px, 86vw);
+    box-shadow: 20px 0 50px rgba(5, 18, 35, 0.3);
+    transform: translateX(-105%);
+    transition: transform 240ms ease;
+  }
+
+  .app-shell[data-sidebar-drawer="open"] .app-sidebar {
+    transform: none;
+  }
+
+  /* Dans le tiroir, la sidebar est toujours complète (libellés visibles). */
+  .app-shell[data-sidebar="collapsed"] .app-sidebar {
+    padding-inline: 14px;
+  }
+
+  .app-shell[data-sidebar="collapsed"] .sidebar-header {
+    flex-direction: row;
+  }
+
+  .app-shell[data-sidebar="collapsed"] :is(.sidebar-brand-text, .sidebar-greeting, .sidebar-section-title, .sidebar-link-label, .technician-card-text) {
+    display: revert;
+  }
+
+  .app-shell[data-sidebar="collapsed"] .sidebar-greeting,
+  .app-shell[data-sidebar="collapsed"] .technician-card-text {
+    display: grid;
+  }
+
+  .app-shell[data-sidebar="collapsed"] .sidebar-link,
+  .app-shell[data-sidebar="collapsed"] .technician-card {
+    justify-content: flex-start;
+    padding: 0 12px;
+  }
+
+  .app-shell[data-sidebar-drawer="open"] .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 44;
+    display: block;
+    background: rgba(15, 39, 66, 0.4);
+  }
+
+  .mobile-menu-button {
+    display: grid !important;
+  }
+
+  .workspace-header {
+    min-height: 62px;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .toolbar-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .atm-chatbot-page .assistant-identity strong {
+    font-size: 16px;
+  }
+
+  .pill-button {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .pill-button > span:last-child {
+    display: none;
+  }
+
+  .demo-badge {
+    display: none;
+  }
+
+  .atm-chatbot-page .conversation {
+    padding: 18px 14px;
+  }
+
+  .atm-chatbot-page .message-bubble {
+    font-size: 15px;
+  }
+
+  .atm-chatbot-page .composer-area {
+    padding: 8px 10px 12px;
+  }
+
+  /* Saisie sur deux lignes : texte en haut, équipement + micro + envoi en bas. */
+  .atm-chatbot-page .message-composer {
+    flex-wrap: wrap;
+  }
+
+  .atm-chatbot-page .message-composer textarea {
+    order: -1;
+    flex-basis: 100%;
+    min-height: 46px;
+    padding: 8px 6px;
+  }
+
+  .atm-chatbot-page .device-picker {
+    margin-right: auto;
+  }
+
+  .device-trigger-text small {
+    display: none;
+  }
+
+  .send-button-label {
+    display: none;
+  }
+
+  .composer-meta {
+    justify-content: flex-end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atm-chatbot-page *,
+  .atm-chatbot-page *::before,
+  .atm-chatbot-page *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

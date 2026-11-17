@@ -1,0 +1,7 @@
+{
+  "source_key": "problem-reference-gab-network",
+  "device_type": "gab",
+  "label": "Le GAB ne communique plus avec le serveur",
+  "reply": "Relève le message de communication et l'heure de début. Vérifie les voyants et branchements accessibles du réseau, sans modifier la configuration. Si la liaison ne revient pas, contacte l'équipe réseau avec le journal du GAB et le résultat des vérifications.",
+  "display_order": 101
+}

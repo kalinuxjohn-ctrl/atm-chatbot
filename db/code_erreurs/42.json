@@ -1,0 +1,16 @@
+{
+  "catalog_number": 42,
+  "code": "56",
+  "label": "Cassette 6 : trop de mauvais billets",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 56 : trop de mauvais billets dans la cassette 6.\nVérifier le contenu de la cassette 6. Si la panne persiste malgré l'intervention, contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "family": "5x",
+    "cassette": 6,
+    "component": "Cassette 6",
+    "kind": "error"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "source_key": "problem-reference-gab-cash-retract",
+  "device_type": "gab",
+  "label": "Les billets présentés sont repris par le GAB",
+  "reply": "Relève l'heure de l'opération et le message affiché. Vérifie dans les journaux autorisés si les billets ont été détectés comme non retirés. Applique la procédure de rapprochement du site ; ne récupère pas de billets dans le coffre hors procédure. Si le phénomène se répète, contacte le support.",
+  "display_order": 109
+}

@@ -4,22 +4,44 @@
 Moteur de recherche par similarité pour les symptômes.
 
 Ce fichier permet de trouver les symptômes enregistrés qui ressemblent le plus à une recherche texte :
-- Convertit la recherche en vecteur d'embedding.
+- Convertit la recherche en vecteur d'embedding (via embeddings_service.generate_embedding --
+  ce fichier ne sait RIEN du modèle utilisé derrière, local ou API externe demain).
 - Exécute un SELECT optimisé dans PostgreSQL (pgvector) pour trouver les résultats les plus proches.
-- Calcule la similarité à la main en Python (cosinus) si la BDD ne supporte pas l'extension vectorielle.
-- Va ensuite chercher, pour les symptômes catalogués trouvés, les actions déjà
+- Remonte une erreur explicite si PostgreSQL/pgvector échoue, sans moteur de secours.
+- Élimine les candidats pas assez pertinents (seuil configurable, voir settings.symptom_similarity_threshold)
+  avant qu'ils puissent influencer la recherche de solutions.
+- Va ensuite chercher, pour les symptômes catalogués jugés pertinents, les actions déjà
   connues classées par accuracy -- toujours pour le MÊME device_type (gab ou
   tpe), puisqu'une action validée sur un GAB n'a pas la même fiabilité sur un
   TPE (mécaniques différentes -- voir symptom_action_outcome_stats).
+
+Convention de score : "similarity", score élevé = plus pertinent.
+pgvector renvoie nativement une
+distance cosinus (0 = identique) ; elle est convertie en similarité
+(1 - distance) directement dans la requête SQL, pour que le reste du
+fichier -- et tout appelant externe -- n'ait jamais à connaître cette
+convention de distance.
 """
 
 import math
 from typing import Sequence
 
 from sqlalchemy import bindparam, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.types import Integer
 
-from app.services.embeddings_service import generate_embedding
+from app.core.config import settings
+from app.core.errors import ExternalServiceUnavailableError
+from app.core.tracing import trace
+from app.services.embeddings_service import generate_embedding, generate_embeddings_batch
+
+
+# Garde-fou technique (pas un paramètre métier) : évite qu'un limit
+# aberrant (ex. mal passé par un appelant) ne fasse remonter des milliers
+# de lignes. Volontairement en dur -- contrairement au seuil de
+# pertinence, ce n'est pas un réglage qu'on attend de faire varier.
+MAX_SYMPTOM_LIMIT = 50
+DEFAULT_SYMPTOM_LIMIT = 5
 
 
 def cosine_similarity(left: Sequence[float], right: Sequence[float]) -> float:
@@ -34,103 +56,352 @@ def cosine_similarity(left: Sequence[float], right: Sequence[float]) -> float:
     return dot_product / (left_norm * right_norm)
 
 
-def fetch_similar_symptoms(db, raw_text: str, device_type: str, limit: int = 5):
-    """Return the closest intervention symptoms for a text query.
+def _clean_search_text(search_text: str | None) -> str:
+    return (search_text or "").strip()
+
+
+def _clamp_limit(limit: int, default: int = DEFAULT_SYMPTOM_LIMIT) -> int:
+    """Remplace un `limit` invalide par une valeur par défaut raisonnable, et plafonne les valeurs absurdes."""
+    if not isinstance(limit, int) or limit <= 0:
+        return default
+    return min(limit, MAX_SYMPTOM_LIMIT)
+
+
+def _apply_relevance_threshold(candidates: list[dict], threshold: float, method: str) -> list[dict]:
+    """Applique le seuil de pertinence aux candidats vectoriels."""
+    retained = [c for c in candidates if c["similarity"] >= threshold]
+    eliminated_count = len(candidates) - len(retained)
+
+    if retained:
+        trace(
+            "SEARCH",
+            "Résultats retenus après seuil de pertinence",
+            method=method,
+            retained_count=len(retained),
+            eliminated_count=eliminated_count,
+            threshold=threshold,
+            scores=[round(c["similarity"], 4) for c in retained],
+        )
+    else:
+        trace(
+            "SEARCH",
+            "Aucun résultat suffisamment pertinent",
+            method=method,
+            candidate_count=len(candidates),
+            threshold=threshold,
+        )
+
+    return retained
+
+
+def _model_filter_sql(model_name: str | None) -> tuple[str, dict]:
+    """
+    Filtre facultatif par nom de modèle (celui que Claude a extrait du
+    message). Sans modèle mentionné : chaîne vide, la recherche reste
+    filtrée par device_type seul. Comparaison insensible à la casse et aux
+    espaces autour, comme technical_reference_resolver_service.
+    """
+    if not model_name or not model_name.strip():
+        return "", {}
+    return (
+        """
+              AND d.model_id IN (
+                  SELECT dm.model_id FROM modele_appareil dm
+                  WHERE UPPER(TRIM(dm.model_name)) = UPPER(TRIM(:model_name))
+              )""",
+        {"model_name": model_name},
+    )
+
+
+def fetch_similar_symptoms(
+    db,
+    search_text: str,
+    device_type: str,
+    limit: int = DEFAULT_SYMPTOM_LIMIT,
+    model_name: str | None = None,
+    query_vector: Sequence[float] | None = None,
+) -> list[dict]:
+    """
+    Les symptômes enregistrés les plus proches d'une recherche texte, DÉJÀ
+    filtrés par le seuil de pertinence (settings.symptom_similarity_threshold)
+    -- un appelant ne reçoit donc jamais un résultat jugé non pertinent
+    simplement parce qu'il faisait partie du Top N.
 
     Restreint aux symptômes enregistrés sur le même device_type (jointure
     jusqu'à `device` via `intervention`) : un GAB et un TPE ne partagent pas
     la même mécanique, donc un symptôme "similaire en texte" observé sur
-    l'un n'est pas forcément pertinent pour l'autre.
-    """
-    query_vector = generate_embedding(raw_text, is_query=True) 
-    
+    l'un n'est pas forcément pertinent pour l'autre. Si `model_name` est
+    fourni (modèle cité dans le message), restreint en plus aux appareils
+    de ce modèle.
 
+    `query_vector` : embedding de `search_text` déjà calculé par l'appelant
+    (voir fetch_similar_symptoms_per_symptom), pour éviter un appel de plus
+    au fournisseur d'embedding.
+
+    Retourne [] si le texte est vide/inexploitable (aucune recherche
+    vectorielle n'est lancée dans ce cas), ou si aucun candidat ne dépasse
+    le seuil de pertinence.
+    """
+    cleaned_text = _clean_search_text(search_text)
+    trace("PROCESSING", "Texte de recherche nettoyé", cleaned_length=len(cleaned_text))
+    if not cleaned_text:
+        trace("SEARCH", "Texte de recherche vide, recherche vectorielle ignorée", device_type=device_type)
+        return []
+
+    limit = _clamp_limit(limit)
+    threshold = settings.symptom_similarity_threshold
+
+    trace(
+        "SEARCH",
+        "Recherche vectorielle démarrée",
+        query_length=len(cleaned_text),
+        device_type=device_type,
+        has_model_filter=bool(model_name),
+        limit=limit,
+        threshold=threshold,
+    )
+
+    if query_vector is None:
+        query_vector = generate_embedding(cleaned_text, is_query=True)
+    model_filter, model_params = _model_filter_sql(model_name)
+
+    # SAVEPOINT plutôt que db.rollback() : en cas d'échec, seule cette
+    # requête est annulée -- un rollback complet effacerait aussi ce que
+    # l'appelant a déjà écrit dans la même transaction (ex. conversation et
+    # message utilisateur de /api/chat), qui échouerait ensuite sur une
+    # clé étrangère.
+    savepoint = db.begin_nested()
     try:
         rows = db.execute(
             text(
-                """
+                f"""
                 SELECT isym.intervention_symptom_id, isym.intervention_id,
                        isym.symptom_id, isym.raw_text,
-                       isym.embedding <=> CAST(:query_vector AS vector) AS distance
-                FROM intervention_symptom isym
+                       1 - (isym.embedding <=> CAST(:query_vector AS vector)) AS similarity
+                FROM symptome_intervention isym
                 JOIN intervention iv ON iv.intervention_id = isym.intervention_id
-                JOIN device d ON d.device_id = iv.device_id
+                JOIN appareil d ON d.device_id = iv.device_id
                 WHERE isym.embedding IS NOT NULL
-                  AND d.device_type = :device_type
+                  AND d.device_type = :device_type{model_filter}
                 ORDER BY isym.embedding <=> CAST(:query_vector AS vector)
                 LIMIT :limit
                 """
             ),
-            {"query_vector": str(query_vector), "device_type": device_type, "limit": limit},
+            {"query_vector": str(query_vector), "device_type": device_type, "limit": limit, **model_params},
         ).mappings().all()
-        return [dict(row) for row in rows]
-    except Exception:
-        # Repli si pgvector n'est pas disponible : on relit les embeddings
-        # comme du texte brut (le type `vector` accepte cette lecture) et on
-        # calcule la similarité cosinus à la main.
+        candidates = [dict(row) for row in rows]
+        savepoint.commit()
+        method = "pgvector"
+    except SQLAlchemyError as error:
+        trace(
+            "ERROR",
+            "Échec de la recherche PostgreSQL/pgvector",
+            error_type=type(error).__name__,
+        )
         # Indispensable : la requête précédente a échoué et a laissé la
         # transaction "avortée" côté Postgres -- toute nouvelle requête sur
         # la même session échouerait avec InFailedSqlTransaction tant qu'on
-        # n'a pas annulé cette transaction.
-        db.rollback()
-        rows = db.execute(
-            text(
-                """
-                SELECT isym.intervention_symptom_id, isym.intervention_id,
-                       isym.symptom_id, isym.raw_text, isym.embedding::text AS embedding_text
-                FROM intervention_symptom isym
-                JOIN intervention iv ON iv.intervention_id = isym.intervention_id
-                JOIN device d ON d.device_id = iv.device_id
-                WHERE isym.embedding IS NOT NULL
-                  AND d.device_type = :device_type
-                """
-            ),
-            {"device_type": device_type},
-        ).mappings().all()
+        # n'est pas revenu au savepoint.
+        savepoint.rollback()
+        raise ExternalServiceUnavailableError(
+            f"Recherche PostgreSQL/pgvector indisponible ({type(error).__name__})."
+        ) from error
 
-        scored = []
-        for row in rows:
-            vector = [float(value) for value in row["embedding_text"].strip("[]").split(",")]
-            score = cosine_similarity(query_vector, vector)
-            scored.append({
-                "intervention_symptom_id": row["intervention_symptom_id"],
-                "intervention_id": row["intervention_id"],
-                "symptom_id": row["symptom_id"],
-                "raw_text": row["raw_text"],
-                "similarity": score,
-            })
-        scored.sort(key=lambda item: item["similarity"], reverse=True)
-        return scored[:limit]
+    trace("SEARCH", "Candidats vectoriels récupérés avant filtrage", count=len(candidates), method=method)
+    return _apply_relevance_threshold(candidates, threshold, method)
 
 
 retrieve_similar_symptoms = fetch_similar_symptoms
 
 
-def find_ranked_solutions(db, raw_text: str, device_type: str, symptom_limit: int = 5, solution_limit: int = 10):
+def fetch_similar_symptoms_per_symptom(
+    db,
+    symptom_texts: list[str],
+    device_type: str,
+    limit: int = DEFAULT_SYMPTOM_LIMIT,
+    model_name: str | None = None,
+) -> list[list[dict]]:
+    """
+    Une recherche vectorielle PAR symptôme du technicien : le résultat i
+    contient les symptômes enregistrés proches de symptom_texts[i] (même
+    seuil, mêmes filtres que fetch_similar_symptoms).
+
+    Chercher chaque symptôme séparément évite qu'un message à plusieurs
+    symptômes ne donne un seul vecteur « moyen », trop loin de chacun d'eux.
+    Plusieurs symptômes : leurs embeddings sont calculés en UN appel groupé.
+    """
+    cleaned_texts = [_clean_search_text(symptom_text) for symptom_text in symptom_texts]
+    cleaned_texts = [cleaned for cleaned in cleaned_texts if cleaned]
+    if not cleaned_texts:
+        return []
+    if len(cleaned_texts) == 1:
+        # Un seul symptôme : chemin habituel, qui profite du cache des recherches.
+        return [fetch_similar_symptoms(db, cleaned_texts[0], device_type, limit=limit, model_name=model_name)]
+
+    trace("SEARCH", "Recherche par symptôme démarrée", symptom_count=len(cleaned_texts))
+    query_vectors = generate_embeddings_batch(cleaned_texts, is_query=True)
+    return [
+        fetch_similar_symptoms(
+            db, cleaned, device_type, limit=limit, model_name=model_name, query_vector=query_vector
+        )
+        for cleaned, query_vector in zip(cleaned_texts, query_vectors)
+    ]
+
+
+def find_best_catalog_match(
+    db, symptom_text: str, device_type: str, query_vector: Sequence[float] | None = None
+) -> dict | None:
+    """
+    Cherche, parmi les symptômes DÉJÀ rattachés au catalogue (symptom_id non
+    NULL) pour ce device_type, celui dont la formulation passée est la plus
+    proche de symptom_text.
+
+    Cette fonction garde sa convention "distance"
+    (plus bas = plus proche), utilisée ailleurs avec son propre seuil
+    (settings.symptom_catalog_match_max_distance). Une panne pgvector
+    remonte une erreur explicite, sans recherche alternative.
+    """
+    cleaned_text = _clean_search_text(symptom_text)
+    if not cleaned_text:
+        return None
+
+    # query_vector fourni : l'appelant l'a déjà calculé dans un appel groupé
+    # (voir intervention_service.create_intervention_with_symptoms) -- on
+    # évite un appel au fournisseur d'embedding de plus par symptôme.
+    if query_vector is None:
+        query_vector = generate_embedding(cleaned_text, is_query=True)
+
+    # Même raison que dans fetch_similar_symptoms : ne jamais annuler le
+    # travail en cours de l'appelant (ex. intervention en cours de création).
+    savepoint = db.begin_nested()
+    try:
+        row = db.execute(
+            text(
+                """
+                SELECT isym.symptom_id,
+                       isym.embedding <=> CAST(:query_vector AS vector) AS distance
+                FROM symptome_intervention isym
+                JOIN intervention iv ON iv.intervention_id = isym.intervention_id
+                JOIN appareil d ON d.device_id = iv.device_id
+                WHERE isym.embedding IS NOT NULL
+                  AND isym.symptom_id IS NOT NULL
+                  AND d.device_type = :device_type
+                ORDER BY isym.embedding <=> CAST(:query_vector AS vector)
+                LIMIT 1
+                """
+            ),
+            {"query_vector": str(query_vector), "device_type": device_type},
+        ).mappings().first()
+        savepoint.commit()
+        return dict(row) if row else None
+    except SQLAlchemyError as error:
+        savepoint.rollback()
+        trace("ERROR", "Échec du rattachement au catalogue via pgvector", error_type=type(error).__name__)
+        raise ExternalServiceUnavailableError(
+            f"Rattachement au catalogue PostgreSQL/pgvector indisponible ({type(error).__name__})."
+        ) from error
+
+
+def store_symptom_embedding(db, intervention_symptom_id: int, vector: Sequence[float]) -> None:
+    """
+    Écrit l'embedding calculé pour un symptôme déjà enregistré.
+
+    La colonne `embedding` n'est pas mappée dans le modèle ORM
+    InterventionSymptom (voir app/models/intervention.py) -- son écriture
+    passe donc par une requête SQL directe, comme sa lecture ailleurs dans
+    ce fichier.
+    """
+    db.execute(
+        text(
+            "UPDATE symptome_intervention SET embedding = CAST(:vector AS vector) "
+            "WHERE intervention_symptom_id = :intervention_symptom_id"
+        ),
+        {"vector": str(list(vector)), "intervention_symptom_id": intervention_symptom_id},
+    )
+
+
+def find_ranked_solutions(
+    db,
+    search_text: str,
+    device_type: str,
+    symptom_limit: int = DEFAULT_SYMPTOM_LIMIT,
+    solution_limit: int = 10,
+    model_name: str | None = None,
+    symptom_texts: list[str] | None = None,
+) -> dict:
     """Point d'entrée principal du flux de recherche (étapes 1-2 de la
     feuille de route) : à partir d'un symptôme décrit en langage libre par
-    le technicien, retrouve les symptômes catalogués les plus proches, puis
+    le technicien, retrouve les symptômes catalogués les plus proches
+    (déjà filtrés par pertinence -- voir fetch_similar_symptoms), puis
     renvoie les actions déjà tentées pour ces symptômes, classées par
     accuracy décroissante -- sans rien cacher (le technicien voit tout le
     classement, pas juste le "meilleur" résultat).
-    """
-    similar = fetch_similar_symptoms(db, raw_text, device_type, limit=symptom_limit)
 
-    # Seuls les symptômes déjà rattachés au catalogue (symptom_id non NULL)
-    # ont des statistiques d'accuracy -- un symptôme jamais catalogué n'a
-    # encore aucune action associée à classer.
-    symptom_ids = sorted({row["symptom_id"] for row in similar if row.get("symptom_id") is not None})
+    Le classement des solutions reste piloté par les stats
+    (accuracy_score, attempts), PAS par le score sémantique -- celui-ci ne
+    sert qu'à décider quels symptômes entrent dans cette recherche. Il est
+    cependant conservé et rattaché à chaque solution (clé
+    "symptom_similarity"), pour que l'appelant sache à quel point le
+    symptôme d'origine correspondait à la recherche.
+
+    `symptom_texts` : symptômes du technicien cherchés séparément (voir
+    fetch_similar_symptoms_per_symptom) ; leurs correspondances sont
+    réunies. Absent : `search_text` est cherché d'un bloc.
+
+    Renvoie {"matched_symptom_ids": [], "solutions": [], "no_relevant_match": True}
+    si aucun symptôme suffisamment pertinent n'a été trouvé -- aucune
+    solution n'est alors recherchée au hasard.
+    """
+    solution_limit = _clamp_limit(solution_limit, default=10)
+    # model_name ne filtre que les symptômes retenus : les stats elles-mêmes
+    # restent calculées par device_type (pas de colonne modèle dans la table).
+    if symptom_texts:
+        similar = [
+            row
+            for rows in fetch_similar_symptoms_per_symptom(
+                db, symptom_texts, device_type, limit=symptom_limit, model_name=model_name
+            )
+            for row in rows
+        ]
+    else:
+        similar = fetch_similar_symptoms(db, search_text, device_type, limit=symptom_limit, model_name=model_name)
+
+    if not similar:
+        return {"matched_symptom_ids": [], "solutions": [], "no_relevant_match": True}
+
+    # Un même symptom_id catalogué peut apparaître via plusieurs lignes
+    # (plusieurs interventions passées formulées différemment) -- on garde
+    # sa MEILLEURE similarité, c'est elle qui doit accompagner la solution.
+    best_similarity_by_symptom: dict[int, float] = {}
+    for row in similar:
+        symptom_id = row.get("symptom_id")
+        if symptom_id is None:
+            continue
+        current_best = best_similarity_by_symptom.get(symptom_id)
+        if current_best is None or row["similarity"] > current_best:
+            best_similarity_by_symptom[symptom_id] = row["similarity"]
+
+    symptom_ids = sorted(best_similarity_by_symptom)
 
     if not symptom_ids:
-        return {"matched_symptom_ids": [], "solutions": []}
+        # Candidats trouvés et pertinents, mais aucun rattaché au
+        # catalogue (symptom_id NULL) -- rien à chercher dans
+        # symptom_action_outcome_stats, qui est indexée sur symptom_id.
+        trace(
+            "SEARCH",
+            "Candidats pertinents mais non catalogués, aucune solution possible",
+            candidate_count=len(similar),
+            device_type=device_type,
+        )
+        return {"matched_symptom_ids": [], "solutions": [], "no_relevant_match": True}
 
     query = text(
         """
         SELECT stats.symptom_id, s.canonical_text AS symptom_text,
                stats.action_id, a.canonical_text AS action_text,
                stats.attempts, stats.successes, stats.accuracy_score
-        FROM symptom_action_outcome_stats stats
-        JOIN symptom s ON s.symptom_id = stats.symptom_id
+        FROM statistiques_resultats_symptome_action stats
+        JOIN symptome s ON s.symptom_id = stats.symptom_id
         JOIN action a ON a.action_id = stats.action_id
         WHERE stats.symptom_id IN :symptom_ids
           AND stats.device_type = :device_type
@@ -144,4 +415,15 @@ def find_ranked_solutions(db, raw_text: str, device_type: str, symptom_limit: in
         {"symptom_ids": symptom_ids, "device_type": device_type, "limit": solution_limit},
     ).mappings().all()
 
-    return {"matched_symptom_ids": symptom_ids, "solutions": [dict(row) for row in rows]}
+    solutions = [
+        {**dict(row), "symptom_similarity": best_similarity_by_symptom[row["symptom_id"]]} for row in rows
+    ]
+
+    trace(
+        "SEARCH",
+        "Solutions classées récupérées",
+        matched_symptom_count=len(symptom_ids),
+        solution_count=len(solutions),
+    )
+
+    return {"matched_symptom_ids": symptom_ids, "solutions": solutions, "no_relevant_match": False}

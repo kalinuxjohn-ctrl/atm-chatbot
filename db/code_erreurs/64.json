@@ -1,0 +1,14 @@
+{
+  "catalog_number": 64,
+  "code": "93",
+  "label": "Barrière photoélectrique PS2 encrassée",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 93 : barrière photoélectrique PS2 encrassée.\nLa mesure prescrite par ce document est de contacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "component": "PS2",
+    "kind": "error"
+  }
+}

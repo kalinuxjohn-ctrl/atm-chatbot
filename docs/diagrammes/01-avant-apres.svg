@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Avant : le technicien dépend de collègues, de notes ou du hasard. Après : il interroge ATM-Chatbot qui s'appuie sur l'historique partagé.">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3b4f66"/></marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#127a76"/></marker>
+  </defs>
+  <rect width="960" height="420" fill="#ffffff"/>
+
+  <!-- ===== AUJOURD'HUI ===== -->
+  <rect x="20" y="20" width="440" height="380" rx="14" fill="#fbf5f5" stroke="#ecd2d4"/>
+  <text x="40" y="52" font-size="15" font-weight="700" fill="#a53c45" letter-spacing="1">AUJOURD'HUI</text>
+
+  <rect x="40" y="82" width="170" height="44" rx="8" fill="#fff" stroke="#c9d6e3"/>
+  <text x="125" y="109" font-size="13" text-anchor="middle" fill="#1d2d3d">Appeler un collègue</text>
+  <rect x="250" y="82" width="190" height="44" rx="8" fill="#fff" stroke="#c9d6e3"/>
+  <text x="345" y="109" font-size="13" text-anchor="middle" fill="#1d2d3d">Chercher dans ses notes</text>
+  <rect x="130" y="296" width="200" height="44" rx="8" fill="#fff" stroke="#c9d6e3"/>
+  <text x="230" y="323" font-size="13" text-anchor="middle" fill="#1d2d3d">Essayer au hasard</text>
+
+  <rect x="150" y="172" width="160" height="56" rx="10" fill="#10243a"/>
+  <text x="230" y="196" font-size="13" text-anchor="middle" fill="#fff" font-weight="600">Technicien</text>
+  <text x="230" y="214" font-size="12" text-anchor="middle" fill="#b9c8d8">devant la panne</text>
+
+  <line x1="200" y1="172" x2="140" y2="130" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="58" y="160" font-size="12" fill="#5b6b7f" font-style="italic">s'il répond…</text>
+  <line x1="262" y1="172" x2="322" y2="130" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="300" y="158" font-size="12" fill="#5b6b7f" font-style="italic">si elles existent…</text>
+  <line x1="230" y1="228" x2="230" y2="292" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="240" y="265" font-size="12" fill="#5b6b7f" font-style="italic">temps perdu</text>
+
+  <text x="240" y="378" font-size="13" text-anchor="middle" fill="#a53c45" font-weight="600">La solution trouvée reste dans la tête de chacun</text>
+
+  <!-- ===== AVEC ATM-CHATBOT ===== -->
+  <rect x="500" y="20" width="440" height="380" rx="14" fill="#f2f9f8" stroke="#cfe7e3"/>
+  <text x="520" y="52" font-size="15" font-weight="700" fill="#127a76" letter-spacing="1">AVEC ATM-CHATBOT</text>
+
+  <rect x="525" y="172" width="150" height="56" rx="10" fill="#10243a"/>
+  <text x="600" y="196" font-size="13" text-anchor="middle" fill="#fff" font-weight="600">Technicien</text>
+  <text x="600" y="214" font-size="12" text-anchor="middle" fill="#b9c8d8">devant la panne</text>
+
+  <rect x="760" y="84" width="160" height="56" rx="10" fill="#eaf2fd" stroke="#1f6fd1"/>
+  <text x="840" y="117" font-size="14" text-anchor="middle" fill="#1657a8" font-weight="700">ATM-Chatbot</text>
+
+  <path d="M760 286 v56 a80 12 0 0 0 160 0 v-56" fill="#e6f5f3" stroke="#127a76"/>
+  <ellipse cx="840" cy="286" rx="80" ry="12" fill="#cdeee9" stroke="#127a76"/>
+  <text x="840" y="320" font-size="12.5" text-anchor="middle" fill="#0d4f4c" font-weight="600">Historique des</text>
+  <text x="840" y="337" font-size="12.5" text-anchor="middle" fill="#0d4f4c" font-weight="600">interventions</text>
+
+  <line x1="675" y1="182" x2="756" y2="114" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="640" y="134" font-size="12" fill="#5b6b7f">décrit la panne</text>
+  <line x1="780" y1="140" x2="680" y2="200" stroke="#127a76" stroke-width="1.6" marker-end="url(#arrow-teal)"/>
+  <text x="722" y="190" font-size="12" fill="#127a76" font-weight="600">pistes classées</text>
+  <line x1="860" y1="140" x2="860" y2="270" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="868" y="212" font-size="12" fill="#5b6b7f">cas</text>
+  <text x="868" y="227" font-size="12" fill="#5b6b7f">similaires</text>
+  <line x1="640" y1="228" x2="756" y2="312" stroke="#127a76" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arrow-teal)"/>
+  <text x="560" y="290" font-size="12" fill="#127a76">enregistre ce qu'il</text>
+  <text x="560" y="305" font-size="12" fill="#127a76">a fait et le résultat</text>
+
+  <text x="720" y="378" font-size="13" text-anchor="middle" fill="#127a76" font-weight="600">Chaque panne résolue aide la suivante</text>
+</svg>

@@ -1,0 +1,14 @@
+{
+  "catalog_number": 12,
+  "code": "16",
+  "label": "Codage du transport de distribution invalide",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 16 : codage du transport de distribution non valide.\nContacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 7,
+    "component": "Transport de distribution",
+    "kind": "error"
+  }
+}

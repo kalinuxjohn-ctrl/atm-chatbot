@@ -6,16 +6,18 @@ Contrats de données pour l'endpoint de recherche de symptôme (/chat) :
   classées par accuracy décroissante, sans rien cacher.
 """
 
-from typing import Literal, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
+
+from app.schemas.device_type import DeviceType, NonEmptyStr
 
 
 class SymptomSearchRequest(BaseModel):
     """Symptôme décrit en langage libre par le technicien, sur un appareil donné."""
 
-    raw_text: str = Field(..., description="Formulation exacte du technicien.")
-    device_type: Literal["gab", "tpe"]
+    raw_text: NonEmptyStr = Field(..., description="Formulation exacte du technicien.")
+    device_type: DeviceType
 
 
 class SolutionSuggestion(BaseModel):
@@ -38,3 +40,4 @@ class SymptomSearchResponse(BaseModel):
         description="Symptômes catalogués retrouvés par similarité, à l'origine des solutions ci-dessous.",
     )
     solutions: list[SolutionSuggestion] = Field(default_factory=list)
+    summary: str = ""  # résumé LLM ou demande de reformulation après rejet local du texte

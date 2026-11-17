@@ -1,0 +1,7 @@
+{
+  "source_key": "problem-reference-tpe-printer",
+  "device_type": "tpe",
+  "label": "Le TPE n'imprime pas le ticket",
+  "reply": "Vérifie le message d'état, la présence du rouleau et la fermeture du capot. Remplace le papier selon les indications du fabricant et lance une impression autorisée. Si le ticket reste absent ou illisible, note le résultat et contacte le support.",
+  "display_order": 103
+}

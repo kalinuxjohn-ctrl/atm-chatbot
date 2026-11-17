@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f7fb">
+    <!-- Thème sombre appliqué avant l'affichage (clé STORAGE_KEYS.theme de js/config.js) -->
+    <script src="js/applySavedTheme.js"></script>
+    <!-- Affiché dans l'onglet ATM-Chatbot de l'Espace techniciens (?embedded=1) : thème, technicien, barre du haut masquée -->
+    <script src="js/embeddedMode.js"></script>
+    <meta name="description" content="ATM-Chatbot : conversation écrite et vocale pour la maintenance GAB et TPE.">
+    <title>Conversation | ATM-Chatbot</title>
+    <link rel="icon" href="assets/images/logo.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="css/assets.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/atm-chatbot.css">
+    <link rel="stylesheet" href="css/theme.css">
+    <script type="module" src="js/components/themeToggle.js"></script>
+    <script type="module" src="js/pages/atm-chatbot.js"></script>
+  </head>
+  <body class="atm-chatbot-page">
+    <div class="app-frame">
+    <div class="app-shell chat-only-shell" id="app-shell">
+
+      <!-- ========== Espace de conversation ========== -->
+      <main class="workspace">
+        <header class="workspace-header">
+          <!-- Statut de l’ATM-Chatbot, annoncé aux lecteurs d'écran (l'avatar est dans la barre du haut). -->
+          <p class="visually-hidden" aria-live="polite">ATM-Chatbot : <span id="atm-chatbot-status">Prêt à vous aider</span></p>
+
+          <div class="workspace-actions">
+            <span class="technician-card">
+              <span class="technician-avatar" id="technician-avatar" aria-hidden="true"></span>
+              <span class="technician-card-text">
+                <strong id="technician-name"></strong>
+                <small id="technician-number"></small>
+              </span>
+            </span>
+            <span class="standalone-chat-actions">
+              <a class="pill-button" href="/">Accueil</a>
+              <button class="pill-button" type="button" data-new-conversation>Nouvelle conversation</button>
+              <button class="pill-button" type="button" data-open-settings>Paramètres</button>
+            </span>
+            <span class="demo-badge" id="demo-badge" hidden title="Ajoutez ?mock=0 à l’adresse pour revenir au backend réel">Mode démo</span>
+            <button class="pill-button pill-button-primary" type="button" data-open-voice-mode aria-label="Ouvrir le Chat vocal">
+              <span data-icon="voice"></span><span class="pill-button-label">Chat vocal</span>
+            </button>
+          </div>
+        </header>
+
+        <section class="chat-panel" aria-label="Conversation avec l’ATM-Chatbot">
+          <!-- Fil de conversation (rempli par chatView.js) -->
+          <div class="conversation" id="conversation" aria-live="polite" aria-relevant="additions text"></div>
+
+          <!-- Zone de saisie : le texte en haut, les outils en dessous -->
+          <div class="composer-area">
+            <form class="message-composer" id="message-form">
+              <label class="visually-hidden" for="message-input">Votre message à l’ATM-Chatbot</label>
+              <textarea
+                id="message-input"
+                rows="2"
+                maxlength="2000"
+                placeholder="Décrivez le problème observé…"
+                aria-describedby="character-count dictation-status"
+              ></textarea>
+
+              <button class="pill-button pill-button-warning speech-stop-button" id="stop-reading-button" type="button" aria-label="Arrêter la lecture" hidden>
+                <span data-icon="stop"></span><span>Arrêter la lecture</span>
+              </button>
+
+              <div class="composer-toolbar">
+                <div class="device-picker" id="device-picker"></div>
+                <!-- Menus déroulants : pannes fréquentes + codes d'erreur (suggestions.js) -->
+                <div class="composer-suggestions" id="composer-suggestions"></div>
+
+                <div class="composer-buttons">
+                  <!-- Photo de l'appareil, lue par l’ATM-Chatbot (composerPhoto.js). Cachée si le backend ne l'accepte pas. -->
+                  <button class="mic-button photo-button" id="photo-button" type="button" hidden aria-label="Joindre une photo de l’appareil" title="Prendre une photo (le texte affiché sera lu)">
+                    <span data-icon="camera"></span>
+                  </button>
+                  <input class="visually-hidden" id="photo-input" type="file" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true">
+                  <button class="mic-button" id="mic-button" type="button" aria-pressed="false" aria-label="Dicter votre message au micro" title="Dicter au micro">
+                    <span data-icon="mic"></span>
+                  </button>
+                  <button class="composer-voice-button" type="button" data-open-voice-mode aria-label="Démarrer le Chat vocal" title="Parler à l’ATM-Chatbot">
+                    <span data-icon="voice"></span><span class="composer-voice-button-label">Vocal</span>
+                  </button>
+                  <button class="send-button" id="send-button" type="submit" disabled aria-label="Envoyer le message" title="Envoyer">
+                    <span class="send-button-label">Envoyer</span><span data-icon="send"></span>
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            <!-- Aperçu de la photo jointe au prochain message (composerPhoto.js) -->
+            <div class="composer-photo-preview" id="photo-preview" hidden></div>
+
+            <!-- États de la dictée : écoute, traitement, erreur micro (composerDictation.js) -->
+            <p class="dictation-status" id="dictation-status" data-state="idle" hidden></p>
+
+            <div class="composer-meta">
+              <span class="keyboard-hint"><kbd>Entrée</kbd> envoyer · <kbd>Maj + Entrée</kbd> nouvelle ligne</span>
+              <span class="character-count" id="character-count">0 / 2000</span>
+            </div>
+
+          </div>
+        </section>
+      </main>
+
+    </div>
+    </div>
+
+    <!-- ========== Mode Chat vocal (voiceMode.js, état dans data-state) ==========
+         Plein écran, comme une conversation téléphonique : la messagerie est
+         masquée, mais chaque échange est quand même envoyé / reçu par le chat
+         (et visible dans la conversation après la fermeture). -->
+    <dialog class="voice-dialog" id="voice-dialog" data-state="idle" aria-labelledby="voice-title" aria-describedby="voice-status">
+      <div class="voice-screen">
+        <header class="voice-topbar">
+          <span class="voice-brand">
+            <strong id="voice-title">Chat vocal</strong>
+            <small data-voice-device></small>
+          </span>
+          <button class="voice-icon-button" type="button" data-voice-close aria-label="Fermer le mode vocal">
+            <span data-icon="close"></span>
+          </button>
+        </header>
+
+        <div class="voice-center">
+          <!-- La bulle : touchez pour parler, finir votre phrase ou interrompre l’ATM-Chatbot. -->
+          <button class="voice-orb" type="button" data-voice-main aria-label="Parler">
+            <span class="voice-orb-halo" aria-hidden="true"></span>
+            <span class="voice-orb-halo" aria-hidden="true"></span>
+            <span class="voice-orb-core" aria-hidden="true">
+              <span class="voice-avatar" data-voice-avatar></span>
+            </span>
+          </button>
+
+          <div class="voice-status-block" aria-live="polite">
+            <p class="voice-status" id="voice-status" data-voice-status>Connexion…</p>
+            <p class="voice-detail" data-voice-detail hidden></p>
+            <button class="voice-secondary-button" type="button" data-voice-stop hidden>
+              <span data-icon="stop"></span><span>Arrêter la voix</span>
+            </button>
+          </div>
+
+          <div class="voice-captions" aria-live="polite">
+            <p class="voice-caption voice-caption-user" data-voice-transcript></p>
+            <p class="voice-caption voice-caption-atm-chatbot" data-voice-reply></p>
+          </div>
+
+          <div class="voice-error-actions" data-voice-error-actions hidden>
+            <button class="voice-secondary-button" type="button" data-voice-retry>
+              <span data-icon="refresh"></span><span>Réessayer</span>
+            </button>
+            <button class="voice-secondary-button" type="button" data-voice-offline hidden>
+              <span data-icon="download"></span><span>Activer la reconnaissance hors ligne</span>
+            </button>
+            <button class="voice-secondary-button" type="button" data-voice-type-instead>
+              <span data-icon="keyboard"></span><span>Écrire ma question</span>
+            </button>
+          </div>
+
+          <form class="voice-fallback" data-voice-fallback hidden>
+            <label class="visually-hidden" for="voice-fallback-input">Votre question</label>
+            <input id="voice-fallback-input" type="text" maxlength="2000" placeholder="Écrivez votre question…" autocomplete="off">
+            <button type="submit" aria-label="Envoyer"><span data-icon="send"></span></button>
+          </form>
+        </div>
+
+        <footer class="voice-controls">
+          <button class="voice-round-button" type="button" data-voice-mute aria-pressed="false">
+            <span data-icon="mic"></span><span class="voice-round-label" data-label>Couper le micro</span>
+          </button>
+          <button class="voice-round-button voice-end-button" type="button" data-voice-end>
+            <span data-icon="close"></span><span class="voice-round-label">Terminer</span>
+          </button>
+          <button class="voice-round-button" type="button" data-voice-replay disabled>
+            <span data-icon="speaker"></span><span class="voice-round-label">Réécouter</span>
+          </button>
+        </footer>
+        <p class="voice-hint">Parlez naturellement : votre message part dès que vous vous taisez. Touchez la bulle pour interrompre. <kbd>Échap</kbd> pour quitter.</p>
+      </div>
+    </dialog>
+
+    <!-- ========== Proposer une solution (solutionProposalDialog.js) ========== -->
+    <dialog class="app-dialog proposal-dialog" id="proposal-dialog" data-state="loading" aria-labelledby="proposal-title">
+      <form class="dialog-form" data-proposal-form novalidate>
+        <header class="dialog-header">
+          <h2 id="proposal-title">Proposer une solution</h2>
+          <p>Décrivez ce qui a marché sur le terrain. Un administrateur la vérifiera avant qu’elle rejoigne les solutions de l’ATM-Chatbot.</p>
+        </header>
+
+        <p class="proposal-loading" data-proposal-loading role="status">Récupération du problème en cours…</p>
+        <p class="form-error" data-proposal-error role="alert" hidden></p>
+
+        <!-- Problème actif, envoyé par le backend : affiché, jamais saisi -->
+        <section class="proposal-problem" data-proposal-problem aria-label="Problème concerné" hidden>
+          <dl class="proposal-problem-details" data-proposal-details></dl>
+          <details class="proposal-previous" data-proposal-previous>
+            <summary>Solutions déjà proposées (<span data-proposal-previous-count>0</span>)</summary>
+            <ol data-proposal-previous-list></ol>
+          </details>
+        </section>
+
+        <div class="proposal-fields" data-proposal-fields hidden>
+          <label class="field">
+            <span>Votre solution</span>
+            <textarea name="proposedAction" rows="3" maxlength="2000" required placeholder="Décrivez l’action réalisée…"></textarea>
+          </label>
+          <label class="field">
+            <span>Résultat obtenu</span>
+            <textarea name="resultDescription" rows="3" maxlength="2000" required placeholder="Décrivez ce qui s’est passé…"></textarea>
+          </label>
+          <div class="segmented" role="radiogroup" aria-label="Le problème est-il réglé ?">
+            <label><input type="radio" name="outcomeStatus" value="resolved" checked> <span>Problème réglé</span></label>
+            <label><input type="radio" name="outcomeStatus" value="partial"> <span>Réglé en partie</span></label>
+          </div>
+        </div>
+
+        <div class="proposal-success" data-proposal-success role="status" hidden>
+          <strong>Proposition envoyée</strong>
+          <span>Elle sera examinée par un administrateur. Vous pouvez continuer la conversation.</span>
+        </div>
+
+        <footer class="dialog-actions">
+          <button class="button button-secondary" type="button" data-proposal-cancel>Annuler</button>
+          <button class="button button-primary" type="submit" data-proposal-submit>Envoyer la proposition</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog class="app-dialog conversation-history-dialog" id="conversation-history-dialog" aria-labelledby="conversation-history-title">
+      <div class="dialog-form">
+        <header class="dialog-header">
+          <h2 id="conversation-history-title">Vos conversations</h2>
+          <p>Retrouvez les échanges enregistrés en base et sélectionnez une conversation pour la reprendre.</p>
+        </header>
+        <p data-history-status role="status"></p>
+        <div class="conversation-history-list" data-history-list></div>
+        <footer class="dialog-actions">
+          <button class="button button-secondary" type="button" data-history-retry hidden>Réessayer</button>
+          <button class="button button-secondary" type="button" data-history-more hidden>Voir plus</button>
+          <button class="button button-primary" type="button" data-history-close>Fermer</button>
+        </footer>
+      </div>
+    </dialog>
+
+    <!-- ========== Paramètres (settingsPanel.js, enregistrés dans le navigateur) ========== -->
+    <dialog class="app-dialog settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
+      <form class="dialog-form" method="dialog">
+        <header class="dialog-header">
+          <h2 id="settings-title">Paramètres de l’ATM-Chatbot</h2>
+          <p>Vos choix sont enregistrés sur cet appareil et appliqués immédiatement.</p>
+        </header>
+        <fieldset class="settings-group">
+          <legend>Apparence</legend>
+          <div data-theme-settings></div>
+        </fieldset>
+
+        <fieldset class="settings-group">
+          <legend>Avatar de l’ATM-Chatbot</legend>
+          <div class="avatar-choices" data-avatar-choices></div>
+        </fieldset>
+
+        <fieldset class="settings-group" data-voice-section>
+          <legend>Voix</legend>
+          <div class="segmented" role="radiogroup" aria-label="Type de voix">
+            <label><input type="radio" name="voiceGender" value="female"> <span>Voix féminine</span></label>
+            <label><input type="radio" name="voiceGender" value="male"> <span>Voix masculine</span></label>
+          </div>
+          <label class="field">
+            <span>Voix française</span>
+            <select name="voiceURI" data-voice-select>
+              <option value="">Automatique</option>
+            </select>
+          </label>
+          <p class="voice-active" data-voice-active></p>
+          <p class="settings-note settings-warning" data-voice-warning hidden></p>
+          <button class="button button-secondary" type="button" data-voice-test>🔊 Tester la voix</button>
+          <p class="settings-note unsupported-note">La synthèse vocale n’est pas disponible dans ce navigateur.</p>
+        </fieldset>
+
+        <fieldset class="settings-group">
+          <legend>Conversation</legend>
+          <label class="switch">
+            <input type="checkbox" name="voiceModeEnabled">
+            <span class="switch-track" aria-hidden="true"></span>
+            <span>Fonctions vocales <small>Affiche le micro et le Chat vocal</small></span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" name="autoRead">
+            <span class="switch-track" aria-hidden="true"></span>
+            <span>Lecture automatique <small>L’ATM-Chatbot lit à voix haute ses réponses du chat écrit</small></span>
+          </label>
+          <p class="settings-note" data-recognition-note hidden>
+            La reconnaissance vocale n’est pas disponible dans ce navigateur (utilisez Chrome ou Edge).
+          </p>
+        </fieldset>
+
+        <footer class="dialog-actions">
+          <button class="button button-primary" type="submit">Terminé</button>
+        </footer>
+      </form>
+    </dialog>
+  </body>
+</html>

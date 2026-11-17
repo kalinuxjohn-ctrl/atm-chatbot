@@ -1,0 +1,14 @@
+{
+  "catalog_number": 17,
+  "code": "21",
+  "label": "Station de mesure DDU défectueuse",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 21 : station de mesure des billets DDU défectueuse.\nContacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 8,
+    "component": "DDU",
+    "kind": "error"
+  }
+}

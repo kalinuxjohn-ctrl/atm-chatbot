@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Administration | Espace techniciens</title>
+    <link rel="icon" type="image/svg+xml" href="/shared/images/favicon.svg">
+    <script src="/shared/js/applySavedTheme.js"></script>
+    <link rel="stylesheet" href="/shared/css/base.css">
+    <link rel="stylesheet" href="/admin/css/administration.css">
+    <script type="module" src="/shared/js/connectedPageShell.js"></script>
+    <script type="module" src="/admin/js/administrationPage.js"></script>
+  </head>
+  <body>
+    <header data-page-shell></header>
+    <main class="page-content administration-layout">
+      <div class="page-heading administration-heading">
+        <p class="page-eyebrow">Administration</p>
+        <h1>Pilotage de l'application</h1>
+        <p>Comptes, modèles d’équipement, interventions, catalogue d’actions et réponses de l’ATM-Chatbot au même endroit.</p>
+      </div>
+
+      <!-- Affiché à la place des rubriques si l'utilisateur n'est pas administrateur. -->
+      <section class="card empty-state administration-forbidden" data-administration-forbidden hidden>
+        <span data-icon="shield"></span>
+        <strong>Page réservée aux administrateurs</strong>
+        <span>Demandez à un administrateur de vous donner ce rôle si vous en avez besoin.</span>
+      </section>
+
+      <div class="administration-workspace" data-administration-workspace hidden>
+        <!-- Une seule rubrique visible à la fois ; chaque module JS remplit la sienne. -->
+        <div class="administration-sections">
+          <section class="administration-section" id="comptes" data-section="comptes" aria-labelledby="comptes-title" hidden>
+            <header class="administration-section-header">
+              <div>
+                <h2 id="comptes-title">Comptes</h2>
+                <p>Créez les accès, changez les rôles, désactivez un compte : ses sessions sont coupées aussitôt.</p>
+              </div>
+              <button class="button" type="button" data-account-creation-toggle><span data-icon="userPlus"></span>Nouveau compte</button>
+            </header>
+            <p class="form-error" data-accounts-error role="alert" hidden></p>
+
+            <form class="card account-creation-form" data-account-creation-form novalidate hidden>
+              <div class="card-header">
+                <h3>Créer un compte</h3>
+              </div>
+              <div class="form-grid">
+                <label class="form-field">Nom d'utilisateur
+                  <input name="username" required maxlength="30" autocapitalize="none" spellcheck="false" autocomplete="off">
+                </label>
+                <label class="form-field">Mot de passe initial
+                  <input name="password" type="password" required minlength="10" maxlength="128" autocomplete="new-password">
+                </label>
+                <label class="form-field">Rôle
+                  <select name="role">
+                    <option value="technician">Technicien</option>
+                    <option value="moderator">Modérateur (gère tous les points)</option>
+                    <option value="admin">Administrateur</option>
+                  </select>
+                </label>
+                <label class="form-field">Nom complet (nouveau technicien)
+                  <input name="fullName" maxlength="200" autocomplete="off">
+                </label>
+                <label class="form-field">Ou technicien existant du chatbot (n°)
+                  <input name="existingTechnicianId" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+                </label>
+              </div>
+              <p class="muted form-hint">Sans n° de technicien existant, un nouveau technicien est ajouté avec ce nom complet.</p>
+              <p class="form-error" data-creation-error role="alert" hidden></p>
+              <div class="form-actions">
+                <button class="button button-secondary" type="button" data-account-creation-cancel>Annuler</button>
+                <button class="button" type="submit">Créer le compte</button>
+              </div>
+            </form>
+            <p class="form-success" data-accounts-success role="status" hidden></p>
+
+            <div class="card table-card">
+              <div class="table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr><th>Utilisateur</th><th>N°</th><th>Rôle</th><th>État</th><th class="data-table-actions">Actions</th></tr>
+                  </thead>
+                  <tbody data-accounts-table-body></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section class="administration-section" id="propositions" data-section="propositions" aria-labelledby="propositions-title" hidden>
+            <header class="administration-section-header">
+              <div>
+                <h2 id="propositions-title">Propositions de solution</h2>
+                <p>Solutions trouvées sur le terrain et proposées depuis l’ATM-Chatbot. Approuvée, une proposition rejoint le catalogue d'actions ; rejetée, elle reste dans l'historique.</p>
+              </div>
+            </header>
+            <div class="segmented-control" role="tablist" aria-label="Statut des propositions" data-status-filter="propositions">
+              <button type="button" role="tab" data-status="pending" aria-selected="true">En attente</button>
+              <button type="button" role="tab" data-status="approved" aria-selected="false">Approuvées</button>
+              <button type="button" role="tab" data-status="rejected" aria-selected="false">Rejetées</button>
+            </div>
+            <p class="section-status" data-section-status="propositions" role="status"></p>
+            <div class="review-list" data-review-list="propositions" aria-live="polite"></div>
+          </section>
+
+          <section class="administration-section" id="interventions" data-section="interventions" aria-labelledby="interventions-title" hidden>
+            <header class="administration-section-header">
+              <div>
+                <h2 id="interventions-title">Ajouts d'intervention</h2>
+                <p>Validez les demandes des techniciens ou ajoutez directement une intervention d'origine admin pour enrichir la base.</p>
+              </div>
+              <button class="button" type="button" data-intervention-create-toggle aria-expanded="false" aria-controls="admin-intervention-form" aria-label="Ajouter une intervention"><span data-icon="plus"></span>Ajouter</button>
+            </header>
+            <form class="card admin-intervention-form" id="admin-intervention-form" data-admin-intervention-form hidden>
+              <div class="card-header"><h3>Ajouter une intervention</h3><span class="badge badge-accent">Origine : admin</span></div>
+              <p class="muted form-hint">Enregistrement direct dans la base, sans demande à approuver. Aucun technicien ni date de visite à renseigner.</p>
+              <div class="form-grid">
+                <label class="form-field">Type d'appareil
+                  <select name="device_type" required><option value="">Choisir…</option><option value="gab">GAB</option><option value="tpe">TPE</option></select>
+                </label>
+                <label class="form-field">Modèle (facultatif)<input name="model_name" maxlength="200"></label>
+                <label class="form-field">Site (facultatif)<input name="site_name" maxlength="200"></label>
+                <label class="form-field">N° de série (facultatif)<input name="serial_number" maxlength="100"></label>
+              </div>
+              <fieldset class="admin-intervention-group">
+                <legend>Symptômes constatés</legend>
+                <p class="muted form-hint">Un problème par ligne. Vous pouvez ajouter jusqu'à 20 symptômes.</p>
+                <div class="admin-intervention-rows" data-admin-symptoms></div>
+                <button class="button button-secondary" type="button" data-admin-add-symptom><span data-icon="plus"></span>Ajouter un symptôme</button>
+              </fieldset>
+              <fieldset class="admin-intervention-group">
+                <legend>Actions et résultats</legend>
+                <p class="muted form-hint">Choisissez une action du catalogue pour la rattacher explicitement ; sinon, le rapprochement automatique est utilisé.</p>
+                <div class="admin-intervention-rows" data-admin-actions></div>
+                <button class="button button-secondary" type="button" data-admin-add-action><span data-icon="plus"></span>Ajouter une action</button>
+              </fieldset>
+              <div class="form-grid">
+                <label class="form-field">État final
+                  <select name="final_outcome_status" required>
+                    <option value="resolved">Résolue</option><option value="partially_resolved">Résolue en partie</option>
+                    <option value="unresolved">Non résolue</option><option value="escalated">Escaladée</option>
+                  </select>
+                </label>
+                <label class="form-field">Résumé (facultatif)<textarea name="summary_text" maxlength="2000" rows="3"></textarea></label>
+                <label class="form-field">Diagnostic (facultatif)<textarea name="diagnosis" maxlength="2000" rows="3"></textarea></label>
+                <label class="form-field">Composant en cause (facultatif)<input name="root_cause_component_text" maxlength="200"></label>
+              </div>
+              <label class="admin-intervention-checkbox"><input type="checkbox" name="diagnosis_confirmed">Diagnostic confirmé</label>
+              <p class="form-error" data-admin-intervention-error role="alert" hidden></p>
+              <div class="form-actions">
+                <button class="button button-secondary" type="button" data-admin-intervention-cancel>Annuler</button>
+                <button class="button" type="submit" data-admin-intervention-submit>Enregistrer dans la base</button>
+              </div>
+            </form>
+            <p class="form-success" data-admin-intervention-success role="status" hidden></p>
+            <div class="segmented-control" role="tablist" aria-label="Statut des demandes" data-status-filter="interventions">
+              <button type="button" role="tab" data-status="pending" aria-selected="true">En attente</button>
+              <button type="button" role="tab" data-status="approved" aria-selected="false">Approuvées</button>
+              <button type="button" role="tab" data-status="rejected" aria-selected="false">Rejetées</button>
+            </div>
+            <p class="section-status" data-section-status="interventions" role="status"></p>
+            <div class="review-list" data-review-list="interventions" aria-live="polite"></div>
+          </section>
+
+          <section class="administration-section" id="actions" data-section="actions" aria-labelledby="actions-title" hidden>
+            <header class="administration-section-header">
+              <div>
+                <h2 id="actions-title">Catalogue d'actions</h2>
+                <p>Ajoutez des actions à la bibliothèque sans créer d'intervention. Elles pourront ensuite être rattachées explicitement lors d'un ajout d'intervention.</p>
+              </div>
+            </header>
+            <section class="card action-catalog-panel" aria-label="Ajouter et rechercher des actions">
+              <form class="action-catalog-form" data-action-catalog-form>
+                <label class="form-field">Nouvelle action
+                  <input name="canonical_text" required maxlength="500" autocomplete="off">
+                </label>
+                <label class="form-field">Équipement
+                  <select name="device_type" required>
+                    <option value="">Choisir…</option>
+                    <option value="gab">GAB</option>
+                    <option value="tpe">TPE</option>
+                    <option value="shared">Commun aux GAB et TPE</option>
+                  </select>
+                </label>
+                <button class="button" type="submit">Ajouter au catalogue</button>
+              </form>
+              <label class="search-field">
+                <span data-icon="search"></span>
+                <input type="search" placeholder="Rechercher une action…" data-action-catalog-search aria-label="Rechercher une action du catalogue">
+              </label>
+              <p class="section-status" data-action-catalog-status role="status"></p>
+              <div class="action-catalog-groups">
+                <section class="action-catalog-group" aria-labelledby="action-catalog-gab-title">
+                  <h3 id="action-catalog-gab-title">Actions GAB</h3>
+                  <ul class="action-catalog-list" data-action-catalog-list="gab" aria-live="polite"></ul>
+                </section>
+                <section class="action-catalog-group" aria-labelledby="action-catalog-tpe-title">
+                  <h3 id="action-catalog-tpe-title">Actions TPE</h3>
+                  <ul class="action-catalog-list" data-action-catalog-list="tpe" aria-live="polite"></ul>
+                </section>
+              </div>
+            </section>
+          </section>
+
+          <section class="administration-section" id="modeles-equipement" data-section="modeles-equipement" aria-labelledby="modeles-equipement-title" hidden>
+            <header class="administration-section-header">
+              <div>
+                <h2 id="modeles-equipement-title">Modèles d’équipement</h2>
+                <p>Gérez le catalogue des modèles GAB et TPE avec leur fabricant, année et versions matérielles ou logicielles.</p>
+              </div>
+            </header>
+            <section class="card device-model-panel" aria-label="Ajouter et consulter les modèles d’équipement">
+              <form class="device-model-form" data-device-model-form>
+                <label class="form-field">Type d’équipement
+                  <select name="device_type" required>
+                    <option value="">Choisir…</option>
+                    <option value="gab">GAB</option>
+                    <option value="tpe">TPE</option>
+                  </select>
+                </label>
+                <label class="form-field">Fabricant
+                  <input name="manufacturer_name" required maxlength="200" autocomplete="organization">
+                </label>
+                <label class="form-field">Modèle
+                  <input name="model_name" required maxlength="200" autocomplete="off">
+                </label>
+                <label class="form-field">Année de sortie
+                  <input name="release_year" type="number" min="1900" max="2200" inputmode="numeric">
+                </label>
+                <label class="form-field">Version (facultatif)
+                  <input name="version_label" maxlength="100" placeholder="Ex. 3.2.1">
+                </label>
+                <label class="form-field">Révision matérielle (facultatif)
+                  <input name="hardware_rev" maxlength="100" placeholder="Ex. Rev. B">
+                </label>
+                <label class="form-field form-field-wide">Notes sur la version (facultatif)
+                  <textarea name="notes" maxlength="2000" rows="2"></textarea>
+                </label>
+                <p class="form-error device-model-error" data-device-model-error role="alert" hidden></p>
+                <div class="form-actions device-model-actions">
+                  <button class="button" type="submit">Ajouter le modèle</button>
+                </div>
+              </form>
+              <p class="section-status" data-device-model-status role="status"></p>
+              <ul class="device-model-list" data-device-model-list aria-live="polite"></ul>
+            </section>
+          </section>
+
+          <section class="administration-section" id="codes-erreur" data-section="codes-erreur" aria-labelledby="codes-erreur-title" hidden>
+            <header class="administration-section-header">
+              <div>
+                <h2 id="codes-erreur-title">Codes d'erreur</h2>
+                <p>Un code apparaît dans le menu « Codes d'erreur connus » de l’ATM-Chatbot s'il a un équipement et une réponse. Sans réponse, il reste trouvable par la recherche.</p>
+                <p>Chaque ajout reçoit un ID entier et crée son fichier dans db/code_erreurs avant l'enregistrement en base. Les modifications et suppressions sont synchronisées avec ce JSON.</p>
+              </div>
+              <button class="button" type="button" data-record-add="codes-erreur"><span data-icon="plus"></span>Ajouter un code</button>
+            </header>
+            <div class="record-toolbar">
+              <label class="search-field">
+                <span data-icon="search"></span>
+                <input type="search" placeholder="Rechercher un code, un libellé…" data-record-search="codes-erreur" aria-label="Rechercher un code d'erreur">
+              </label>
+            </div>
+            <p class="section-status" data-section-status="codes-erreur" role="status"></p>
+            <div class="record-list" data-record-list="codes-erreur" aria-live="polite"></div>
+          </section>
+
+          <section class="administration-section" id="pannes-frequentes" data-section="pannes-frequentes" aria-labelledby="pannes-frequentes-title" hidden>
+            <header class="administration-section-header">
+              <div>
+                <h2 id="pannes-frequentes-title">Problèmes usuels</h2>
+                <p>Chaque problème apparaît dans le menu « Problèmes usuels » de son équipement, dans l'ordre indiqué. L’ATM-Chatbot répond avec le texte enregistré, sans IA.</p>
+              </div>
+              <button class="button" type="button" data-record-add="pannes-frequentes"><span data-icon="plus"></span>Ajouter un problème</button>
+            </header>
+            <div class="record-toolbar">
+              <label class="search-field">
+                <span data-icon="search"></span>
+                <input type="search" placeholder="Rechercher un problème…" data-record-search="pannes-frequentes" aria-label="Rechercher un problème usuel">
+              </label>
+            </div>
+            <p class="section-status" data-section-status="pannes-frequentes" role="status"></p>
+            <div class="record-list" data-record-list="pannes-frequentes" aria-live="polite"></div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

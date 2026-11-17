@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 820" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Tables de mémoire d&#x27;une conversation, éléments non enregistrés, et chaîne d&#x27;enregistrement d&#x27;une intervention avec Voyage AI et pgvector.">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3b4f66"/></marker>
+  </defs>
+  <rect width="1400" height="820" fill="#ffffff"/>
+<text x="30" y="40" font-size="20" font-weight="700" fill="#10243a" text-anchor="start" xml:space="preserve">Ce qui est mémorisé, et d&#x27;où viennent les vecteurs</text>
+<text x="30" y="62" font-size="12.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">Gauche : traçabilité d&#x27;une discussion. Droite : comment une intervention devient retrouvable par la recherche.</text>
+<rect x="30" y="85" width="660" height="560" rx="12" fill="#e8f5f4" stroke="#127a76" stroke-width="1.5"/>
+<text x="50" y="112" font-size="15" font-weight="700" fill="#0d4f4c" text-anchor="start" xml:space="preserve">Mémoire d&#x27;une discussion (migration 0006)</text>
+<rect x="50" y="132" width="620" height="118" rx="8" fill="#fff" stroke="#127a76" stroke-width="1.1"/>
+<text x="66" y="156" font-size="13.5" font-weight="700" fill="#0d4f4c" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">conversation</text>
+<text x="654" y="156" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="end" xml:space="preserve">1 ligne par discussion</text>
+<text x="66" y="180" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">conversation_id, technician_id,</text>
+<text x="66" y="196" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">created_at, updated_at</text>
+<text x="66" y="224" font-size="11.5" font-weight="600" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Conservation : permanente</text>
+<text x="66" y="240" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">Sert à : qui, quand</text>
+<rect x="50" y="262" width="620" height="118" rx="8" fill="#fff" stroke="#127a76" stroke-width="1.1"/>
+<text x="66" y="286" font-size="13.5" font-weight="700" fill="#0d4f4c" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">conversation_message</text>
+<text x="654" y="286" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="end" xml:space="preserve">1 ligne par message</text>
+<text x="66" y="310" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">message_id, conversation_id, role (user|assistant),</text>
+<text x="66" y="326" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">content, created_at</text>
+<text x="66" y="354" font-size="11.5" font-weight="600" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Conservation : permanente, jamais réécrite</text>
+<text x="66" y="370" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">Sert à : relire tout le dialogue dans l&#x27;ordre</text>
+<rect x="50" y="392" width="620" height="118" rx="8" fill="#fff" stroke="#127a76" stroke-width="1.1"/>
+<text x="66" y="416" font-size="13.5" font-weight="700" fill="#0d4f4c" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">conversation_context</text>
+<text x="654" y="416" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="end" xml:space="preserve">1 ligne par discussion (JSONB)</text>
+<text x="66" y="440" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">device_type, intent, last_search {query, results},</text>
+<text x="66" y="456" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">selected_result, error_code_id, model_id</text>
+<text x="66" y="484" font-size="11.5" font-weight="600" fill="#7a1f16" text-anchor="start" xml:space="preserve">Conservation : ÉCRASÉE à chaque message</text>
+<text x="66" y="500" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">Sert à : comprendre « le deuxième » au tour suivant</text>
+<rect x="50" y="524" width="620" height="118" rx="8" fill="#fdeeee" stroke="#c0392b" stroke-width="1.1"/>
+<text x="66" y="548" font-size="13.5" font-weight="700" fill="#7a1f16" text-anchor="start" xml:space="preserve">Non enregistré aujourd&#x27;hui</text>
+<text x="66" y="570" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">• le prompt réellement envoyé à Claude et sa réponse brute (JSON d&#x27;intention)</text>
+<text x="66" y="587" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">• les cas remontés à chaque tour (seule la DERNIÈRE recherche est gardée)</text>
+<text x="66" y="604" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">• le fournisseur/modèle utilisé, l&#x27;usage du texte de secours</text>
+<text x="66" y="621" font-size="11.5" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve">• aucune route ne relit l&#x27;historique : le frontend le garde en sessionStorage</text>
+<rect x="720" y="85" width="650" height="560" rx="12" fill="#f1edfc" stroke="#6b4fc9" stroke-width="1.5"/>
+<text x="740" y="112" font-size="15" font-weight="700" fill="#3e2a8a" text-anchor="start" xml:space="preserve">Enregistrement d&#x27;une intervention (POST /interventions)</text>
+<rect x="740" y="140" width="610" height="74" rx="8" fill="#fff" stroke="#10243a" stroke-width="1.2"/>
+<circle cx="764" cy="164" r="11" fill="#10243a"/><text x="764" y="168" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">1</text>
+<text x="784" y="168" font-size="13" font-weight="700" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Le technicien déclare l&#x27;intervention</text>
+<text x="784" y="188" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">{ device_id, technician_id, symptoms:[{raw_text, severity}], … }</text>
+<line x1="1045" y1="214" x2="1045" y2="232" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="740" y="234" width="610" height="74" rx="8" fill="#fff" stroke="#6b4fc9" stroke-width="1.2"/>
+<circle cx="764" cy="258" r="11" fill="#6b4fc9"/><text x="764" y="262" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">2</text>
+<text x="784" y="262" font-size="13" font-weight="700" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Voyage AI · input_type &quot;document&quot;</text>
+<text x="784" y="282" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">1 seul appel pour tous les symptômes → vecteurs À STOCKER,</text>
+<text x="784" y="298" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">ceux que les futures recherches retrouveront</text>
+<line x1="1045" y1="308" x2="1045" y2="326" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="740" y="328" width="610" height="74" rx="8" fill="#fff" stroke="#6b4fc9" stroke-width="1.2"/>
+<circle cx="764" cy="352" r="11" fill="#6b4fc9"/><text x="764" y="356" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">3</text>
+<text x="784" y="356" font-size="13" font-weight="700" fill="#1d2d3d" text-anchor="start" xml:space="preserve">Voyage AI · input_type &quot;query&quot;</text>
+<text x="784" y="376" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">2e appel groupé → vecteurs pour CHERCHER si ce symptôme</text>
+<text x="784" y="392" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">ressemble à un symptôme déjà catalogué</text>
+<line x1="1045" y1="402" x2="1045" y2="420" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="740" y="422" width="610" height="74" rx="8" fill="#fff" stroke="#127a76" stroke-width="1.2"/>
+<circle cx="764" cy="446" r="11" fill="#127a76"/><text x="764" y="450" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">4</text>
+<text x="784" y="450" font-size="13" font-weight="700" fill="#1d2d3d" text-anchor="start" xml:space="preserve">PostgreSQL · rattachement au catalogue</text>
+<text x="784" y="470" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">symptôme catalogué assez proche (même device_type) ?</text>
+<text x="784" y="486" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">oui → symptom_id rempli · non → symptom_id NULL</text>
+<line x1="1045" y1="496" x2="1045" y2="514" stroke="#3b4f66" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="740" y="516" width="610" height="74" rx="8" fill="#fff" stroke="#127a76" stroke-width="1.2"/>
+<circle cx="764" cy="540" r="11" fill="#127a76"/><text x="764" y="544" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" xml:space="preserve">5</text>
+<text x="784" y="544" font-size="13" font-weight="700" fill="#1d2d3d" text-anchor="start" xml:space="preserve">PostgreSQL · stockage</text>
+<text x="784" y="564" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">intervention + intervention_symptom (raw_text, embedding 1024)</text>
+<text x="784" y="580" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve">→ retrouvable à l&#x27;étape 7 du flux de chat</text>
+<text x="740" y="614" font-size="11.5" font-weight="400" fill="#5b6b7f" text-anchor="start" xml:space="preserve" font-style="italic">Pourquoi 2 vecteurs ? Voyage optimise différemment un texte « stocké » et un texte « cherché ».</text>
+<rect x="30" y="665" width="1340" height="130" rx="10" fill="#f6f9fc" stroke="#10243a" stroke-width="1.2"/>
+<text x="48" y="690" font-size="13.5" font-weight="700" fill="#10243a" text-anchor="start" xml:space="preserve">Retracer une discussion aujourd&#x27;hui : directement en base</text>
+<text x="48" y="716" font-size="12" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">SELECT m.message_id, m.role, m.content, m.created_at</text>
+<text x="48" y="734" font-size="12" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">FROM conversation_message m</text>
+<text x="48" y="752" font-size="12" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">WHERE m.conversation_id = :id</text>
+<text x="48" y="770" font-size="12" font-weight="400" fill="#1d2d3d" text-anchor="start" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">ORDER BY m.created_at, m.message_id;   -- message_id départage les messages d&#x27;une même requête</text>
+</svg>

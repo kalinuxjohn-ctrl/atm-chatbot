@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f7fb">
+    <!-- Thème sombre appliqué avant l'affichage (clé STORAGE_KEYS.theme de js/config.js) -->
+    <script src="js/applySavedTheme.js"></script>
+    <meta name="description" content="ATM-Chatbot : l’assistant de maintenance des techniciens GAB et TPE, à l’écrit ou à la voix.">
+    <title>ATM-Chatbot | Assistant de maintenance GAB & TPE</title>
+    <link rel="icon" href="assets/images/logo.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="css/assets.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/home.css">
+    <script type="module" src="js/components/themeToggle.js"></script>
+    <script type="module" src="js/pages/home.js"></script>
+  </head>
+  <body class="home-page">
+    <!-- ========== En-tête ========== -->
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="ATM-Chatbot, accueil">
+        <img class="brand-symbol brand-logo" src="assets/images/logo.svg" alt="" aria-hidden="true">
+        <span>ATM-<strong>Chatbot</strong></span>
+      </a>
+      <nav class="main-navigation" aria-label="Navigation principale">
+        <a class="navigation-link navigation-link-active" href="./" aria-current="page">Accueil</a>
+        <a class="navigation-link" href="diagnostic.html">Diagnostic</a>
+        <a class="navigation-link" href="#equipment">Maintenance</a>
+        <a class="navigation-link" href="flow-presentation.html">À propos</a>
+      </nav>
+      <button class="header-action header-action-button" type="button" data-open-atm-chatbot>
+        <span data-label>Se connecter / Rejoindre</span>
+      </button>
+    </header>
+
+    <main>
+      <!-- ========== Présentation de l’ATM-Chatbot ========== -->
+      <section class="hero-section">
+        <div class="hero-copy home-reveal">
+          <h1>Votre ATM-Chatbot de<br>Maintenance Terrain</h1>
+          <p class="hero-description">
+            L’assistant qui vous accompagne dans le diagnostic et la
+            maintenance de vos équipements au quotidien.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary hero-button" href="#equipment">En savoir plus</a>
+            <a class="hero-secondary" href="#help">Comment ça marche</a>
+          </div>
+        </div>
+
+      </section>
+
+      <section class="equipment-section" id="equipment" aria-labelledby="equipment-title">
+        <h2 id="equipment-title">Choisissez votre équipement</h2>
+        <div class="equipment-grid">
+          <article class="equipment-card equipment-card-atm">
+            <div class="equipment-card-body">
+              <img class="equipment-picture" src="assets/images/guichet-automatique-bleu.png" alt="" width="260" height="510">
+              <h3>Guichet<br>Automatique<br><span>(GAB / ATM)</span></h3>
+            </div>
+            <a class="equipment-action" href="diagnostic.html?device_type=gab">Diagnostic GAB</a>
+          </article>
+          <article class="equipment-card equipment-card-tpe">
+            <div class="equipment-card-body">
+              <img class="equipment-picture" src="assets/images/terminal-paiement-orange.png" alt="" width="285" height="326">
+              <h3>Terminal de<br>Paiement<br><span>(TPE)</span></h3>
+            </div>
+            <a class="equipment-action" href="diagnostic.html?device_type=tpe">Diagnostic TPE</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="home-services" aria-label="Les services de l’ATM-Chatbot">
+        <a href="diagnostic.html"><svg class="service-symbol service-symbol-diagnostic" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="3" y="16" width="5" height="9" rx="1" fill="#68b49b"/><rect x="11" y="10" width="5" height="15" rx="1" fill="#e9b75c"/><rect x="19" y="4" width="5" height="21" rx="1" fill="#6598d0"/></svg><div><h2>01. Diagnostic guidé</h2><p>Retrouvez des interventions similaires et les résultats des actions réalisées.</p></div></a>
+        <a href="#help"><svg class="service-symbol service-symbol-maintenance" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 4 19 20M4 5l4-1 2 4-3 3-4-2 1-4"/><path d="m5 24 9-9m3-4a6 6 0 0 0 7-7l-4 4-3-3 1-3a6 6 0 0 0-6 8"/></svg><div><h2>02. Maintenance</h2><p>Appuyez-vous sur l’expérience du terrain pour préparer vos vérifications.</p></div></a>
+        <button type="button" data-open-atm-chatbot><svg class="service-symbol service-symbol-chat" viewBox="0 0 28 28" fill="none" aria-hidden="true"><path d="M4 4h20v16H12l-6 5v-5H4z" fill="currentColor"/><circle cx="9" cy="12" r="1.3" fill="white"/><circle cx="14" cy="12" r="1.3" fill="white"/><circle cx="19" cy="12" r="1.3" fill="white"/></svg><div><h2 data-label>03. Votre ATM-Chatbot</h2><p>Décrivez votre problème à l’écrit ou à la voix et échangez avec l’assistant.</p></div></button>
+      </section>
+
+      <!-- ========== Étapes ========== -->
+      <section class="steps-section" id="help" aria-labelledby="steps-title">
+        <div class="section-heading">
+          <p class="eyebrow">Prêt pour votre prochaine intervention ?</p>
+          <h2 id="steps-title">Vous connaissez le terrain.<br>On vous aide pour la suite.</h2>
+        </div>
+        <div class="steps-grid">
+          <article class="step-card">
+            <span class="step-index">01</span>
+            <h3>Connectez-vous</h3>
+            <p>Avec votre numéro de technicien.</p>
+          </article>
+          <article class="step-card">
+            <span class="step-index">02</span>
+            <h3>Parlez ou écrivez</h3>
+            <p>Décrivez le symptôme. Le mode vocal vous laisse les mains libres.</p>
+          </article>
+          <article class="step-card">
+            <span class="step-index">03</span>
+            <h3>Suivez les pistes</h3>
+            <p>L’ATM-Chatbot répond à l’écrit et peut lire sa réponse à voix haute.</p>
+          </article>
+        </div>
+      </section>
+      <section class="home-final-cta" aria-labelledby="final-cta-title">
+        <div><p class="eyebrow">Votre prochain réflexe terrain</p><h2 id="final-cta-title">Une panne à comprendre ?<br>Commençons par en parler.</h2></div>
+        <button class="button button-primary hero-button" type="button" data-open-atm-chatbot><span data-label>Ouvrir l’ATM-Chatbot</span><span aria-hidden="true">↗</span></button>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <a class="brand brand-footer" href="./" aria-label="ATM-Chatbot, accueil">
+        <img class="brand-symbol brand-logo" src="assets/images/logo.svg" alt="" aria-hidden="true">
+        <span>ATM-<strong>Chatbot</strong></span>
+      </a>
+      <p>Les pistes proposées reflètent l’historique de maintenance enregistré.</p>
+    </footer>
+
+    <!-- ========== Connexion (simulée : aucune API d'authentification côté backend) ========== -->
+    <dialog class="app-dialog" id="login-dialog" aria-labelledby="login-title">
+      <form class="dialog-form" id="login-form" method="dialog">
+        <header class="dialog-header">
+          <h2 id="login-title">Connexion à l’ATM-Chatbot</h2>
+          <p>Identifiez-vous pour démarrer une conversation.</p>
+        </header>
+
+        <label class="field">
+          <span>Numéro de technicien</span>
+          <input name="technicianId" type="number" min="1" step="1" inputmode="numeric" placeholder="Ex. 7" required autofocus>
+          <small>Le numéro qui vous identifie dans l’historique des interventions.</small>
+        </label>
+        <label class="field">
+          <span>Prénom affiché <em>(facultatif)</em></span>
+          <input name="displayName" type="text" maxlength="40" autocomplete="given-name" placeholder="Ex. Alan">
+        </label>
+
+        <p class="form-error" id="login-error" role="alert" hidden></p>
+
+        <footer class="dialog-actions">
+          <button class="button button-secondary" type="submit" value="cancel" formnovalidate>Annuler</button>
+          <button class="button button-primary" id="login-submit" type="submit">
+            Entrer <span class="button-icon" aria-hidden="true">→</span>
+          </button>
+        </footer>
+      </form>
+    </dialog>
+
+    <!-- Voile de transition vers l’ATM-Chatbot -->
+    <div class="page-transition" aria-hidden="true"></div>
+  </body>
+</html>

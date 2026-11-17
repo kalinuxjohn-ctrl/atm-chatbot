@@ -1,0 +1,19 @@
+{
+  "source_key": "dn-series-250-service-required",
+  "device_type": "gab",
+  "label": "DN Series 250 — Voyant rouge SERVICE REQUIRED",
+  "reply": "Le voyant rouge signale « SERVICE REQUIRED ». Consulte les instructions affichées sur le panneau opérateur ou le moniteur. Si le défaut est irrémédiable ou reste présent, contacte le service après-vente ; ce manuel ne fournit pas de procédure de réparation détaillée.\nSource : Diebold Nixdorf, DN Series 250 Instructions d’utilisation, réf. 01750350043 E, section 3.4.2, p. 3-19.",
+  "display_order": 50,
+  "documentation": {
+    "publisher": "Diebold Nixdorf",
+    "model_family": "DN Series 250",
+    "model_variants": ["DN Series 250A", "DN Series 250C", "DN Series 250H", "DN Series 250V"],
+    "document_title": "DN Series 250 Instructions d’utilisation",
+    "document_number": "01750350043 E",
+    "language": "French",
+    "official_portal": "https://publicdownload.dieboldnixdorf.com/",
+    "portal_object_id": "DPOBJ0000473",
+    "section": "3.4.2 Codes DEL",
+    "source_page": "3-19"
+  }
+}

@@ -1,0 +1,406 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 1250" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Contenu initial de la base avec un exemple">
+<defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#d9620f"/></marker></defs>
+<rect width="2400" height="1250" fill="#ffffff"/>
+<text x="40" y="42" font-size="23" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1 · La base au départ : une panne et sa solution, ligne par ligne</text>
+<text x="40" y="66" font-size="13" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Données réelles du script de démo (db/seed/seed_demo_data.py). Les colonnes bleues sont des clés étrangères : la valeur pointe vers la ligne de l&#x27;autre table.</text>
+<rect x="230" y="120" width="331.5" height="109" rx="7" fill="#ffffff" stroke="#5d6875" stroke-width="1.6"/>
+<path d="M230 127a7 7 0 0 1 7 -7h317.5a7 7 0 0 1 7 7v21h-331.5z" fill="#eceff2" stroke="#5d6875" stroke-width="1.6"/>
+<text x="240" y="139" font-size="13" font-weight="700" fill="#5d6875" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">technician</text>
+<rect x="230.8" y="148" width="329.9" height="20" fill="#f7f8fa"/>
+<text x="238" y="162" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">technician_id</text>
+<text x="335.9" y="162" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">full_name</text>
+<text x="471.59999999999997" y="162" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">employee_code</text>
+<path d="M230 168H561.5" stroke="#d9dee5"/>
+<text x="238" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">4</text>
+<text x="335.9" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Technicien Test API</text>
+<text x="471.59999999999997" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">T-0004</text>
+<rect x="230.8" y="188" width="329.9" height="18" fill="#eaf7f1"/>
+<text x="238" y="201" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">7</text>
+<text x="335.9" y="201" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Alan Moreau</text>
+<text x="471.59999999999997" y="201" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">T-0071</text>
+<text x="238" y="220" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">8</text>
+<text x="335.9" y="220" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Bob Nguyen</text>
+<text x="471.59999999999997" y="220" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">T-0082</text>
+<rect x="621.5" y="120" width="255.9" height="71" rx="7" fill="#ffffff" stroke="#5d6875" stroke-width="1.6"/>
+<path d="M621.5 127a7 7 0 0 1 7 -7h241.9a7 7 0 0 1 7 7v21h-255.9z" fill="#eceff2" stroke="#5d6875" stroke-width="1.6"/>
+<text x="631.5" y="139" font-size="13" font-weight="700" fill="#5d6875" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">device_model</text>
+<rect x="622.3" y="148" width="254.3" height="20" fill="#f7f8fa"/>
+<text x="629.5" y="162" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">model_id</text>
+<text x="695.9" y="162" font-size="10.0" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">manufacturer_id</text>
+<text x="806.4" y="162" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">model_name</text>
+<path d="M621.5 168H877.4" stroke="#d9dee5"/>
+<rect x="622.3" y="169" width="254.3" height="18" fill="#eaf7f1"/>
+<text x="629.5" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">10</text>
+<text x="695.9" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="806.4" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Opteva 720</text>
+<rect x="957.4" y="120" width="505.49999999999994" height="90" rx="7" fill="#ffffff" stroke="#5d6875" stroke-width="1.6"/>
+<path d="M957.4 127a7 7 0 0 1 7 -7h491.49999999999994a7 7 0 0 1 7 7v21h-505.49999999999994z" fill="#eceff2" stroke="#5d6875" stroke-width="1.6"/>
+<text x="967.4" y="139" font-size="13" font-weight="700" fill="#5d6875" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">device</text>
+<rect x="958.1999999999999" y="148" width="503.8999999999999" height="20" fill="#f7f8fa"/>
+<text x="965.4" y="162" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">device_id</text>
+<text x="1038.1" y="162" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">device_type</text>
+<text x="1123.3999999999999" y="162" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">serial_number</text>
+<text x="1221.3" y="162" font-size="10.0" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">model_id</text>
+<text x="1287.7" y="162" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">site_name</text>
+<text x="1417.1" y="162" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">status</text>
+<path d="M957.4 168H1462.8999999999999" stroke="#d9dee5"/>
+<rect x="958.1999999999999" y="169" width="503.8999999999999" height="18" fill="#eaf7f1"/>
+<text x="965.4" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">501</text>
+<text x="1038.1" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">gab</text>
+<text x="1123.3999999999999" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">ON-DN-88213</text>
+<text x="1221.3" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">10</text>
+<text x="1287.7" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Branch 14, Main St</text>
+<text x="1417.1" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">active</text>
+<text x="965.4" y="201" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">502</text>
+<text x="1038.1" y="201" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">gab</text>
+<text x="1123.3999999999999" y="201" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">ON-DN-88214</text>
+<text x="1221.3" y="201" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">10</text>
+<text x="1287.7" y="201" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Branch 22, Elm St</text>
+<text x="1417.1" y="201" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">active</text>
+<path d="M957.4 195 L877.4 195" fill="none" stroke="#3b4f66" stroke-width="1.3"/>
+<text x="949.4" y="211" font-size="11" font-weight="700" fill="#10243a" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<text x="885.4" y="211" font-size="11" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<rect x="887.1999999999999" y="179" width="60.4" height="15" rx="3" fill="#ffffff"/>
+<text x="917.4" y="190" font-size="10.5" font-weight="400" fill="#2f63c8" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">model_id</text>
+<rect x="230" y="320" width="539.9" height="90" rx="7" fill="#ffffff" stroke="#0f7a5f" stroke-width="1.6"/>
+<path d="M230 327a7 7 0 0 1 7 -7h525.9a7 7 0 0 1 7 7v21h-539.9z" fill="#e3f4ee" stroke="#0f7a5f" stroke-width="1.6"/>
+<text x="240" y="339" font-size="13" font-weight="700" fill="#0f7a5f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention</text>
+<text x="759.9" y="339" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-style="italic" xml:space="preserve">la visite</text>
+<rect x="230.8" y="348" width="538.3" height="20" fill="#f7f8fa"/>
+<text x="238" y="362" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_id</text>
+<text x="348.5" y="362" font-size="10.0" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">device_id</text>
+<text x="421.2" y="362" font-size="10.0" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">technician_id</text>
+<text x="519.0999999999999" y="362" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">opened_at</text>
+<text x="635.9" y="362" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">final_outcome_status</text>
+<path d="M230 368H769.9" stroke="#d9dee5"/>
+<rect x="230.8" y="369" width="538.3" height="18" fill="#eaf7f1"/>
+<text x="238" y="382" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">3001</text>
+<text x="348.5" y="382" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">501</text>
+<text x="421.2" y="382" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">7</text>
+<text x="519.0999999999999" y="382" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">2026-09-02 09:14</text>
+<text x="635.9" y="382" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">resolved</text>
+<text x="238" y="401" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">3045</text>
+<text x="348.5" y="401" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">502</text>
+<text x="421.2" y="401" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">8</text>
+<text x="519.0999999999999" y="401" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">2026-09-10 14:30</text>
+<text x="635.9" y="401" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">resolved</text>
+<path d="M390 320 L390 229" fill="none" stroke="#3b4f66" stroke-width="1.3"/>
+<text x="398" y="314" font-size="11" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<text x="398" y="244" font-size="11" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<rect x="344.05" y="267.5" width="91.89999999999999" height="15" rx="3" fill="#ffffff"/>
+<text x="390" y="278.5" font-size="10.5" font-weight="400" fill="#2f63c8" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">technician_id</text>
+<path d="M769.9 360 L1017.4 360 L1017.4 210" fill="none" stroke="#3b4f66" stroke-width="1.3"/>
+<text x="777.9" y="376" font-size="11" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<text x="1025.4" y="225" font-size="11" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<rect x="984.05" y="274.0" width="66.69999999999999" height="15" rx="3" fill="#ffffff"/>
+<text x="1017.4" y="285.0" font-size="10.5" font-weight="400" fill="#2f63c8" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">device_id</text>
+<rect x="230" y="470" width="867.5" height="166" rx="7" fill="#ffffff" stroke="#0f7a5f" stroke-width="1.6"/>
+<path d="M230 477a7 7 0 0 1 7 -7h853.5a7 7 0 0 1 7 7v21h-867.5z" fill="#e3f4ee" stroke="#0f7a5f" stroke-width="1.6"/>
+<text x="240" y="489" font-size="13" font-weight="700" fill="#0f7a5f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_symptom</text>
+<text x="1087.5" y="489" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-style="italic" xml:space="preserve">le problème écrit + son vecteur</text>
+<rect x="230.8" y="498" width="865.9" height="20" fill="#f7f8fa"/>
+<text x="238" y="512" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_symptom_id</text>
+<text x="398.9" y="512" font-size="10.0" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_id</text>
+<text x="509.4" y="512" font-size="10.0" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">symptom_id</text>
+<text x="588.4" y="512" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">raw_text</text>
+<text x="881.5999999999999" y="512" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">embedding  vector(1024)</text>
+<path d="M230 518H1097.5" stroke="#d9dee5"/>
+<rect x="230.8" y="519" width="865.9" height="18" fill="#eaf7f1"/>
+<text x="238" y="532" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">9001</text>
+<text x="398.9" y="532" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">3001</text>
+<text x="509.4" y="532" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">21</text>
+<text x="588.4" y="532" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">La carte est retenue par le GAB.</text>
+<text x="881.5999999999999" y="532" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">[0.021, -0.043, 0.118, …, 0.007]</text>
+<rect x="230.8" y="538" width="865.9" height="18" fill="#eaf7f1"/>
+<text x="238" y="551" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">9002</text>
+<text x="398.9" y="551" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">3001</text>
+<text x="509.4" y="551" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">22</text>
+<text x="588.4" y="551" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">La transaction ne s&#x27;achève pas.</text>
+<text x="881.5999999999999" y="551" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">[-0.012, 0.061, 0.034, …, -0.020]</text>
+<rect x="230.8" y="557" width="865.9" height="18" fill="#eaf7f1"/>
+<text x="238" y="570" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">9003</text>
+<text x="398.9" y="570" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">3001</text>
+<text x="509.4" y="570" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">23</text>
+<text x="588.4" y="570" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Les espèces ne sont pas distribuées.</text>
+<text x="881.5999999999999" y="570" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">[0.044, 0.009, -0.071, …, 0.015]</text>
+<text x="238" y="589" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">9004</text>
+<text x="398.9" y="589" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">3045</text>
+<text x="509.4" y="589" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">21</text>
+<text x="588.4" y="589" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">La carte reste coincée dans le distributeur.</text>
+<text x="881.5999999999999" y="589" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">[0.019, -0.039, 0.112, …, 0.010]</text>
+<text x="238" y="608" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">9005</text>
+<text x="398.9" y="608" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">3045</text>
+<text x="509.4" y="608" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">22</text>
+<text x="588.4" y="608" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">La transaction ne se termine jamais.</text>
+<text x="881.5999999999999" y="608" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">[-0.015, 0.058, 0.029, …, -0.018]</text>
+<text x="238" y="627" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">9006</text>
+<text x="398.9" y="627" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">3045</text>
+<text x="509.4" y="627" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">24</text>
+<text x="588.4" y="627" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">L&#x27;imprimante de reçus est bloquée.</text>
+<text x="881.5999999999999" y="627" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">[0.067, -0.024, 0.003, …, 0.031]</text>
+<path d="M208 530 L190 530 L190 365.0 L230 365.0" fill="none" stroke="#3b4f66" stroke-width="1.3"/>
+<g transform="rotate(-90 190 447.5)"><rect x="137.75" y="436.5" width="104.5" height="15" rx="3" fill="#ffffff"/><text x="190" y="447.5" font-size="10.5" font-weight="400" fill="#2f63c8" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_id</text></g>
+<text x="222" y="546" font-size="11" font-weight="700" fill="#10243a" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<text x="222" y="359.0" font-size="11" font-weight="700" fill="#10243a" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<path d="M208 530H230" stroke="#3b4f66" stroke-width="1.3"/>
+<rect x="230" y="690" width="1182.0" height="128" rx="7" fill="#ffffff" stroke="#0f7a5f" stroke-width="1.6"/>
+<path d="M230 697a7 7 0 0 1 7 -7h1168.0a7 7 0 0 1 7 7v21h-1182.0z" fill="#e3f4ee" stroke="#0f7a5f" stroke-width="1.6"/>
+<text x="240" y="709" font-size="13" font-weight="700" fill="#0f7a5f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_action</text>
+<text x="1402.0" y="709" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-style="italic" xml:space="preserve">les solutions tentées</text>
+<rect x="230.8" y="718" width="1180.4" height="20" fill="#f7f8fa"/>
+<text x="238" y="732" font-size="9.5" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_action_id</text>
+<text x="386.0" y="732" font-size="9.5" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_id</text>
+<text x="492.0" y="732" font-size="9.5" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">action_id</text>
+<text x="562.0" y="732" font-size="9.5" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">targets_symptom_id</text>
+<text x="686.0" y="732" font-size="9.5" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">sequence_order</text>
+<text x="786.0" y="732" font-size="9.5" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">raw_text</text>
+<text x="1000.0" y="732" font-size="9.5" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">result_description</text>
+<text x="1178.0" y="732" font-size="9.5" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">outcome_status</text>
+<text x="1278.0" y="732" font-size="9.5" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">is_confirmed_solution</text>
+<path d="M230 738H1412.0" stroke="#d9dee5"/>
+<rect x="230.8" y="739" width="1180.4" height="18" fill="#eaf7f1"/>
+<text x="238" y="752" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">7001</text>
+<text x="386.0" y="752" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">3001</text>
+<text x="492.0" y="752" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">41</text>
+<text x="562.0" y="752" font-size="10" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">NULL</text>
+<text x="686.0" y="752" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="786.0" y="752" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Checked card reader for damage.</text>
+<text x="1000.0" y="752" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">No physical damage found.</text>
+<text x="1178.0" y="752" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">no_effect</text>
+<text x="1278.0" y="752" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">false</text>
+<rect x="230.8" y="758" width="1180.4" height="18" fill="#eaf7f1"/>
+<text x="238" y="771" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">7002</text>
+<text x="386.0" y="771" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">3001</text>
+<text x="492.0" y="771" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">42</text>
+<text x="562.0" y="771" font-size="10" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">NULL</text>
+<text x="686.0" y="771" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">2</text>
+<text x="786.0" y="771" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Checked card-retention mechanism.</text>
+<text x="1000.0" y="771" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Mechanism operating within…</text>
+<text x="1178.0" y="771" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">no_effect</text>
+<text x="1278.0" y="771" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">false</text>
+<rect x="230.8" y="777" width="1180.4" height="18" fill="#eaf7f1"/>
+<text x="238" y="790" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">7003</text>
+<text x="386.0" y="790" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">3001</text>
+<text x="492.0" y="790" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">43</text>
+<text x="562.0" y="790" font-size="10" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">NULL</text>
+<text x="686.0" y="790" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">3</text>
+<text x="786.0" y="790" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Reinitialized card reader.</text>
+<text x="1000.0" y="790" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Reader reinitialized; card…</text>
+<text x="1178.0" y="790" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">resolved</text>
+<text x="1278.0" y="790" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">TRUE</text>
+<text x="238" y="809" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">7004</text>
+<text x="386.0" y="809" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">3045</text>
+<text x="492.0" y="809" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">44</text>
+<text x="562.0" y="809" font-size="10" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">NULL</text>
+<text x="686.0" y="809" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="786.0" y="809" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Replaced card-retention sensor.</text>
+<text x="1000.0" y="809" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Sensor replaced; card now…</text>
+<text x="1178.0" y="809" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">resolved</text>
+<text x="1278.0" y="809" font-size="10" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">TRUE</text>
+<path d="M230 760 L175 760 L175 390 L230 390" fill="none" stroke="#3b4f66" stroke-width="1.3"/>
+<g transform="rotate(-90 175 630)"><rect x="122.75" y="619" width="104.5" height="15" rx="3" fill="#ffffff"/><text x="175" y="630" font-size="10.5" font-weight="400" fill="#2f63c8" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_id</text></g>
+<text x="222" y="776" font-size="11" font-weight="700" fill="#10243a" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<text x="222" y="384" font-size="11" font-weight="700" fill="#10243a" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<rect x="230" y="880" width="867.5" height="71" rx="7" fill="#ffffff" stroke="#0f7a5f" stroke-width="1.6"/>
+<path d="M230 887a7 7 0 0 1 7 -7h853.5a7 7 0 0 1 7 7v21h-867.5z" fill="#e3f4ee" stroke="#0f7a5f" stroke-width="1.6"/>
+<text x="240" y="899" font-size="13" font-weight="700" fill="#0f7a5f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">diagnosis</text>
+<text x="1087.5" y="899" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-style="italic" xml:space="preserve">la cause trouvée</text>
+<rect x="230.8" y="908" width="865.9" height="20" fill="#f7f8fa"/>
+<text x="238" y="922" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">diagnosis_id</text>
+<text x="329.6" y="922" font-size="10.0" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_id</text>
+<text x="440.1" y="922" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">description</text>
+<text x="871.9000000000001" y="922" font-size="10.0" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">root_cause_component_id</text>
+<text x="1032.8000000000002" y="922" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">confirmed</text>
+<path d="M230 928H1097.5" stroke="#d9dee5"/>
+<rect x="230.8" y="929" width="865.9" height="18" fill="#eaf7f1"/>
+<text x="238" y="942" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">501</text>
+<text x="329.6" y="942" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">3001</text>
+<text x="440.1" y="942" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Card reader firmware/state got stuck; reinitialization cleared it.</text>
+<text x="871.9000000000001" y="942" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="1032.8000000000002" y="942" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">true</text>
+<path d="M230 938 L160 938 L160 408 L230 408" fill="none" stroke="#3b4f66" stroke-width="1.3"/>
+<g transform="rotate(-90 160 830)"><rect x="107.75" y="819" width="104.5" height="15" rx="3" fill="#ffffff"/><text x="160" y="830" font-size="10.5" font-weight="400" fill="#2f63c8" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_id</text></g>
+<text x="222" y="954" font-size="11" font-weight="700" fill="#10243a" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">1</text>
+<rect x="1520" y="120" width="492.4" height="109" rx="7" fill="#ffffff" stroke="#6b4fbf" stroke-width="1.6"/>
+<path d="M1520 127a7 7 0 0 1 7 -7h478.4a7 7 0 0 1 7 7v21h-492.4z" fill="#efeafb" stroke="#6b4fbf" stroke-width="1.6"/>
+<text x="1530" y="139" font-size="13" font-weight="700" fill="#6b4fbf" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">error_code</text>
+<text x="2002.4" y="139" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-style="italic" xml:space="preserve">référentiel à part</text>
+<rect x="1520.8" y="148" width="490.79999999999995" height="20" fill="#f7f8fa"/>
+<text x="1528" y="162" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">error_code_id</text>
+<text x="1625.9" y="162" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">code</text>
+<text x="1667.1000000000001" y="162" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">description</text>
+<text x="1954.0" y="162" font-size="10.0" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">fault_id</text>
+<path d="M1520 168H2012.4" stroke="#d9dee5"/>
+<text x="1528" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="1625.9" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">E42</text>
+<text x="1667.1000000000001" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Capteur de rétention de carte ne répond pas</text>
+<text x="1954.0" y="182" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="1528" y="201" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">2</text>
+<text x="1625.9" y="201" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">E43</text>
+<text x="1667.1000000000001" y="201" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Moteur du lecteur de carte bloqué</text>
+<text x="1954.0" y="201" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="1528" y="220" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">3</text>
+<text x="1625.9" y="220" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">E67</text>
+<text x="1667.1000000000001" y="220" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Distributeur de billets : bourrage détecté</text>
+<text x="1954.0" y="220" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">2</text>
+<text x="1520" y="247" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-style="italic" xml:space="preserve">Aucun lien avec intervention : le code est reconnu, mais ne filtre pas la recherche.</text>
+<rect x="1520" y="470" width="407.1" height="128" rx="7" fill="#ffffff" stroke="#a46200" stroke-width="1.6"/>
+<path d="M1520 477a7 7 0 0 1 7 -7h393.1a7 7 0 0 1 7 7v21h-407.1z" fill="#fbf0dc" stroke="#a46200" stroke-width="1.6"/>
+<text x="1530" y="489" font-size="13" font-weight="700" fill="#a46200" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">symptom</text>
+<text x="1917.1" y="489" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-style="italic" xml:space="preserve">nom officiel</text>
+<rect x="1520.8" y="498" width="405.5" height="20" fill="#f7f8fa"/>
+<text x="1528" y="512" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">symptom_id</text>
+<text x="1607.0" y="512" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">canonical_text</text>
+<text x="1843.5" y="512" font-size="10.0" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">component_id</text>
+<path d="M1520 518H1927.1" stroke="#d9dee5"/>
+<rect x="1520.8" y="519" width="405.5" height="18" fill="#eaf7f1"/>
+<text x="1528" y="532" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">21</text>
+<text x="1607.0" y="532" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Carte retenue par le GAB</text>
+<text x="1843.5" y="532" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<rect x="1520.8" y="538" width="405.5" height="18" fill="#eaf7f1"/>
+<text x="1528" y="551" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">22</text>
+<text x="1607.0" y="551" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">La transaction ne s&#x27;achève pas</text>
+<text x="1843.5" y="551" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">NULL</text>
+<rect x="1520.8" y="557" width="405.5" height="18" fill="#eaf7f1"/>
+<text x="1528" y="570" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">23</text>
+<text x="1607.0" y="570" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Les espèces ne sont pas distribuées</text>
+<text x="1843.5" y="570" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">NULL</text>
+<text x="1528" y="589" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">24</text>
+<text x="1607.0" y="589" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Imprimante de reçus bloquée</text>
+<text x="1843.5" y="589" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">NULL</text>
+<path d="M1097.5 580 L1520 580" fill="none" stroke="#3b4f66" stroke-width="1.3"/>
+<text x="1105.5" y="596" font-size="11" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<text x="1512" y="596" font-size="11" font-weight="700" fill="#10243a" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">0..1</text>
+<rect x="1272.25" y="564" width="73.0" height="15" rx="3" fill="#ffffff"/>
+<text x="1308.75" y="575" font-size="10.5" font-weight="400" fill="#2f63c8" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">symptom_id</text>
+<rect x="1520" y="690" width="369.29999999999995" height="128" rx="7" fill="#ffffff" stroke="#a46200" stroke-width="1.6"/>
+<path d="M1520 697a7 7 0 0 1 7 -7h355.29999999999995a7 7 0 0 1 7 7v21h-369.29999999999995z" fill="#fbf0dc" stroke="#a46200" stroke-width="1.6"/>
+<text x="1530" y="709" font-size="13" font-weight="700" fill="#a46200" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">action</text>
+<text x="1879.3" y="709" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-style="italic" xml:space="preserve">action officielle</text>
+<rect x="1520.8" y="718" width="367.69999999999993" height="20" fill="#f7f8fa"/>
+<text x="1528" y="732" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">action_id</text>
+<text x="1600.7" y="732" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">canonical_text</text>
+<text x="1805.7" y="732" font-size="10.0" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">component_id</text>
+<path d="M1520 738H1889.3" stroke="#d9dee5"/>
+<rect x="1520.8" y="739" width="367.69999999999993" height="18" fill="#eaf7f1"/>
+<text x="1528" y="752" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">41</text>
+<text x="1600.7" y="752" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Check card reader</text>
+<text x="1805.7" y="752" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<rect x="1520.8" y="758" width="367.69999999999993" height="18" fill="#eaf7f1"/>
+<text x="1528" y="771" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">42</text>
+<text x="1600.7" y="771" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Check card-retention mechanism</text>
+<text x="1805.7" y="771" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<rect x="1520.8" y="777" width="367.69999999999993" height="18" fill="#eaf7f1"/>
+<text x="1528" y="790" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">43</text>
+<text x="1600.7" y="790" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Reinitialize card reader</text>
+<text x="1805.7" y="790" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="1528" y="809" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">44</text>
+<text x="1600.7" y="809" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Replace card-retention sensor</text>
+<text x="1805.7" y="809" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<path d="M1412.0 810 L1520 810" fill="none" stroke="#3b4f66" stroke-width="1.3"/>
+<text x="1420.0" y="826" font-size="11" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">*</text>
+<text x="1512" y="826" font-size="11" font-weight="700" fill="#10243a" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">0..1</text>
+<rect x="1432.65" y="794" width="66.69999999999999" height="15" rx="3" fill="#ffffff"/>
+<text x="1466.0" y="805" font-size="10.5" font-weight="400" fill="#2f63c8" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">action_id</text>
+<rect x="1997.1" y="590" width="176.89999999999998" height="71" rx="7" fill="#ffffff" stroke="#a46200" stroke-width="1.6"/>
+<path d="M1997.1 597a7 7 0 0 1 7 -7h162.89999999999998a7 7 0 0 1 7 7v21h-176.89999999999998z" fill="#fbf0dc" stroke="#a46200" stroke-width="1.6"/>
+<text x="2007.1" y="609" font-size="13" font-weight="700" fill="#a46200" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">component</text>
+<rect x="1997.8999999999999" y="618" width="175.29999999999998" height="20" fill="#f7f8fa"/>
+<text x="2005.1" y="632" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">component_id</text>
+<text x="2096.7" y="632" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">name</text>
+<path d="M1997.1 638H2174.0" stroke="#d9dee5"/>
+<rect x="1997.8999999999999" y="639" width="175.29999999999998" height="18" fill="#eaf7f1"/>
+<text x="2005.1" y="652" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="2096.7" y="652" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">Card reader</text>
+<path d="M1927.1 535 L2085.5499999999997 535 L2085.5499999999997 590" fill="none" stroke="#3b4f66" stroke-width="1.3"/>
+<rect x="2042.7499999999998" y="519" width="85.6" height="15" rx="3" fill="#ffffff"/>
+<text x="2085.5499999999997" y="530" font-size="10.5" font-weight="400" fill="#2f63c8" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">component_id</text>
+<path d="M1889.3 755 L2085.5499999999997 755 L2085.5499999999997 661" fill="none" stroke="#3b4f66" stroke-width="1.3"/>
+<rect x="2042.7499999999998" y="764" width="85.6" height="15" rx="3" fill="#ffffff"/>
+<text x="2085.5499999999997" y="775" font-size="10.5" font-weight="400" fill="#2f63c8" text-anchor="middle" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">component_id</text>
+<rect x="1520" y="900" width="480.29999999999995" height="147" rx="7" fill="#ffffff" stroke="#b4384f" stroke-width="1.6"/>
+<path d="M1520 907a7 7 0 0 1 7 -7h466.29999999999995a7 7 0 0 1 7 7v21h-480.29999999999995z" fill="#fbe7eb" stroke="#b4384f" stroke-width="1.6"/>
+<text x="1530" y="919" font-size="13" font-weight="700" fill="#b4384f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">symptom_action_outcome_stats</text>
+<text x="1990.3" y="919" font-size="11" font-weight="400" fill="#5b6b7f" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-style="italic" xml:space="preserve">taux de réussite</text>
+<rect x="1520.8" y="928" width="478.69999999999993" height="20" fill="#f7f8fa"/>
+<text x="1528" y="942" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">symptom_id</text>
+<text x="1607.0" y="942" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">action_id</text>
+<text x="1679.7" y="942" font-size="10.0" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">device_type</text>
+<text x="1765.0" y="942" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">attempts</text>
+<text x="1831.4" y="942" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">successes</text>
+<text x="1904.1000000000001" y="942" font-size="10.0" font-weight="700" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">accuracy_score</text>
+<path d="M1520 948H2000.3" stroke="#d9dee5"/>
+<text x="1528" y="962" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">21</text>
+<text x="1607.0" y="962" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">41</text>
+<text x="1679.7" y="962" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">gab</text>
+<text x="1765.0" y="962" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="1831.4" y="962" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">0</text>
+<text x="1904.1000000000001" y="962" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">0.0000</text>
+<text x="1528" y="981" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">21</text>
+<text x="1607.0" y="981" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">42</text>
+<text x="1679.7" y="981" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">gab</text>
+<text x="1765.0" y="981" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="1831.4" y="981" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">0</text>
+<text x="1904.1000000000001" y="981" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">0.0000</text>
+<rect x="1520.8" y="987" width="478.69999999999993" height="18" fill="#eaf7f1"/>
+<text x="1528" y="1000" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">21</text>
+<text x="1607.0" y="1000" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">43</text>
+<text x="1679.7" y="1000" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">gab</text>
+<text x="1765.0" y="1000" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="1831.4" y="1000" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="1904.1000000000001" y="1000" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1.0000</text>
+<text x="1528" y="1019" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">21</text>
+<text x="1607.0" y="1019" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">44</text>
+<text x="1679.7" y="1019" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">gab</text>
+<text x="1765.0" y="1019" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="1831.4" y="1019" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1</text>
+<text x="1904.1000000000001" y="1019" font-size="10.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">1.0000</text>
+<text x="1528" y="1038" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">…</text>
+<text x="1607.0" y="1038" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">…</text>
+<text x="1679.7" y="1038" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">…</text>
+<text x="1765.0" y="1038" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">…</text>
+<text x="1831.4" y="1038" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">…</text>
+<text x="1904.1000000000001" y="1038" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">…</text>
+<text x="1520" y="1063" font-size="10.5" font-weight="400" fill="#5b6b7f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">… = 8 autres lignes (symptômes 22, 23, 24 × leurs actions)</text>
+<path d="M1157.5 818 L1157.5 1010 L1520 1010" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<circle cx="1157.5" cy="863" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="1157.5" y="867.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">J</text>
+<text x="1173.5" y="970" font-size="11.5" font-weight="600" fill="#d9620f" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">job recompute_stats</text>
+<text x="1173.5" y="988" font-size="10.5" font-weight="400" fill="#d9620f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">intervention_action ⋈ intervention_symptom ⋈ device</text>
+<text x="1173.5" y="1036" font-size="10.5" font-weight="400" fill="#d9620f" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">GROUP BY symptom_id, action_id, device_type</text>
+<rect x="1087.4" y="300" width="470" height="112" rx="12" fill="#fff8f1" stroke="#d9620f" stroke-width="1.4" stroke-dasharray="5 4"/>
+<text x="1101.4" y="323" font-size="13.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Voyage AI (voyage-3-large)</text>
+<text x="1101.4" y="344" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">raw_text  « La carte est retenue par le GAB. »</text>
+<text x="1101.4" y="360" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">   → 1024 nombres  [0.021, -0.043, 0.118, …, 0.007]</text>
+<text x="1101.4" y="376" font-size="11" font-weight="400" fill="#10243a" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">   → UPDATE intervention_symptom SET embedding = …</text>
+<path d="M1127.4 412 L1127.4 448 L987.5 448 L987.5 470" fill="none" stroke="#d9620f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#flow-arrow)"/>
+<circle cx="1127.4" cy="430" r="11" fill="#d9620f" stroke="#ffffff" stroke-width="2"/>
+<text x="1127.4" y="434.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">E</text>
+<rect x="230" y="1050" width="820" height="170" rx="9" fill="#f4fbf7" stroke="#a9dcc5" stroke-width="1.2"/>
+<text x="242" y="1070" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Le cas 3001 raconté par les tables (lignes vertes) :</text>
+<text x="242" y="1089" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">• intervention 3001 : Alan (technician 7) est intervenu le 2 sept. sur le GAB 501 (Opteva 720, Branch 14).</text>
+<text x="242" y="1108" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">• intervention_symptom 9001-9003 : les 3 phrases qu&#x27;il a écrites. Chacune a son embedding (son vecteur).</text>
+<text x="242" y="1127" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">  symptom_id les range dans le catalogue : 9001 « La carte est retenue par le GAB. » = symptom 21.</text>
+<text x="242" y="1146" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">• intervention_action 7001-7003 : 3 actions dans l&#x27;ordre (sequence_order). 7001 et 7002 sans effet,</text>
+<text x="242" y="1165" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">  7003 « Reinitialized card reader. » résout le problème → is_confirmed_solution = TRUE.</text>
+<text x="242" y="1184" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">• diagnosis 501 : la cause, « le firmware du lecteur était bloqué ».</text>
+<text x="242" y="1203" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">• symptom_action_outcome_stats (21, 43, gab) : 1 essai, 1 réussite → 100 %, calculé par le job (J).</text>
+<rect x="1090" y="1050" width="700" height="170" rx="9" fill="#f6f8fb" stroke="#c9d2de" stroke-width="1.2"/>
+<text x="1102" y="1070" font-size="11.5" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">À retenir :</text>
+<text x="1102" y="1089" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">• L&#x27;embedding vit UNIQUEMENT dans intervention_symptom (colonne vector(1024)).</text>
+<text x="1102" y="1108" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">  Il est calculé une seule fois, quand le symptôme est enregistré (E).</text>
+<text x="1102" y="1127" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">• Une solution n&#x27;a pas de vecteur : on la retrouve PARCE QUE son intervention</text>
+<text x="1102" y="1146" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">  a un symptôme proche de la question (même intervention_id).</text>
+<text x="1102" y="1165" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">• targets_symptom_id = NULL : l&#x27;action vaut pour tous les symptômes de la visite.</text>
+<text x="1102" y="1184" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">  Renseigné (ex. proposition approuvée), elle ne vise que ce symptôme-là.</text>
+<text x="1102" y="1203" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">• error_code est un référentiel séparé, relié à fault, pas aux interventions.</text>
+<text x="1730" y="1070" font-size="13" font-weight="700" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">Légende</text>
+<rect x="1730" y="1081" width="26" height="14" rx="2" fill="#eaf7f1" stroke="#c9d2de"/>
+<text x="1766" y="1092" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">ligne du cas d&#x27;exemple (intervention 3001)</text>
+<text x="1730" y="1112" font-size="10.5" font-weight="700" fill="#c2410c" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">PK</text>
+<text x="1754" y="1112" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">clé primaire</text>
+<text x="1850" y="1112" font-size="10.5" font-weight="700" fill="#2f63c8" text-anchor="start" font-family="Cascadia Mono, Consolas, monospace"  xml:space="preserve">FK</text>
+<text x="1874" y="1112" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">clé étrangère (colonne bleue)</text>
+<path d="M1730 1128H1770" stroke="#d9620f" stroke-width="2.4" marker-end="url(#flow-arrow)"/>
+<text x="1780" y="1132" font-size="11.5" font-weight="400" fill="#10243a" text-anchor="start" font-family="Segoe UI, Helvetica, Arial, sans-serif"  xml:space="preserve">flux de données (numéro = ordre)</text>
+</svg>

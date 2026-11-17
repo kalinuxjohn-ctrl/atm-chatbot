@@ -1,0 +1,16 @@
+{
+  "catalog_number": 47,
+  "code": "65",
+  "label": "Cassette 5 défectueuse",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 65 : cassette 5 défectueuse.\nRemplacer la cassette 5 par une nouvelle cassette initialisée.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "family": "6x",
+    "cassette": 5,
+    "component": "Cassette 5",
+    "kind": "error"
+  }
+}

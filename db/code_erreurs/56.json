@@ -1,0 +1,16 @@
+{
+  "catalog_number": 56,
+  "code": "82",
+  "label": "Cassette 2 : avertisseur de cassette vide PSE2 encrassé",
+  "device_type": "gab",
+  "reply": "CMD-V4 — code 82, cassette 2 : avertisseur de cassette vide PSE2 encrassé.\nContacter le SAV.",
+  "documentation": {
+    "module": "CMD-V4 (142, 153)",
+    "source": "CMD V4_ET_MAJ.pdf",
+    "source_page": 11,
+    "family": "8x",
+    "cassette": 2,
+    "component": "PSE2",
+    "kind": "warning"
+  }
+}
