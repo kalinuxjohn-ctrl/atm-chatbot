@@ -1,7 +1,7 @@
 # Espace techniciens : documentation
 
 Documentation de l'application des techniciens (dossier `main-app/`).
-La référence technique détaillée (sécurité, conteneurs, variables) reste dans [`../main-app.md`](../main-app.md).
+La référence technique détaillée (sécurité, conteneurs, variables) reste dans [`../main-app.md`](../main-app.md). Le dossier technique approfondi est disponible en [PDF](../ATM-BOT_Dossier_technique.pdf), avec son [source Word modifiable](../ATM-BOT_Dossier_technique.docx).
 
 | Document | Contenu |
 |---|---|
@@ -10,6 +10,8 @@ La référence technique détaillée (sécurité, conteneurs, variables) reste d
 | [diagrammes-uml.md](diagrammes-uml.md) | Cas d'utilisation, classes, séquences, états |
 | [fonctionnement.md](fonctionnement.md) | Fonctionnement de chaque module, liste des routes de l'API |
 | [../demarrage-et-connexions.md](../demarrage-et-connexions.md) | **Lancer tout le projet**, interfaces, connexion et vérification des API (avec le chatbot) |
+| [../ATM-BOT_Dossier_technique.pdf](../ATM-BOT_Dossier_technique.pdf) | Dossier technique (corps v1.1, addendum v1.2 en fin de PDF) |
+| [../ATM-BOT_Dossier_technique.docx](../ATM-BOT_Dossier_technique.docx) | Source Word modifiable, version 1.2 |
 
 Les diagrammes sont écrits en [Mermaid](https://mermaid.js.org/) : GitHub, GitLab et VS Code (extension *Markdown Preview Mermaid Support*) les affichent directement.
 

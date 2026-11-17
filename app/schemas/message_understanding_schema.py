@@ -29,9 +29,10 @@ class UnderstoodMessage(BaseModel):
     # faire planter la validation ou, pire, d'être utilisé quelque part.
     model_config = ConfigDict(extra="ignore")
 
-    # "diagnostic" : nouvelle panne à chercher en base ; "conversation" : tout
-    # le reste (questions sur les résultats, suivi, questions générales...).
-    intent: Literal["conversation", "diagnostic"]
+    # "diagnostic" : nouvelle panne à chercher en base ; "off_topic" :
+    # demande substantielle hors GAB/TPE, refusée par le backend.
+    # "conversation" : échanges sociaux, questions dans le domaine et suivis.
+    intent: Literal["conversation", "diagnostic", "off_topic"]
     device_type_text: Optional[str] = None
     model_name_text: Optional[str] = None
     error_code_text: Optional[str] = None
@@ -46,7 +47,8 @@ class UnderstoodMessage(BaseModel):
     # True quand le technicien demande plus de détails sur CE résultat : le
     # backend relit alors le dossier complet du cas en base (case_detail_service.py).
     case_detail_requested: bool = False
-    # Réponse au technicien, rédigée par le LLM (uniquement si intent == "conversation").
+    # Réponse au technicien, rédigée par le LLM uniquement si intent == "conversation".
+    # Pour "off_topic", le backend choisit lui-même une réponse de refus.
     reply: Optional[str] = None
     # Seulement quand une photo est jointe (photo_ocr_service.py) : texte lu
     # sur la photo, tel quel, et sa signification. Absents sinon.
@@ -109,8 +111,10 @@ class UnderstoodMessage(BaseModel):
         return [{"number": index + 1, "text": text} for index, text in enumerate(texts)]
 
     @model_validator(mode="after")
-    def _reply_required_outside_diagnostic(self):
-        # Sans réponse, le technicien n'aurait rien : réponse inexploitable (-> 503).
+    def _validate_reply_by_intent(self):
+        # Une conversation doit avoir une réponse ; un refus hors sujet est fourni par le backend.
         if self.intent == "conversation" and not self.error_code_text and not (self.reply or "").strip():
             raise ValueError("Réponse absente pour un message hors diagnostic.")
+        if self.intent == "off_topic" and (self.reply is not None or self.error_code_text is not None):
+            raise ValueError("Une demande hors sujet doit être refusée par le backend sans référence de code.")
         return self

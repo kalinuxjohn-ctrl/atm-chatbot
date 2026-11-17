@@ -1363,9 +1363,9 @@ kbd {
 .composer-toolbar .suggestion-menus {
   display: flex;
   min-width: 0;
-  flex: 1 1 300px;
+  flex: 0 1 auto;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
 }
 
@@ -2378,10 +2378,10 @@ kbd {
 .suggestion-trigger {
   display: inline-flex;
   max-width: 100%;
-  height: 42px;
-  gap: 8px;
+  height: 40px;
+  gap: 6px;
   align-items: center;
-  padding: 0 12px 0 5px;
+  padding: 0 10px 0 4px;
   border: 1px solid var(--chip-border);
   border-radius: 999px;
   background: var(--chip-gloss), var(--chip-background);
@@ -2415,8 +2415,8 @@ kbd {
 .suggestion-trigger-icon,
 .suggestion-popover-icon {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
@@ -2438,8 +2438,6 @@ kbd {
 }
 
 .suggestion-trigger-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -2461,8 +2459,8 @@ kbd {
   bottom: calc(100% + 12px);
   left: 0;
   z-index: 30;
-  width: min(380px, calc(100vw - 48px));
-  padding: 10px;
+  width: min(400px, calc(100vw - 48px));
+  padding: 12px;
   border: 1px solid var(--pane-border);
   border-radius: 22px;
   background: var(--popover-fill);
@@ -2630,7 +2628,7 @@ body:has(.error-code-dialog[open]) {
   align-items: center;
   padding: 8px 10px 8px 8px;
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: 11px;
   color: var(--text-soft);
   cursor: pointer;
   font-size: 13.5px;

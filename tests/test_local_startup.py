@@ -92,8 +92,8 @@ class LocalStartupTests(unittest.TestCase):
             original = "# Existing configuration\nDATABASE_URL=existing-value\n"
             (root / ".env").write_text(original, encoding="utf-8")
             environment = {
-                "DATABASE_URL": "existing-value", "LLM_PROVIDER": "gemini",
-                "GEMINI_API_KEY": "test-key", "VOYAGE_API_KEY": "test-key",
+                "DATABASE_URL": "existing-value", "LLM_PROVIDER": "claude",
+                "CLAUDE_API_KEY": "test-key", "VOYAGE_API_KEY": "test-key",
             }
             with patch.object(start, "ROOT", root), patch.object(start, "read_environment", return_value=environment):
                 with contextlib.redirect_stdout(io.StringIO()):
@@ -103,6 +103,19 @@ class LocalStartupTests(unittest.TestCase):
                     start.prepare_configuration()
             self.assertTrue(first_content.startswith(original))
             self.assertEqual((root / ".env").read_text(encoding="utf-8"), first_content)
+
+    def test_removed_provider_is_rejected_explicitly(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / ".env").write_text("unchanged", encoding="utf-8")
+            environment = {
+                "DATABASE_URL": "existing-value", "LLM_PROVIDER": "gemini",
+                "GEMINI_API_KEY": "test-key", "VOYAGE_API_KEY": "test-key",
+            }
+            with patch.object(start, "ROOT", root), patch.object(start, "read_environment", return_value=environment):
+                with self.assertRaisesRegex(RuntimeError, "LLM_PROVIDER doit valoir claude"):
+                    start.prepare_configuration()
+            self.assertEqual((root / ".env").read_text(encoding="utf-8"), "unchanged")
 
     def test_missing_api_key_fails_before_modifying_configuration(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -58,9 +58,9 @@ def prepare_configuration():
     environment = read_environment()
     required = ["DATABASE_URL", "VOYAGE_API_KEY"]
     provider = environment.get("LLM_PROVIDER") or "claude"
-    if provider not in {"claude", "gemini"}:
-        raise RuntimeError("LLM_PROVIDER doit valoir claude ou gemini.")
-    required.append("CLAUDE_API_KEY" if provider == "claude" else "GEMINI_API_KEY")
+    if provider != "claude":
+        raise RuntimeError("LLM_PROVIDER doit valoir claude.")
+    required.append("CLAUDE_API_KEY")
     missing = [key for key in required if not environment.get(key)]
     if missing:
         raise RuntimeError(f"Renseigner dans .env : {', '.join(missing)}.")
@@ -124,7 +124,17 @@ def start(*, rebuild_base=False):
         run(COMPOSE + ["build", "--no-cache", "python-base"])
     # All four Node services and the database job use the same image.
     run(COMPOSE + ["build", "chatbot-backend", "init-db", "chatbot-frontend", "main-app-auth", "main-app-gateway"])
-    run(COMPOSE + ["up", "-d", "--no-build", "--wait", "--wait-timeout", "180"])
+    runtime_services = [
+        "db",
+        "chatbot-backend",
+        "chatbot-frontend",
+        "main-app-auth",
+        "main-app-map",
+        "main-app-messaging",
+        "main-app-calls",
+        "main-app-gateway",
+    ]
+    run(COMPOSE + ["up", "-d", "--no-build", "--wait", "--wait-timeout", "180", *runtime_services])
     gateway_port = published_port("main-app-gateway", 8080)
     api_port = published_port("chatbot-backend", 8000)
     database_port = published_port("db", 5432)

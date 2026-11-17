@@ -1,0 +1,7 @@
+{
+  "source_key": "problem-reference-gab-card-reader",
+  "device_type": "gab",
+  "label": "Le lecteur du GAB ne lit pas la carte",
+  "reply": "Note le message affiché et vérifie si le problème concerne plusieurs cartes. Contrôle visuellement l'entrée du lecteur sans y introduire d'objet. N'effectue un nettoyage que si la procédure du modèle l'autorise. Si le défaut persiste, maintiens l'appareil selon les consignes du site et transmets le journal au support.",
+  "display_order": 102
+}

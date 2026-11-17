@@ -295,6 +295,7 @@ h2 {
 /* Rail à gauche (ordinateur) : le contenu de la page se décale d'autant. */
 body.has-app-sidebar {
   padding-left: calc(var(--sidebar-width) + 24px);
+  transition: padding-left var(--sidebar-motion-duration, 320ms) ease;
 }
 
 .app-sidebar {
@@ -312,6 +313,8 @@ body.has-app-sidebar {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-large);
   box-shadow: var(--shadow-card);
+  transition: width var(--sidebar-motion-duration, 320ms) ease,
+    padding var(--sidebar-motion-duration, 320ms) ease;
 }
 
 /* Le flou reste sur une couche distincte pour ne pas recadrer les menus fixes. */
@@ -374,7 +377,7 @@ body.has-app-sidebar {
 
 .app-sidebar-toggle-icon {
   flex: none;
-  transition: transform 280ms ease;
+  transition: transform var(--sidebar-motion-duration, 320ms) ease;
 }
 
 .app-sidebar-toggle[aria-expanded="false"] .app-sidebar-toggle-icon {
@@ -397,11 +400,15 @@ body.has-app-sidebar {
   display: flex;
   flex-direction: column;
   line-height: 1.2;
+  min-width: 0;
 }
 
 .app-sidebar-brand-text strong {
   font-size: 0.98rem;
   font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .app-sidebar-brand-text span {
@@ -547,6 +554,18 @@ body.has-app-sidebar {
 
 /* Le rail conserve le choix de retraction sur toutes les pages. */
 @media (min-height: 601px), (orientation: portrait) {
+  .app-sidebar-footer {
+    margin-top: auto;
+  }
+
+  .app-sidebar :is(.app-sidebar-brand-text, .app-navigation-link-label, .app-sidebar-section-title, .app-sidebar-user-text, .button-label, .app-chatbot-chevron) {
+    max-width: var(--sidebar-width);
+    overflow: hidden;
+    white-space: nowrap;
+    transition: max-width var(--sidebar-motion-duration, 320ms) ease,
+      opacity var(--sidebar-motion-duration, 320ms) ease;
+  }
+
   body.has-app-sidebar[data-sidebar-mode="collapsed"] {
     padding-left: calc(var(--sidebar-compact-width) + 24px);
   }
@@ -555,15 +574,13 @@ body.has-app-sidebar {
     align-items: center;
     width: var(--sidebar-compact-width);
     padding: var(--sidebar-padding-top) 8px 16px;
-    --sidebar-footer-gap: var(--sidebar-compact-footer-gap);
-    --sidebar-footer-padding-top: 16px;
-    --sidebar-footer-item-gap: 12px;
     --sidebar-item-height: 46px;
     --sidebar-item-gap: 6px;
   }
 
   [data-sidebar-mode="collapsed"] :is(.app-sidebar-brand-text, .app-navigation-link-label, .app-sidebar-section-title, .app-sidebar-user-text, .button-label, .app-chatbot-chevron) {
-    display: none;
+    max-width: 0;
+    opacity: 0;
   }
 
   [data-sidebar-mode="collapsed"] .app-navigation-link {
@@ -1417,13 +1434,12 @@ textarea {
 .app-chatbot-subnavigation {
   display: grid;
   gap: 0;
-  margin-top: 8px;
+  margin: 8px 0 0;
   padding: 7px;
   color: var(--dropdown-text);
-  border: 1px solid var(--dropdown-border);
   border-radius: 14px;
   background: var(--dropdown-background);
-  box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / 8%);
+  box-shadow: var(--shadow-card);
   backdrop-filter: blur(22px);
 }
 
@@ -1432,6 +1448,8 @@ textarea {
 }
 
 .app-chatbot-menu > summary {
+  position: relative;
+  z-index: 3;
   list-style: none;
   cursor: pointer;
 }
@@ -1497,14 +1515,16 @@ textarea {
 }
 
 .app-chatbot-action {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   gap: 10px;
   min-height: 44px;
   padding: 10px;
   border: 1px solid var(--dropdown-border);
-  border-radius: 10px;
-  background: rgb(255 255 255 / 3%);
+  border-radius: 12px;
+  background: transparent;
   color: var(--dropdown-text);
   font-size: 0.85rem;
   font-weight: 500;
@@ -1513,7 +1533,12 @@ textarea {
 }
 
 .app-chatbot-action .icon { width: 18px; height: 18px; flex: none; opacity: 0.72; }
-body .app-chatbot-action .app-navigation-link-label { display: inline; }
+body .app-chatbot-action .app-navigation-link-label {
+  display: inline;
+  max-width: none;
+  opacity: 1;
+  white-space: normal;
+}
 
 body .app-chatbot-subnavigation:popover-open {
   position: fixed;
@@ -1526,10 +1551,17 @@ body .app-chatbot-subnavigation:popover-open {
   overflow-y: auto;
   display: grid;
   justify-content: stretch;
+  padding: 6px;
+  border: 1px solid var(--dropdown-border);
+  border-radius: 14px;
+  background: var(--dropdown-background);
+  box-shadow: var(--shadow-card);
 }
 
 .app-chatbot-action + .app-chatbot-action {
-  margin-top: -5px;
+  z-index: 1;
+  margin: -5px 0 0;
+  border-top-color: transparent;
 }
 
 .app-chatbot-menu[open] .app-chatbot-action {
@@ -1754,5 +1786,8 @@ select option { background: #302c29; color: var(--dropdown-text); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root { --dropdown-motion-duration: 0ms; }
+  :root {
+    --dropdown-motion-duration: 0ms;
+    --sidebar-motion-duration: 0ms;
+  }
 }

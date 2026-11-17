@@ -9,7 +9,7 @@ import requests
 
 from app.services import (
     chat_orchestrator_service as orchestrator,
-    llm_service,
+    claude_service,
     message_understanding_service as understanding,
 )
 
@@ -54,6 +54,14 @@ class ConversationMessagesTests(unittest.TestCase):
         self.assertTrue(turn.endswith("[Message du technicien]\ndétaille le cas 2"))
         self.assertIn(understanding._NO_SEARCH_RESULTS, understanding._build_turn_message("x", None, None))
 
+    def test_system_prompt_refuses_substantive_requests_outside_gab_tpe_scope(self):
+        prompt = understanding._SYSTEM_PROMPT
+        self.assertIn('"off_topic"', prompt)
+        self.assertIn('Mets "reply" à null, ne rédige aucun refus', prompt)
+        self.assertIn("installer une carte graphique sur un PC", prompt)
+        self.assertIn("le backend choisira le texte de refus", prompt)
+        self.assertIn("petite question de contact", prompt)
+
     def test_same_history_gives_the_same_prefix(self):
         history = [{"role": "user", "content": "a"}, {"role": "assistant", "content": "b"}]
         first = understanding._build_messages(history, "turn 1")
@@ -62,7 +70,7 @@ class ConversationMessagesTests(unittest.TestCase):
 
     def test_reply_and_result_position_come_back_from_a_single_call(self):
         response = json.dumps({"intent": "conversation", "result_position": 2, "reply": "Le cas 2 …"})
-        with patch.object(llm_service, "generate_chat_reply", return_value=response) as call:
+        with patch.object(claude_service, "generate_chat_reply", return_value=response) as call:
             understood = understanding.understand_message("détaille le cas 2", history=[], search_results_text="Cas 2")
         self.assertEqual((understood.reply, understood.result_position), ("Le cas 2 …", 2))
         call.assert_called_once()
@@ -72,6 +80,7 @@ class ConversationMessagesTests(unittest.TestCase):
         self.assertFalse(schema["additionalProperties"])
         self.assertFalse(schema["$defs"]["IdentifiedSymptom"]["additionalProperties"])
         self.assertNotIn("default", json.dumps(schema))
+        self.assertIn("off_topic", schema["properties"]["intent"]["enum"])
 
 
 class LastSearchDescriptionTests(unittest.TestCase):
@@ -179,7 +188,7 @@ class ProviderConversationPayloadTests(unittest.TestCase):
 
     def test_claude_receives_system_prompt_and_all_messages(self):
         with patch.object(requests, "post", return_value=ok_response({"content": [{"type": "text", "text": "ok"}]})) as post:
-            llm_service.ClaudeProvider("key", "model").generate_chat("consigne", self.MESSAGES)
+            claude_service.ClaudeProvider("key", "model").generate_chat("consigne", self.MESSAGES)
         payload = post.call_args.kwargs["json"]
         self.assertEqual(payload["system"], "consigne")
         self.assertEqual(payload["messages"], self.MESSAGES)
@@ -190,7 +199,7 @@ class ProviderConversationPayloadTests(unittest.TestCase):
             "usage": {"cache_read_input_tokens": 900, "cache_creation_input_tokens": 40, "input_tokens": 60},
         })
         with patch.object(requests, "post", return_value=response) as post:
-            llm_service.ClaudeProvider("key", "model").generate_chat("consigne", self.MESSAGES, cache_history=True)
+            claude_service.ClaudeProvider("key", "model").generate_chat("consigne", self.MESSAGES, cache_history=True)
         payload = post.call_args.kwargs["json"]
         cache = {"type": "ephemeral", "ttl": "1h"}
         self.assertEqual(payload["system"], [{"type": "text", "text": "consigne", "cache_control": cache}])
@@ -201,7 +210,7 @@ class ProviderConversationPayloadTests(unittest.TestCase):
 
     def test_first_message_has_no_history_to_cache(self):
         with patch.object(requests, "post", return_value=ok_response({"content": [{"type": "text", "text": "ok"}]})) as post:
-            llm_service.ClaudeProvider("key", "model").generate_chat("consigne", self.MESSAGES[:1], cache_history=True)
+            claude_service.ClaudeProvider("key", "model").generate_chat("consigne", self.MESSAGES[:1], cache_history=True)
         payload = post.call_args.kwargs["json"]
         self.assertEqual(payload["messages"], self.MESSAGES[:1])
         self.assertIn("cache_control", payload["system"][0])
@@ -209,7 +218,7 @@ class ProviderConversationPayloadTests(unittest.TestCase):
     def test_claude_constrains_json_only_when_requested(self):
         schema = {"type": "object", "properties": {}, "additionalProperties": False}
         with patch.object(requests, "post", return_value=ok_response({"content": [{"type": "text", "text": "{}"}]})) as post:
-            llm_service.ClaudeProvider("key", "model").generate_chat("consigne", self.MESSAGES, response_schema=schema)
+            claude_service.ClaudeProvider("key", "model").generate_chat("consigne", self.MESSAGES, response_schema=schema)
         self.assertEqual(post.call_args.kwargs["json"]["output_config"]["format"], {"type": "json_schema", "schema": schema})
 
     def test_claude_reports_usage_without_logging_content(self):
@@ -219,8 +228,8 @@ class ProviderConversationPayloadTests(unittest.TestCase):
             "usage": {"cache_read_input_tokens": 900, "cache_creation_input_tokens": 40,
                       "input_tokens": 60, "output_tokens": 10, "output_tokens_details": {"thinking_tokens": 3}},
         })
-        with patch.object(requests, "post", return_value=response), patch.object(llm_service, "trace") as log:
-            llm_service.ClaudeProvider("key", "model").generate("PRIVATE_PROMPT")
+        with patch.object(requests, "post", return_value=response), patch.object(claude_service, "trace") as log:
+            claude_service.ClaudeProvider("key", "model").generate("PRIVATE_PROMPT")
         self.assertEqual(log.call_args.kwargs["cache_read_tokens"], 900)
         self.assertEqual(log.call_args.kwargs["thinking_tokens"], 3)
         self.assertEqual(log.call_args.kwargs["model"], "claude-sonnet-5-5")
@@ -232,37 +241,19 @@ class ProviderConversationPayloadTests(unittest.TestCase):
     def test_claude_rejects_truncated_output_even_when_text_is_present(self):
         response = ok_response({"stop_reason": "max_tokens", "content": [{"type": "text", "text": "Incomplete"}]})
         with patch.object(requests, "post", return_value=response):
-            with self.assertRaisesRegex(llm_service.LLMUnavailableError, "réponse incomplète"):
-                llm_service.ClaudeProvider("key", "model").generate("prompt")
+            with self.assertRaisesRegex(claude_service.LLMUnavailableError, "réponse incomplète"):
+                claude_service.ClaudeProvider("key", "model").generate("prompt")
 
     def test_claude_identifies_thinking_only_token_exhaustion(self):
         response = ok_response({"stop_reason": "max_tokens", "content": [{"type": "thinking"}]})
         with patch.object(requests, "post", return_value=response):
-            with self.assertRaisesRegex(llm_service.LLMUnavailableError, "réponse incomplète"):
-                llm_service.ClaudeProvider("key", "model").generate("prompt")
+            with self.assertRaisesRegex(claude_service.LLMUnavailableError, "réponse incomplète"):
+                claude_service.ClaudeProvider("key", "model").generate("prompt")
 
     def test_claude_joins_text_blocks_around_thinking(self):
         response = ok_response({"content": [{"type": "text", "text": "one"}, {"type": "thinking"}, {"type": "text", "text": "two"}]})
         with patch.object(requests, "post", return_value=response):
-            self.assertEqual(llm_service.ClaudeProvider("key", "model").generate("prompt"), "onetwo")
-
-    def test_gemini_ignores_the_cache_option(self):
-        response = ok_response({"candidates": [{"content": {"parts": [{"text": "ok"}]}}]})
-        with patch.object(requests, "post", return_value=response) as post:
-            llm_service.GeminiProvider("key", "model").generate_chat("consigne", self.MESSAGES, cache_history=True)
-        self.assertNotIn("cache_control", json.dumps(post.call_args.kwargs["json"]))
-
-    def test_gemini_maps_assistant_to_model(self):
-        response = MagicMock(status_code=200)
-        response.json.return_value = {"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}
-        with patch("requests.post", return_value=response) as post:
-            llm_service.GeminiProvider("key", "model").generate_chat(
-                "consigne", [{"role": "user", "content": "a"}, {"role": "assistant", "content": "b"}]
-            )
-        payload = post.call_args.kwargs["json"]
-        self.assertEqual([c["role"] for c in payload["contents"]], ["user", "model"])
-        self.assertEqual(payload["systemInstruction"]["parts"][0]["text"], "consigne")
-
+            self.assertEqual(claude_service.ClaudeProvider("key", "model").generate("prompt"), "onetwo")
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,7 +5,7 @@ Le modèle d'embedding transforme un texte en vecteur numérique.
 La recherche sémantique compare ensuite ces vecteurs avec pgvector.
 
 Structuré en interface (EmbeddingProvider) + implémentation (VoyageProvider),
-même principe que LLMProvider dans llm_service.py : un futur changement de
+même principe que LLMProvider dans claude_service.py : un futur changement de
 fournisseur se fait en ajoutant une classe ici, sans toucher à
 retrieval_service.py, case_retrieval_service.py ou seed_demo_data.py -- ils
 n'appellent jamais un provider directement, seulement generate_embedding()

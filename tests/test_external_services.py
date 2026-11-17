@@ -13,7 +13,7 @@ from app.schemas.message_understanding_schema import UnderstoodMessage
 from app.services import (
     chat_orchestrator_service as orchestrator,
     embeddings_service as embeddings,
-    llm_service,
+    claude_service,
     message_understanding_service as understanding,
     retrieval_service,
     stats_service,
@@ -31,16 +31,15 @@ def api_response(payload=None, status=200):
 
 class ExternalProviderTests(unittest.TestCase):
     def test_claude_uses_the_two_minute_timeout(self):
-        provider = llm_service.ClaudeProvider("test-key", "test-model")
+        provider = claude_service.ClaudeProvider("test-key", "test-model")
         with patch("requests.post", side_effect=requests.Timeout()) as post:
-            with self.assertRaisesRegex(llm_service.LLMUnavailableError, r"\(120s\)"):
+            with self.assertRaisesRegex(claude_service.LLMUnavailableError, r"\(120s\)"):
                 provider.generate("test prompt")
         self.assertEqual(post.call_args.kwargs["timeout"], 120)
 
     def setUp(self):
         self.providers = (
-            (llm_service.ClaudeProvider("test-key", "test-model"), llm_service.LLMUnavailableError),
-            (llm_service.GeminiProvider("test-key", "test-model"), llm_service.LLMUnavailableError),
+            (claude_service.ClaudeProvider("test-key", "test-model"), claude_service.LLMUnavailableError),
             (embeddings.VoyageProvider("test-key", "test-model", 2), embeddings.EmbeddingUnavailableError),
         )
         patcher = patch.object(embeddings.time, "sleep")
@@ -77,10 +76,45 @@ class ExternalProviderTests(unittest.TestCase):
                     retries = (
                         embeddings._MAX_RETRIES_ON_RATE_LIMIT
                         if isinstance(provider, embeddings.VoyageProvider) and (status == 429 or status >= 500)
+                        else claude_service.ClaudeProvider._MAX_RETRIES + 1
+                        if isinstance(provider, claude_service.ClaudeProvider) and status in {429, 500, 502, 503, 504, 529}
                         else 1
                     )
                     self.assertEqual(post.call_count, retries)
                     self.assertEqual(len({call.args[0] for call in post.call_args_list}), 1)
+
+    def test_claude_retries_transient_statuses_within_the_original_budget(self):
+        provider = claude_service.ClaudeProvider("test-key", "test-model", streaming=True, stream_deadline=3)
+        busy = api_response(status=503)
+        ready = MagicMock(status_code=200)
+        times = iter((0.0, 0.1, 0.5, 1.0))
+        with (
+            patch("requests.post", side_effect=(busy, ready)) as post,
+            patch.object(claude_service, "monotonic", side_effect=lambda: next(times)),
+            patch.object(claude_service, "sleep") as pause,
+        ):
+            result = provider._post_with_retry({}, True, 3, 3.0)
+        self.assertIs(result, ready)
+        self.assertEqual(post.call_count, 2)
+        self.assertEqual(post.call_args_list[0].kwargs["timeout"], (3, 3))
+        self.assertLessEqual(post.call_args_list[1].kwargs["timeout"][1], 2.5)
+        pause.assert_called_once_with(1)
+        busy.close.assert_called_once()
+
+    def test_claude_stops_retrying_when_the_deadline_expires_during_backoff(self):
+        provider = claude_service.ClaudeProvider("test-key", "test-model", streaming=True, stream_deadline=3)
+        busy = api_response(status=503)
+        times = iter((0.0, 2.5, 3.0))
+        with (
+            patch("requests.post", return_value=busy) as post,
+            patch.object(claude_service, "monotonic", side_effect=lambda: next(times)),
+            patch.object(claude_service, "sleep") as pause,
+        ):
+            with self.assertRaises(requests.Timeout):
+                provider._post_with_retry({}, True, 3, 3.0)
+        post.assert_called_once()
+        pause.assert_called_once_with(0.5)
+        busy.close.assert_called_once()
 
     def test_missing_keys_do_not_make_network_calls(self):
         for provider, error_type in self.providers:
@@ -202,23 +236,23 @@ class ExternalPipelineTests(unittest.TestCase):
         # '{"intent":"conversation"}' : hors diagnostic, une réponse est obligatoire.
         for response in ('{}', '{"intent":"unknown"}', '{"intent":"conversation"}', "not JSON", None):
             with self.subTest(response=response):
-                with patch.object(llm_service, "generate_chat_reply", return_value=response):
-                    with self.assertRaises(llm_service.LLMUnavailableError):
+                with patch.object(claude_service, "generate_chat_reply", return_value=response):
+                    with self.assertRaises(claude_service.LLMUnavailableError):
                         understanding.understand_message("message")
 
     def test_case_summary_does_not_hide_llm_failures(self):
-        failure = llm_service.LLMUnavailableError("unavailable")
+        failure = claude_service.LLMUnavailableError("unavailable")
         with (
             patch.object(orchestrator, "_format_case", return_value="case text"),
-            patch.object(llm_service, "generate_chat_reply", side_effect=failure) as generate,
+            patch.object(claude_service, "generate_chat_reply", side_effect=failure) as generate,
         ):
-            with self.assertRaises(llm_service.LLMUnavailableError):
+            with self.assertRaises(claude_service.LLMUnavailableError):
                 orchestrator._summarize_cases("query", [{}])
         generate.assert_called_once()
 
     def test_conversation_failure_is_not_hidden(self):
-        with patch.object(llm_service, "generate_chat_reply", side_effect=llm_service.LLMUnavailableError("down")):
-            with self.assertRaises(llm_service.LLMUnavailableError):
+        with patch.object(claude_service, "generate_chat_reply", side_effect=claude_service.LLMUnavailableError("down")):
+            with self.assertRaises(claude_service.LLMUnavailableError):
                 understanding.understand_message("détaille le cas 2", history=[{"role": "user", "content": "x"}])
 
     def test_catalog_match_does_not_retry_with_python(self):

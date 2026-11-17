@@ -1,7 +1,7 @@
 /**
  * Page Administration : réunit l'administration de l'Espace techniciens
  * (comptes) et celle de l’ATM-Chatbot (propositions, ajouts d'intervention,
- * codes d'erreur, pannes fréquentes).
+ * codes d'erreur, problèmes usuels).
  *
  * Ce fichier ne fait que l'aiguillage :
  *   - vérifie que l'utilisateur est administrateur (sinon retour à l'accueil) ;
@@ -15,8 +15,10 @@
 
 import { currentUserPromise } from "/shared/js/connectedPageShell.js";
 import { createAccountsSection } from "./accountsSection.js";
+import { connectActionCatalogSection } from "./actionCatalogSection.js";
 import { createInterventionAddsSection } from "./interventionAddsSection.js";
 import { createErrorCodesSection, createUsualProblemsSection } from "./savedRepliesSection.js";
+import { connectDeviceModelsSection } from "./deviceModelsSection.js";
 import { createSolutionProposalsSection } from "./solutionProposalsSection.js";
 
 const DEFAULT_SECTION_NAME = "propositions";
@@ -36,16 +38,26 @@ if (currentUser && currentUser.role !== "admin") {
   document.querySelector("[data-administration-workspace]").hidden = false;
   const reviewerName = currentUser?.fullName || currentUser?.username || "Administrateur";
 
+  const interventions = createInterventionAddsSection({
+    reviewerName,
+    showPendingCount: (count) => showSectionCounter("interventions", count, { hideWhenZero: true }),
+  });
+  const actions = connectActionCatalogSection(
+    document.querySelector('[data-section="actions"]'),
+    (catalogActions) => interventions.setCatalogActions(catalogActions),
+  );
+  const deviceModels = connectDeviceModelsSection(
+    document.querySelector('[data-section="modeles-equipement"]'),
+  );
   const sections = {
     comptes: createAccountsSection({ currentUser, showAccountCount: (count) => showSectionCounter("comptes", count) }),
     propositions: createSolutionProposalsSection({
       reviewerName,
       showPendingCount: (count) => showSectionCounter("propositions", count, { hideWhenZero: true }),
     }),
-    interventions: createInterventionAddsSection({
-      reviewerName,
-      showPendingCount: (count) => showSectionCounter("interventions", count, { hideWhenZero: true }),
-    }),
+    interventions,
+    actions,
+    "modeles-equipement": deviceModels,
     "codes-erreur": createErrorCodesSection({ showRecordCount: (count) => showSectionCounter("codes-erreur", count) }),
     "pannes-frequentes": createUsualProblemsSection({ showRecordCount: (count) => showSectionCounter("pannes-frequentes", count) }),
   };

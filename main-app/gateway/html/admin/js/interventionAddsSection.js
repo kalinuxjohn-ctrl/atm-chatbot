@@ -12,7 +12,7 @@
 
 import { createElementWithText } from "/shared/js/domHelpers.js";
 import { createIcon } from "/shared/js/icons.js";
-import { interventionAddApi } from "./atmChatbotAdminApi.js";
+import { actionCatalogApi, interventionAddApi } from "./atmChatbotAdminApi.js";
 import { connectAdminInterventionForm } from "./adminInterventionForm.js";
 import {
   STATUS_LABELS,
@@ -271,11 +271,28 @@ export function createInterventionAddsSection({ reviewerName, showPendingCount }
     loadInterventionAdds();
   });
 
-  connectAdminInterventionForm(sectionElement, async () => {
+  const interventionForm = connectAdminInterventionForm(sectionElement, async () => {
     const approvedTab = sectionElement.querySelector('[data-status="approved"]');
     approvedTab.click();
     await refreshPendingCount();
   });
 
-  return { load: loadInterventionAdds, refreshPendingCount };
+  return {
+    async load() {
+      let catalogError = null;
+      try {
+        interventionForm.setCatalogActions(await actionCatalogApi.list());
+      } catch (error) {
+        catalogError = error;
+      }
+      await loadInterventionAdds();
+      if (catalogError) {
+        showSectionStatus(statusLine, `Le catalogue d'actions n'a pas pu être chargé : ${catalogError.message}`, { isError: true });
+      }
+    },
+    setCatalogActions(actions) {
+      interventionForm.setCatalogActions(actions);
+    },
+    refreshPendingCount,
+  };
 }

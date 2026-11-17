@@ -3,8 +3,8 @@
  * Les deux menus ont le même comportement : leurs entrées ET leurs réponses
  * viennent du backend, qui les lit en base SANS IA (ni LLM, ni embedding).
  *
- *   [ Pannes fréquentes      ▾ ]  GET /api/usual_problem?device_type=...
- *   [ Codes d'erreur connus  ▾ ]  GET /api/error_code?device_type=...
+ *   [ Problèmes usuels       ▾ ]  GET /api/usual_problem?device_type=...
+ *   [ Codes d'erreur        ▾ ]  GET /api/error_code?device_type=...
  *
  * Sur téléphone, les codes ouvrent un dialogue modal central. Les autres
  * menus ouvrent un panneau au-dessus de la saisie. Flèches pour se
@@ -21,7 +21,7 @@ import { createIcon } from "./icons.js";
 const FILTER_THRESHOLD = 6;
 
 /**
- * Crée les deux menus : pannes fréquentes, puis codes d'erreur connus.
+ * Crée les deux menus : problèmes usuels, puis codes d'erreur.
  * Un menu n'apparaît que s'il a au moins une entrée pour cet équipement.
  * @param {{
  *   usualProblems?: import("../services/api/usualProblemApi.js").UsualProblem[],
@@ -42,8 +42,9 @@ export function createSuggestionMenus({
   if (usualProblems.length > 0) {
     container.append(
       createMenu({
-        title: "Pannes fréquentes",
-        ariaLabel: "Choisir une panne fréquente",
+        title: "Problèmes usuels",
+        shortTitle: "Problèmes usuels",
+        ariaLabel: "Choisir un problème usuel",
         icon: "wrench",
         options: usualProblems.map(({ label }) => ({ label })),
         onChoose: (index) => onPickUsualProblem(usualProblems[index]),
@@ -54,8 +55,9 @@ export function createSuggestionMenus({
   if (errorCodes.length > 0) {
     container.append(
       createMenu({
-        title: "Codes d’erreur connus",
-        ariaLabel: "Choisir un code d'erreur connu",
+        title: "Codes d’erreur",
+        shortTitle: "Codes d’erreur",
+        ariaLabel: "Choisir un code d’erreur",
         icon: "alert",
         options: errorCodes.map(({ code, label }) => ({ badge: code, label: label || code })),
         onChoose: (index) => onPickErrorCode(errorCodes[index]),
@@ -68,10 +70,10 @@ export function createSuggestionMenus({
 
 /**
  * Un menu : pastille déclencheur + panneau de choix.
- * @param {{ title: string, ariaLabel: string, icon: string,
+ * @param {{ title: string, shortTitle: string, ariaLabel: string, icon: string,
  *   options: { label: string, badge?: string }[], onChoose: (index: number) => void, className?: string }} config
  */
-function createMenu({ title, ariaLabel, icon, options, onChoose, className = "" }) {
+function createMenu({ title, shortTitle, ariaLabel, icon, options, onChoose, className = "" }) {
   const menuId = `suggestion-menu-${Math.random().toString(36).slice(2, 8)}`;
   const root = createElement("div", `suggestion-dropdown ${className}`.trim());
   const mobileDialog = className === "error-code-menu" ? createElement("dialog", "error-code-dialog") : null;
@@ -84,6 +86,7 @@ function createMenu({ title, ariaLabel, icon, options, onChoose, className = "" 
   trigger.setAttribute("aria-expanded", "false");
   trigger.setAttribute("aria-controls", menuId);
   trigger.setAttribute("aria-label", ariaLabel);
+  trigger.title = title;
   if (mobileDialog && window.matchMedia("(max-width: 760px)").matches) {
     trigger.setAttribute("aria-haspopup", "dialog");
     trigger.setAttribute("aria-controls", mobileDialog.id);
@@ -92,7 +95,7 @@ function createMenu({ title, ariaLabel, icon, options, onChoose, className = "" 
   triggerIcon.append(createIcon(icon));
   trigger.append(
     triggerIcon,
-    createElement("span", "suggestion-trigger-label", title),
+    createElement("span", "suggestion-trigger-label", shortTitle),
     createIcon("chevron-down", "icon suggestion-trigger-chevron"),
   );
 

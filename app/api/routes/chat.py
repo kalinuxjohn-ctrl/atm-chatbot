@@ -37,7 +37,7 @@ from app.core.errors import (
 from app.core.gateway_identity import effective_technician_id
 from app.schemas.chat_schema import SymptomSearchRequest, SymptomSearchResponse
 from app.services.retrieval_service import find_ranked_solutions
-from app.services.llm_service import summarize_solutions
+from app.services.claude_service import summarize_solutions
 from app.services.text_validation_service import REFORMULATION_REPLY, validate_and_clean_message
 from app.schemas.solution_proposal_schema import (
     ProposalContextResponse,

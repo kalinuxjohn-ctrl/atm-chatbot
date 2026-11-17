@@ -1,0 +1,7 @@
+{
+  "source_key": "problem-reference-gab-short-cash",
+  "device_type": "gab",
+  "label": "Le montant distribué ne correspond pas à la demande",
+  "reply": "Consigne l'heure, le montant demandé et le montant signalé par le système, sans noter de données personnelles du client. Vérifie les journaux de transaction et de distribution via l'outil autorisé. Ne manipule pas les cassettes hors procédure ; transmets les éléments au support et à l'équipe de rapprochement.",
+  "display_order": 105
+}

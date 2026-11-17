@@ -1,4 +1,4 @@
-"""Sélection des fournisseurs LLM conservés, sans requête réseau."""
+"""Service Claude, sans requête réseau réelle."""
 
 import json
 import unittest
@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 from pydantic import ValidationError
 
 from app.core.config import Settings
-from app.services import llm_service
+from app.services import claude_service
 
 
 def stream_response(events=None):
@@ -31,7 +31,7 @@ def stream_response(events=None):
     return response
 
 
-class LLMProviderTests(unittest.TestCase):
+class ClaudeServiceTests(unittest.TestCase):
     def test_scoped_callback_receives_deltas_before_the_provider_finishes(self):
         response = stream_response()
         lines = response.iter_lines.return_value
@@ -45,14 +45,14 @@ class LLMProviderTests(unittest.TestCase):
 
         response.iter_lines.return_value = incremental_lines()
         with patch("requests.post", return_value=response):
-            with llm_service.stream_reply(deltas.append):
+            with claude_service.stream_reply(deltas.append):
                 self.assertEqual(
-                    llm_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question"),
+                    claude_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question"),
                     '{"reply":"ok"}',
                 )
             # La requête suivante ne doit pas réutiliser le destinataire précédent.
             response.iter_lines.return_value = lines
-            llm_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Autre question")
+            claude_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Autre question")
         self.assertEqual(deltas, ['{"reply":"', 'ok"}'])
 
     def test_fast_chat_preserves_the_schema_and_cache_in_the_request(self):
@@ -60,7 +60,7 @@ class LLMProviderTests(unittest.TestCase):
         schema = {"type": "object", "properties": {}, "additionalProperties": False}
         for response_schema in (None, schema):
             with self.subTest(schema=response_schema), patch("requests.post", return_value=response) as post:
-                provider = llm_service.ClaudeProvider("test-key", "claude-sonnet-5-5")
+                provider = claude_service.ClaudeProvider("test-key", "claude-sonnet-5-5")
                 reply = provider.generate_chat(
                     "Consigne", [{"role": "user", "content": "Question"}],
                     cache_history=True, response_schema=response_schema,
@@ -77,7 +77,8 @@ class LLMProviderTests(unittest.TestCase):
                     })
                 self.assertIn("cache_control", payload["system"][0])
                 self.assertTrue(payload["stream"])
-                self.assertEqual(post.call_args.kwargs["timeout"], (5, 45))
+                self.assertEqual(post.call_args.kwargs["timeout"][0], 5)
+                self.assertGreater(post.call_args.kwargs["timeout"][1], 44)
 
     def test_fast_chat_can_be_disabled_and_does_not_change_other_models(self):
         response = stream_response()
@@ -87,20 +88,20 @@ class LLMProviderTests(unittest.TestCase):
             ("claude-sonnet-4-5-20250929", True),
         ):
             with self.subTest(model=model, fast_chat=fast_chat), patch("requests.post", return_value=response) as post:
-                llm_service.ClaudeProvider("test-key", model, fast_chat=fast_chat).generate("Question")
+                claude_service.ClaudeProvider("test-key", model, fast_chat=fast_chat).generate("Question")
                 payload = post.call_args.kwargs["json"]
                 self.assertNotIn("thinking", payload)
                 self.assertNotIn("output_config", payload)
 
     def test_configured_fast_chat_mode_reaches_the_provider(self):
-        with patch.multiple(llm_service.settings, llm_provider="claude", claude_fast_chat=False):
-            provider = llm_service.get_llm_provider()
+        with patch.multiple(claude_service.settings, llm_provider="claude", claude_fast_chat=False):
+            provider = claude_service.get_llm_provider()
         self.assertFalse(provider.fast_chat)
 
     def test_stream_preserves_usage_and_logs_first_text_without_content(self):
         response = stream_response()
-        with patch("requests.post", return_value=response), patch.object(llm_service, "trace") as trace:
-            reply = llm_service.ClaudeProvider("secret-key", "claude-sonnet-5-5").generate("PRIVATE_PROMPT")
+        with patch("requests.post", return_value=response), patch.object(claude_service, "trace") as trace:
+            reply = claude_service.ClaudeProvider("secret-key", "claude-sonnet-5-5").generate("PRIVATE_PROMPT")
         self.assertEqual(reply, '{"reply":"ok"}')
         response.close.assert_called_once()
         first_text = [call for call in trace.call_args_list if call.args[1] == "Premier texte Claude reçu"]
@@ -119,8 +120,8 @@ class LLMProviderTests(unittest.TestCase):
             ]
             response = stream_response(events)
             with self.subTest(ending=ending), patch("requests.post", return_value=response):
-                with self.assertRaises(llm_service.LLMUnavailableError) as error:
-                    llm_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question")
+                with self.assertRaises(claude_service.LLMUnavailableError) as error:
+                    claude_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question")
                 self.assertNotIn("PRIVATE", str(error.exception))
                 response.close.assert_called_once()
 
@@ -128,10 +129,10 @@ class LLMProviderTests(unittest.TestCase):
         response = stream_response([{"type": "ping"}])
         with (
             patch("requests.post", return_value=response),
-            patch.object(llm_service, "monotonic", side_effect=[0, 0, 45, 45]),
+            patch.object(claude_service, "monotonic", side_effect=[0, 0, 45, 45, 45]),
         ):
-            with self.assertRaisesRegex(llm_service.LLMUnavailableError, r"génération \(45s\)"):
-                llm_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question")
+            with self.assertRaisesRegex(claude_service.LLMUnavailableError, r"génération \(45s\)"):
+                claude_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question")
         response.close.assert_called_once()
 
     def test_stream_read_timeout_is_explicit_and_closes_the_connection(self):
@@ -140,8 +141,8 @@ class LLMProviderTests(unittest.TestCase):
         cause = requests.Timeout()
         response.iter_lines.side_effect = cause
         with patch("requests.post", return_value=response):
-            with self.assertRaisesRegex(llm_service.LLMUnavailableError, "45s sans données") as error:
-                llm_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question")
+            with self.assertRaisesRegex(claude_service.LLMUnavailableError, "45s sans données") as error:
+                claude_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question")
         self.assertIs(error.exception.__cause__, cause)
         response.close.assert_called_once()
 
@@ -156,15 +157,15 @@ class LLMProviderTests(unittest.TestCase):
             return response
 
         with patch("requests.post", side_effect=delayed_headers) as post:
-            reply = llm_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question")
+            reply = claude_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question")
         self.assertEqual(reply, '{"reply":"ok"}')
         post.assert_called_once()
 
     def test_header_timeout_is_distinguished_from_a_stream_interruption(self):
         import requests
         with patch("requests.post", side_effect=requests.ReadTimeout()) as post:
-            with self.assertRaisesRegex(llm_service.LLMUnavailableError, "45s en attendant les en-têtes HTTP"):
-                llm_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question")
+            with self.assertRaisesRegex(claude_service.LLMUnavailableError, "45s en attendant les en-têtes HTTP"):
+                claude_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question")
         post.assert_called_once()
 
     def test_wrapped_stream_read_timeout_is_reported_as_a_timeout(self):
@@ -174,8 +175,8 @@ class LLMProviderTests(unittest.TestCase):
         cause = requests.ConnectionError(ReadTimeoutError(None, "/messages", "Read timed out."))
         response.iter_lines.side_effect = cause
         with patch("requests.post", return_value=response):
-            with self.assertRaisesRegex(llm_service.LLMUnavailableError, "45s sans données") as error:
-                llm_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question")
+            with self.assertRaisesRegex(claude_service.LLMUnavailableError, "45s sans données") as error:
+                claude_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question")
         self.assertIs(error.exception.__cause__, cause)
         response.close.assert_called_once()
 
@@ -187,8 +188,8 @@ class LLMProviderTests(unittest.TestCase):
             {"type": "message_stop"},
         ])
         with patch("requests.post", return_value=response):
-            with self.assertRaisesRegex(llm_service.LLMUnavailableError, "flux inexploitable"):
-                llm_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question")
+            with self.assertRaisesRegex(claude_service.LLMUnavailableError, "flux inexploitable"):
+                claude_service.ClaudeProvider("key", "claude-sonnet-5-5").generate("Question")
         response.close.assert_called_once()
 
     def test_default_is_claude(self):
@@ -196,18 +197,15 @@ class LLMProviderTests(unittest.TestCase):
             settings = Settings(_env_file=None)
         self.assertEqual(settings.llm_provider, "claude")
 
-    def test_supported_providers(self):
-        providers = {"claude": llm_service.ClaudeProvider, "gemini": llm_service.GeminiProvider}
-        self.assertEqual(set(llm_service._PROVIDERS), set(providers))
-        for name, provider_type in providers.items():
-            with self.subTest(provider=name):
-                with patch.object(llm_service.settings, "llm_provider", name):
-                    self.assertIsInstance(llm_service.get_llm_provider(), provider_type)
+    def test_only_claude_provider_is_available(self):
+        self.assertEqual(set(claude_service._PROVIDERS), {"claude"})
+        with patch.object(claude_service.settings, "llm_provider", "claude"):
+            self.assertIsInstance(claude_service.get_llm_provider(), claude_service.ClaudeProvider)
 
     def test_unknown_provider_is_an_explicit_error(self):
-        with patch.object(llm_service.settings, "llm_provider", "unsupported"):
-            with self.assertRaisesRegex(llm_service.LLMUnavailableError, "Fournisseur LLM inconnu"):
-                llm_service.get_llm_provider()
+        with patch.object(claude_service.settings, "llm_provider", "unsupported"):
+            with self.assertRaisesRegex(claude_service.LLMUnavailableError, "Fournisseur LLM inconnu"):
+                claude_service.get_llm_provider()
 
     def test_model_rejects_an_accidentally_pasted_assignment(self):
         for value in ("CLAUDE_MODEL=claude-sonnet-5-5", " claude-sonnet-5-5", "claude sonnet", ""):

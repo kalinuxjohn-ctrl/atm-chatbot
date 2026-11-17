@@ -26,7 +26,7 @@ class ConversationMemoryTests(unittest.TestCase):
         self.query_patch = patch.object(memory.conversation_service, "get_messages_after", return_value=self.rows)
         self.query = self.query_patch.start()
         self.addCleanup(self.query_patch.stop)
-        self.llm_patch = patch.object(memory.llm_service, "generate_chat_reply", return_value="Faits conservés.")
+        self.llm_patch = patch.object(memory.claude_service, "generate_chat_reply", return_value="Faits conservés.")
         self.llm = self.llm_patch.start()
         self.addCleanup(self.llm_patch.stop)
 
@@ -104,21 +104,21 @@ class ConversationMemoryTests(unittest.TestCase):
             with self.subTest(summary_length=len(summary)):
                 self.llm.return_value = summary
                 with patch.object(memory, "COMPACTION_CHAR_THRESHOLD", 1):
-                    with self.assertRaises(memory.llm_service.LLMUnavailableError):
+                    with self.assertRaises(memory.claude_service.LLMUnavailableError):
                         self.prepare()
                 self.assertNotIn("conversation_memory", self.context)
 
     def test_provider_failure_does_not_advance_the_memory(self):
-        self.llm.side_effect = memory.llm_service.LLMUnavailableError("Service indisponible")
+        self.llm.side_effect = memory.claude_service.LLMUnavailableError("Service indisponible")
         with patch.object(memory, "COMPACTION_CHAR_THRESHOLD", 1):
-            with self.assertRaises(memory.llm_service.LLMUnavailableError):
+            with self.assertRaises(memory.claude_service.LLMUnavailableError):
                 self.prepare()
         self.assertNotIn("conversation_memory", self.context)
 
     def test_invalid_memory_never_silently_discards_history(self):
         for value in ({"summary": "x", "through_message_id": "8"}, {}, {"summary": "", "through_message_id": 8}):
             self.context["conversation_memory"] = value
-            with self.assertRaises(memory.llm_service.LLMUnavailableError):
+            with self.assertRaises(memory.claude_service.LLMUnavailableError):
                 self.prepare()
         self.query.assert_not_called()
 

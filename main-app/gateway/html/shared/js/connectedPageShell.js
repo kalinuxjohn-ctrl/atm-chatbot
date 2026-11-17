@@ -26,7 +26,7 @@ import { startMessageNotifications } from "./messageNotifications.js";
 
 const NAVIGATION_LINKS = [
   { label: "Accueil", path: "/", iconName: "home" },
-  { label: "ATM-Chatbot", path: "/atm-chatbot/", iconName: "bot", submenu: true },
+  { label: "ATM-Chatbot", path: "/atm-chatbot/", iconName: "sparkles", submenu: true },
   { label: "Carte", path: "/map/", iconName: "map" },
   { label: "Messagerie", path: "/messaging/", iconName: "message" },
   { label: "Appels", path: "/calls/", iconName: "phone" },
@@ -37,8 +37,10 @@ const ADMINISTRATION_SECTIONS = [
   { name: "comptes", label: "Comptes", iconName: "users" },
   { name: "propositions", label: "Propositions", iconName: "lightbulb", pending: true },
   { name: "interventions", label: "Ajouts d’intervention", iconName: "clipboardList", pending: true },
+  { name: "actions", label: "Catalogue d’actions", iconName: "wrench" },
+  { name: "modeles-equipement", label: "Modèles d’équipement", iconName: "wrench" },
   { name: "codes-erreur", label: "Codes d’erreur", iconName: "errorCode" },
-  { name: "pannes-frequentes", label: "Pannes fréquentes", iconName: "listOrdered" },
+  { name: "pannes-frequentes", label: "Problèmes usuels", iconName: "listOrdered" },
 ];
 const THEME_STORAGE_KEY = "main-app-theme"; // même clé que applySavedTheme.js
 const SIDEBAR_STORAGE_KEY = "main-app-sidebar";
@@ -138,7 +140,7 @@ function createChatbotMenu() {
   const summary = createElementWithText("summary", "app-navigation-link");
   summary.title = "ATM-Chatbot";
   summary.setAttribute("aria-label", "ATM-Chatbot");
-  summary.append(createIcon("bot"), createElementWithText("span", "app-navigation-link-label", "ATM-Chatbot"),
+  summary.append(createIcon("sparkles"), createElementWithText("span", "app-navigation-link-label", "ATM-Chatbot"),
     createIcon("chevronRight", "icon app-chatbot-chevron"));
   const subnavigation = createElementWithText("div", "app-chatbot-subnavigation");
   for (const item of [
@@ -246,16 +248,18 @@ function renderPageShell(headerElement, currentUser, { isLoadingUser = false } =
   document.body.classList.add("has-app-sidebar");
 
   const brandLink = createElementWithText("a", "app-sidebar-brand");
+  const displayName = currentUser?.fullName || currentUser?.username;
   brandLink.href = "/";
   brandLink.setAttribute("aria-label", currentUser
-    ? `Accueil de l’application — ${currentUser.username}`
+    ? `Accueil de l’application — ${displayName}`
     : "Accueil de l’application");
+  if (currentUser) brandLink.title = displayName;
   const brandLogo = currentUser
-    ? createAvatar(currentUser.username)
+    ? createAvatar(displayName)
     : createElementWithText("span", "app-sidebar-brand-logo");
   if (!currentUser) brandLogo.append(createIcon("wrench"));
   const brandText = createElementWithText("span", "app-sidebar-brand-text");
-  brandText.append(createElementWithText("strong", "", currentUser ? `Bonjour, ${currentUser.username}` : "Bienvenue"));
+  brandText.append(createElementWithText("strong", "", currentUser ? displayName : "Bienvenue"));
   if (currentUser) {
     brandText.append(createElementWithText("span", "app-sidebar-brand-role", describeRole(currentUser.role)));
   }

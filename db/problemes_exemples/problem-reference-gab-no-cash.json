@@ -1,0 +1,7 @@
+{
+  "source_key": "problem-reference-gab-no-cash",
+  "device_type": "gab",
+  "label": "Le GAB ne distribue pas les billets",
+  "reply": "Relève le message, l'heure de la transaction et l'état indiqué pour le module de distribution. Vérifie les informations accessibles dans l'interface de service. N'ouvre pas le coffre et ne force pas de verrou ; toute intervention interne doit suivre la procédure autorisée pour le modèle. Si le défaut persiste, contacte le support.",
+  "display_order": 104
+}

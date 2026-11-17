@@ -96,3 +96,13 @@ export const interventionAddApi = {
   review: (interventionAddId, decision, decisionBody) =>
     requestAtmChatbotAdmin(`/intervention_add/${encodeURIComponent(interventionAddId)}/${decision}`, { method: "POST", body: decisionBody }),
 };
+
+export const actionCatalogApi = {
+  list: () => requestAtmChatbotAdmin("/action_catalog"),
+  create: (action) => requestAtmChatbotAdmin("/action_catalog", { method: "POST", body: action }),
+};
+
+export const deviceModelCatalogApi = {
+  list: () => requestAtmChatbotAdmin("/device_models"),
+  create: (model) => requestAtmChatbotAdmin("/device_models", { method: "POST", body: model }),
+};

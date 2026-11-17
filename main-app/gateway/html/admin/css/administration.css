@@ -8,7 +8,7 @@
  *   3. Cartes de demande à valider (propositions, ajouts d'intervention)
  *   4. Formulaire de décision et bandeau de résultat
  *   5. Comptes (tableau)
- *   6. Réponses enregistrées (codes d'erreur, pannes fréquentes)
+ *   6. Réponses enregistrées (codes d'erreur, problèmes usuels)
  *   7. Mobile
  */
 
@@ -116,6 +116,173 @@
 
 .admin-intervention-row {
   background: var(--color-surface-muted);
+}
+
+.action-catalog-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.action-catalog-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 220px) auto;
+  align-items: end;
+  gap: 14px;
+}
+
+.action-catalog-form .button {
+  width: auto;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 16px;
+}
+
+.action-catalog-list {
+  display: grid;
+  gap: 8px;
+  max-height: 400px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.action-catalog-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.action-catalog-group {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-small);
+}
+
+.action-catalog-group h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.action-catalog-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+}
+
+.action-catalog-item-details {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.action-catalog-shared-label {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.action-catalog-empty {
+  padding: 10px 4px;
+}
+
+.device-model-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.device-model-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.device-model-error,
+.device-model-actions {
+  grid-column: 1 / -1;
+}
+
+.device-model-actions {
+  justify-content: flex-end;
+  margin: 0;
+}
+
+.device-model-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-height: 480px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.device-model-item {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 14px;
+}
+
+.device-model-item-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.device-model-item-heading h3,
+.device-model-item p {
+  margin: 0;
+}
+
+.device-model-type {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.device-model-manufacturer {
+  font-weight: 600;
+}
+
+.device-model-versions {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.device-model-versions p {
+  margin-top: 3px;
+}
+
+.device-model-empty {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .action-catalog-form,
+  .device-model-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .action-catalog-form .button {
+    justify-self: start;
+  }
+
+  .action-catalog-groups {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .device-model-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .admin-intervention-row > button,

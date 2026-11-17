@@ -3,7 +3,7 @@
  * - Propositions     : examen des solutions proposées par les techniciens
  *                      (/api/admin/solution-proposals, services/api/adminProposalApi.js) ;
  * - Codes d'erreur   : ajout / modification / suppression (/api/admin/error_code) ;
- * - Pannes fréquentes : idem (/api/admin/usual_problem).
+ * - Problèmes usuels : idem (/api/admin/usual_problem).
  * Les deux dernières alimentent les menus de suggestions de l’ATM-Chatbot
  * (services/api/adminCatalogApi.js, components/adminRecordEditor.js).
  *
@@ -270,7 +270,7 @@ function renderReviewForm(proposal, card) {
   return form;
 }
 
-/* ---------- Codes d'erreur et pannes fréquentes ---------- */
+/* ---------- Codes d'erreur et problèmes usuels ---------- */
 
 const DEVICE_LABELS = { gab: "GAB", tpe: "TPE" };
 const getAdminKey = () => adminKeyInput.value.trim();
@@ -312,7 +312,7 @@ const usualProblemEditor = createRecordEditor({
   resource: adminUsualProblems,
   getAdminKey,
   describeError,
-  nouns: { one: "panne fréquente", many: "pannes fréquentes", none: "Aucune panne fréquente." },
+  nouns: { one: "problème usuel", many: "problèmes usuels", none: "Aucun problème usuel." },
   fields: [
     { name: "device_type", label: "Équipement", type: "select", required: true, options: [["gab", "GAB"], ["tpe", "TPE"]] },
     { name: "label", label: "Libellé du menu", type: "text", required: true, maxLength: 300, hint: "Ex. « Le GAB a avalé la carte du client »." },

@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 from app.api.routes import chat as routes
 from app.schemas.conversation_schema import ChatRequest
-from app.services import llm_service
+from app.services import claude_service
 
 
 class ChatStreamingTests(unittest.TestCase):
@@ -51,7 +51,7 @@ class ChatStreamingTests(unittest.TestCase):
     def test_failure_after_a_delta_has_no_done_or_private_detail(self):
         def handle(**kwargs):
             kwargs["on_reply_delta"]("Texte provisoire")
-            raise llm_service.LLMUnavailableError("PRIVATE_PROVIDER_DETAILS")
+            raise claude_service.LLMUnavailableError("PRIVATE_PROVIDER_DETAILS")
 
         async def consume(response):
             return [json.loads(line) async for line in response.body_iterator]

@@ -4,19 +4,22 @@ Coordination du endpoint POST /api/chat.
 ORCHESTRE seulement : text_validation_service (nettoyage et validation
 locale, AVANT tout appel au LLM : le bruit ne coûte aucun jeton),
 greeting_service (réponses locales aux salutations et présentations exactes),
-message_understanding_service (un appel LLM : comprendre ET répondre hors
-diagnostic), technical_reference_resolver_service (résoudre le texte en IDs
-réels), context_service (mémoire de la conversation), case_retrieval_service/
-retrieval_service (recherche en base), llm_service (synthèse d'un diagnostic).
+message_understanding_service (un appel LLM : comprendre, répondre dans le
+domaine ou classer une demande hors périmètre),
+technical_reference_resolver_service (résoudre le texte en IDs réels),
+context_service (mémoire de la conversation), case_retrieval_service/
+retrieval_service (recherche en base), claude_service (synthèse d'un diagnostic).
 
-Partage des rôles : hors formules locales exactes, le LLM gère le langage (comprendre, détailler
-un résultat, répondre aux questions), avec toute la conversation sous les yeux ;
-la base gère les données (historique des interventions, statistiques).
+Partage des rôles : hors formules locales exactes, le LLM gère le langage
+(comprendre, détailler un résultat, répondre dans le domaine et classifier les
+demandes hors sujet) ; le backend choisit le texte de refus. La base gère les
+données (historique des interventions, statistiques).
 Seul un diagnostic déclenche une recherche en base.
 """
 
 from __future__ import annotations
 
+import random
 from typing import Callable
 from sqlalchemy.orm import Session
 
@@ -34,7 +37,7 @@ from app.services import (
     conversation_service,
     error_code_service,
     greeting_service,
-    llm_service,
+    claude_service,
     message_understanding_service,
     photo_ocr_service,
     retrieval_service,
@@ -54,6 +57,14 @@ _OUTCOME_LABELS = {
 _DEVICE_TYPE_REQUIRED_REPLY = (
     "Je n'ai pas pu déterminer le type d'appareil concerné. Sélectionne GAB ou TPE "
     "(ou précise-le dans ton message), puis renvoie la description du problème."
+)
+
+_OFF_TOPIC_REPLIES = (
+    "Je suis là pour aider sur la maintenance des GAB et des TPE. Je ne peux pas traiter ce sujet ; décris-moi plutôt un problème sur l'un de ces équipements.",
+    "Ce sujet sort de mon périmètre : je peux t'accompagner sur les GAB et les TPE, pas sur cette demande. Quel souci rencontres-tu sur l'équipement ?",
+    "Je ne peux pas répondre à cette demande hors maintenance GAB/TPE. Si tu as un symptôme, un code erreur ou une question sur une intervention, envoie-le-moi.",
+    "Mon aide est réservée à la maintenance des distributeurs de billets et des terminaux de paiement. Pour un autre sujet, je ne peux pas te guider.",
+    "Je peux t'aider à diagnostiquer un GAB ou un TPE, mais pas sur ce sujet. On revient à un équipement ?",
 )
 
 
@@ -141,8 +152,8 @@ def handle_chat_message(
             conversation_id=conversation.conversation_id,
             intent=understood.intent,
         )
-        with llm_service.stream_reply(emit_delta if on_reply_delta is not None else None):
-            reply = _route_message(db, context, technician_text, understood)
+        with claude_service.stream_reply(emit_delta if on_reply_delta is not None else None):
+            reply = _route_message(db, context, technician_text, understood, history=history)
         if isinstance(understood.error_code_text, str) and understood.error_code_text.strip():
             detected_error_code = understood.error_code_text.strip()
             detected_error_code_id = context.get("error_code_id")
@@ -234,7 +245,26 @@ def handle_error_code_selection(
     }
 
 
-def _route_message(db: Session, context: dict, message: str, understood: UnderstoodMessage) -> str:
+def _route_message(
+    db: Session,
+    context: dict,
+    message: str,
+    understood: UnderstoodMessage,
+    history: list[dict] | None = None,
+) -> str:
+    if understood.intent == "off_topic":
+        previous_reply = next(
+            (
+                item.get("content")
+                for item in reversed(history or [])
+                if item.get("role") == "assistant" and item.get("content") in _OFF_TOPIC_REPLIES
+            ),
+            None,
+        )
+        choices = [reply for reply in _OFF_TOPIC_REPLIES if reply != previous_reply]
+        trace("ROUTING", "Refus hors périmètre sélectionné par le backend")
+        return random.choice(choices)
+
     if isinstance(understood.error_code_text, str) and understood.error_code_text.strip():
         code = understood.error_code_text.strip()
         device_type = context.get("device_type")
@@ -261,10 +291,9 @@ def _route_message(db: Session, context: dict, message: str, understood: Underst
     if understood.intent == "diagnostic":
         return _handle_symptom_search(db, context, understood, message)
 
-    # Tout le reste : le LLM a déjà rédigé sa réponse, avec la conversation et
-    # les résultats de la dernière recherche sous les yeux. Le backend retient
-    # seulement le résultat dont il parle (sert de référence à une proposition
-    # de solution), après avoir vérifié qu'il existe vraiment.
+    # Pour une conversation dans le domaine, le LLM a déjà rédigé sa réponse
+    # avec l'historique sous les yeux. Le backend retient seulement le résultat
+    # dont il parle, après avoir vérifié qu'il existe vraiment.
     if understood.result_position is not None:
         selected = context_service.select_result_by_position(context, understood.result_position)
         trace("CONTEXT", "Résultat de la dernière recherche désigné", found=selected is not None)
@@ -436,7 +465,7 @@ def _handle_symptom_search(
         context_service.record_last_search(context, query=search_text, results=results, symptoms=query_symptoms)
         context["intent"] = "diagnostic"
         trace("CONTEXT", "Solutions agrégées mémorisées pour le suivi", result_count=len(results))
-        return llm_service.summarize_solutions(search_text, solutions, device_type=device_type)
+        return claude_service.summarize_solutions(search_text, solutions, device_type=device_type)
 
     context_service.record_last_search(context, query=search_text, results=[], symptoms=query_symptoms)
     trace("RESPONSE", "Aucun cas ni solution, suggestions du chatbot demandées", has_model_filter=bool(model_name))
@@ -496,16 +525,14 @@ def _summarize_cases(
     # le prompt reste identique à avant.
     multi_symptom_instruction = (
         f"{_format_query_symptoms(symptoms)}\n"
-        "Chaque symptôme a été cherché séparément : un cas peut en recouper un seul ou plusieurs. "
-        "Pour chaque cas présenté, indique quels symptômes il recoupe (par leur numéro) ; "
-        "un cas qui en recoupe plusieurs est en général plus proche du problème. "
-        "Si un symptôme n'est recoupé par aucun cas pertinent, dis-le.\n"
+        "Chaque symptôme a été cherché séparément. Pour les cas retenus, indique brièvement les symptômes "
+        "qu'ils recoupent par leur numéro ; signale en une phrase tout symptôme important non couvert.\n"
         if symptoms and len(symptoms) > 1
         else ""
     )
 
     turn_context = (
-        f"{llm_service.device_type_instruction(device_type)}"
+        f"{claude_service.device_type_instruction(device_type)}"
         f"Un technicien décrit ce symptôme : « {problem_text} ».\n"
         f"{multi_symptom_instruction}"
         "Voici des cas candidats issus d'une recherche vectorielle, classés par similarité. "
@@ -513,7 +540,7 @@ def _summarize_cases(
         f"{lignes}"
     )
     instructions = (
-        "Tu es un assistant pour techniciens de maintenance ATM. "
+        "Tu aides un technicien de maintenance GAB/TPE. Réponds en français, de façon directe et exploitable. "
         "Avant de répondre, vérifie si le sens du problème du technicien correspond réellement "
         "aux symptômes, diagnostics et résultats décrits dans chaque cas. "
         "Un même type d'appareil ou une panne générique ne suffit pas : conserve les précisions "
@@ -523,32 +550,26 @@ def _summarize_cases(
         "Par exemple, un GAB hors service avec des piles mortes ne correspond pas, à lui seul, "
         "à une carte retenue ou à une imprimante bloquée ; une action générique comme un reset "
         "ne suffit pas non plus à établir ce lien.\n"
-        "Présente uniquement les cas dont les informations fournies établissent un lien technique "
-        "avec le problème. Écarte ceux sans lien établi ou qui le contredisent. "
-        "Si aucun cas ne convient, indique : "
-        "« Aucune intervention correspondant à ce problème n'a été trouvée dans notre base de données. » "
-        "Ne présente pas les actions des cas écartés comme des solutions historiques pertinentes.\n"
-        "Sinon, résume les seuls cas pertinents en langage naturel, en expliquant brièvement "
-        "le lien avec le problème et les éventuelles limites. Conserve leurs numéros d'origine "
-        "(par exemple Cas 2 reste Cas 2 si Cas 1 est écarté). "
-        "N'invente AUCUNE information historique absente des cas fournis. "
-        "Respecte l'origine indiquée : un ajout d'origine admin ne provient pas d'une visite de technicien. "
-        "Tu peux présenter une piste indirecte dans une section **Pistes indirectes de l'historique**, "
-        "uniquement si les détails fournis établissent un lien de composant ou de fonction précis ; "
-        "explique les différences de symptômes et ne la présente pas comme une correspondance directe. "
-        "Par exemple, une réinitialisation de lecteur ayant rétabli l'acceptation des cartes peut être "
-        "une piste indirecte pour des cartes rejetées, même si le symptôme initial était une carte retenue.\n"
-        "Que des cas conviennent ou non, propose si possible 2 à 4 vérifications adaptées au problème "
-        "en les introduisant simplement par : "
-        "« Néanmoins, en tant que chatbot d'aide à la maintenance, je peux te conseiller ces vérifications : » "
-        "si aucun cas ne convient ; sinon utilise « En complément, voici mes conseils de chatbot : ». "
-        "Cette introduction suffit à distinguer tes conseils des faits de la base : "
-        "n'ajoute pas de long avertissement, de titre « hors base de données » ni de formule « Notez bien ». "
-        "Présente-les comme des pistes à vérifier, pas comme un diagnostic certain. "
-        "Privilégie les contrôles non destructifs et les procédures constructeur ; "
-        "n'invente ni code de maintenance ni contournement des sécurités. "
-        "Si les informations ne suffisent pas, demande les précisions utiles plutôt que d'inventer.\n"
-        "Utilise du Markdown simple : **Cas 1**, titres et listes courtes ; pas de bloc de code autour de la réponse."
+        "Présente uniquement les cas qui répondent directement au problème. N'affiche jamais les cas écartés, "
+        "ne les compte pas, ne les résume pas et ne justifie pas leur omission. "
+        "Compte seulement les cas retenus et commence par « J'ai trouvé N cas pertinents dans l'historique. » "
+        "ou, si aucun ne convient, « Je n'ai trouvé aucun cas directement pertinent dans l'historique. » "
+        "Garde pour chaque cas son numéro d'origine afin que le technicien puisse demander son détail, "
+        "mais ne commente jamais les numéros manquants.\n"
+        "Pour chaque cas retenu, écris une entrée courte : **Cas N — symptôme correspondant** ; "
+        "résume les observations utiles, les actions tentées dans l'ordre et leur résultat. "
+        "Indique clairement quelle action a réglé le problème uniquement si le résultat l'établit. "
+        "N'invente aucune information et ne présente pas une piste comme une solution garantie.\n"
+        "Utilise les informations de provenance uniquement pour ne pas attribuer à tort une action à une visite ; "
+        "ne mentionne jamais la provenance, l'origine administrative, le nom du technicien, le ticket, la date "
+        "ou l'agence dans la réponse. Parle simplement du « cas » ou de « l'entrée enregistrée ».\n"
+        "Si un symptôme important du technicien n'est couvert par aucun cas retenu, signale-le en une phrase "
+        "courte. Termine par au plus deux vérifications directement liées aux symptômes et aux faits retenus, "
+        "sûres et conformes aux procédures constructeur ; ne répète pas les actions déjà décrites et n'ajoute "
+        "pas de conseils génériques. Pose au plus une question ciblée si une précision est indispensable.\n"
+        "S'il n'y a aucun cas pertinent, dis-le simplement, puis donne au plus deux vérifications ciblées "
+        "ou une question utile. N'invente ni cause, ni code, ni procédure de maintenance. "
+        "Limite toute la réponse à 140 mots, avec du Markdown simple, sans section « Cas écartés » ni longue introduction."
     )
     trace(
         "CONTEXT",
@@ -556,7 +577,7 @@ def _summarize_cases(
         case_count=len(cases),
         prompt_length=len(instructions) + len(turn_context),
     )
-    return llm_service.generate_chat_reply(
+    return claude_service.generate_chat_reply(
         instructions, [{"role": "user", "content": turn_context}], cache_history=True,
     )
 

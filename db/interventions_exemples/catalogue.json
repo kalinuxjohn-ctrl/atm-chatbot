@@ -1,0 +1,249 @@
+[
+  {
+    "source_key": "intervention-reference-gab-01",
+    "device_type": "gab",
+    "opened_at": "2026-02-02T09:10:00",
+    "summary": "Le lecteur a retenu une carte et affiché un message de service. Après vérification des journaux et un contrôle visuel conforme à la procédure du site, le lecteur a fonctionné lors de l'essai autorisé.",
+    "final_outcome_status": "resolved",
+    "symptoms": [{"text": "Le GAB retient la carte et affiche un message de défaut du lecteur.", "severity": "medium"}],
+    "actions": [
+      {"text": "Relever le message et l'heure dans le journal de service.", "result": "Le défaut est localisé au lecteur de carte.", "outcome_status": "no_effect"},
+      {"text": "Effectuer le contrôle et le nettoyage autorisés du lecteur.", "result": "Le lecteur a accepté et rendu une carte lors de l'essai de service.", "outcome_status": "resolved", "confirmed_solution": true}
+    ],
+    "diagnosis": {"description": "Un défaut temporaire du lecteur est suspecté; le fonctionnement a été rétabli après le contrôle autorisé.", "root_cause_component": "Lecteur de carte", "confirmed": false}
+  },
+  {
+    "source_key": "intervention-reference-gab-02",
+    "device_type": "gab",
+    "opened_at": "2026-02-03T10:20:00",
+    "summary": "Le GAB a annulé des demandes de retrait et le journal signale un défaut du module de distribution. Le défaut est resté présent après les vérifications accessibles et a été transmis au support.",
+    "final_outcome_status": "escalated",
+    "symptoms": [{"text": "Le GAB accepte la demande mais ne distribue pas les billets.", "severity": "high"}],
+    "actions": [
+      {"text": "Consulter le journal de service et vérifier l'état du module dans l'interface autorisée.", "result": "Un défaut de distribution est toujours signalé.", "outcome_status": "no_effect"},
+      {"text": "Mettre l'appareil dans l'état prévu par le site et transmettre le journal au support.", "result": "Intervention spécialisée demandée; aucune ouverture ni manipulation du module n'a été effectuée.", "outcome_status": "unknown"}
+    ],
+    "diagnosis": {"description": "Origine mécanique ou capteur à confirmer par le support spécialisé.", "root_cause_component": "Module de distribution", "confirmed": false}
+  },
+  {
+    "source_key": "intervention-reference-gab-03",
+    "device_type": "gab",
+    "opened_at": "2026-02-04T11:05:00",
+    "summary": "Aucun reçu ne sortait après les opérations. Le rouleau était en fin de course; il a été remplacé selon les consignes du modèle et une impression de service a réussi.",
+    "final_outcome_status": "resolved",
+    "symptoms": [{"text": "Le GAB termine l'opération mais n'imprime pas de reçu.", "severity": "low"}],
+    "actions": [
+      {"text": "Vérifier l'état du papier et les messages de l'imprimante.", "result": "Le rouleau est presque épuisé.", "outcome_status": "no_effect"},
+      {"text": "Remplacer le rouleau selon la procédure du modèle et lancer une impression autorisée.", "result": "Le reçu de service est imprimé correctement.", "outcome_status": "resolved", "confirmed_solution": true}
+    ],
+    "diagnosis": {"description": "Le rouleau de papier était épuisé.", "root_cause_component": "Imprimante de reçus", "confirmed": true}
+  },
+  {
+    "source_key": "intervention-reference-gab-04",
+    "device_type": "gab",
+    "opened_at": "2026-02-05T08:45:00",
+    "summary": "Le GAB ne joignait plus le serveur. Le service réseau du site a rétabli la liaison; le statut de connexion est redevenu opérationnel.",
+    "final_outcome_status": "resolved",
+    "symptoms": [{"text": "Le GAB indique une perte de communication avec le serveur.", "severity": "high"}],
+    "actions": [
+      {"text": "Relever l'heure de la coupure et vérifier les indicateurs réseau accessibles.", "result": "La liaison locale est active mais le serveur n'est pas joignable.", "outcome_status": "no_effect"},
+      {"text": "Transmettre les éléments à l'équipe réseau et vérifier le rétablissement du statut.", "result": "La liaison au serveur est revenue après intervention réseau.", "outcome_status": "resolved", "confirmed_solution": true}
+    ],
+    "diagnosis": {"description": "La cause se situait sur la liaison réseau en amont du GAB.", "root_cause_component": "Communication réseau", "confirmed": true}
+  },
+  {
+    "source_key": "intervention-reference-gab-05",
+    "device_type": "gab",
+    "opened_at": "2026-02-06T14:15:00",
+    "summary": "L'écran tactile ne répondait plus sur une partie de sa surface. Le défaut persistait après un contrôle visuel et les observations ont été transmises au support.",
+    "final_outcome_status": "escalated",
+    "symptoms": [{"text": "Une partie de l'écran tactile du GAB ne détecte pas les appuis.", "severity": "medium"}],
+    "actions": [
+      {"text": "Vérifier visuellement l'écran et relever les messages système.", "result": "Aucun dommage évident; la zone non réactive reste identique.", "outcome_status": "no_effect"},
+      {"text": "Transmettre les observations au support sans ouvrir l'écran.", "result": "Un diagnostic spécialisé est demandé.", "outcome_status": "unknown"}
+    ],
+    "diagnosis": {"description": "Défaut de numérisation tactile à confirmer par le support.", "root_cause_component": "Écran tactile", "confirmed": false}
+  },
+  {
+    "source_key": "intervention-reference-gab-06",
+    "device_type": "gab",
+    "opened_at": "2026-02-07T09:30:00",
+    "summary": "L'affichage présentait des scintillements intermittents alors que le GAB restait joignable. Le contrôle des messages n'a pas isolé la cause; le service a été maintenu sous surveillance.",
+    "final_outcome_status": "partially_resolved",
+    "symptoms": [{"text": "L'écran du GAB scintille par intermittence mais l'appareil reste joignable.", "severity": "medium"}],
+    "actions": [
+      {"text": "Noter les moments du scintillement et consulter les événements système accessibles.", "result": "Aucun défaut logiciel précis n'est indiqué.", "outcome_status": "no_effect"},
+      {"text": "Vérifier les connexions externes accessibles selon les consignes du site.", "result": "Le scintillement a cessé pendant l'observation; surveillance recommandée.", "outcome_status": "partial"}
+    ],
+    "diagnosis": {"description": "La cause de l'affichage intermittent reste à déterminer.", "root_cause_component": "Écran", "confirmed": false}
+  },
+  {
+    "source_key": "intervention-reference-gab-07",
+    "device_type": "gab",
+    "opened_at": "2026-02-08T12:40:00",
+    "summary": "Une transaction a été annulée après l'autorisation et le résultat n'était pas clair dans l'interface. Les journaux ont été conservés pour rapprochement avant toute nouvelle tentative.",
+    "final_outcome_status": "escalated",
+    "symptoms": [{"text": "La transaction du GAB est annulée après autorisation et son résultat est incertain.", "severity": "high"}],
+    "actions": [
+      {"text": "Relever la référence et l'état de la transaction dans les journaux autorisés.", "result": "Le statut doit être confirmé par le système central.", "outcome_status": "no_effect"},
+      {"text": "Transmettre le cas au support et à l'équipe de rapprochement avant un nouvel essai.", "result": "Le rapprochement est en attente; aucune opération répétée n'a été lancée.", "outcome_status": "unknown"}
+    ],
+    "diagnosis": {"description": "La cause technique et l'issue financière restent à confirmer par les journaux centraux.", "root_cause_component": "Communication transactionnelle", "confirmed": false}
+  },
+  {
+    "source_key": "intervention-reference-gab-08",
+    "device_type": "gab",
+    "opened_at": "2026-02-09T15:00:00",
+    "summary": "L'obturateur de distribution ne s'ouvrait pas et le journal signalait un défaut. L'observation visuelle n'a pas permis de résoudre le problème; le cas a été escaladé sans forcer le mécanisme.",
+    "final_outcome_status": "escalated",
+    "symptoms": [{"text": "L'obturateur du GAB reste fermé après une demande de retrait.", "severity": "high"}],
+    "actions": [
+      {"text": "Relever le statut du module et observer l'obturateur sans le manipuler.", "result": "Le défaut du module est toujours présent.", "outcome_status": "no_effect"},
+      {"text": "Mettre le GAB dans l'état prévu par le site et appeler le support.", "result": "Aucune ouverture forcée; intervention spécialisée demandée.", "outcome_status": "unknown"}
+    ],
+    "diagnosis": {"description": "Le mécanisme ou son capteur de position nécessite un contrôle spécialisé.", "root_cause_component": "Obturateur de distribution", "confirmed": false}
+  },
+  {
+    "source_key": "intervention-reference-gab-09",
+    "device_type": "gab",
+    "opened_at": "2026-02-10T07:55:00",
+    "summary": "Le GAB redémarrait plusieurs fois par heure. Les journaux ont montré une séquence de redémarrage après un événement système; après la procédure autorisée de maintenance, l'appareil est resté stable.",
+    "final_outcome_status": "resolved",
+    "symptoms": [{"text": "Le GAB redémarre périodiquement sans action de l'utilisateur.", "severity": "high"}],
+    "actions": [
+      {"text": "Consulter les événements système et vérifier si une mise à jour est en cours.", "result": "Aucune mise à jour n'était active; l'événement a été enregistré.", "outcome_status": "no_effect"},
+      {"text": "Appliquer le redémarrage contrôlé prévu par la procédure du site.", "result": "Le GAB est resté disponible pendant la période d'observation.", "outcome_status": "resolved", "confirmed_solution": true}
+    ],
+    "diagnosis": {"description": "Un état logiciel instable est probable; la stabilité doit être surveillée.", "root_cause_component": "Système informatique", "confirmed": false}
+  },
+  {
+    "source_key": "intervention-reference-gab-10",
+    "device_type": "gab",
+    "opened_at": "2026-02-11T13:25:00",
+    "summary": "Une alerte de maintenance était affichée pour l'approvisionnement. Le panneau de service a guidé le remplacement de consommable selon la configuration et l'alerte a disparu.",
+    "final_outcome_status": "resolved",
+    "symptoms": [{"text": "Le GAB affiche une alerte d'approvisionnement ou de consommable requis.", "severity": "low"}],
+    "actions": [
+      {"text": "Lire l'instruction affichée par le panneau de service.", "result": "Le consommable à vérifier est identifié par le système.", "outcome_status": "no_effect"},
+      {"text": "Effectuer le remplacement prévu par la procédure de l'appareil.", "result": "L'alerte a disparu et l'état de service est revenu à la normale.", "outcome_status": "resolved", "confirmed_solution": true}
+    ],
+    "diagnosis": {"description": "Un consommable nécessitait un remplacement conformément à l'indication de service.", "root_cause_component": "Consommable", "confirmed": true}
+  },
+  {
+    "source_key": "intervention-reference-tpe-11",
+    "device_type": "tpe",
+    "opened_at": "2026-02-12T10:10:00",
+    "summary": "Le lecteur à puce échouait de manière intermittente avec plusieurs cartes. Le contrôle et le nettoyage autorisés ont été suivis d'une transaction de service réussie.",
+    "final_outcome_status": "resolved",
+    "symptoms": [{"text": "Le TPE échoue à lire certaines cartes à puce de façon intermittente.", "severity": "medium"}],
+    "actions": [
+      {"text": "Vérifier le message et comparer le comportement sur plusieurs cartes de service autorisées.", "result": "Le défaut est reproductible sur le lecteur à puce.", "outcome_status": "no_effect"},
+      {"text": "Effectuer le nettoyage autorisé conformément aux instructions du fabricant.", "result": "La transaction de service a abouti.", "outcome_status": "resolved", "confirmed_solution": true}
+    ],
+    "diagnosis": {"description": "Un encrassement du lecteur est suspecté; l'essai après nettoyage est concluant.", "root_cause_component": "Lecteur à puce", "confirmed": false}
+  },
+  {
+    "source_key": "intervention-reference-tpe-12",
+    "device_type": "tpe",
+    "opened_at": "2026-02-13T16:05:00",
+    "summary": "Les paiements sans contact échouaient alors que les paiements par puce fonctionnaient. L'état du service a été vérifié et le cas transmis pour contrôle de configuration.",
+    "final_outcome_status": "partially_resolved",
+    "symptoms": [{"text": "Le TPE accepte les cartes à puce mais échoue en paiement sans contact.", "severity": "medium"}],
+    "actions": [
+      {"text": "Comparer les messages des transactions puce et sans contact dans le journal autorisé.", "result": "Le défaut semble limité au mode sans contact.", "outcome_status": "no_effect"},
+      {"text": "Demander au support de vérifier la configuration du service sans contact.", "result": "Le paiement par puce reste disponible; contrôle central en attente.", "outcome_status": "partial"}
+    ],
+    "diagnosis": {"description": "Configuration ou antenne sans contact à vérifier par le support.", "root_cause_component": "Lecteur sans contact", "confirmed": false}
+  },
+  {
+    "source_key": "intervention-reference-tpe-13",
+    "device_type": "tpe",
+    "opened_at": "2026-02-14T08:35:00",
+    "summary": "Le terminal portable perdait sa connexion de données. Le signal local était absent; le support opérateur a été sollicité et le terminal est resté hors service pour les opérations en ligne.",
+    "final_outcome_status": "escalated",
+    "symptoms": [{"text": "Le TPE portable perd régulièrement la connexion au réseau mobile.", "severity": "high"}],
+    "actions": [
+      {"text": "Noter le niveau de signal et l'heure des déconnexions.", "result": "Le signal est absent dans la zone concernée.", "outcome_status": "no_effect"},
+      {"text": "Transmettre le cas au support réseau en précisant la zone et les journaux.", "result": "Vérification de couverture en attente.", "outcome_status": "unknown"}
+    ],
+    "diagnosis": {"description": "La cause peut relever de la couverture ou du service opérateur; à confirmer.", "root_cause_component": "Connexion de données", "confirmed": false}
+  },
+  {
+    "source_key": "intervention-reference-tpe-14",
+    "device_type": "tpe",
+    "opened_at": "2026-02-15T11:50:00",
+    "summary": "Le ticket imprimé était blanc. Le rouleau était orienté à l'envers; après remise en place selon les indications du terminal, le ticket de service a été imprimé.",
+    "final_outcome_status": "resolved",
+    "symptoms": [{"text": "L'imprimante du TPE entraîne le papier mais le ticket est blanc.", "severity": "low"}],
+    "actions": [
+      {"text": "Vérifier le type de papier thermique et son orientation.", "result": "Le rouleau est installé dans le mauvais sens.", "outcome_status": "no_effect"},
+      {"text": "Replacer le rouleau selon le schéma du capot et lancer un ticket autorisé.", "result": "Le ticket de service est lisible.", "outcome_status": "resolved", "confirmed_solution": true}
+    ],
+    "diagnosis": {"description": "Le papier thermique était orienté à l'envers.", "root_cause_component": "Imprimante intégrée", "confirmed": true}
+  },
+  {
+    "source_key": "intervention-reference-tpe-15",
+    "device_type": "tpe",
+    "opened_at": "2026-02-16T09:00:00",
+    "summary": "Le terminal portable signalait une autonomie très courte. Le câble et le socle compatibles ont été vérifiés; la batterie montrait toujours une décharge rapide et le support a été contacté.",
+    "final_outcome_status": "escalated",
+    "symptoms": [{"text": "La batterie du TPE portable se décharge rapidement malgré la charge.", "severity": "medium"}],
+    "actions": [
+      {"text": "Vérifier l'indicateur de charge et l'état visible du câble et du socle.", "result": "Le chargeur est correctement branché et compatible.", "outcome_status": "no_effect"},
+      {"text": "Cesser l'usage si la batterie présente un dommage et demander un contrôle au support.", "result": "Remplacement ou diagnostic de batterie en attente.", "outcome_status": "unknown"}
+    ],
+    "diagnosis": {"description": "La capacité de batterie est suspectée; aucun démontage n'a été réalisé.", "root_cause_component": "Batterie", "confirmed": false}
+  },
+  {
+    "source_key": "intervention-reference-tpe-16",
+    "device_type": "tpe",
+    "opened_at": "2026-02-17T17:15:00",
+    "summary": "La télécollecte restait en attente après une coupure réseau. Les journaux ont été relevés et le support a confirmé qu'une vérification centrale était nécessaire avant toute nouvelle tentative.",
+    "final_outcome_status": "escalated",
+    "symptoms": [{"text": "La télécollecte du TPE reste en attente et son résultat n'est pas confirmé.", "severity": "high"}],
+    "actions": [
+      {"text": "Vérifier la connexion et consulter le statut de télécollecte dans l'interface autorisée.", "result": "Le résultat n'est pas confirmé localement.", "outcome_status": "no_effect"},
+      {"text": "Transmettre les références au support monétique sans relancer la télécollecte.", "result": "Contrôle central demandé.", "outcome_status": "unknown"}
+    ],
+    "diagnosis": {"description": "L'état de transmission doit être confirmé côté service monétique.", "root_cause_component": "Télécollecte", "confirmed": false}
+  },
+  {
+    "source_key": "intervention-reference-tpe-17",
+    "device_type": "tpe",
+    "opened_at": "2026-02-18T13:40:00",
+    "summary": "Une touche du terminal répondait de façon répétée. Le défaut a été reproduit après redémarrage autorisé et le terminal a été envoyé au support sans saisie de données de paiement.",
+    "final_outcome_status": "escalated",
+    "symptoms": [{"text": "Une touche du clavier du TPE produit plusieurs caractères ou reste bloquée.", "severity": "medium"}],
+    "actions": [
+      {"text": "Identifier la touche concernée sans saisir de données confidentielles.", "result": "Le défaut est reproductible sur la même touche.", "outcome_status": "no_effect"},
+      {"text": "Effectuer le redémarrage prévu par le site et transmettre le terminal au support si le défaut persiste.", "result": "Le défaut reste présent; contrôle matériel demandé.", "outcome_status": "unknown"}
+    ],
+    "diagnosis": {"description": "Défaut du clavier à confirmer par le support.", "root_cause_component": "Clavier", "confirmed": false}
+  },
+  {
+    "source_key": "intervention-reference-tpe-18",
+    "device_type": "tpe",
+    "opened_at": "2026-02-19T07:25:00",
+    "summary": "Le terminal ne démarrait pas sur son socle habituel. Le chargeur compatible a été vérifié sur une prise autorisée et le démarrage a réussi après recharge.",
+    "final_outcome_status": "resolved",
+    "symptoms": [{"text": "Le TPE ne démarre pas et son indicateur de batterie est éteint.", "severity": "medium"}],
+    "actions": [
+      {"text": "Vérifier le branchement visible et utiliser le chargeur compatible indiqué.", "result": "Le terminal était déchargé.", "outcome_status": "no_effect"},
+      {"text": "Laisser le terminal charger puis vérifier son démarrage normal.", "result": "Le terminal a démarré et a passé le contrôle de service.", "outcome_status": "resolved", "confirmed_solution": true}
+    ],
+    "diagnosis": {"description": "La batterie était déchargée; aucun défaut de matériel n'a été relevé pendant l'essai.", "root_cause_component": "Alimentation", "confirmed": true}
+  },
+  {
+    "source_key": "intervention-reference-tpe-19",
+    "device_type": "tpe",
+    "opened_at": "2026-02-20T14:30:00",
+    "summary": "Les transactions étaient refusées avec un message de date ou d'heure invalide. Le support a vérifié la synchronisation via l'outil autorisé et une transaction de service a ensuite réussi.",
+    "final_outcome_status": "resolved",
+    "symptoms": [{"text": "Le TPE affiche une erreur de date ou d'heure pendant la transaction.", "severity": "medium"}],
+    "actions": [
+      {"text": "Relever le message et comparer l'horloge affichée à la référence du site.", "result": "Un décalage d'horloge est constaté.", "outcome_status": "no_effect"},
+      {"text": "Demander la synchronisation au support par l'outil autorisé puis réaliser un contrôle de service.", "result": "L'heure est synchronisée et le contrôle aboutit.", "outcome_status": "resolved", "confirmed_solution": true}
+    ],
+    "diagnosis": {"description": "L'horloge du terminal était décalée; la synchronisation a rétabli le service.", "root_cause_component": "Configuration horaire", "confirmed": true}
+  }
+]

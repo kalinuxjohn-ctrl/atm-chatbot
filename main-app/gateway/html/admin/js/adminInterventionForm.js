@@ -16,6 +16,7 @@ export function connectAdminInterventionForm(section, onCreated) {
   const actionList = form.querySelector("[data-admin-actions]");
   const addSymptom = form.querySelector("[data-admin-add-symptom]");
   const addAction = form.querySelector("[data-admin-add-action]");
+  let catalogActions = [];
   let nextSymptomId = 0;
   let busy = false;
 
@@ -74,6 +75,21 @@ export function connectAdminInterventionForm(section, onCreated) {
       } else {
         target.value = previous;
       }
+      const catalogSelect = row.querySelector("[data-action-catalog]");
+      const selectedCatalogAction = catalogSelect.value;
+      const deviceType = form.elements.namedItem("device_type").value;
+      catalogSelect.replaceChildren(new Option("Rapprochement automatique", ""));
+      for (const action of catalogActions) {
+        if (!action.device_type || !deviceType || action.device_type === deviceType) {
+          catalogSelect.add(new Option(`${action.canonical_text} · n° ${action.action_id}`, String(action.action_id)));
+        }
+      }
+      catalogSelect.value = catalogActions.some((action) =>
+        String(action.action_id) === selectedCatalogAction
+        && (!action.device_type || !deviceType || action.device_type === deviceType),
+      )
+        ? selectedCatalogAction
+        : "";
     }
     addSymptom.disabled = symptoms.length >= 20;
     addAction.disabled = actions.length >= 30;
@@ -111,6 +127,8 @@ export function connectAdminInterventionForm(section, onCreated) {
     const outcome = select(ACTION_OUTCOMES);
     outcome.value = actionList.children.length ? "unknown" : "resolved";
     outcome.dataset.actionOutcome = "";
+    const catalogAction = select([]);
+    catalogAction.dataset.actionCatalog = "";
     const target = select([]);
     target.dataset.actionTarget = "";
     target.addEventListener("change", () => target.setCustomValidity(""));
@@ -121,6 +139,7 @@ export function connectAdminInterventionForm(section, onCreated) {
     const confirmedLabel = createElementWithText("label", "admin-intervention-checkbox");
     confirmedLabel.append(confirmed, "Cette action est une solution confirmée");
     row.append(document.createElement("legend"), field("Action effectuée", text),
+      field("Action du catalogue à rattacher (facultatif)", catalogAction),
       field("Résultat observé", result), field("Effet de l'action", outcome),
       field("Symptôme visé", target), confirmedLabel, removeButton(row, "Retirer cette action"));
     actionList.append(row);
@@ -157,6 +176,7 @@ export function connectAdminInterventionForm(section, onCreated) {
   form.querySelector("[data-admin-intervention-cancel]").addEventListener("click", close);
   addSymptom.addEventListener("click", () => appendSymptom().querySelector("textarea").focus());
   addAction.addEventListener("click", () => appendAction().querySelector("textarea").focus());
+  form.elements.namedItem("device_type").addEventListener("change", refreshRows);
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -171,6 +191,9 @@ export function connectAdminInterventionForm(section, onCreated) {
         result_description: row.querySelector("[data-action-result]").value.trim(),
         outcome_status: row.querySelector("[data-action-outcome]").value,
         is_confirmed_solution: row.querySelector("[data-action-confirmed]").checked,
+        catalog_action_id: row.querySelector("[data-action-catalog]").value
+          ? Number(row.querySelector("[data-action-catalog]").value)
+          : null,
         targets_symptom_number: target ? symptomRows.findIndex((symptom) => symptom.dataset.symptomId === target) + 1 : null,
       };
     });
@@ -242,4 +265,10 @@ export function connectAdminInterventionForm(section, onCreated) {
     }
   });
   reset();
+  return {
+    setCatalogActions(actions) {
+      catalogActions = actions;
+      refreshRows();
+    },
+  };
 }

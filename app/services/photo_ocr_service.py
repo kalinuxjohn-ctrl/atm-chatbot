@@ -21,8 +21,7 @@ contentent d'appeler les fonctions ci-dessous, qui ne font rien sans photo.
 
 Activer / désactiver : PHOTO_OCR_ENABLED dans le .env (settings.photo_ocr_enabled).
 Désactivée, le bouton photo disparaît du chat (GET /api/chat/photo-ocr) et
-une photo reçue malgré tout est ignorée. Réservée à Claude : avec un autre
-fournisseur LLM, la fonctionnalité est considérée comme désactivée.
+une photo reçue malgré tout est ignorée. La fonctionnalité utilise Claude.
 """
 
 from __future__ import annotations

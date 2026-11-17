@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f4f7fb">
     <!-- Thème sombre appliqué avant l'affichage (clé STORAGE_KEYS.theme de js/config.js) -->
     <script src="js/applySavedTheme.js"></script>
-    <meta name="description" content="Administration de l’ATM-Chatbot : propositions des techniciens, codes d’erreur et pannes fréquentes.">
+    <meta name="description" content="Administration de l’ATM-Chatbot : propositions des techniciens, codes d’erreur et problèmes usuels.">
     <title>Administration | ATM-Chatbot</title>
     <link rel="icon" href="assets/images/logo.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,7 +39,7 @@
       <div class="admin-heading">
         <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span> Administration</p>
         <h1>Administration de l’ATM-Chatbot</h1>
-        <p class="admin-intro">Examinez les solutions proposées par les techniciens et gérez les réponses enregistrées que l’ATM-Chatbot donne sans IA : codes d’erreur connus et pannes fréquentes.</p>
+        <p class="admin-intro">Examinez les solutions proposées par les techniciens et gérez les réponses enregistrées que l’ATM-Chatbot donne sans IA : codes d’erreur connus et problèmes usuels.</p>
       </div>
 
       <!-- Clé admin : ADMIN_API_KEY du serveur, gardée seulement pour cet onglet -->
@@ -58,7 +58,7 @@
       <nav class="admin-sections" role="tablist" aria-label="Rubriques d’administration">
         <button class="admin-section-tab" type="button" role="tab" id="tab-proposals" data-section="proposals" aria-controls="section-proposals" aria-selected="true">Propositions</button>
         <button class="admin-section-tab" type="button" role="tab" id="tab-error-codes" data-section="error-codes" aria-controls="section-error-codes" aria-selected="false">Codes d’erreur</button>
-        <button class="admin-section-tab" type="button" role="tab" id="tab-usual-problems" data-section="usual-problems" aria-controls="section-usual-problems" aria-selected="false">Pannes fréquentes</button>
+        <button class="admin-section-tab" type="button" role="tab" id="tab-usual-problems" data-section="usual-problems" aria-controls="section-usual-problems" aria-selected="false">Problèmes usuels</button>
       </nav>
 
       <!-- Propositions de solution des techniciens -->
@@ -83,13 +83,13 @@
         <div class="proposal-list" id="error-code-list" aria-live="polite"></div>
       </section>
 
-      <!-- Pannes fréquentes : menu « Pannes fréquentes » de l’ATM-Chatbot -->
+      <!-- Problèmes usuels : menu « Problèmes usuels » de l’ATM-Chatbot -->
       <section class="admin-section" id="section-usual-problems" role="tabpanel" aria-labelledby="tab-usual-problems" hidden>
         <div class="admin-section-header">
-          <p class="admin-section-intro">Chaque panne apparaît dans le menu « Pannes fréquentes » de son équipement, dans l’ordre indiqué. L’ATM-Chatbot répond avec le texte enregistré, sans IA.</p>
-          <button class="button button-primary" type="button" id="usual-problem-add">Ajouter une panne</button>
+          <p class="admin-section-intro">Chaque problème apparaît dans le menu « Problèmes usuels » de son équipement, dans l’ordre indiqué. L’ATM-Chatbot répond avec le texte enregistré, sans IA.</p>
+          <button class="button button-primary" type="button" id="usual-problem-add">Ajouter un problème</button>
         </div>
-        <p class="admin-status" id="usual-problem-status" role="status">Saisissez la clé administrateur pour afficher les pannes fréquentes.</p>
+        <p class="admin-status" id="usual-problem-status" role="status">Saisissez la clé administrateur pour afficher les problèmes usuels.</p>
         <div class="proposal-list" id="usual-problem-list" aria-live="polite"></div>
       </section>
     </main>

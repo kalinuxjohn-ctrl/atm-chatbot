@@ -15,7 +15,7 @@ from app.models.fault import ErrorCode
 from app.models.conversation import ConversationMessage, ConversationContext
 from app.schemas.error_code_schema import ErrorCodeAdminIn
 from app.services import error_code_service
-from app.services import chat_orchestrator_service, llm_service
+from app.services import chat_orchestrator_service, claude_service
 from scripts.load_error_codes import DEMO_CODES, load_error_codes
 
 
@@ -166,7 +166,7 @@ def test_detected_code_uses_database_reply_and_persists_reference(catalog, techn
     generate = Mock(return_value=json.dumps({
         "intent": intent, "error_code_text": "01", "reply": None,
     }))
-    monkeypatch.setattr(llm_service, "generate_chat_reply", generate)
+    monkeypatch.setattr(claude_service, "generate_chat_reply", generate)
     client = TestClient(app)
     response = client.post("/api/chat", json={
         "technician_id": technician, "device_type": "gab", "message": "Le GAB affiche le code 01",
@@ -221,7 +221,7 @@ def test_menu_selection_is_persistent_without_any_llm(catalog, technician, monke
         identifier, reply = known.error_code_id, known.reply
     def forbidden(*args, **kwargs):
         pytest.fail("A saved code must never call Claude.")
-    monkeypatch.setattr(llm_service, "generate_chat_reply", forbidden)
+    monkeypatch.setattr(claude_service, "generate_chat_reply", forbidden)
     client = TestClient(app)
     payload = {"technician_id": technician, "device_type": "tpe", "error_code_id": identifier}
     assert client.post("/api/chat/error-code", json=payload).status_code == 404

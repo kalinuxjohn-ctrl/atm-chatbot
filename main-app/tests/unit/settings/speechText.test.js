@@ -109,4 +109,20 @@ describe("texte Markdown lu par les voix du chatbot", () => {
     expect(fetch).not.toHaveBeenCalled();
     expect(browserSpeech).not.toHaveBeenCalled();
   });
+
+  test("arrêter résout la lecture même si le navigateur n'émet aucun événement de fin", async () => {
+    browserSpeech.mockImplementation(() => {});
+    const started = new Promise((resolve) => {
+      browserSpeech.mockImplementationOnce(resolve);
+    });
+    const reading = synthesis.speak("Première phrase. " + "Phrase suivante. ".repeat(30), {
+      voiceURI: "browser:denise", voiceGender: "female",
+    });
+    await started;
+    synthesis.stopSpeaking();
+    await reading;
+    expect(window.speechSynthesis.cancel).toHaveBeenCalled();
+    expect(synthesis.isSpeaking()).toBe(false);
+    expect(browserSpeech).toHaveBeenCalledTimes(1);
+  });
 });

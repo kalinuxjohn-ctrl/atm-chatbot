@@ -358,6 +358,16 @@ def _plan_actions(db: Session, content: ReviewedInterventionContent) -> list[Pla
         entry, distance = None, None
         if action.catalog_action_id is not None:
             link, entry = "chosen_by_admin", db.get(Action, action.catalog_action_id)
+            device_type = content.device.device_type
+            if (
+                entry is not None
+                and device_type is not None
+                and getattr(entry, "device_type", None) is not None
+                and entry.device_type != device_type
+            ):
+                raise InvalidReferenceError(
+                    f"L'action {entry.action_id} n'est pas disponible pour l'équipement {device_type.upper()}."
+                )
         else:
             closest = next(iter(next(rankings)), None)
             if closest is not None and closest["distance"] <= settings.action_catalog_match_max_distance:

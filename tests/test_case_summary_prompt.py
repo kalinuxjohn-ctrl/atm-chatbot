@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from app.services import chat_orchestrator_service as orchestrator
-from app.services import llm_service, message_understanding_service
+from app.services import claude_service, message_understanding_service
 
 
 class CaseSummaryPromptTests(unittest.TestCase):
@@ -12,7 +12,7 @@ class CaseSummaryPromptTests(unittest.TestCase):
         problem = "Le GAB est hors service car les piles sont mortes."
         with (
             patch.object(orchestrator, "_format_case", return_value="Cas 1 : carte retenue."),
-            patch.object(orchestrator.llm_service, "generate_chat_reply", return_value="response") as generate,
+            patch.object(orchestrator.claude_service, "generate_chat_reply", return_value="response") as generate,
         ):
             self.assertEqual(orchestrator._summarize_cases(problem, [{}], "gab"), "response")
         generate.assert_called_once()
@@ -23,28 +23,35 @@ class CaseSummaryPromptTests(unittest.TestCase):
         self.assertIn("Cas 1 : carte retenue.", prompt)
         self.assertIn("ne garantit PAS leur pertinence technique", prompt)
         self.assertIn("N'invente aucun lien technique", prompt)
-        self.assertIn("Si aucun cas ne convient", prompt)
-        self.assertIn("Néanmoins, en tant que chatbot d'aide à la maintenance", prompt)
-        self.assertIn("Aucune intervention correspondant à ce problème", prompt)
-        self.assertIn("Pistes indirectes de l'historique", prompt)
-        self.assertIn("Conserve leurs numéros d'origine", prompt)
+        self.assertIn("J'ai trouvé N cas pertinents", prompt)
+        self.assertIn("Présente uniquement les cas qui répondent directement", prompt)
+        self.assertIn("ne mentionne jamais la provenance", prompt)
+        self.assertIn("au plus deux vérifications directement liées", prompt)
+        self.assertIn("Je n'ai trouvé aucun cas directement pertinent", prompt)
+        self.assertIn("Garde pour chaque cas son numéro d'origine", prompt)
+        self.assertIn("ne justifie pas leur omission", prompt)
+        self.assertIn("sans section « Cas écartés »", prompt)
+        self.assertNotIn("Pistes indirectes de l'historique", prompt)
 
     def test_empty_candidates_request_explicitly_labeled_suggestions(self):
-        with patch.object(orchestrator.llm_service, "generate_chat_reply", return_value="suggestions") as generate:
+        with patch.object(orchestrator.claude_service, "generate_chat_reply", return_value="suggestions") as generate:
             self.assertEqual(
                 orchestrator._summarize_cases("problem", []),
                 "suggestions",
             )
         self.assertIn("Aucun cas candidat.", generate.call_args.args[1][0]["content"])
-        self.assertIn("n'ajoute pas de long avertissement", generate.call_args.args[0])
+        self.assertIn("S'il n'y a aucun cas pertinent", generate.call_args.args[0])
+        self.assertIn("au plus deux vérifications ciblées", generate.call_args.args[0])
+        self.assertIn("n'ajoute pas de conseils génériques", generate.call_args.args[0])
 
     def test_aggregate_prompt_handles_empty_and_nonempty_results(self):
         for solutions in ([], [dict(symptom_text="carte", action_text="test", successes=1,
                                     attempts=2, accuracy_score=0.5)]):
-            with patch.object(llm_service, "generate_chat_reply", return_value="reply") as generate:
-                self.assertEqual(llm_service.summarize_solutions("rejet", solutions, "gab"), "reply")
-            self.assertIn("Néanmoins, en tant que chatbot d'aide à la maintenance", generate.call_args.args[0])
-            self.assertIn("En complément, voici mes conseils de chatbot", generate.call_args.args[0])
+            with patch.object(claude_service, "generate_chat_reply", return_value="reply") as generate:
+                self.assertEqual(claude_service.summarize_solutions("rejet", solutions, "gab"), "reply")
+            self.assertIn("de façon directe et exploitable", generate.call_args.args[0])
+            self.assertIn("au plus deux vérifications directement liées", generate.call_args.args[0])
+            self.assertIn("Reste sous 100 mots", generate.call_args.args[0])
 
     def test_followup_prompt_preserves_provenance_and_allows_markdown(self):
         self.assertIn("En complément, voici mes conseils de chatbot", message_understanding_service._SYSTEM_PROMPT)

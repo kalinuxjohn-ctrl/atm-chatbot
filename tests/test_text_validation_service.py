@@ -120,11 +120,11 @@ class OrchestratorValidationTests(unittest.TestCase):
                 return_value=UnderstoodMessage(intent="conversation", reply="reply"),
             ),
             "route": patch.object(orchestrator, "_route_message", return_value="reply"),
-            "llm": patch.object(orchestrator.llm_service, "generate_reply"),
-            "summarize": patch.object(orchestrator.llm_service, "summarize_solutions"),
+            "llm": patch.object(orchestrator.claude_service, "generate_reply"),
+            "summarize": patch.object(orchestrator.claude_service, "summarize_solutions"),
             "search": patch.object(orchestrator.case_retrieval_service, "find_similar_cases"),
             "describe_search": patch.object(orchestrator, "_describe_last_search", return_value=None),
-            "chat_llm": patch.object(orchestrator.llm_service, "generate_chat_reply"),
+            "chat_llm": patch.object(orchestrator.claude_service, "generate_chat_reply"),
         }
         self.mocks = {}
         for name, patcher in patches.items():
@@ -135,11 +135,11 @@ class OrchestratorValidationTests(unittest.TestCase):
         deltas = []
 
         def understand(*args, **kwargs):
-            self.assertIsNone(orchestrator.llm_service._reply_delta_callback.get())
+            self.assertIsNone(orchestrator.claude_service._reply_delta_callback.get())
             return UnderstoodMessage(intent="conversation", reply="reply")
 
         def route(*args):
-            callback = orchestrator.llm_service._reply_delta_callback.get()
+            callback = orchestrator.claude_service._reply_delta_callback.get()
             callback("pre")
             callback("view")
             return "reply"
@@ -155,7 +155,7 @@ class OrchestratorValidationTests(unittest.TestCase):
         self.assertEqual(result["reply"], "reply")
         self.mocks["save_message"].assert_any_call(self.db, 7, "assistant", "reply")
         self.db.commit.assert_called_once()
-        self.assertIsNone(orchestrator.llm_service._reply_delta_callback.get())
+        self.assertIsNone(orchestrator.claude_service._reply_delta_callback.get())
 
     def test_local_greeting_is_emitted_without_understanding(self):
         deltas = []

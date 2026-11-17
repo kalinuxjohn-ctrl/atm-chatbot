@@ -1,0 +1,7 @@
+{
+  "source_key": "problem-reference-gab-touchscreen",
+  "device_type": "gab",
+  "label": "L'écran tactile du GAB ne répond plus",
+  "reply": "Vérifie si l'affichage est présent et si le défaut touche toute la surface ou une zone précise. Note le message système et l'état des voyants. Ne redémarre l'équipement que selon la procédure autorisée du site ; si le problème reste présent, contacte le support.",
+  "display_order": 103
+}

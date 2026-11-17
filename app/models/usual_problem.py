@@ -5,7 +5,8 @@ réponse enregistrée -- aucun lien avec le catalogue symptom ni avec la
 recherche vectorielle.
 """
 
-from sqlalchemy import Column, Enum, Integer, String
+from sqlalchemy import JSON, Column, Enum, Integer, String
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app.core.database import Base
 
@@ -18,3 +19,5 @@ class UsualProblem(Base):
     label = Column(String, nullable=False)
     reply = Column(String, nullable=False)
     display_order = Column(Integer, nullable=False, default=0)
+    source_key = Column(String)
+    documentation = Column(JSON().with_variant(JSONB, "postgresql"), nullable=False, default=dict)

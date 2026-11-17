@@ -121,7 +121,7 @@ class DevelopCaseTests(unittest.TestCase):
         }
         with (
             patch.object(case_detail_service, "build_case_dossier", return_value=dossier),
-            patch.object(case_detail_service.llm_service, "generate_reply", return_value="**Cas 2** …") as call,
+            patch.object(case_detail_service.claude_service, "generate_reply", return_value="**Cas 2** …") as call,
         ):
             reply = case_detail_service.develop_case(MagicMock(), STORED_RESULT, "détaille le cas 2", "gab", "carte bloquée")
         return reply, call.call_args.args[0]
@@ -131,6 +131,9 @@ class DevelopCaseTests(unittest.TestCase):
         self.assertEqual(reply, "**Cas 2** …")
         self.assertIn("La base de données indique que la pièce en cause est : « Capteur de rétention »", prompt)
         self.assertIn("« détaille le cas 2 »", prompt)
+        self.assertIn("ne la mentionne jamais dans ta réponse", prompt)
+        self.assertIn("Reste sous 120 mots", prompt)
+        self.assertIn("Ne donne pas les détails administratifs", prompt)
 
     def test_missing_root_cause_must_not_be_invented(self):
         _, prompt = self.develop(None)

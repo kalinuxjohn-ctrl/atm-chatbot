@@ -245,6 +245,20 @@
   padding: 6px 8px;
 }
 
+html[data-embedded] .technician-card {
+  display: none;
+}
+
+.atm-chatbot-page .speech-stop-button {
+  width: auto;
+  padding: 8px 12px;
+  margin: 4px 0 10px;
+}
+
+.atm-chatbot-page .speech-stop-button > span:last-child {
+  display: inline;
+}
+
 .technician-avatar {
   display: grid;
   width: 40px;
@@ -355,10 +369,6 @@
 
 .atm-chatbot-page .assistant-identity small i {
   background: #2fa36b;
-}
-
-.atm-chatbot-page .chat-panel[aria-busy="true"] .conversation {
-  cursor: progress;
 }
 
 .workspace-actions {

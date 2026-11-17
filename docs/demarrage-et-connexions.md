@@ -97,8 +97,8 @@ jamais être poussés sur GitHub.
 ### 1.1 Prérequis
 
 - Docker et Docker Compose (sous Windows : Docker dans WSL ou Docker Desktop).
-- Pour le chatbot : une clé d'IA de langage (Claude ou Gemini) et une clé Voyage AI (embeddings).
-- Aucun GPU n'est requis : les embeddings et le langage utilisent les API Voyage et Claude/Gemini, sans PyTorch/CUDA local.
+- Pour le chatbot : une clé Claude et une clé Voyage AI (embeddings).
+- Aucun GPU n'est requis : les embeddings et le langage utilisent les API Voyage et Claude, sans PyTorch/CUDA local.
 
 ### 1.2 Créer le fichier `.env`
 
@@ -109,8 +109,8 @@ Copier `.env.example` en `.env` à la racine du dépôt, puis remplir :
 | Variable | Obligatoire | Rôle |
 |---|---|---|
 | `DATABASE_URL` | oui | Connexion à la base (la valeur du modèle convient en local) |
-| `LLM_PROVIDER` | oui | `claude` (défaut) ou `gemini` |
-| `CLAUDE_API_KEY` / `GEMINI_API_KEY` | selon le fournisseur | Clé de l'IA de langage |
+| `LLM_PROVIDER` | oui | `claude` |
+| `CLAUDE_API_KEY` | oui | Clé de l'IA de langage |
 | `VOYAGE_API_KEY`, `VOYAGE_MODEL` | oui | Embeddings (recherche des cas similaires) |
 | `ADMIN_API_KEY` | **oui** | Clé de l'API d'administration du chatbot. Sans elle, l'administration de l’ATM-Chatbot est refusée. Exemple : `openssl rand -hex 32` |
 

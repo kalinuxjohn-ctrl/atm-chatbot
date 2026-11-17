@@ -2,7 +2,7 @@
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from app.schemas.device_type import NonEmptyStr
 
@@ -15,6 +15,59 @@ class SimilarActionCandidate(BaseModel):
     distance: float  # 0 = identique, 2 = opposé (convention pgvector <=>)
 
     model_config = {"from_attributes": True}
+
+
+class ActionCatalogAdminCreate(BaseModel):
+    canonical_text: NonEmptyStr = Field(..., max_length=500)
+    device_type: Optional[Literal["gab", "tpe"]] = None
+
+
+class ActionCatalogDocument(BaseModel):
+    catalog_number: int = Field(..., ge=1)
+    canonical_text: NonEmptyStr = Field(..., max_length=500)
+    device_type: Optional[Literal["gab", "tpe"]] = None
+
+
+class ActionCatalogAdminOut(BaseModel):
+    action_id: int
+    canonical_text: str
+    device_type: Optional[Literal["gab", "tpe"]] = None
+
+    model_config = {"from_attributes": True}
+
+
+class DeviceModelVersionAdminOut(BaseModel):
+    version_id: int
+    version_label: str
+    hardware_rev: Optional[str] = None
+    notes: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class DeviceModelAdminCreate(BaseModel):
+    device_type: Literal["gab", "tpe"]
+    manufacturer_name: NonEmptyStr = Field(..., max_length=200)
+    model_name: NonEmptyStr = Field(..., max_length=200)
+    release_year: Optional[int] = Field(None, ge=1900, le=2200)
+    version_label: Optional[NonEmptyStr] = Field(None, max_length=100)
+    hardware_rev: Optional[str] = Field(None, max_length=100)
+    notes: Optional[str] = Field(None, max_length=2000)
+
+    @model_validator(mode="after")
+    def version_details_need_a_label(self):
+        if not self.version_label and (self.hardware_rev or self.notes):
+            raise ValueError("Renseignez une version pour enregistrer sa révision ou ses notes.")
+        return self
+
+
+class DeviceModelAdminOut(BaseModel):
+    model_id: int
+    device_type: Optional[Literal["gab", "tpe"]] = None
+    manufacturer_name: Optional[str] = None
+    model_name: Optional[str] = None
+    release_year: Optional[int] = None
+    versions: list[DeviceModelVersionAdminOut] = Field(default_factory=list)
 
 
 class ResolveActionRequest(BaseModel):

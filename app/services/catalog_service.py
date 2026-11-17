@@ -4,16 +4,55 @@ avant qu'un technicien n'ajoute une nouvelle action, puis appliquer sa
 décision (nouvelle entrée, ou fusion avec une entrée existante).
 """
 
-from sqlalchemy import text
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
-from app.core.errors import ReferenceNotFoundError
+from app.core.errors import ReferenceNotFoundError, StateConflictError
+from app.core.tracing import trace
 from app.models.catalog import Action, Component
 from app.models.intervention import InterventionAction
-from app.schemas.catalog_schema import ResolveActionRequest
+from app.schemas.catalog_schema import ActionCatalogAdminCreate, ActionCatalogDocument, ResolveActionRequest
+from app.services import action_catalog_document_service as action_documents
 from app.services.embeddings_service import generate_embedding, generate_embeddings_batch
 from app.services.retrieval_service import MAX_SYMPTOM_LIMIT, cosine_similarity
 from app.services.stats_service import recompute_stats_safely
+
+
+def list_catalog_actions(db: Session) -> list[Action]:
+    """Liste les actions existantes pour l'administration et le rattachement manuel."""
+    return db.query(Action).order_by(func.lower(Action.canonical_text), Action.action_id).all()
+
+
+def create_catalog_action(db: Session, payload: ActionCatalogAdminCreate) -> Action:
+    """Ajoute une action manuellement au catalogue, en refusant les doublons exacts."""
+    canonical_text = payload.canonical_text.strip()
+    if db.get_bind().dialect.name == "postgresql":
+        db.execute(text("LOCK TABLE action IN SHARE ROW EXCLUSIVE MODE"))
+    existing_texts = {
+        action.canonical_text.strip().casefold()
+        for action in db.query(Action.canonical_text).all()
+    }
+    if canonical_text.casefold() in existing_texts:
+        raise StateConflictError("Une action identique existe déjà dans le catalogue.")
+
+    folder = action_documents.directory()
+    folder.mkdir(parents=True, exist_ok=True)
+    document = ActionCatalogDocument(
+        catalog_number=action_documents.next_catalog_number(folder),
+        canonical_text=canonical_text,
+        device_type=payload.device_type,
+    )
+    action = Action(canonical_text=canonical_text, device_type=payload.device_type)
+    try:
+        with action_documents.persist_document(document):
+            db.add(action)
+            db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    db.refresh(action)
+    trace("ADMIN", "Action ajoutée au catalogue", action_id=action.action_id)
+    return action
 
 
 def find_similar_actions(db: Session, action_text: str, limit: int = 5) -> list[dict]:

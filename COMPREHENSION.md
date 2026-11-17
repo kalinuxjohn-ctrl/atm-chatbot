@@ -10,7 +10,7 @@ Le dossier `frontend/` n'est pas décrit ici.
 Un technicien décrit une panne de **GAB** (distributeur de billets) ou de
 **TPE** (terminal de paiement). Le backend retrouve dans la base des
 **interventions passées similaires** (recherche sémantique), puis un **LLM**
-(Claude ou Gemini) les reformule en français.
+(Claude) les reformule en français.
 
 > **Règle d'or : le système n'invente jamais de solution.** Il retrouve des
 > cas réels et le LLM ne fait que les reformuler. Chaque prompt le lui
@@ -25,10 +25,10 @@ Un technicien décrit une panne de **GAB** (distributeur de billets) ou de
 | API | Python + FastAPI | `app/main.py` |
 | Base de données | PostgreSQL 16 + extension **pgvector** | `compose.backend.yaml` (service `db`) |
 | Embeddings (texte → vecteur) | **Voyage AI** (`voyage-3-large`, API), **1024 dimensions** | `app/services/embeddings_service.py` |
-| LLM | **Claude par défaut**, Gemini disponible | `app/services/llm_service.py` |
+| LLM | Claude | `app/services/claude_service.py` |
 | Déploiement | Docker Compose : `db` → `init-db` → `chatbot-backend` (+ `frontend/docker-compose.yml`) | `compose.backend.yaml` |
 
-Le backend et la base sont auto-hébergés ; le LLM (Claude ou Gemini) et les
+Le backend et la base sont auto-hébergés ; Claude et les
 embeddings (Voyage AI) sont des **API externes avec clé** (fichier `.env`).
 
 ---
@@ -135,7 +135,7 @@ réponse précédée de « 📷 Texte lu sur la photo : « … » » + significa
   fonctions ne font rien sans photo ; les autres fichiers se contentent de les appeler.
 - **Désactiver** : `PHOTO_OCR_ENABLED=false` dans `.env`. Le bouton 📷 disparaît
   (le frontend lit `GET /api/chat/photo-ocr`) et une photo reçue est ignorée.
-  Avec `LLM_PROVIDER=gemini`, la fonctionnalité est désactivée d'office.
+  La fonctionnalité photo utilise Claude.
 - **La photo n'est jamais enregistrée.** Seul le texte lu est gardé, dans le
   message du technicien (`[Photo jointe, texte lu : « … »]`) et dans la
   réponse : les tours suivants savent ce que montrait la photo.
@@ -250,14 +250,12 @@ lance, pour chaque symptôme, `fetch_similar_symptoms(db, texte, device_type)` :
 `_summarize_cases()` met chaque cas sur une ligne (`_format_case`, qui liste
 les symptômes recoupés et le numéro du symptôme du technicien correspondant),
 construit un prompt « résume ces cas, garde l'ordre Cas 1 / Cas 2…, **n'invente
-rien** » et appelle `llm_service.generate_reply()`. Avec plusieurs symptômes, le
+rien** » et appelle `claude_service.generate_reply()`. Avec plusieurs symptômes, le
 prompt les liste numérotés et demande d'indiquer, pour chaque cas, ceux qu'il
 recoupe, et de signaler un symptôme recoupé par aucun cas.
 
-`llm_service` passe par une interface `LLMProvider` (`ClaudeProvider` ou
-`GeminiProvider`), choisie avec `LLM_PROVIDER`. Une indisponibilité remonte
-à l'API (503 neutre), sauf si l'appelant fournit un texte de secours :
-celui-ci est alors renvoyé et la cause est journalisée.
+`claude_service` appelle Claude, choisi avec `LLM_PROVIDER=claude`. Une
+indisponibilité remonte à l'API (503 neutre), sans réponse de secours.
 
 ---
 
@@ -404,7 +402,7 @@ Il est lancé par `init-db`, après l'ajout d'une action cataloguée, et par
 | `GET /api/chat/conversations/{id}/solution-proposal-context`, `POST /api/chat/conversations/{id}/solution-proposals` | proposer une solution (voir README) | `solution_proposal_service` |
 | `POST`/`GET /api/intervention_add` | proposer une nouvelle intervention (validée par un admin) | `intervention_add_service` |
 | `/api/admin/solution-proposals`, `/api/admin/intervention_add` | validation admin (clé `X-Admin-Key`) | `solution_proposal_service`, `intervention_add_service` |
-| `POST /api/chat/search-symptom` | recherche « statistique » sans conversation : symptômes proches → actions classées par fiabilité + résumé LLM | `retrieval_service.find_ranked_solutions` + `llm_service.summarize_solutions` |
+| `POST /api/chat/search-symptom` | recherche « statistique » sans conversation : symptômes proches → actions classées par fiabilité + résumé LLM | `retrieval_service.find_ranked_solutions` + `claude_service.summarize_solutions` |
 | `POST /interventions` | créer une intervention + symptômes (embeddings + rattachement catalogue), admin | `intervention_service` |
 | `GET /interventions/{id}` | lire une intervention | `intervention_service` |
 | `POST /interventions/{id}/actions` | ajouter une action tentée | `intervention_service` |
@@ -431,9 +429,9 @@ Documentation interactive : <http://localhost:8000/docs>.
 | --- | --- | --- |
 | `DATABASE_URL` | `postgresql+psycopg2://…/atm_chatbot` | connexion BDD |
 | `EMBEDDING_PROVIDER` / `VOYAGE_API_KEY` / `VOYAGE_MODEL` / `EMBEDDING_DIMENSIONS` | `voyage` / clé vide / `voyage-3-large` / 1024 | embeddings |
-| `LLM_PROVIDER` | `claude` | fournisseur LLM (`claude` ou `gemini`) |
+| `LLM_PROVIDER` | `claude` | fournisseur LLM |
 | `CLAUDE_API_KEY` / `CLAUDE_MODEL` | clé vide / `claude-sonnet-5-5` | API Claude |
-| `GEMINI_API_KEY` / `GEMINI_MODEL` | clé vide / `gemini-3.5-flash-lite` | API Gemini |
+| `CLAUDE_STREAMING` | `true` | réception progressive des réponses Claude |
 | `SYMPTOM_SIMILARITY_THRESHOLD` | 0.5 | seuil de pertinence de la recherche |
 | `SYMPTOM_CATALOG_MATCH_MAX_DISTANCE` | 0.15 | seuil de rattachement automatique au catalogue |
 | `ACTION_CATALOG_MATCH_MAX_DISTANCE` | 0.15 | réutilisation d'une action du catalogue à l'approbation |
@@ -462,7 +460,7 @@ ni le texte lu : seulement le format, la taille et « texte trouvé oui/non ». 
 message, de la requête à la réponse.
 
 Le backend doit accéder à l'API du fournisseur choisi et recevoir sa clé
-via `.env` (`CLAUDE_API_KEY` ou `GEMINI_API_KEY`).
+via `.env` (`CLAUDE_API_KEY`).
 
 ---
 

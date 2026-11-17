@@ -1,0 +1,7 @@
+{
+  "source_key": "problem-reference-tpe-contactless",
+  "device_type": "tpe",
+  "label": "Le paiement sans contact ne fonctionne pas",
+  "reply": "Vérifie si le problème concerne une seule carte ou toutes les cartes et relève le message affiché. Contrôle que le TPE est opérationnel et que le sans-contact est activé dans la configuration autorisée. Ne modifie pas les paramètres de sécurité ; si le défaut persiste, transmets le journal au support monétique.",
+  "display_order": 101
+}

@@ -193,18 +193,28 @@ async function initAtmChatbot({ technicianId, displayName }) {
   }
 
   /* ---------- Lecture à voix haute ---------- */
+  let readingToken = 0;
+
   function stopReading() {
+    readingToken += 1;
     stopSpeaking();
     elements.stopReadingButton.hidden = true;
+    if (!requestInProgress) setStatus(READY_STATUS);
   }
 
   async function readAloud(text) {
     if (!isSpeechSynthesisSupported()) return;
+    const token = ++readingToken;
     elements.stopReadingButton.hidden = false;
     setStatus("Lecture de la réponse…", "speaking");
-    await speak(text, getPreferences());
-    elements.stopReadingButton.hidden = true;
-    if (!requestInProgress) setStatus(READY_STATUS);
+    try {
+      await speak(text, getPreferences());
+    } finally {
+      if (token === readingToken) {
+        elements.stopReadingButton.hidden = true;
+        if (!requestInProgress) setStatus(READY_STATUS);
+      }
+    }
   }
 
   /* ---------- Zone de saisie ---------- */

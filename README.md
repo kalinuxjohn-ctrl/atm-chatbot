@@ -36,7 +36,7 @@ l'API 8000 et PostgreSQL 5433 ; `ps` affiche les ports réellement publiés.
 L'image Python de base est construite automatiquement avant `chatbot-backend` et `init-db`,
 meme sur une nouvelle installation Docker. Le service auxiliaire `python-base`
 termine immediatement avec le code 0 ; il n'ouvre aucun port.
-Les embeddings sont calculés par l'API Voyage, et Claude/Gemini sont appelés
+Les embeddings sont calculés par l'API Voyage, et Claude est appelé
 par HTTP : aucune dépendance PyTorch, CUDA, sentence-transformers ni modèle
 Hugging Face local n'est installée. Les reconstructions ne téléchargent plus
 ces bibliothèques. Les anciens caches locaux ne sont plus montés ni utilisés ;
@@ -49,7 +49,7 @@ Les lanceurs ci-dessous sont facultatifs, pas nécessaires à ces commandes.
 |---|---|---|
 | `main-app-gateway` | Entrée de l'application : sert les pages, vérifie les sessions et relaie les requêtes vers chaque module. | 8080 |
 | `chatbot-frontend` | Interface du chat ; relaie ses appels API en conservant l'identité vérifiée par le gateway. | Aucun (5173 interne) |
-| `chatbot-backend` | API FastAPI : conversations et historique, compréhension Claude/Gemini, codes d'erreur en DB, recherche via Voyage et administration du chatbot. | 8000 |
+| `chatbot-backend` | API FastAPI : conversations et historique, compréhension Claude, codes d'erreur en DB, recherche via Voyage et administration du chatbot. | 8000 |
 | `main-app-auth` | Connexion, sessions, mots de passe hachés, comptes et rôles. | Aucun (3000 interne) |
 | `main-app-map` | Points de la carte, tuiles et calcul d'itinéraires via OpenRouteService. | Aucun (3000 interne) |
 | `main-app-messaging` | Messagerie entre techniciens et pièces jointes persistées dans le volume d'uploads. | Aucun (3000 interne) |
@@ -59,7 +59,7 @@ Les lanceurs ci-dessous sont facultatifs, pas nécessaires à ces commandes.
 | `main-app-database-setup` | Job ponctuel : configure l'accès SQL du rôle dédié `main_app_user`. Ne crée pas les comptes utilisateurs. | Aucun |
 | `python-base` | Construit l'image Python commune ; le conteneur auxiliaire termine normalement avec le code 0. | Aucun |
 
-Claude, Gemini, Voyage et OpenRouteService sont des API externes, pas des conteneurs locaux.
+Claude, Voyage et OpenRouteService sont des API externes, pas des conteneurs locaux.
 Les jobs ponctuels peuvent apparaître `Exited (0)` : ce n'est pas une panne.
 `docker compose up` ne crée pas le premier administrateur ; utiliser le lanceur
 ou la commande de création interactive ci-dessous sur une installation neuve.
@@ -83,7 +83,7 @@ depot dans le systeme de fichiers Linux (par exemple `~/projets/atm-chatbot`).
 ### Réponses instantanées aux messages simples
 
 Le service [`greeting_service.py`](app/services/greeting_service.py) répond
-localement aux messages entiers suivants, sans appel Claude/Gemini, sans
+localement aux messages entiers suivants, sans appel à Claude, sans
 préparation ou résumé de l'historique et sans recherche :
 
 | Type | Messages |
@@ -126,7 +126,7 @@ pas d'outils à Claude : ce mode supprime donc la réflexion préalable. Le JSON
 contraint, le cache, les règles de pertinence et de provenance restent en place.
 Ce réglage privilégie la latence, avec un compromis possible sur la qualité
 du raisonnement ; `CLAUDE_FAST_CHAT=false` rétablit le mode adaptatif.
-Les autres modèles et Gemini ne sont pas modifiés.
+Les autres modèles Claude ne sont pas modifiés.
 Voir les [recommandations Anthropic pour le chat](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-sonnet-5-5).
 
 Sonnet 5.5 utilise aussi le streaming SSE **entre le backend et Claude** :
@@ -134,6 +134,7 @@ les événements maintiennent la connexion active et le backend reconstitue
 la réponse complète. Le chat écrit utilise `POST /api/chat/stream` :
 les morceaux de rédaction finale sont relayés immédiatement au navigateur
 et affichés progressivement, sans animation artificielle après génération.
+`CLAUDE_STREAMING=false` désactive le streaming côté Claude.
 Le JSON interne de compréhension n'est jamais affiché. Les réponses locales,
 du catalogue ou déjà rédigées dans ce JSON arrivent en un seul morceau.
 Le mode vocal et l'ancienne route `POST /api/chat` restent inchangés.
@@ -211,7 +212,7 @@ depuis cette machine. Les autres services restent sur le réseau Docker interne.
 
 - Le fichier `.env` existant est conservé ; seuls les paramètres locaux manquants
   sont ajoutés. Il faut renseigner `DATABASE_URL`, `VOYAGE_API_KEY` et la clé du
-  fournisseur `LLM_PROVIDER` (`CLAUDE_API_KEY` ou `GEMINI_API_KEY`).
+  fournisseur `LLM_PROVIDER=claude` et `CLAUDE_API_KEY`.
 - La base `atm-chatbot_pgdata` et les pièces jointes existantes sont réutilisées :
   aucune remise à zéro, aucun seed de démonstration ni appel IA au démarrage.
 - S'il existe déjà un administrateur actif, son compte reste inchangé. Sinon,
@@ -226,7 +227,7 @@ depuis cette machine. Les autres services restent sur le réseau Docker interne.
   de production : connexion obligatoire, inscription libre désactivée, cookies
   non Secure autorisés uniquement dans ce mode. Le rechargement du backend Python
   est conservé ; les modifications des images Node nécessitent de relancer.
-- Le GPU n'est pas requis pour les API Voyage / Claude / Gemini. L'image Python
+- Le GPU n'est pas requis pour les API Voyage / Claude. L'image Python
   existante est réutilisée, ou construite si absente. Après modification de
   `requirements.txt` ou `Dockerfile.base`, lancer `.\start.ps1 --rebuild-base`.
 
@@ -326,7 +327,7 @@ prompts, réponses LLM brutes, secrets ou données personnelles à `trace()`.
      et de signaler si aucun ne convient. Les pistes indirectes doivent expliquer
      leurs limites. Les suggestions générales sont introduites brièvement par
      « En complément, voici mes conseils de chatbot », sans inventer de faits
-     historiques ni de fiabilité. Ces consignes sont communes à Gemini et Claude.
+     historiques ni de fiabilité. Ces consignes s'appliquent aux réponses Claude.
      Ce contrôle porte sur la réponse :
      les candidats mémorisés dans le contexte restent inchangés.
      Les consignes fixes de synthese des cas et des statistiques sont egalement
@@ -363,7 +364,7 @@ Les administrateurs les gèrent dans `admin.html` (rubriques « Codes d'erreur �
 
 ## Erreurs des ressources externes
 
-- Claude/Gemini : erreur réseau, délai dépassé, quota, authentification ou
+- Claude : erreur réseau, délai dépassé, quota, authentification ou
   réponse inexploitable -> `LLMUnavailableError`, puis HTTP 503. Aucun
   changement de fournisseur ni texte de secours, même pour la synthèse des cas.
 - Voyage : les erreurs et les embeddings invalides (dimension, valeurs,
@@ -396,7 +397,7 @@ de données, ainsi que leur contrat OpenAPI.
 
 `python -B -m unittest discover -s tests -p test_text_validation_service.py -v`
 
-`python -B -m unittest discover -s tests -p test_llm_providers.py -v`
+`python -B -m unittest discover -s tests -p test_claude_service.py -v`
 
 `python -B -m unittest discover -s tests -p test_external_services.py -v`
 
@@ -517,4 +518,4 @@ supplémentaire. Les dépendances sont installées dans l'image de base :
 docker compose up -d --build
 ```
 
-Claude est le fournisseur par défaut ; `LLM_PROVIDER=gemini` reste possible.
+Claude est le seul fournisseur disponible ; `LLM_PROVIDER=claude`.

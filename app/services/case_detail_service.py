@@ -26,7 +26,7 @@ from app.core.tracing import trace
 from app.models.catalog import Component
 from app.models.device import DeviceModel, Manufacturer
 from app.models.intervention import Diagnosis, Intervention
-from app.services import case_retrieval_service, llm_service
+from app.services import case_retrieval_service, claude_service
 
 _INTERVENTION_OUTCOME_LABELS = {
     "resolved": "résolue",
@@ -65,24 +65,22 @@ def develop_case(
 
     prompt = (
         "Tu es un assistant pour techniciens de maintenance ATM. "
-        f"{llm_service.device_type_instruction(device_type)}"
+        f"{claude_service.device_type_instruction(device_type)}"
         f"Le technicien cherchait une solution à ce problème : « {problem_text or 'non précisé'} ».\n"
         f"Il demande maintenant plus de détails sur le Cas {stored_result.get('position')} : « {technician_question} ».\n\n"
-        "Voici TOUT ce que la base de données contient sur ce cas. Respecte son origine : "
-        "un ajout admin ne doit pas être présenté comme la visite d'un technicien :\n"
+        "Voici les faits enregistrés sur ce cas. Utilise la provenance uniquement pour éviter une attribution "
+        "inexacte, mais ne la mentionne jamais dans ta réponse :\n"
         f"{_format_dossier(dossier)}\n\n"
-        "Développe ce cas pour répondre à sa question : ce qui a été observé, ce qui a été essayé dans "
-        "l'ordre et avec quel résultat, ce qui a finalement réglé le problème et pourquoi, "
-        "et ce qu'il peut en retenir pour sa propre panne.\n"
+        "Réponds directement à sa question en te limitant aux symptômes correspondants, aux actions tentées "
+        "dans l'ordre, à leurs résultats et à l'action qui a réglé le problème si le dossier l'établit. "
+        "Ne donne pas les détails administratifs (origine, technicien, ticket, dates ou agence).\n"
         f"{_root_cause_instruction(dossier)}"
         "Appuie-toi uniquement sur ces faits pour tout ce qui concerne l'historique : "
         "n'invente aucune action, pièce, date ou résultat absent du dossier. "
-        "Si une information manque (ex. résultat non détaillé), dis-le simplement. "
-        "Tu peux ajouter tes propres conseils, introduits par « En complément, voici mes conseils de chatbot : », "
-        "en 2 à 4 pistes courtes, non destructives, sans code de maintenance inventé.\n"
-        "Commence par **Cas "
-        f"{stored_result.get('position')}**. Utilise du Markdown simple : titres, **gras** et listes courtes ; "
-        "pas de bloc de code autour de la réponse."
+        "Si une information manque, dis-le en quelques mots. N'ajoute au plus qu'une ou deux vérifications "
+        "directement utiles, sûres et conformes aux procédures constructeur ; n'invente pas de procédure. "
+        "Reste sous 120 mots, commence par **Cas "
+        f"{stored_result.get('position')}**, et utilise du Markdown simple sans longue introduction."
     )
     trace(
         "CASE_DETAIL",
@@ -94,7 +92,7 @@ def develop_case(
         has_summary=bool(dossier["summary_text"]),
         prompt_length=len(prompt),
     )
-    return llm_service.generate_reply(prompt)
+    return claude_service.generate_reply(prompt)
 
 
 def build_case_dossier(db: Session, stored_result: dict, device_type: str | None = None) -> dict | None:

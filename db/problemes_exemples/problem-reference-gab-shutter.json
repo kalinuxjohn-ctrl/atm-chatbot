@@ -1,0 +1,7 @@
+{
+  "source_key": "problem-reference-gab-shutter",
+  "device_type": "gab",
+  "label": "L'obturateur de distribution ne s'ouvre pas",
+  "reply": "Relève le message et vérifie si la transaction est toujours en cours ou annulée. Observe l'obturateur sans forcer ni introduire d'objet. Consulte l'état du module dans l'interface autorisée ; si le défaut demeure, place l'appareil dans l'état prévu par le site et contacte le support.",
+  "display_order": 106
+}

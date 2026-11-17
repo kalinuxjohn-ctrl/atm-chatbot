@@ -29,6 +29,7 @@ class Action(Base):
     action_id = Column(Integer, primary_key=True)
     canonical_text = Column(String, nullable=False)
     component_id = Column(Integer, ForeignKey("composant.component_id"))
+    device_type = Column(Enum("gab", "tpe", name="device_type"))
 
 
 class SymptomActionOutcomeStats(Base):

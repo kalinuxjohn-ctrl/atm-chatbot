@@ -62,6 +62,7 @@ const regionNames = typeof Intl.DisplayNames === "function" ? new Intl.DisplayNa
 let speakToken = 0;
 let speaking = false;
 let currentAudio = null;
+let finishBrowserChunk = null;
 let serverVoicesPromise = null;
 let serverUnavailableUntil = 0;
 
@@ -331,13 +332,18 @@ async function speakWithServer(chunks, voiceId, token) {
 function speakBrowserChunk(text, voice, pitch) {
   return new Promise((resolve) => {
     const utterance = new SpeechSynthesisUtterance(text);
+    const finish = () => {
+      if (finishBrowserChunk === finish) finishBrowserChunk = null;
+      resolve();
+    };
+    finishBrowserChunk = finish;
     // Langue française TOUJOURS imposée, même sans voix française trouvée.
     utterance.lang = voice && isFrench(voice) ? voice.lang : SPEECH_LANG;
     if (voice && isFrench(voice)) utterance.voice = voice;
     utterance.pitch = pitch;
     utterance.rate = 1;
-    utterance.onend = resolve;
-    utterance.onerror = resolve; // "interrupted" lors d'un arrêt volontaire : rien à signaler
+    utterance.onend = finish;
+    utterance.onerror = finish; // "interrupted" lors d'un arrêt volontaire : rien à signaler
     synth.speak(utterance);
   });
 }
@@ -396,4 +402,5 @@ export function stopSpeaking() {
     audio.pause();
   }
   synth?.cancel();
+  finishBrowserChunk?.();
 }

@@ -1,5 +1,5 @@
 /**
- * Rubriques « Codes d'erreur » et « Pannes fréquentes » : réponses que le
+ * Rubriques « Codes d'erreur » et « Problèmes usuels » : réponses que le
  * ATM-Chatbot donne SANS IA, depuis ses menus de suggestions. Les deux ont les
  * mêmes opérations (lister, ajouter, modifier, supprimer) : un seul éditeur
  * générique, configuré par createSavedRepliesSection(...) en bas du fichier.
@@ -239,7 +239,7 @@ export function createUsualProblemsSection({ showRecordCount }) {
   return createSavedRepliesSection({
     sectionName: "pannes-frequentes",
     resource: usualProblemResource,
-    nouns: { one: "panne fréquente", many: "pannes fréquentes" },
+    nouns: { one: "problème usuel", many: "problèmes usuels" },
     showRecordCount,
     fields: [
       { name: "device_type", label: "Équipement", type: "select", required: true, options: [["gab", "GAB"], ["tpe", "TPE"]] },

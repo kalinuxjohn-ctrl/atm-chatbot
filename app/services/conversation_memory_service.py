@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 
 from app.core.tracing import trace
-from app.services import conversation_service, llm_service
+from app.services import conversation_service, claude_service
 
 RECENT_EXCHANGES = 6
 COMPACTION_CHAR_THRESHOLD = 12000
@@ -36,7 +36,7 @@ def prepare_history(db, conversation_id: int, context: dict, message_threshold: 
         or type(memory.get("through_message_id")) is not int
         or memory["through_message_id"] <= 0
     ):
-        raise llm_service.LLMUnavailableError("Mémoire résumée de la conversation invalide.")
+        raise claude_service.LLMUnavailableError("Mémoire résumée de la conversation invalide.")
 
     summary = memory["summary"] if memory else ""
     through_id = memory["through_message_id"] if memory else 0
@@ -55,11 +55,11 @@ def prepare_history(db, conversation_id: int, context: dict, message_threshold: 
             "previous_summary": summary,
             "older_messages": [{"role": row.role, "content": row.content} for row in older],
         }, ensure_ascii=False)
-        compacted = llm_service.generate_chat_reply(
+        compacted = claude_service.generate_chat_reply(
             _SUMMARY_PROMPT, [{"role": "user", "content": payload}], cache_history=True,
         ).strip()
         if not compacted or len(compacted) > min(MAX_SUMMARY_CHARS, int(source_chars * 0.75)):
-            raise llm_service.LLMUnavailableError(
+            raise claude_service.LLMUnavailableError(
                 "Résumé de conversation vide ou insuffisamment condensé."
             )
         summary = compacted

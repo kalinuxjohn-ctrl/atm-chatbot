@@ -17,6 +17,7 @@ class DeviceModel(Base):
     __tablename__ = "modele_appareil"
 
     model_id = Column(Integer, primary_key=True)
+    device_type = Column(Enum("gab", "tpe", name="device_type"))
     # Nullable en base (migration 0001) : fabricant pas toujours connu, ex. modèle ajouté par un technicien.
     manufacturer_id = Column(Integer, ForeignKey("fabricant.manufacturer_id"))
     model_name = Column(String, nullable=False)
@@ -57,5 +58,6 @@ class Device(Base):
         nullable=False,
         default="active",
     )
+    source_key = Column(String)
 
     interventions = relationship("Intervention", back_populates="device")

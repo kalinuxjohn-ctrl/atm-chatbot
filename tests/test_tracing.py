@@ -15,7 +15,7 @@ from app.schemas.conversation_schema import ChatRequest
 from app.schemas.message_understanding_schema import UnderstoodMessage
 from app.services import (
     chat_orchestrator_service as orchestrator,
-    llm_service,
+    claude_service,
     message_understanding_service as understanding,
     retrieval_service,
     technical_reference_resolver_service as resolver,
@@ -54,7 +54,7 @@ class TracingTests(unittest.TestCase):
             '{"intent":"diagnostic","model_name_text":"SECRET_MODEL",'
             '"error_code_text":"SECRET_CODE","reformulated_problem_text":"SECRET_PROBLEM"}'
         )
-        with patch.object(understanding.llm_service, "generate_chat_reply", return_value=response):
+        with patch.object(understanding.claude_service, "generate_chat_reply", return_value=response):
             result = understanding.understand_message("SECRET_MESSAGE")
         self.assertEqual(result.intent, "diagnostic")
         self.assertEqual(result.model_name_text, "SECRET_MODEL")
@@ -65,38 +65,38 @@ class TracingTests(unittest.TestCase):
     def test_unreadable_understanding_raises_instead_of_guessing_diagnostic(self):
         # Avant : une réponse illisible faisait traiter le message comme une
         # panne (un « bonjour » affichait des cas). Désormais : erreur 503.
-        with patch.object(understanding.llm_service, "generate_chat_reply", return_value="SECRET_RESPONSE"):
-            with self.assertRaises(llm_service.LLMUnavailableError):
+        with patch.object(understanding.claude_service, "generate_chat_reply", return_value="SECRET_RESPONSE"):
+            with self.assertRaises(claude_service.LLMUnavailableError):
                 understanding.understand_message("SECRET_MESSAGE")
         self.assertIn("[ERROR]", self.output.getvalue())
         self.assertNotIn("SECRET", self.output.getvalue())
 
     def test_llm_failure_raises_without_fallback(self):
         provider = MagicMock()
-        provider.generate.side_effect = llm_service.LLMUnavailableError("Gemini a répondu avec une erreur (503).")
-        with patch.object(llm_service, "get_llm_provider", return_value=provider):
-            with self.assertRaises(llm_service.LLMUnavailableError):
-                llm_service.generate_reply("prompt")
+        provider.generate.side_effect = claude_service.LLMUnavailableError("Claude a répondu avec une erreur (503).")
+        with patch.object(claude_service, "get_llm_provider", return_value=provider):
+            with self.assertRaises(claude_service.LLMUnavailableError):
+                claude_service.generate_reply("prompt")
         provider.generate.assert_called_once_with("prompt")
 
     def test_empty_llm_reply_is_an_error(self):
         provider = MagicMock()
         provider.generate.return_value = "   "
-        with patch.object(llm_service, "get_llm_provider", return_value=provider):
-            with self.assertRaises(llm_service.LLMUnavailableError):
-                llm_service.generate_reply("prompt")
+        with patch.object(claude_service, "get_llm_provider", return_value=provider):
+            with self.assertRaises(claude_service.LLMUnavailableError):
+                claude_service.generate_reply("prompt")
 
     def test_unavailable_service_returns_neutral_503_and_logs_cause(self):
         request = SimpleNamespace(url=SimpleNamespace(path="/api/chat"))
         response = main._service_externe_indisponible(
-            request, llm_service.LLMUnavailableError("Gemini a répondu avec une erreur (503).")
+            request, claude_service.LLMUnavailableError("Claude a répondu avec une erreur (503).")
         )
         body = response.body.decode("utf-8")
         self.assertEqual(response.status_code, 503)
-        self.assertNotIn("Gemini", body)  # le client ne doit pas deviner le fournisseur
+        self.assertNotIn("Claude", body)  # le client ne doit pas deviner le fournisseur
         self.assertIn("indisponible", body)
         self.assertNotIn("saturé", body)
-        self.assertIn("Gemini a répondu avec une erreur (503).", self.output.getvalue())  # cause claire côté serveur
+        self.assertIn("Claude a répondu avec une erreur (503).", self.output.getvalue())  # cause claire côté serveur
 
     def test_reference_resolution_keeps_returned_ids(self):
         db = MagicMock()
@@ -156,7 +156,7 @@ class TracingTests(unittest.TestCase):
 
     def test_conversation_branch_does_not_search(self):
         with (
-            patch.object(orchestrator.llm_service, "generate_reply") as generate,
+            patch.object(orchestrator.claude_service, "generate_reply") as generate,
             patch.object(orchestrator.case_retrieval_service, "find_similar_cases") as search,
         ):
             result = orchestrator._route_message(
@@ -167,6 +167,25 @@ class TracingTests(unittest.TestCase):
         generate.assert_not_called()
         search.assert_not_called()
         self.assertIn("sans recherche vectorielle", self.output.getvalue())
+
+    def test_off_topic_branch_uses_varied_backend_reply_without_llm_or_search(self):
+        previous_reply = orchestrator._OFF_TOPIC_REPLIES[0]
+        history = [{"role": "assistant", "content": previous_reply}]
+        with (
+            patch.object(orchestrator.random, "choice", side_effect=lambda choices: choices[0]) as choose,
+            patch.object(orchestrator.claude_service, "generate_reply") as generate,
+            patch.object(orchestrator.case_retrieval_service, "find_similar_cases") as search,
+        ):
+            result = orchestrator._route_message(
+                MagicMock(), {}, "question hors sujet",
+                UnderstoodMessage(intent="off_topic"), history=history,
+            )
+        self.assertIn(result, orchestrator._OFF_TOPIC_REPLIES)
+        self.assertNotEqual(result, previous_reply)
+        choose.assert_called_once()
+        generate.assert_not_called()
+        search.assert_not_called()
+        self.assertIn("Refus hors périmètre sélectionné par le backend", self.output.getvalue())
 
     def test_diagnostic_cases_branch(self):
         context = {"device_type": "gab"}
@@ -200,7 +219,7 @@ class TracingTests(unittest.TestCase):
                     patch.object(orchestrator.case_retrieval_service, "find_similar_cases", return_value=[]),
                     patch.object(orchestrator.retrieval_service, "find_ranked_solutions",
                                  return_value={"solutions": solutions}),
-                    patch.object(orchestrator.llm_service, "summarize_solutions",
+                    patch.object(orchestrator.claude_service, "summarize_solutions",
                                  return_value="aggregate reply") as summarize,
                     patch.object(orchestrator, "_summarize_cases",
                                  return_value="chatbot suggestions") as suggest,

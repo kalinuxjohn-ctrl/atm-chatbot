@@ -12,7 +12,7 @@ from app.schemas.message_understanding_schema import UnderstoodMessage
 from app.schemas.photo_schema import PhotoAttachment
 from app.services import (
     chat_orchestrator_service as orchestrator,
-    llm_service,
+    claude_service,
     message_understanding_service as understanding,
     photo_ocr_service,
 )
@@ -50,7 +50,7 @@ class PhotoSwitchTests(unittest.TestCase):
     def test_photo_is_ignored_when_disabled_or_not_claude(self):
         with enabled(False):
             self.assertIsNone(photo_ocr_service.accept_photo(PHOTO))
-        with enabled(True, provider="gemini"):
+        with enabled(True, provider="other"):
             self.assertFalse(photo_ocr_service.is_enabled())
             self.assertIsNone(photo_ocr_service.accept_photo(PHOTO))
         with enabled(True):
@@ -74,7 +74,7 @@ class PhotoSentToClaudeTests(unittest.TestCase):
             "photo_meaning": "Le lecteur de carte est en défaut.",
         })
         history = [{"role": "user", "content": "bonjour"}, {"role": "assistant", "content": "Salut"}]
-        with patch.object(llm_service, "generate_chat_reply", return_value=response) as call:
+        with patch.object(claude_service, "generate_chat_reply", return_value=response) as call:
             understood = understanding.understand_message(
                 "ça affiche seulement ça en boucle", device_type="gab", history=history, photo=PHOTO
             )
@@ -130,7 +130,7 @@ class PhotoInOrchestratorTests(unittest.TestCase):
             patch.object(orchestrator, "_describe_last_search", return_value=None),
             patch.object(orchestrator.message_understanding_service, "understand_message", return_value=understood) as understand,
             patch.object(orchestrator.error_code_service, "find_exact_error_code", return_value=record),
-            patch.object(orchestrator.llm_service, "generate_chat_reply") as second_call,
+            patch.object(orchestrator.claude_service, "generate_chat_reply") as second_call,
             enabled(True),
         ):
             result = orchestrator.handle_chat_message(MagicMock(), 15, 4, "", "gab", photo=PHOTO)

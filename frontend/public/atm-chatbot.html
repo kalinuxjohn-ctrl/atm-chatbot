@@ -46,9 +46,6 @@
               <button class="pill-button" type="button" data-open-settings>Paramètres</button>
             </span>
             <span class="demo-badge" id="demo-badge" hidden title="Ajoutez ?mock=0 à l’adresse pour revenir au backend réel">Mode démo</span>
-            <button class="pill-button pill-button-warning" id="stop-reading-button" type="button" aria-label="Arrêter la lecture" hidden>
-              <span data-icon="stop"></span><span>Arrêter la lecture</span>
-            </button>
             <button class="pill-button pill-button-primary" type="button" data-open-voice-mode aria-label="Ouvrir le Chat vocal">
               <span data-icon="voice"></span><span class="pill-button-label">Chat vocal</span>
             </button>
@@ -70,6 +67,10 @@
                 placeholder="Décrivez le problème observé…"
                 aria-describedby="character-count dictation-status"
               ></textarea>
+
+              <button class="pill-button pill-button-warning speech-stop-button" id="stop-reading-button" type="button" aria-label="Arrêter la lecture" hidden>
+                <span data-icon="stop"></span><span>Arrêter la lecture</span>
+              </button>
 
               <div class="composer-toolbar">
                 <div class="device-picker" id="device-picker"></div>
@@ -142,6 +143,9 @@
           <div class="voice-status-block" aria-live="polite">
             <p class="voice-status" id="voice-status" data-voice-status>Connexion…</p>
             <p class="voice-detail" data-voice-detail hidden></p>
+            <button class="voice-secondary-button" type="button" data-voice-stop hidden>
+              <span data-icon="stop"></span><span>Arrêter la voix</span>
+            </button>
           </div>
 
           <div class="voice-captions" aria-live="polite">

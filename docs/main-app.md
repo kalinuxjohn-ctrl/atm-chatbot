@@ -13,6 +13,7 @@ Elle tourne en **Node.js + Express**. Son code est dans `main-app/`, séparé du
 
 ## Paramètres et notifications web
 
+- La barre latérale affiche le nom complet du technicien (ou son identifiant si le nom est absent). Cette identité n'est plus répétée dans l'en-tête du chatbot intégré. Les options du chatbot gardent la même largeur, avec des bordures arrondies légèrement superposées dans un panneau commun ; la rétraction du rail et la rotation de son bouton sont synchronisées, avec les boutons de pied ancrés en bas. Les animations respectent la préférence de mouvement réduit.
 - **Paramètres** (engrenage sous **Appels**) ouvre un panneau global depuis chaque page, sans recharger le chatbot ni perdre sa conversation. Le sous-menu **ATM-Chatbot** du groupe Fonctionnalités contient **Nouvelle conversation** et **Voir les conversations**. Le sous-titre « Application des techniciens » n'est plus affiché sous la salutation.
 - Une seule fenêtre défilante aligne **Apparence**, **Notifications** et tous les paramètres **Chat** d'origine (avatar, voix, conversation), sans accordéons. Le titre et le bouton Fermer restent visibles pendant le défilement. Le formulaire et le contrôleur du frontend sont réutilisés, sans seconde fenêtre ni navigation. Les choix sont enregistrés immédiatement sur cet appareil et synchronisés avec le chatbot ouvert, sans perdre son brouillon. L'ancien lien `/atm-chatbot/#settings` ouvre aussi cette fenêtre.
 - Le test de voix appelle les routes authentifiées `/atm-chatbot/app/tts` depuis toute page. La CSP autorise les médias du même site et les URL `blob:` nécessaires à leur lecture, sans élargir les origines de scripts.
@@ -30,6 +31,8 @@ Elle tourne en **Node.js + Express**. Son code est dans `main-app/`, séparé du
 Les routes `GET /api/chat/conversations` et `GET /api/chat/conversations/{id}` utilisent l'identité authentifiée transmise par le gateway et filtrent le propriétaire. Une conversation absente ou appartenant à un autre compte renvoie le même 404. Le cache d'onglet est également isolé par technicien ; l'ancien cache non identifié n'est pas réattribué à un compte.
 
 L'historique restitue ce qui a été enregistré par l'API : les photos originales et les échanges purement locaux (réponses rapides, confirmations de formulaire) ne sont pas conservés en base et ne peuvent pas être reconstruits.
+
+Pendant une lecture, **Arrêter la lecture** apparaît dans la zone de saisie du chat écrit. Dans le Chat vocal, **Arrêter la voix** coupe la réponse et met l'écoute en pause ; la bulle permet de reprendre. Ces commandes ne suppriment aucun message.
 
 ## Navigation d'administration
 
@@ -51,7 +54,7 @@ Avec le déploiement Docker local :
 wsl -d Ubuntu -- docker compose -f compose.yaml exec -T chatbot-backend python -m scripts.load_error_codes
 ```
 
-L'option `--replace-demo` retire **uniquement** les anciennes entrées connues E42/E43/E67 (ID 1/2/3, libellé et panne d'origine vérifiés). Une référence par une proposition, une entrée modifiée ou un conflit fait échouer la transaction sans suppression partielle. Ni les pannes liées, ni les pannes fréquentes, ni les interventions ne sont supprimées. Les seeds ne recréent plus ces codes fictifs.
+L'option `--replace-demo` retire **uniquement** les anciennes entrées connues E42/E43/E67 (ID 1/2/3, libellé et panne d'origine vérifiés). Une référence par une proposition, une entrée modifiée ou un conflit fait échouer la transaction sans suppression partielle. Ni les problèmes liés, ni les problèmes usuels, ni les interventions ne sont supprimés. Les seeds ne recréent plus ces codes fictifs.
 
 L'import valide tous les fichiers et retrouve les lignes par `catalog_number` ; il peut être rejoué sans changer leurs ID. PostgreSQL attribue seul `error_code_id` via sa séquence. La migration conserve les ID existants et leurs références. Pour un ajout admin, seul le numéro de catalogue est calculé par `MAX(catalog_number) + 1`. Import et administration partagent un verrou de table pour éviter les collisions concurrentes des numéros/fichiers. Les suppressions ne renumérotent pas les autres entrées ; un ID SQL peut avoir des trous et ne sert jamais de compteur.
 
@@ -59,9 +62,19 @@ L'administration écrit atomiquement le JSON **avant** le commit SQL. Une erreur
 
 Dans le chat, Claude renseigne `error_code_text` dans son JSON de compréhension, y compris pour un code lu sur une photo. Le backend cherche une correspondance exacte (casse ignorée, zéros initiaux conservés) pour l'équipement choisi et renvoie la réponse enregistrée **sans second appel à Claude, embedding ni recherche d'interventions**. Sans consigne, il le dit explicitement au lieu d'inventer une procédure. Le code détecté et sa clé étrangère éventuelle sont enregistrés avec les deux messages ; la référence et sa consigne entrent dans le contexte envoyé aux échanges suivants. Un nouveau code inconnu efface l'ancienne référence, et un nouveau diagnostic sans code quitte ce contexte.
 
-Le choix manuel passe par `POST /api/chat/error-code` : même persistance et même contexte, mais **aucun appel à Claude**. L'historique restauré conserve ces références. Sur téléphone (largeur du chat ≤ 760 px), le bouton ouvre un dialogue modal central, filtrable et défilant, avec fermeture accessible et arrière-plan flouté ; le menu des pannes fréquentes reste inchangé. Sur grand écran, le menu déroulant est conservé.
+Le choix manuel passe par `POST /api/chat/error-code` : même persistance et même contexte, mais **aucun appel à Claude**. L'historique restauré conserve ces références. Sur téléphone (largeur du chat ≤ 760 px), le bouton ouvre un dialogue modal central, filtrable et défilant, avec fermeture accessible et arrière-plan flouté ; le menu des problèmes usuels reste inchangé. Sur grand écran, le menu déroulant est conservé.
 
-Pour les administrateurs, **Administration** est le premier groupe de la barre principale, avant les outils des techniciens. Ses liens directs sont Comptes, Propositions, Ajouts d'intervention, Codes d'erreur et Pannes fréquentes, sans menu déroulant. La page `/admin/` n'a plus de seconde barre latérale ; les compteurs et la rubrique active figurent dans le groupe Administration. Les liens `/admin/#<rubrique>` et l'historique du navigateur restent utilisables. Les autres rôles ne voient pas ce groupe et les protections serveur restent inchangées.
+Pour les administrateurs, **Administration** est le premier groupe de la barre principale, avant les outils des techniciens. Ses liens directs sont Comptes, Propositions, Ajouts d'intervention, Catalogue d'actions, Modèles d'équipement, Codes d'erreur et Problèmes usuels, sans menu déroulant. La page `/admin/` n'a plus de seconde barre latérale ; les compteurs et la rubrique active figurent dans le groupe Administration. Les liens `/admin/#<rubrique>` et l'historique du navigateur restent utilisables. Les autres rôles ne voient pas ce groupe et les protections serveur restent inchangées.
+
+### Catalogue d'actions et documents JSON
+
+Le dossier `db/actions` contient un fichier `<catalog_number>.json` par action. Les numéros JSON sont indépendants des IDs SQL ; au démarrage, `init-db` importe ces documents de manière idempotente après les migrations. Chaque document peut préciser `device_type` (`gab` ou `tpe`) ; une valeur absente ou nulle désigne une action commune. Les actions de la fiche technicienne sont préchargées et classées par équipement dans ces JSON.
+
+Dans **Administration → Catalogue d'actions**, un administrateur peut ajouter une action sans créer une intervention, en la classant GAB, TPE ou commune aux deux. Les actions communes apparaissent dans les deux listes. Le formulaire de création d'intervention ne propose que les actions de l'équipement choisi et les actions communes ; le backend vérifie aussi ce rattachement. Les actions existantes sans catégorie sont traitées comme communes. Le backend valide puis écrit atomiquement le JSON avant de valider la transaction SQL ; si cette transaction échoue, le nouveau fichier est retiré. La suppression d'action n'est pas proposée afin de préserver les liens de l'historique et des statistiques. Les fichiers sont montés en écriture dans `chatbot-backend` et en lecture seule dans `init-db`, afin que les ajouts persistent hors des conteneurs.
+
+### Modèles d'équipement
+
+Dans **Administration → Modèles d'équipement**, l'administrateur ajoute au catalogue un modèle GAB ou TPE avec son fabricant, son nom, son année de sortie facultative et une version facultative (libellé, révision matérielle et notes). Un fabricant saisi pour la première fois est ajouté au catalogue des fabricants. Un même modèle ne peut pas être ajouté deux fois pour le même fabricant et le même type. La migration `0024_device_model_type.sql` ajoute le type au modèle et renseigne les modèles déjà liés à des appareils lorsque leur type est non ambigu. Cette rubrique gère les modèles, pas les appareils physiques installés.
 
 ### Ajouter directement une intervention
 
@@ -70,6 +83,12 @@ Dans **Administration → Ajouts d'intervention**, le bouton **+ Ajouter** ouvre
 L'enregistrement est immédiatement approuvé avec **origine admin** et le compte connecté comme auteur ; il n'attribue ni technicien ni conversation et ne demande aucune date de visite. La date technique de création n'est pas présentée au chatbot comme une date de visite. Les symptômes sont indexés, les catalogues enrichis et les statistiques recalculées dans la même transaction : un échec annule l'écriture complète et le formulaire conserve la saisie. Les demandes des techniciens gardent leur circuit habituel de validation.
 
 La migration `0020_admin_interventions.sql` permet cette provenance distincte et impose sa cohérence en base. Le navigateur appelle `POST /api/atm-chatbot-admin/intervention_add` ; le gateway contrôle la session admin, injecte la clé serveur et **remplace** l'en-tête `X-Authenticated-Admin-Username` par l'identité authentifiée. La route backend `POST /api/admin/intervention_add` refuse une identité manquante/invalide, une provenance fournie dans le JSON ou des dates de visite non nulles.
+
+### Données de référence de dépannage
+
+`db/interventions_exemples/catalogue.json` contient 19 interventions de référence GAB/TPE, chargées avec des embeddings pour la recherche de cas similaires. `db/problemes_exemples` contient 16 problèmes usuels généraux. Avec les données déjà présentes, le jeu local compte environ 20 interventions et 20 problèmes usuels. Ces entrées sont des exemples génériques, pas des procédures constructeur certifiées ; les problèmes issus d'un document constructeur restent séparés dans `db/problemes_officiels`. Aucun code d'erreur n'est créé ou modifié par ces imports.
+
+Chaque entrée de référence est repérable par `source_key`, sans exposer cette marque dans le libellé du menu. Les imports sont idempotents. Pour remplacer ultérieurement ces exemples, retirer les documents concernés des JSON puis relancer `bash start.sh` : les entrées de référence absentes des fichiers sont supprimées. Les interventions déjà utilisées par une proposition ou un ajout approuvé ne sont pas supprimées automatiquement ; l'import s'arrête explicitement pour éviter de casser ces références. Les scripts `python -m scripts.load_example_problems --remove` et `python -m scripts.load_intervention_examples --remove` permettent aussi leur retrait explicite depuis le conteneur `init-db`.
 
 ## Thème GAB et orientation mobile
 
@@ -98,6 +117,11 @@ docker compose -f compose.backend.yaml -f docker-compose.main-app.yml exec main-
 ```
 
 L'app s'ouvre sur `http://localhost:8080` (variable `MAIN_APP_GATEWAY_PORT`).
+
+Dans **Administration → Ajouts d'intervention**, le catalogue d'actions permet
+d'ajouter une action sans créer d'intervention. Lors d'un ajout d'intervention,
+chaque action peut être rattachée explicitement à une entrée du catalogue ; sans
+sélection, le rapprochement automatique existant reste utilisé.
 
 Chaque fonctionnalité a son conteneur : on peut l'arrêter ou le relancer seul.
 Les services Node et le job DB partagent `atm-main-app:latest`, construite uniquement

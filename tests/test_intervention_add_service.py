@@ -302,6 +302,33 @@ class PreviewTests(InterventionAddTestCase):
         self.assertEqual(preview.new_catalog_symptoms, ["Écran figé sur « Veuillez patienter »"])
         self.assertEqual(preview.diagnosis.description, "Nappe du clavier pincée")
 
+    def test_selected_catalog_action_is_attached_without_automatic_action_matching(self):
+        payload = intervention_add_payload()
+        payload.pop("technician_id")
+        payload["device"]["device_type"] = "gab"
+        payload["actions"][0]["catalog_action_id"] = 44
+        content = AdminInterventionCreate(**payload)
+
+        planned_actions = service._plan_actions(self.db, content)
+
+        self.assertEqual(planned_actions[0].catalog_link, "chosen_by_admin")
+        self.assertEqual(planned_actions[0].action_id, 44)
+        self.assertEqual(
+            self.mocks[1].call_args.args[1],
+            [action["text"] for action in payload["actions"][1:]],
+        )
+
+    def test_selected_catalog_action_for_other_device_is_refused(self):
+        payload = intervention_add_payload()
+        payload.pop("technician_id")
+        payload["device"]["device_type"] = "gab"
+        payload["actions"][0]["catalog_action_id"] = 44
+        content = AdminInterventionCreate(**payload)
+        self.db.get(Action, 44).device_type = "tpe"
+
+        with self.assertRaisesRegex(InvalidReferenceError, "pas disponible pour l'équipement GAB"):
+            service._plan_actions(self.db, content)
+
     def test_admin_choice_wins_over_automatic_matching(self):
         intervention_add = self.submit()
         content = ReviewedInterventionContent.model_validate(intervention_add.content)

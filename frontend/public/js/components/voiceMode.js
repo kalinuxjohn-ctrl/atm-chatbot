@@ -94,6 +94,7 @@ export function createVoiceMode({ dialog, askAtmChatbot, getPreferences, getCont
   const muteIcon = muteButton.querySelector("[data-icon]");
   const muteLabel = muteButton.querySelector("[data-label]");
   const replayButton = query("replay");
+  const stopButton = query("stop");
   const endButton = query("end");
   const closeButton = query("close");
   const errorActions = query("error-actions");
@@ -124,6 +125,7 @@ export function createVoiceMode({ dialog, askAtmChatbot, getPreferences, getCont
     orbButton.setAttribute("aria-label", ORB_LABEL[nextState]);
     orbButton.disabled = BUSY_STATES.has(nextState);
     replayButton.disabled = !lastReply || nextState === VOICE_STATES.SPEAKING || BUSY_STATES.has(nextState);
+    stopButton.hidden = nextState !== VOICE_STATES.SPEAKING;
     errorActions.hidden = nextState !== VOICE_STATES.ERROR;
     offlineButton.hidden = !errorCanInstallOffline;
   }
@@ -283,6 +285,13 @@ export function createVoiceMode({ dialog, askAtmChatbot, getPreferences, getCont
   }
 
   orbButton.addEventListener("click", handleOrb);
+  stopButton.addEventListener("click", () => {
+    turnToken += 1;
+    stopSpeaking();
+    muted = true;
+    renderMuteButton();
+    setState(VOICE_STATES.MUTED, { detail: "Lecture arrêtée. Touchez la bulle pour reprendre." });
+  });
   muteButton.addEventListener("click", toggleMute);
   replayButton.addEventListener("click", () => {
     cancelListening();

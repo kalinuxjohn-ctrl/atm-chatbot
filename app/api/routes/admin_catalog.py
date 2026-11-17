@@ -12,8 +12,11 @@ la même clé que les propositions (ADMIN_API_KEY, en-tête X-Admin-Key) :
     PUT    /api/admin/usual_problem/{id}    modification
     DELETE /api/admin/usual_problem/{id}    suppression
 
+    GET    /api/admin/action_catalog         toutes les actions
+    POST   /api/admin/action_catalog         ajout d'une action
+
 Aucune logique métier ici : tout est délégué à error_code_service.py et
-usual_problem_service.py.
+usual_problem_service.py et catalog_service.py.
 """
 
 from fastapi import APIRouter, Depends
@@ -23,7 +26,13 @@ from app.api.routes.admin import require_admin
 from app.core.database import get_db
 from app.schemas.error_code_schema import ErrorCodeAdminIn, ErrorCodeAdminOut
 from app.schemas.usual_problem_schema import UsualProblemAdminIn, UsualProblemAdminOut
-from app.services import error_code_service, usual_problem_service
+from app.schemas.catalog_schema import (
+    ActionCatalogAdminCreate,
+    ActionCatalogAdminOut,
+    DeviceModelAdminCreate,
+    DeviceModelAdminOut,
+)
+from app.services import catalog_service, device_model_catalog_service, error_code_service, usual_problem_service
 
 error_code_router = APIRouter(
     prefix="/api/admin/error_code",
@@ -36,6 +45,42 @@ usual_problem_router = APIRouter(
     tags=["admin"],
     dependencies=[Depends(require_admin)],
 )
+
+action_catalog_router = APIRouter(
+    prefix="/api/admin/action_catalog",
+    tags=["admin"],
+    dependencies=[Depends(require_admin)],
+)
+
+device_model_router = APIRouter(
+    prefix="/api/admin/device_models",
+    tags=["admin"],
+    dependencies=[Depends(require_admin)],
+)
+
+
+@action_catalog_router.get("", response_model=list[ActionCatalogAdminOut])
+def lister_actions_catalogue(db: Session = Depends(get_db)) -> list[ActionCatalogAdminOut]:
+    return catalog_service.list_catalog_actions(db)
+
+
+@action_catalog_router.post("", response_model=ActionCatalogAdminOut, status_code=201)
+def ajouter_action_catalogue(
+    payload: ActionCatalogAdminCreate, db: Session = Depends(get_db)
+) -> ActionCatalogAdminOut:
+    return catalog_service.create_catalog_action(db, payload)
+
+
+@device_model_router.get("", response_model=list[DeviceModelAdminOut])
+def lister_modeles_equipement(db: Session = Depends(get_db)) -> list[DeviceModelAdminOut]:
+    return device_model_catalog_service.list_device_models(db)
+
+
+@device_model_router.post("", response_model=DeviceModelAdminOut, status_code=201)
+def ajouter_modele_equipement(
+    payload: DeviceModelAdminCreate, db: Session = Depends(get_db)
+) -> DeviceModelAdminOut:
+    return device_model_catalog_service.create_device_model(db, payload)
 
 
 # ---------- Codes d'erreur ----------

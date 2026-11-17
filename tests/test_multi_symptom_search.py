@@ -143,7 +143,7 @@ class OrchestratorSymptomTests(unittest.TestCase):
 
     def test_summary_prompt_mentions_symptom_numbers_only_when_several(self):
         symptoms = [{"number": 1, "text": "Écran noir"}, {"number": 2, "text": "Carte bloquée"}]
-        with patch.object(orchestrator.llm_service, "generate_chat_reply", return_value="r") as generate:
+        with patch.object(orchestrator.claude_service, "generate_chat_reply", return_value="r") as generate:
             orchestrator._summarize_cases("problème", [], "gab", symptoms)
             orchestrator._summarize_cases("problème", [], "gab", symptoms[:1])
         several, single = (call.args[1][0]["content"] for call in generate.call_args_list)

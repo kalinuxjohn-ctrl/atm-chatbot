@@ -56,6 +56,10 @@ services:
 
     volumes:
       - ./db/code_erreurs:/app/db/code_erreurs:ro
+      - ./db/actions:/app/db/actions:ro
+      - ./db/problemes_officiels:/app/db/problemes_officiels:ro
+      - ./db/problemes_exemples:/app/db/problemes_exemples:ro
+      - ./db/interventions_exemples:/app/db/interventions_exemples:ro
 
     # Applique chaque migration de db/migrations/*.sql UNE SEULE FOIS,
     # peu importe combien de fois ce conteneur redémarre -- une table
@@ -110,6 +114,10 @@ services:
         fi
 
         python -m scripts.load_error_codes
+        python -m scripts.load_action_catalog
+        python -m scripts.load_official_problems
+        python -m scripts.load_example_problems
+        python -m scripts.load_intervention_examples
 
 
   chatbot-backend:
@@ -130,12 +138,11 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       APP_NAME: ${APP_NAME:-atm-chatbot}
       SYMPTOM_SIMILARITY_THRESHOLD: ${SYMPTOM_SIMILARITY_THRESHOLD:-0.5}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       LLM_PROVIDER: ${LLM_PROVIDER:-claude}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
       CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
       CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-5-5}
       CLAUDE_FAST_CHAT: ${CLAUDE_FAST_CHAT:-true}
+      CLAUDE_STREAMING: ${CLAUDE_STREAMING:-true}
       ADMIN_API_KEY: ${ADMIN_API_KEY:-}
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER}
       VOYAGE_API_KEY: ${VOYAGE_API_KEY}
@@ -155,6 +162,7 @@ services:
     volumes:
       - ./app:/app/app
       - ./db/code_erreurs:/app/db/code_erreurs
+      - ./db/actions:/app/db/actions
       - ./scripts:/app/scripts:ro
 
     command:

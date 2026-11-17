@@ -23,6 +23,7 @@ class Intervention(Base):
         Enum("resolved", "partially_resolved", "unresolved", "escalated", name="intervention_outcome")
     )
     summary_text = Column(String)
+    source_key = Column(String)
 
     device = relationship("Device", back_populates="interventions")
     # cascade="all, delete-orphan" : si une intervention est supprimée, ses

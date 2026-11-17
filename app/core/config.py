@@ -8,7 +8,7 @@ lève une erreur explicite au démarrage si une variable obligatoire manque,
 plutôt que de planter plus tard avec une erreur confuse.
 """
 
-from typing import Optional
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -27,14 +27,13 @@ class Settings(BaseSettings):
     retrieval_top_k: int = 5
     max_cases_returned: int = 3 
 
-    llm_provider: str = "claude"  # "claude" | "gemini"
-    gemini_api_key: str = ""
-    gemini_model: str = "gemini-3.5-flash-lite"
-    # Utilisés par ClaudeProvider (llm_service.py) quand llm_provider="claude".
+    llm_provider: Literal["claude"] = "claude"
+    # Utilisés par ClaudeProvider (claude_service.py).
     claude_api_key: str = ""
     claude_model: str = Field(default="claude-sonnet-5-5", pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
     # Sonnet 5.5 : synthèses sans réflexion préalable ; compréhension JSON inchangée.
     claude_fast_chat: bool = True
+    claude_streaming: bool = True
 
     # --- Conversation avec le LLM (message_understanding_service) ---
     # Seuil de condensation des échanges anciens (aussi déclenchée à 12000
@@ -72,6 +71,10 @@ class Settings(BaseSettings):
     # administration désactivée (toutes les routes admin répondent 403).
     admin_api_key: str = ""
     error_code_documents_dir: str = "db/code_erreurs"
+    action_catalog_documents_dir: str = "db/actions"
+    official_problem_documents_dir: str = "db/problemes_officiels"
+    example_problem_documents_dir: str = "db/problemes_exemples"
+    intervention_example_documents_file: str = "db/interventions_exemples/catalogue.json"
     # À l'approbation (proposition de solution ou rapport d'intervention), une
     # action du catalogue plus proche que cette distance cosinus (0 = identique)
     # est réutilisée au lieu de créer un doublon.
